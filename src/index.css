@@ -131,6 +131,9 @@ html[dir='rtl']{
 @layer base {
   html, body {
     direction: rtl;
+    min-height: 100vh;
+    margin: 0;
+    @apply overflow-x-hidden lg:overflow-visible;
   }
   /* General Reset and Styling */
   * {
@@ -139,7 +142,6 @@ html[dir='rtl']{
     box-sizing: border-box;
     border: none;
     outline: none;
-    text-transform: capitalize ;
     font-family: 'Tajawal', sans-serif;
     scrollbar-width: none;
     -ms-overflow-style: none;
@@ -264,6 +266,7 @@ html[dir='rtl']{
 
   main {
     flex-grow: 1;
+    overflow-y: auto;
   }
 
   footer {
@@ -452,7 +455,7 @@ html[dir='rtl']{
   position: fixed;
   top: 0;
   left: 0;
-  width: 100vw;
+  width: 100%;
   height: 100vh;
   background-color: #000; /* Change to your brand color */
   z-index: 9999;

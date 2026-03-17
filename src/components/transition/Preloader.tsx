@@ -2,6 +2,7 @@ import { usePreloader } from '@/contexts/PreloaderContext';
 import gsap from 'gsap';
 import nProgress from 'nprogress';
 import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
+import { useMediaQuery } from 'react-responsive';
 import { useLocation } from 'react-router-dom';
 
 const Preloader = () => {
@@ -10,20 +11,18 @@ const Preloader = () => {
   const logoRef = useRef<HTMLDivElement>(null);
   const { setIsLoaded, setIsExiting } = usePreloader();
 
-  const topBoxes = useRef<(HTMLDivElement | null)[]>([]);
-  const bottomBoxes = useRef<(HTMLDivElement | null)[]>([]);
-
   const ease = "expo.inOut";
   const darkPrimary = "#052c46";
 
   // Use a ref to track the master timeline to prevent clashing
   const masterTl = useRef<gsap.core.Timeline | null>(null);
 
+  // Determine box count based on device. 1 for desktop, 4 for mobile.
+  const isDesktop = useMediaQuery({ query: '(min-width: 768px)' });
+  const boxCount = isDesktop ? 4 : 1;
+
   const revealTransition = useCallback(() => {
-    // Kill any existing timeline before starting a new one
-    if (masterTl.current) {
-      masterTl.current.kill();
-    }
+    if (masterTl.current) masterTl.current.kill();
 
     nProgress.start();
     gsap.set(loaderRef.current, { display: 'flex', pointerEvents: 'all' });
@@ -39,19 +38,23 @@ const Preloader = () => {
 
     masterTl.current = tl;
 
+    // Use query selectors for more reliable element targeting during route shifts
+    const activeTopBoxes = Array.from(loaderRef.current?.querySelectorAll('.top-box-animate') || []);
+    const activeBottomBoxes = Array.from(loaderRef.current?.querySelectorAll('.bottom-box-animate') || []);
+
     tl.to(logoRef.current, {
       y: -40,
       opacity: 0,
       duration: 0.8,
       ease: "power3.in"
     })
-    .to(topBoxes.current, {
+    .to(activeTopBoxes, {
       yPercent: -101,
       stagger: 0.04,
       duration: 1.2,
       ease: ease
     }, "-=0.5")
-    .to(bottomBoxes.current, {
+    .to(activeBottomBoxes, {
       yPercent: 101,
       stagger: 0.04,
       duration: 1.2,
@@ -75,11 +78,14 @@ const Preloader = () => {
 
       masterTl.current = tl;
 
-      tl.fromTo(topBoxes.current,
+      const activeTopBoxes = Array.from(loaderRef.current?.querySelectorAll('.top-box-animate') || []);
+      const activeBottomBoxes = Array.from(loaderRef.current?.querySelectorAll('.bottom-box-animate') || []);
+
+      tl.fromTo(activeTopBoxes,
         { yPercent: -101 },
         { yPercent: 0, stagger: 0.04, duration: 0.8, ease: ease }
       )
-      .fromTo(bottomBoxes.current,
+      .fromTo(activeBottomBoxes,
         { yPercent: 101 },
         { yPercent: 0, stagger: 0.04, duration: 0.8, ease: ease },
         "<"
@@ -96,7 +102,6 @@ const Preloader = () => {
     window.triggerExitTransition = closeTransition;
   }, [closeTransition]);
 
-  // Handle first mount and subsequent route/language changes
   useLayoutEffect(() => {
     revealTransition();
   }, [location.pathname, revealTransition]);
@@ -106,14 +111,13 @@ const Preloader = () => {
       ref={loaderRef}
       className="fixed inset-0 z-99999999 flex items-center justify-center overflow-hidden pointer-events-none"
     >
-      <div className="absolute inset-0 flex flex-col">
+      <div className="absolute inset-0 flex flex-col pointer-events-none">
         {/* Top Row */}
         <div className="flex flex-1">
-          {[...Array(4)].map((_, i) => (
+          {Array.from({ length: boxCount }).map((_, i) => (
             <div
               key={`top-${i}`}
-              ref={(el) => { topBoxes.current[i] = el; }}
-              className="flex-1 will-change-transform"
+              className="flex-1 will-change-transform top-box-animate"
               style={{ backgroundColor: darkPrimary }}
             />
           ))}
@@ -121,11 +125,10 @@ const Preloader = () => {
 
         {/* Bottom Row */}
         <div className="flex flex-1">
-          {[...Array(4)].map((_, i) => (
+          {Array.from({ length: boxCount }).map((_, i) => (
             <div
               key={`bottom-${i}`}
-              ref={(el) => { bottomBoxes.current[i] = el; }}
-              className="flex-1 will-change-transform"
+              className="flex-1 will-change-transform bottom-box-animate"
               style={{ backgroundColor: darkPrimary }}
             />
           ))}
@@ -135,11 +138,10 @@ const Preloader = () => {
       {/* Logo Overlay */}
       <div ref={logoRef} className="relative z-10 flex flex-col items-center px-6">
         <div className="flex flex-col items-center justify-center">
-          <h2 className="text-5xl md:text-7xl font-black text-white tracking-widest uppercase mb-2">Medexa</h2>
-          <div className="h-1.5 w-full bg-white/20 rounded-full overflow-hidden">
+          <img src="/images/logo.png" alt="Medexa Logo" className="h-28 md:h-48 w-auto mb-6 object-contain shadow-2xl" />
+          <div className="h-1 w-48 bg-white/20 rounded-full overflow-hidden">
              <div className="h-full bg-white w-1/3 animate-[shimmer_2s_infinite]" />
           </div>
-          <p className="text-white/60 text-sm md:text-base mt-4 font-medium tracking-[0.3em] uppercase">عيادة النور الطبية</p>
         </div>
       </div>
     </div>

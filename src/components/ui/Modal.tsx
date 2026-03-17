@@ -1,6 +1,6 @@
 import { gsap } from 'gsap';
 import { AlertTriangle } from 'lucide-react';
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 
 interface ModalProps {
   isOpen: boolean;
@@ -26,9 +26,30 @@ const Modal = ({
   const overlayRef = useRef<HTMLDivElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
 
+  const handleClose = useCallback(() => {
+    gsap.to(modalRef.current, { scale: 0.9, opacity: 0, y: 10, duration: 0.2 });
+    gsap.to(overlayRef.current, { opacity: 0, duration: 0.2, onComplete: onClose });
+  }, [onClose]);
+
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
+
+      // Push state to history to handle mobile back button
+      window.history.pushState({ modalOpen: true }, '');
+
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') handleClose();
+        if (e.key === 'Enter') onConfirm();
+      };
+
+      const handlePopState = () => {
+        handleClose();
+      };
+
+      window.addEventListener('keydown', handleKeyDown);
+      window.addEventListener('popstate', handlePopState);
+
       const ctx = gsap.context(() => {
         gsap.fromTo(overlayRef.current,
           { opacity: 0 },
@@ -39,17 +60,20 @@ const Modal = ({
           { scale: 1, opacity: 1, y: 0, duration: 0.4, ease: 'back.out(1.7)' }
         );
       });
+
       return () => {
         ctx.revert();
         document.body.style.overflow = 'unset';
+        window.removeEventListener('keydown', handleKeyDown);
+        window.removeEventListener('popstate', handlePopState);
+        
+        // If the modal is closed manually (not via back button), clear the pushed state
+        if (window.history.state?.modalOpen) {
+          window.history.back();
+        }
       };
     }
-  }, [isOpen]);
-
-  const handleClose = () => {
-    gsap.to(modalRef.current, { scale: 0.9, opacity: 0, y: 10, duration: 0.2 });
-    gsap.to(overlayRef.current, { opacity: 0, duration: 0.2, onComplete: onClose });
-  };
+  }, [isOpen, onConfirm, handleClose]);
 
   if (!isOpen) return null;
 
