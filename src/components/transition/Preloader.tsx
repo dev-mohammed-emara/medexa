@@ -1,8 +1,8 @@
 import { usePreloader } from '@/contexts/PreloaderContext';
 import gsap from 'gsap';
+import nProgress from 'nprogress';
 import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
-import nProgress from 'nprogress';
 
 const Preloader = () => {
   const location = useLocation();
@@ -14,7 +14,7 @@ const Preloader = () => {
   const bottomBoxes = useRef<(HTMLDivElement | null)[]>([]);
 
   const ease = "expo.inOut";
-  const accentColor = "#3FB8AF"; // Using accent color as requested
+  const darkPrimary = "#052c46";
 
   // Use a ref to track the master timeline to prevent clashing
   const masterTl = useRef<gsap.core.Timeline | null>(null);
@@ -114,7 +114,7 @@ const Preloader = () => {
               key={`top-${i}`}
               ref={(el) => { topBoxes.current[i] = el; }}
               className="flex-1 will-change-transform"
-              style={{ backgroundColor: accentColor }}
+              style={{ backgroundColor: darkPrimary }}
             />
           ))}
         </div>
@@ -126,7 +126,7 @@ const Preloader = () => {
               key={`bottom-${i}`}
               ref={(el) => { bottomBoxes.current[i] = el; }}
               className="flex-1 will-change-transform"
-              style={{ backgroundColor: accentColor }}
+              style={{ backgroundColor: darkPrimary }}
             />
           ))}
         </div>
@@ -139,7 +139,7 @@ const Preloader = () => {
           <div className="h-1.5 w-full bg-white/20 rounded-full overflow-hidden">
              <div className="h-full bg-white w-1/3 animate-[shimmer_2s_infinite]" />
           </div>
-          <p className="text-white/60 text-sm md:text-base mt-4 font-medium tracking-[0.3em] uppercase">Healthcare Systems</p>
+          <p className="text-white/60 text-sm md:text-base mt-4 font-medium tracking-[0.3em] uppercase">عيادة النور الطبية</p>
         </div>
       </div>
     </div>
