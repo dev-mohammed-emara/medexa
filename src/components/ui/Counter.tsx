@@ -39,7 +39,7 @@ const RollingDigit = ({ value, height, isInView, delay }: RollingDigitProps) => 
       {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((num, idx) => (
         <span
           key={idx}
-          className="flex items-center justify-end"
+          className="flex items-center  justify-center"
           style={{ height, width: '1ch' }}
         >
           {num}
@@ -68,7 +68,7 @@ export default function Counter({
   isInView,
   isCurrency = false,
 }: CounterProps) {
-  const height = fontSize;
+  const height = fontSize * 1.2;
 
   // For currency/floats, we might want to handle it differently
   // If isCurrency, we'll force 2 decimal places.
@@ -80,21 +80,21 @@ export default function Counter({
 
   return (
     <span
-      className={`relative inline-flex flex-row overflow-hidden ${containerClass}`}
+      className={`relative inline-flex flex-row items-center overflow-hidden ${containerClass}`}
       dir="ltr"
-      style={{ height, fontSize, color: textColor, fontWeight, lineHeight: 1, letterSpacing: '0em' }}
+      style={{ height, fontSize, color: textColor, fontWeight, lineHeight: 1.2, letterSpacing: '0em' }}
     >
       {digits.map((char, index) => {
-        if (char === '.') return <span key={index} style={{ width: '0.3ch' }}>.</span>;
-        if (char === ',') return <span key={index} style={{ width: '0.3ch' }}>,</span>;
+        if (char === '.') return <span key={index} className="flex items-center justify-center" style={{ width: '0.3ch', height }}>.</span>;
+        if (char === ',') return <span key={index} className="flex items-center justify-center" style={{ width: '0.3ch', height }}>,</span>;
 
         return (
-          <div key={index} className="relative overflow-hidden" style={{ height }}>
+          <div key={index} className="relative overflow-hidden -mx-px " style={{ height, width: '1ch' }}>
             <RollingDigit
               value={parseInt(char)}
               height={height}
               isInView={isInView}
-              delay={index * 0.15}
+              delay={index * 0.1}
             />
           </div>
         );

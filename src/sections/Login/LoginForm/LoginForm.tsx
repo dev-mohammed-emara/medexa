@@ -1,5 +1,6 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { TransitionLink } from '../../../components/transition/TransitionLink'
 import { useAuth } from '../../../contexts/AuthContext'
 import { FiMail, FiLock, FiEye, FiEyeOff, FiLogIn } from 'react-icons/fi'
 import BtnPrimary from '../../../components/ui/BtnPrimary'
@@ -12,10 +13,16 @@ const LoginForm = () => {
   const { login } = useAuth()
   const navigate = useNavigate()
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (email && password) {
+      // Trigger seamless transition before navigating
+      if (window.triggerExitTransition) {
+        await window.triggerExitTransition()
+      }
+      
       login()
+      window.showToast('تم تسجيل الدخول بنجاح')
       navigate('/')
     }
   }
@@ -80,9 +87,9 @@ const LoginForm = () => {
             </div>
           </div>
           <div className="flex items-center justify-between">
-            <a className="text-sm text-primary hover:underline" href="/">
+            <TransitionLink className="text-sm text-primary hover:underline" href="/">
               نسيت كلمة المرور؟
-            </a>
+            </TransitionLink>
           </div>
           <BtnPrimary
             className="w-full"
@@ -93,9 +100,9 @@ const LoginForm = () => {
           </BtnPrimary>
           <div className="text-center text-sm text-muted-foreground">
             ليس لديك حساب؟{' '}
-            <a className="text-primary hover:underline" href="/register">
+            <TransitionLink className="text-primary hover:underline" href="/register">
               سجل الآن
-            </a>
+            </TransitionLink>
           </div>
         </form>
       </div>

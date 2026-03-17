@@ -1,10 +1,25 @@
 import React, { useState, useOptimistic, useTransition } from 'react'
-import { Link } from 'react-router-dom'
-import { LuBuilding2, LuUser, LuChevronDown } from 'react-icons/lu'
+import { useNavigate } from 'react-router-dom'
+import { TransitionLink } from '../../components/transition/TransitionLink'
+import { LuBuilding2, LuUser } from 'react-icons/lu'
+import { FaCalendarAlt } from "react-icons/fa"
 import BtnPrimary from '../../components/ui/BtnPrimary'
 import Input from '../../components/ui/Input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../components/ui/select"
+import { format } from 'date-fns'
+import { ar } from 'date-fns/locale'
+import Flatpickr from "react-flatpickr"
+import { Arabic } from "flatpickr/dist/l10n/ar.js"
+import "flatpickr/dist/flatpickr.css"
 
 const RegisterForm = () => {
+  const navigate = useNavigate()
   const [isPending, startTransition] = useTransition()
 
   // State for form data
@@ -27,7 +42,7 @@ const RegisterForm = () => {
   // Optimistic state for submission feedback
   const [optimisticStatus, setOptimisticStatus] = useOptimistic(
     { status: 'idle', message: '' },
-    (state, newMessage: string) => ({ ...state, status: 'submitting', message: newMessage })
+    (state: { status: string; message: string }, newMessage: string) => ({ ...state, status: 'submitting', message: newMessage })
   )
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -37,17 +52,22 @@ const RegisterForm = () => {
       setOptimisticStatus('جاري إرسال طلبك...')
 
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      await new Promise(resolve => setTimeout(resolve, 1500))
 
-      // After success logic would go here
-      console.log('Form submitted:', formData)
-      alert('تم إرسال طلبك بنجاح! سنتواصل معك قريباً.')
+      // Success feedback
+      window.showToast('تم إنشاء الحساب بنجاح! يمكنك الآن تسجيل الدخول')
+      
+      // Trigger seamless transition before navigating
+      if (window.triggerExitTransition) {
+        await window.triggerExitTransition()
+      }
+      navigate('/login')
     })
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
-    setFormData(prev => ({ ...prev, [name]: value }))
+    setFormData((prev: any) => ({ ...prev, [name]: value }))
   }
 
   return (
@@ -86,22 +106,21 @@ const RegisterForm = () => {
 
               <div>
                 <label className="text-sm font-semibold text-[#1a2b3c] pr-1 block mb-2">التخصص الطبي</label>
-                <div className="relative">
-                  <select
-                    name="specialty"
-                    required
-                    value={formData.specialty}
-                    onChange={handleChange}
-                    className="w-full h-12 bg-input-background border border-border rounded-xl px-4 appearance-none outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all text-base md:text-sm"
-                  >
-                    <option value="" disabled>اختر التخصص</option>
-                    <option value="general">طب عام</option>
-                    <option value="pediatrics">أطفال</option>
-                    <option value="dentistry">أسنان</option>
-                    <option value="dermatology">جلدية</option>
-                  </select>
-                  <LuChevronDown className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-                </div>
+                <Select
+                  onValueChange={(val: string) => setFormData((prev: any) => ({...prev, specialty: val}))}
+                  value={formData.specialty}
+                  required
+                >
+                  <SelectTrigger className="focus:ring-4 focus:ring-primary/10">
+                    <SelectValue placeholder="اختر التخصص" />
+                  </SelectTrigger>
+                  <SelectContent className="text-right! [direction:rtl]">
+                    <SelectItem value="general">طب عام</SelectItem>
+                    <SelectItem value="pediatrics">أطفال</SelectItem>
+                    <SelectItem value="dentistry">أسنان</SelectItem>
+                    <SelectItem value="dermatology">جلدية</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
@@ -225,31 +244,43 @@ const RegisterForm = () => {
 
               <div>
                 <label className="text-sm font-semibold text-[#1a2b3c] pr-1 block mb-2">الجنس</label>
-                <div className="relative">
-                  <select
-                    name="gender"
-                    required
-                    value={formData.gender}
-                    onChange={handleChange}
-                    className="w-full h-12 bg-input-background border border-border rounded-xl px-4 appearance-none outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all text-base md:text-sm"
-                  >
-                    <option value="" disabled>اختر الجنس</option>
-                    <option value="male">ذكر</option>
-                    <option value="female">أنثى</option>
-                  </select>
-                  <LuChevronDown className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-                </div>
+                <Select
+                  onValueChange={(val: string) => setFormData((prev: any) => ({...prev, gender: val}))}
+                  value={formData.gender}
+                  required
+                >
+                  <SelectTrigger className="focus:ring-4 focus:ring-primary/10">
+                    <SelectValue placeholder="اختر الجنس" />
+                  </SelectTrigger>
+                  <SelectContent className="text-right">
+                    <SelectItem value="male">ذكر</SelectItem>
+                    <SelectItem value="female">أنثى</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
                 <label className="text-sm font-semibold text-[#1a2b3c] pr-1 block mb-2">تاريخ الميلاد</label>
-                <Input
-                  type="date"
-                  name="dob"
-                  required
-                  value={formData.dob}
-                  onChange={handleChange}
-                />
+                <div className="relative group">
+                  <Flatpickr
+                    value={formData.dob}
+                    onChange={([date]) => {
+                      setFormData((prev: any) => ({...prev, dob: date ? date.toISOString().split('T')[0] : ''}))
+                    }}
+                    options={{
+                      locale: Arabic,
+                      dateFormat: "Y-F-d",
+                      disableMobile: true,
+                      maxDate: "today",
+                      formatDate: (date: Date) => {
+                        return format(date, "yyyy-MMMM-dd", { locale: ar });
+                      }
+                    }}
+                    placeholder="dd/mm/yyyy"
+                    className="w-full h-12 bg-input-background border border-border rounded-xl px-4 text-right flex items-center justify-between transition-all outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 text-base md:text-sm"
+                  />
+                  <FaCalendarAlt className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none group-focus-within:text-primary transition-colors size-4" />
+                </div>
               </div>
             </div>
           </article>
@@ -263,19 +294,19 @@ const RegisterForm = () => {
             >
               {isPending ? optimisticStatus.message || 'جاري الإرسال...' : 'إرسال الطلب'}
             </BtnPrimary>
-            <Link
-              to="/"
+            <TransitionLink // Changed from Link to TransitionLink
+              href="/" // Changed from 'to' to 'href'
               className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-300 disabled:pointer-events-none disabled:opacity-50 shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] hover:shadow-lg hover:-translate-y-1 active:translate-y-0 active:shadow-md border border-border bg-background text-foreground hover:bg-slate-50 hover:border-primary/30 px-8 h-12"
             >
               إلغاء
-            </Link>
+            </TransitionLink>
           </footer>
 
           <footer className="text-center text-sm text-muted-foreground pb-8">
             لديك حساب بالفعل؟{' '}
-            <Link to="/login" className="text-primary hover:underline">
+            <TransitionLink href="/login" className="text-primary hover:underline">
               تسجيل الدخول
-            </Link>
+            </TransitionLink>
           </footer>
         </form>
       </div>

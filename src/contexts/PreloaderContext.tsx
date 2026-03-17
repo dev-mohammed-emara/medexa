@@ -6,6 +6,10 @@ interface PreloaderContextType {
   setIsLoaded: (loaded: boolean) => void;
   isExiting: boolean;
   setIsExiting: (exiting: boolean) => void;
+  hasServerError: boolean;
+  setHasServerError: (val: boolean) => void;
+  hasSessionExpired: boolean;
+  setHasSessionExpired: (val: boolean) => void;
 }
 
 const PreloaderContext = createContext<PreloaderContextType | undefined>(undefined);
@@ -13,9 +17,16 @@ const PreloaderContext = createContext<PreloaderContextType | undefined>(undefin
 export const PreloaderProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
+  const [hasServerError, setHasServerError] = useState(false);
+  const [hasSessionExpired, setHasSessionExpired] = useState(false);
 
   return (
-    <PreloaderContext.Provider value={{ isLoaded, setIsLoaded, isExiting, setIsExiting }}>
+    <PreloaderContext.Provider value={{ 
+      isLoaded, setIsLoaded, 
+      isExiting, setIsExiting,
+      hasServerError, setHasServerError,
+      hasSessionExpired, setHasSessionExpired
+    }}>
       {children}
     </PreloaderContext.Provider>
   );

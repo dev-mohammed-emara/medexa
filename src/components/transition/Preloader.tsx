@@ -1,12 +1,11 @@
+import { usePreloader } from '@/contexts/PreloaderContext';
 import gsap from 'gsap';
 import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
-import { useLanguage } from '../../context/LanguageContext';
-import { usePreloader } from '../../context/PreloaderContext';
+import nProgress from 'nprogress';
 
 const Preloader = () => {
   const location = useLocation();
-  const { language } = useLanguage();
   const loaderRef = useRef<HTMLDivElement>(null);
   const logoRef = useRef<HTMLDivElement>(null);
   const { setIsLoaded, setIsExiting } = usePreloader();
@@ -15,6 +14,7 @@ const Preloader = () => {
   const bottomBoxes = useRef<(HTMLDivElement | null)[]>([]);
 
   const ease = "expo.inOut";
+  const accentColor = "#3FB8AF"; // Using accent color as requested
 
   // Use a ref to track the master timeline to prevent clashing
   const masterTl = useRef<gsap.core.Timeline | null>(null);
@@ -25,11 +25,15 @@ const Preloader = () => {
       masterTl.current.kill();
     }
 
+    nProgress.start();
     gsap.set(loaderRef.current, { display: 'flex', pointerEvents: 'all' });
 
     const tl = gsap.timeline({
       onComplete: () => {
         gsap.set(loaderRef.current, { display: 'none', pointerEvents: 'none' });
+        setIsLoaded(true);
+        setIsExiting(false);
+        nProgress.done();
       }
     });
 
@@ -52,11 +56,7 @@ const Preloader = () => {
       stagger: 0.04,
       duration: 1.2,
       ease: ease
-    }, "<")
-    .call(() => {
-      setIsLoaded(true);
-      setIsExiting(false);
-    }, [], "-=0.5");
+    }, "<");
 
   }, [setIsLoaded, setIsExiting, ease]);
 
@@ -66,6 +66,7 @@ const Preloader = () => {
 
       setIsLoaded(false);
       setIsExiting(true);
+      nProgress.start();
       gsap.set(loaderRef.current, { display: 'flex', pointerEvents: 'all' });
 
       const tl = gsap.timeline({
@@ -98,13 +99,12 @@ const Preloader = () => {
   // Handle first mount and subsequent route/language changes
   useLayoutEffect(() => {
     revealTransition();
-    // No redundant useEffect needed after this
-  }, [location.pathname, language, revealTransition]);
+  }, [location.pathname, revealTransition]);
 
   return (
     <div
       ref={loaderRef}
-      className="fixed inset-0 z-99999999 flex items-center justify-center overflow-hidden"
+      className="fixed inset-0 z-99999999 flex items-center justify-center overflow-hidden pointer-events-none"
     >
       <div className="absolute inset-0 flex flex-col">
         {/* Top Row */}
@@ -113,8 +113,8 @@ const Preloader = () => {
             <div
               key={`top-${i}`}
               ref={(el) => { topBoxes.current[i] = el; }}
-              className={`bg-[#0B1120] will-change-transform
-                ${i === 0 ? 'flex-1 md:flex-initial md:w-1/4' : 'hidden md:block md:flex-1'}`}
+              className="flex-1 will-change-transform"
+              style={{ backgroundColor: accentColor }}
             />
           ))}
         </div>
@@ -125,8 +125,8 @@ const Preloader = () => {
             <div
               key={`bottom-${i}`}
               ref={(el) => { bottomBoxes.current[i] = el; }}
-              className={`bg-[#0B1120] will-change-transform
-                ${i === 0 ? 'flex-1 md:flex-initial md:w-1/4' : 'hidden md:block md:flex-1'}`}
+              className="flex-1 will-change-transform"
+              style={{ backgroundColor: accentColor }}
             />
           ))}
         </div>
@@ -134,8 +134,12 @@ const Preloader = () => {
 
       {/* Logo Overlay */}
       <div ref={logoRef} className="relative z-10 flex flex-col items-center px-6">
-        <div className="w-48 h-34 md:w-64 md:h-48 flex items-center justify-center">
-          <img src="/images/logo.avif" alt="logo" className="w-full h-full object-contain" />
+        <div className="flex flex-col items-center justify-center">
+          <h2 className="text-5xl md:text-7xl font-black text-white tracking-widest uppercase mb-2">Medexa</h2>
+          <div className="h-1.5 w-full bg-white/20 rounded-full overflow-hidden">
+             <div className="h-full bg-white w-1/3 animate-[shimmer_2s_infinite]" />
+          </div>
+          <p className="text-white/60 text-sm md:text-base mt-4 font-medium tracking-[0.3em] uppercase">Healthcare Systems</p>
         </div>
       </div>
     </div>

@@ -14,14 +14,16 @@ const config: Config = {
         blue: { 50: '#DFDFF0', 75: '#dfdff2', 100: '#F0F2FA', 200: '#010101', 300: '#4FB7DD' },
         violet: { 300: '#5724ff' },
         yellow: { 100: '#8e983f', 300: '#edff66' },
-        primary: '#109aa7',
-        'primary-light': '#17d2e3', // Added for your gradient
-        secondary: '#0f172a',
-        'text': '#29466D',
+        primary: '#0b5a8e',
+        'primary-light': '#17d2e3',
+        secondary: '#3fb8af',
+        accent: '#5dd9d1',
+        foreground: '#1a2b3c',
+        'text': '#1a2b3c',
       },
       // ... existing transitions ...
       keyframes: {
-        hovering: { '0%,100%': { transform: 'translateY(0px)' }, '50%': { transform: 'translateY(30px)' } },
+        hovering: { '0%,100%': { transform: 'translateY(-5px)' }, '50%': { transform: 'translateY(5px)' } },
         hoveringScale: { '0%,100%': { transform: 'translateY(30px) scale(1)' }, '50%': { transform: 'translateY(-30px) scale(1.1)' } },
           fade: {
           '0%': { opacity: '0' },
