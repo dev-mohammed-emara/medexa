@@ -44,13 +44,19 @@ const ChartsOverview = () => {
   const canAnimate = isLoaded && !isExiting
 
   return (
-    <div className={cn("space-y-6 mb-10 opacity-0 transition-opacity duration-500", canAnimate && "animate-fadeUp opacity-100")} style={{ opacity: canAnimate ? 1 : 0 }}>
+    <div 
+      className={cn(
+        "space-y-6 mb-10 opacity-0", 
+        canAnimate && "animate-fadeUp opacity-100",
+        isExiting && "animate-fadeDownOut"
+      )}
+    >
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Gender Distribution */}
         <section className="bg-white p-6 border border-border shadow-lg rounded-2xl hover:shadow-xl transition-all duration-300">
           <h3 className="text-lg font-bold mb-6 text-right">توزيع المرضى حسب الجنس</h3>
           <figure className="h-[300px] w-full">
-            {canAnimate && (
+            {isLoaded && (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -85,7 +91,7 @@ const ChartsOverview = () => {
         <section className="bg-white p-6 border border-border shadow-lg rounded-2xl hover:shadow-xl transition-all duration-300">
           <h3 className="text-lg font-bold mb-6 text-right">توزيع المرضى حسب العمر</h3>
           <figure className="h-[300px] w-full">
-            {canAnimate && (
+            {isLoaded && (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={ageData}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E8EEF2" />
@@ -104,7 +110,7 @@ const ChartsOverview = () => {
       <section className="bg-white p-6 border border-border shadow-lg rounded-2xl hover:shadow-xl transition-all duration-300">
         <h3 className="text-lg font-bold mb-6 text-right">المواعيد اليومية</h3>
         <figure className="h-[300px] w-full">
-          {canAnimate && (
+          {isLoaded && (
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={appointmentData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E8EEF2" />

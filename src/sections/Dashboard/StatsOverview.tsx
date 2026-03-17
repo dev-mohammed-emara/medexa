@@ -124,6 +124,20 @@ const StatsOverview = () => {
     return () => observer.disconnect()
   }, [canAnimate])
 
+  // Exit animation logic
+  useEffect(() => {
+    if (isExiting && cardsRef.current.length > 0) {
+      gsap.to(cardsRef.current, {
+        opacity: 0,
+        y: 40,
+        scale: 0.95,
+        duration: 0.5,
+        stagger: 0.05,
+        ease: "power2.in"
+      })
+    }
+  }, [isExiting])
+
   return (
     <section
       ref={sectionRef}

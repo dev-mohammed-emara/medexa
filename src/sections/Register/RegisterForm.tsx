@@ -1,8 +1,14 @@
-import React, { useState, useOptimistic, useTransition } from 'react'
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { format } from 'date-fns'
+import { ar } from 'date-fns/locale'
+import "flatpickr/dist/flatpickr.css"
+import { Arabic } from "flatpickr/dist/l10n/ar.js"
+import React, { useOptimistic, useState, useTransition } from 'react'
+import Flatpickr from "react-flatpickr"
+import { FaCalendarAlt } from "react-icons/fa"
+import { LuBuilding2, LuUser } from 'react-icons/lu'
 import { useNavigate } from 'react-router-dom'
 import { TransitionLink } from '../../components/transition/TransitionLink'
-import { LuBuilding2, LuUser } from 'react-icons/lu'
-import { FaCalendarAlt } from "react-icons/fa"
 import BtnPrimary from '../../components/ui/BtnPrimary'
 import Input from '../../components/ui/Input'
 import {
@@ -12,13 +18,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../../components/ui/select"
-import { format } from 'date-fns'
-import { ar } from 'date-fns/locale'
-import Flatpickr from "react-flatpickr"
-import { Arabic } from "flatpickr/dist/l10n/ar.js"
-import "flatpickr/dist/flatpickr.css"
+
+import { usePreloader } from '../../contexts/PreloaderContext'
+import { cn } from '../../utils/cn'
 
 const RegisterForm = () => {
+  const { isLoaded, isExiting } = usePreloader()
+  const canAnimate = isLoaded && !isExiting
   const navigate = useNavigate()
   const [isPending, startTransition] = useTransition()
 
@@ -56,7 +62,7 @@ const RegisterForm = () => {
 
       // Success feedback
       window.showToast('تم إنشاء الحساب بنجاح! يمكنك الآن تسجيل الدخول')
-      
+
       // Trigger seamless transition before navigating
       if (window.triggerExitTransition) {
         await window.triggerExitTransition()
@@ -73,7 +79,11 @@ const RegisterForm = () => {
   return (
     <section className="min-h-screen bg-background px-4 py-12 md:px-8" dir="rtl">
       <div className="max-w-4xl mx-auto">
-        <header className="mb-8 text-center opacity-0 animate-fadeUp animate-delay-200">
+        <header className={cn(
+          "mb-8 text-center opacity-0",
+          canAnimate && "animate-fadeUp animate-delay-200",
+          isExiting && "animate-fadeDownOut"
+        )}>
           <figure className="mb-2">
              <h1 className="text-4xl" style={{ fontWeight: 700, color: 'rgb(11, 90, 142)' }}>
               Medexa Cloud
@@ -82,7 +92,11 @@ const RegisterForm = () => {
           <p className="text-muted-foreground">تسجيل عيادة جديدة</p>
         </header>
 
-        <form className="space-y-6 opacity-0 animate-fadeUp animate-delay-400" onSubmit={handleSubmit}>
+        <form className={cn(
+          "space-y-6 opacity-0",
+          canAnimate && "animate-fadeUp animate-delay-400",
+          isExiting && "animate-fadeDownOut"
+        )} onSubmit={handleSubmit}>
           {/* Clinic Information Card */}
           <article className="bg-white rounded-xl border border-border shadow-sm hover:shadow-lg transition-all duration-300 p-6">
             <header className="flex items-center gap-3 mb-12">

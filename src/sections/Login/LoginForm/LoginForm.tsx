@@ -6,7 +6,12 @@ import { FiMail, FiLock, FiEye, FiEyeOff, FiLogIn } from 'react-icons/fi'
 import BtnPrimary from '../../../components/ui/BtnPrimary'
 import Input from '../../../components/ui/Input'
 
+import { usePreloader } from '../../../contexts/PreloaderContext'
+import { cn } from '../../../utils/cn'
+
 const LoginForm = () => {
+  const { isLoaded, isExiting } = usePreloader()
+  const canAnimate = isLoaded && !isExiting
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -28,7 +33,14 @@ const LoginForm = () => {
   }
 
   return (
-    <div className="w-full lg:w-1/2 flex items-center justify-center p-8 opacity-0 animate-delay-200 bg-white animate-snappyUp" id="login-form-area">
+    <div 
+      className={cn(
+        "w-full lg:w-1/2 flex items-center justify-center p-8 bg-white opacity-0",
+        canAnimate && "animate-snappyUp animate-delay-200",
+        isExiting && "animate-snappyDown"
+      )} 
+      id="login-form-area"
+    >
       <div className="w-full max-w-xl lg:max-w-md" style={{ opacity: 1, transform: 'none' }}>
         <div className="mb-8">
           <h1 className="text-4xl mb-2" style={{ fontWeight: 700, color: 'rgb(11, 90, 142)' }}>

@@ -51,11 +51,15 @@ const config: Config = {
         },
         snappyUp: {
           '0%': { opacity: '0', transform: 'translateY(30px) scale(0.9)' },
-          '100%': { opacity: '1', transform: 'translateY(0) scale(1)' },     // Settling back
+          '100%': { opacity: '1', transform: 'translateY(0) scale(1)' },
         },
-         snappyRight: {
+        snappyDown: {
+          '0%': { opacity: '1', transform: 'translateY(0) scale(1)' },
+          '100%': { opacity: '0', transform: 'translateY(30px) scale(0.9)' },
+        },
+        snappyRight: {
           '0%': { opacity: '0', transform: 'translateX(-30px) scale(0.9)' },
-          '100%': { opacity: '1', transform: 'translateY(0) scale(1)' },     // Settling back
+          '100%': { opacity: '1', transform: 'translateY(0) scale(1)' },
         },
         growUp: {
           '0%': { transform: 'scaleY(0)', transformOrigin: 'bottom', opacity: '0' },
@@ -71,26 +75,37 @@ const config: Config = {
           '50%': { transform: 'translateY(-10px) rotateX(10deg) rotateY(-10deg)' },
         },
         overshoot: {
-                            '0%': { transform: 'scale(0)', opacity: '0' },
-                            '100%': { transform: 'scale(1)', opacity: '1' },
-                        }
+          '0%': { transform: 'scale(0)', opacity: '0' },
+          '100%': { transform: 'scale(1)', opacity: '1' },
+        },
+        fadeDownOut: {
+          '0%': { opacity: '1', transform: 'translateY(0)' },
+          '100%': { opacity: '0', transform: 'translateY(40px)' },
+        },
+        scaleDownOut: {
+          '0%': { opacity: '1', transform: 'translateY(0)', scale: '1' },
+          '100%': { opacity: '0', transform: 'translateY(10px)', scale: '0.9' },
+        }
       },
       animation: {
         hovering: 'hovering 5s ease-in-out infinite',
         hoveringScale: 'hoveringScale 7s ease-in-out infinite',
         hoveringSlow: 'hovering 6.5s ease-in-out infinite',
-        fade: 'fade 0.5s ease-out forwards',
-        fadeDown: 'fadeDown 0.5s ease-out forwards',
-        fadeUp: 'fadeUp 0.5s ease-out forwards',
-        fadeLeft: 'fadeLeft 0.5s ease-out forwards',
-        fadeRight: 'fadeRight 0.5s ease-out forwards',
-        scaleUp: 'scaleUp 1s var(--snap) forwards',
-        snappyUp: 'snappyUp 1s var(--snap) forwards',
-        snappyRight: 'snappyRight 1s var(--snap) forwards',
-        growUp: 'growUp 1s var(--easing) forwards',
+        fade: 'fade 0.5s ease-out both',
+        fadeDown: 'fadeDown 0.5s ease-out both',
+        fadeUp: 'fadeUp 0.5s ease-out both',
+        fadeLeft: 'fadeLeft 0.5s ease-out both',
+        fadeRight: 'fadeRight 0.5s ease-out both',
+        scaleUp: 'scaleUp 1s var(--snap) both',
+        snappyUp: 'snappyUp 1s var(--snap) both',
+        snappyDown: 'snappyDown 0.6s var(--snap) both',
+        snappyRight: 'snappyRight 1s var(--snap) both',
+        growUp: 'growUp 1s var(--easing) both',
         rotate3D: 'rotate3D 8s ease-in-out infinite',
-        jumpIn: 'jumpIn 0.5s ease-out forwards',
-        overshoot: 'overshoot 1s var(--overshoot) forwards',
+        jumpIn: 'jumpIn 0.5s ease-out both',
+        overshoot: 'overshoot 1s var(--overshoot) both',
+        fadeDownOut: 'fadeDownOut 0.5s ease-in both',
+        scaleDownOut: 'scaleDownOut 0.6s ease-in both',
       },
       // Keep the theme object for reference
       animationDelay: {
