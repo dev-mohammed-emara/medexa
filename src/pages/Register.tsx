@@ -1,4 +1,4 @@
-import React from 'react'
+
 import RegisterForm from '../sections/Register/RegisterForm'
 
 const Register = () => {
