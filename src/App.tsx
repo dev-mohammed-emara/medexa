@@ -30,7 +30,7 @@ const App = () => {
             <Route
               path="/500"
               element={
-                <ErrorRoute errorKey="hasServerError">
+                <ErrorRoute>
                   <ServerError />
                 </ErrorRoute>
               }
@@ -38,7 +38,7 @@ const App = () => {
             <Route
               path="/419"
               element={
-                <ErrorRoute errorKey="hasSessionExpired">
+                <ErrorRoute>
                   <SessionExpired />
                 </ErrorRoute>
               }
