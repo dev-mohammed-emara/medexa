@@ -68,10 +68,10 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
   }, [])
 
   return (
-    <header className="h-20 bg-white border-b border-border px-6 flex items-center justify-between shadow-sm sticky top-0 z-50">
+    <header className="h-20 bg-white border-b border-border px-6 flex items-center justify-between shadow-sm sticky top-0 z-30">
       <div className="flex items-center gap-4 flex-row-reverse">
         {/* Menu toggle for all screen sizes */}
-        <button 
+        <button
           onClick={onMenuClick}
           className="p-2 rounded-md hover:bg-accent text-muted-foreground transition-colors lg:hidden"
           aria-label="Toggle Menu"

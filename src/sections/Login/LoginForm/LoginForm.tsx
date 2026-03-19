@@ -25,7 +25,7 @@ const LoginForm = () => {
       if (window.triggerExitTransition) {
         await window.triggerExitTransition()
       }
-      
+
       login()
       window.showToast('تم تسجيل الدخول بنجاح')
       navigate('/')
@@ -33,18 +33,18 @@ const LoginForm = () => {
   }
 
   return (
-    <div 
+    <div
       className={cn(
         "w-full lg:w-1/2 flex items-center justify-center p-8 bg-white opacity-0",
-        canAnimate && "animate-snappyUp animate-delay-200",
+        canAnimate && "animate-snappyUp animate-delay-0",
         isExiting && "animate-snappyDown"
-      )} 
+      )}
       id="login-form-area"
     >
       <div className="w-full max-w-xl lg:max-w-md" style={{ opacity: 1, transform: 'none' }}>
         <div className="mb-8">
-          <h1 className="text-4xl mb-2" style={{ fontWeight: 700, color: 'rgb(11, 90, 142)' }}>
-            Medexa Cloud
+          <h1 className="text-4xl mb-2 flex justify-start" style={{ fontWeight: 700, color: 'rgb(11, 90, 142)' }}>
+             <img src="/images/logo.png" alt="Medexa Cloud" className="h-20 mb-2 w-auto" />
           </h1>
           <p className="text-muted-foreground">منصة إدارة العيادات الطبية</p>
         </div>
@@ -80,7 +80,7 @@ const LoginForm = () => {
                 type={showPassword ? 'text' : 'password'}
                 id="password"
                 name="password"
-                placeholder="••••••••"
+                placeholder={showPassword ? 'P@ssword1' : '••••••••'}
                 required
                 value={password}
                 autoComplete="current-password"

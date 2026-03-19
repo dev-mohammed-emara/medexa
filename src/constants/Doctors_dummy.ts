@@ -1,0 +1,62 @@
+export const initialDoctors = [
+  {
+    id: 1,
+    name: 'د. عمر الزعبي',
+    specialty: 'طب عام',
+    status: 'نشط',
+    phone: '0789651800',
+    email: 'omar.zoubi@medexa.jo',
+    patients: 145,
+    revenue: '2,400',
+    initial: 'ع',
+    gender: 'ذكر',
+    dob: '1985-05-15',
+    description: 'أخصائي طب عام بخبرة تزيد عن 10 سنوات في الرعاية الصحية الأولية والتشخيص.',
+    permissions: ['managePatients', 'manageAppointments', 'medicalRecords']
+  },
+  {
+    id: 2,
+    name: 'د. ليلى الخطيب',
+    specialty: 'أطفال',
+    status: 'نشط',
+    phone: '0789651801',
+    email: 'layla.khatib@medexa.jo',
+    patients: 198,
+    revenue: '3,200',
+    initial: 'ل',
+    gender: 'أنثى',
+    dob: '1990-08-22',
+    description: 'استشارية طب أطفال متخصصة في النمو والتطور وتغذية الأطفال.',
+    permissions: ['managePatients', 'manageAppointments', 'medicalRecords', 'financialReports']
+  },
+  {
+    id: 3,
+    name: 'د. هند الطراونة',
+    specialty: 'أسنان',
+    status: 'نشط',
+    phone: '0789651802',
+    email: 'hind.tarawneh@medexa.jo',
+    patients: 112,
+    revenue: '1,800',
+    initial: 'هـ',
+    gender: 'أنثى',
+    dob: '1988-03-10',
+    description: 'طبيبة أسنان متخصصة في تجميل الأسنان والتركيبات الثابتة والحشوات التجميلية.',
+    permissions: ['managePatients', 'medicalRecords']
+  },
+  {
+    id: 4,
+    name: 'د. سامي القضاة',
+    specialty: 'باطني',
+    status: 'نشط',
+    phone: '0789651803',
+    email: 'sami.qudah@medexa.jo',
+    patients: 215,
+    revenue: '4,100',
+    initial: 'س',
+    gender: 'ذكر',
+    dob: '1979-11-20',
+    description: 'استشاري أمراض باطنية متخصص في إدارة الأمراض المزمنة وارتفاع ضغط الدم والسكري.',
+    permissions: ['managePatients', 'manageAppointments', 'medicalRecords', 'financialReports']
+  }
+];

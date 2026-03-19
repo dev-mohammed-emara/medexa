@@ -21,7 +21,7 @@ import { TransitionLink } from '../transition/TransitionLink'
 const navItems = [
   { icon: LayoutDashboard, label: 'لوحة التحكم', href: '/' },
   { icon: Users, label: 'الأطباء', href: '/doctors' },
-  { icon: UserCog, label: 'السكرتارية', href: '/staff' },
+  { icon: UserCog, label: 'السكرتارية', href: '/secretary' },
   { icon: UsersRound, label: 'المرضى', href: '/patients' },
   { icon: Calendar, label: 'المواعيد', href: '/appointments' },
   { icon: FileText, label: 'السجلات الطبية', href: '/records' },
@@ -96,7 +96,7 @@ const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
               <span className="text-white text-xl font-bold">M</span>
             </div>
           ) : (
-            <h2 className="text-2xl text-primary font-bold">Medexa</h2>
+            <img src="/images/logo.png" alt="Medexa" className="h-13 min-w-fit w-auto" />
           )}
         </div>
 

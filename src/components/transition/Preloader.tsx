@@ -30,9 +30,8 @@ const Preloader = () => {
     const tl = gsap.timeline({
       onComplete: () => {
         gsap.set(loaderRef.current, { display: 'none', pointerEvents: 'none' });
-        setIsLoaded(true);
+        setIsLoaded(true); // Safety fallback
         setIsExiting(false);
-        nProgress.done();
       }
     });
 
@@ -59,7 +58,11 @@ const Preloader = () => {
       stagger: 0.04,
       duration: 1.2,
       ease: ease
-    }, "<");
+    }, "<")
+    .add(() => {
+      setIsLoaded(true);
+      nProgress.done();
+    }, "-=0.8");
 
   }, [setIsLoaded, setIsExiting, ease]);
 
@@ -109,7 +112,7 @@ const Preloader = () => {
   return (
     <div
       ref={loaderRef}
-      className="fixed inset-0 z-99999999 flex items-center justify-center overflow-hidden pointer-events-none"
+      className="fixed inset-0 max-w-screen max-h-screen h-screen w-screen z-99999999 flex items-center justify-center overflow-hidden pointer-events-none"
     >
       <div className="absolute inset-0 flex flex-col pointer-events-none">
         {/* Top Row */}
@@ -138,9 +141,9 @@ const Preloader = () => {
       {/* Logo Overlay */}
       <div ref={logoRef} className="relative z-10 flex flex-col items-center px-6">
         <div className="flex flex-col items-center justify-center">
-          <img src="/images/logo.png" alt="Medexa Logo" className="h-28 md:h-48 w-auto mb-6 object-contain shadow-2xl" />
+          <img src="/images/logo.png" alt="Medexa Logo" className="h-28 md:h-48 w-auto mb-6 object-contain " />
           <div className="h-1 w-48 bg-white/20 rounded-full overflow-hidden">
-             <div className="h-full bg-white w-1/3 animate-[shimmer_2s_infinite]" />
+             <div className="h-full bg-white w-1/3 animate-shimmer" />
           </div>
         </div>
       </div>

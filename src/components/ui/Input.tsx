@@ -40,7 +40,10 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className={cn("relative w-full", containerClassName)}>
         {icon && (
-          <div className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none group-focus-within:text-primary transition-colors">
+          <div className={cn(
+            "absolute top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none group-focus-within:text-primary transition-colors",
+            props.dir === 'ltr' ? "left-4" : "right-4"
+          )}>
             {icon}
           </div>
         )}
@@ -52,13 +55,12 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             "placeholder:text-muted-foreground",
             "focus:border-primary focus:ring-4 focus:ring-primary/10",
             "disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
-            icon && "pr-12",
+            icon && (props.dir === 'ltr' ? "pl-12" : "pr-12"),
             className
           )}
           ref={ref}
           onChange={handleChange}
           {...props}
-          value={props.value ?? ''}
         />
       </div>
     )

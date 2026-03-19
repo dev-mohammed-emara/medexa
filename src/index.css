@@ -390,7 +390,7 @@ html[dir='rtl']{
     pointer-events: none;
   }
 
-/* * Force the preloader to be visible regardless of body state */ */
+/* Force the preloader to be visible regardless of body state */
   .preloader-root {
     visibility: visible !important;
   }
@@ -490,12 +490,10 @@ input,select{
   direction: rtl;
 }
 
-@media (hover: none) {
  ::-webkit-scrollbar{
   width: 0px !important;
   height: 0px !important;
  }
-}
 
   /* ======CONTAINER MEDIA============= */
 

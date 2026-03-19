@@ -16,28 +16,7 @@ import {
 import { usePreloader } from '../../contexts/PreloaderContext'
 import { cn } from '../../utils/cn'
 
-const genderData = [
-  { name: 'ذكور', value: 50, color: '#0B5A8E' },
-  { name: 'إناث', value: 50, color: '#3FB8AF' }
-]
-
-const ageData = [
-  { range: '0-18', value: 163, fill: '#0B5A8E' },
-  { range: '19-35', value: 67, fill: '#0B5A8E' },
-  { range: '36-50', value: 115, fill: '#0B5A8E' },
-  { range: '51-65', value: 197, fill: '#0B5A8E' },
-  { range: '65+', value: 24, fill: '#0B5A8E' }
-]
-
-const appointmentData = [
-  { name: 'السبت', value: 40 },
-  { name: 'الأحد', value: 55 },
-  { name: 'الاثنين', value: 45 },
-  { name: 'الثلاثاء', value: 75 },
-  { name: 'الأربعاء', value: 50 },
-  { name: 'الخميس', value: 65 },
-  { name: 'الجمعة', value: 30 }
-]
+import { genderData, ageData, appointmentData } from '../../constants/Dashboard_dummy'
 
 const ChartsOverview = () => {
   const { isLoaded, isExiting } = usePreloader()
@@ -47,7 +26,7 @@ const ChartsOverview = () => {
     <div 
       className={cn(
         "space-y-6 mb-10 opacity-0", 
-        canAnimate && "animate-fadeUp opacity-100",
+        canAnimate && "animate-fadeUp opacity-100 animate-delay-700",
         isExiting && "animate-fadeDownOut"
       )}
     >

@@ -7,6 +7,8 @@ import Register from './pages/Register'
 import { ToastContainer } from './components/ui/Toast'
 
 import Dashboard from './pages/Dashboard'
+import Doctors from './pages/Doctors'
+import Secretary from './pages/Secretary'
 import NotFound from './pages/NotFound'
 import ServerError from './pages/ServerError'
 import SessionExpired from './pages/SessionExpired'
@@ -48,6 +50,22 @@ const App = () => {
               element={
                 <ProtectedRoute>
                   <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/doctors"
+              element={
+                <ProtectedRoute>
+                  <Doctors />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/secretary"
+              element={
+                <ProtectedRoute>
+                  <Secretary />
                 </ProtectedRoute>
               }
             />

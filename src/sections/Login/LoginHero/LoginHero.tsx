@@ -11,7 +11,7 @@ const LoginHero = () => {
       <div className="relative z-10 flex flex-col items-center justify-center text-white p-12 w-full">
         <div className={cn(
           "text-center opacity-0",
-          canAnimate && "animate-scaleUp animate-delay-500",
+          canAnimate && "animate-scaleUp animate-delay-100",
           isExiting && "animate-scaleDownOut"
         )}>
           <div className="mb-8">

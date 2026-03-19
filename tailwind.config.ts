@@ -59,7 +59,11 @@ const config: Config = {
         },
         snappyRight: {
           '0%': { opacity: '0', transform: 'translateX(-30px) scale(0.9)' },
-          '100%': { opacity: '1', transform: 'translateY(0) scale(1)' },
+          '100%': { opacity: '1', transform: 'translateX(0) scale(1)' },
+        },
+        snappyToRight: {
+          '0%': { opacity: '0', transform: 'translateX(-40px) scale(0.8)' },
+          '100%': { opacity: '1', transform: 'translateX(0) scale(1)' },
         },
         growUp: {
           '0%': { transform: 'scaleY(0)', transformOrigin: 'bottom', opacity: '0' },
@@ -85,13 +89,21 @@ const config: Config = {
         scaleDownOut: {
           '0%': { opacity: '1', transform: 'translateY(0)', scale: '1' },
           '100%': { opacity: '0', transform: 'translateY(10px)', scale: '0.9' },
+        },
+        shimmer: {
+          '0%': { transform: 'translateX(-150%)' },
+          '100%': { transform: 'translateX(350%)' },
+        },
+        fadeOut: {
+          '0%': { opacity: '1' },
+          '100%': { opacity: '0' },
         }
       },
       animation: {
         hovering: 'hovering 5s ease-in-out infinite',
         hoveringScale: 'hoveringScale 7s ease-in-out infinite',
         hoveringSlow: 'hovering 6.5s ease-in-out infinite',
-        fade: 'fade 0.5s ease-out both',
+        fade: 'fade 0.25s ease-out both',
         fadeDown: 'fadeDown 0.5s ease-out both',
         fadeUp: 'fadeUp 0.5s ease-out both',
         fadeLeft: 'fadeLeft 0.5s ease-out both',
@@ -106,6 +118,9 @@ const config: Config = {
         overshoot: 'overshoot 1s var(--overshoot) both',
         fadeDownOut: 'fadeDownOut 0.5s ease-in both',
         scaleDownOut: 'scaleDownOut 0.6s ease-in both',
+        shimmer: 'shimmer 2s infinite linear',
+        fadeOut: 'fadeOut 0.15s ease-in both',
+        snappyToRight: 'snappyToRight 1s var(--snap) both',
       },
       // Keep the theme object for reference
       animationDelay: {
@@ -114,6 +129,11 @@ const config: Config = {
         '300': '300ms',
         '400': '400ms',
         '500': '500ms',
+        '600': '600ms',
+        '700': '700ms',
+        '800': '800ms',
+        '900': '900ms',
+        '1000': '1000ms',
       },
     },
     screens: {
