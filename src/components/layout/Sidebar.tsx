@@ -7,14 +7,15 @@ import {
   Users,
   UserCog,
   UsersRound,
-  Calendar,
   FileText,
   DollarSign,
   Settings,
   User,
   ChevronLeft,
-  Menu
+  Menu,
+  X
 } from 'lucide-react'
+import { FaCalendarAlt } from 'react-icons/fa'
 import { cn } from '../../utils/cn'
 import { TransitionLink } from '../transition/TransitionLink'
 
@@ -23,7 +24,7 @@ const navItems = [
   { icon: Users, label: 'الأطباء', href: '/doctors' },
   { icon: UserCog, label: 'السكرتارية', href: '/secretary' },
   { icon: UsersRound, label: 'المرضى', href: '/patients' },
-  { icon: Calendar, label: 'المواعيد', href: '/appointments' },
+  { icon: FaCalendarAlt, label: 'المواعيد', href: '/appointments' },
   { icon: FileText, label: 'السجلات الطبية', href: '/records' },
   { icon: DollarSign, label: 'المالية', href: '/finance' },
   { icon: Settings, label: 'الإعدادات', href: '/settings' },
@@ -66,6 +67,16 @@ const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
     return () => ctx.revert()
   }, [canAnimate, isWideScreen])
 
+  useEffect(() => {
+    const handlePopState = () => {
+      if (!isCollapsed && !isWideScreen) {
+        onToggle()
+      }
+    }
+    window.addEventListener('popstate', handlePopState)
+    return () => window.removeEventListener('popstate', handlePopState)
+  }, [isCollapsed, isWideScreen, onToggle])
+
   return (
     <>
       {/* Backdrop for mobile/tablet when open */}
@@ -83,20 +94,32 @@ const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
           "fixed inset-y-0 right-0 z-110 shadow-2xl",
           isCollapsed
             ? "translate-x-[120%] invisible pointer-events-none"
-            : "translate-x-0 w-[280px] visible pointer-events-auto",
+            : "translate-x-0 w-full max-w-full sm:max-w-[300px] visible pointer-events-auto",
 
           // Desktop: Sticky placement (>= 1024px)
           "lg:sticky lg:top-0 lg:h-screen lg:shadow-none lg:z-40 lg:translate-x-0 lg:visible lg:pointer-events-auto lg:transform-none",
           isCollapsed ? "lg:w-[80px]" : "lg:w-[280px]"
         )}
       >
-        <div className="h-20 flex items-center justify-center border-b border-sidebar-border px-4 transition-all overflow-hidden whitespace-nowrap">
-          {isCollapsed ? (
-            <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center shrink-0">
-              <span className="text-white text-xl font-bold">M</span>
-            </div>
-          ) : (
-            <img src="/images/logo.png" alt="Medexa" className="h-13 min-w-fit w-auto" />
+        <div className="h-20 flex items-center justify-between border-b border-sidebar-border px-4 transition-all overflow-hidden whitespace-nowrap relative">
+          <div className="flex-1 flex items-center justify-center">
+            {isCollapsed ? (
+              <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center shrink-0">
+                <span className="text-white text-xl font-bold">M</span>
+              </div>
+            ) : (
+              <img src="/images/logo.png" alt="Medexa" className="h-13 min-w-fit w-auto" />
+            )}
+          </div>
+          
+          {/* Mobile Close Button */}
+          {!isWideScreen && !isCollapsed && (
+            <button 
+              onClick={onToggle}
+              className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center rounded-xl bg-muted/40 text-muted-foreground hover:bg-red-50 hover:text-red-500 transition-all active:scale-95"
+            >
+              <X className="size-5" />
+            </button>
           )}
         </div>
 

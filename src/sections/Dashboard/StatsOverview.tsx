@@ -41,7 +41,7 @@ const StatsOverview = () => {
                  y: 0,
                  scale: 1,
                  duration: 0.6,
-                 delay: 0.2 + (i * 0.05),
+                 delay: 0.1 + (i * 0.05),
                  ease: "power2.inOut"
                })
             }

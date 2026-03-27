@@ -18,6 +18,10 @@ import Patients from './pages/Patients'
 import Secretary from './pages/Secretary'
 import ServerError from './pages/ServerError'
 import SessionExpired from './pages/SessionExpired'
+import Records from './pages/Records'
+import Finance from './pages/Finance'
+import Settings from './pages/Settings'
+import Profile from './pages/Profile'
 
 const App = () => {
   useLenis()
@@ -36,19 +40,21 @@ const App = () => {
             <Route
               path="/500"
               element={
-                <ErrorRoute>
+                <ProtectedRoute>
                   <ServerError />
-                </ErrorRoute>
+                </ProtectedRoute>
               }
             />
             <Route
               path="/419"
               element={
-                <ErrorRoute>
+                <ProtectedRoute>
                   <SessionExpired />
-                </ErrorRoute>
+                </ProtectedRoute>
               }
             />
+
+            {/* Protected Routes */}
             <Route
               path="/"
               element={
@@ -89,8 +95,42 @@ const App = () => {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/records"
+              element={
+                <ProtectedRoute>
+                  <Records />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/finance"
+              element={
+                <ProtectedRoute>
+                  <Finance />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/settings"
+              element={
+                <ProtectedRoute>
+                  <Settings />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
+
             {/* Catch-all route for 404 */}
-            <Route path="*" element={<NotFound />} />
+            <Route path="*" element={<ErrorRoute><NotFound /></ErrorRoute>} />
           </Routes>
         </Router>
       </AuthProvider>

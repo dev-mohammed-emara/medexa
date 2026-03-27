@@ -13,6 +13,7 @@ const Preloader = () => {
 
   const ease = "expo.inOut";
   const darkPrimary = "#052c46";
+  const lastUrlRef = useRef(window.location.href);
 
   // Use a ref to track the master timeline to prevent clashing
   const masterTl = useRef<gsap.core.Timeline | null>(null);
@@ -25,44 +26,50 @@ const Preloader = () => {
     if (masterTl.current) masterTl.current.kill();
 
     nProgress.start();
+    
+    // Ensure display is flex BEFORE starting animation
     gsap.set(loaderRef.current, { display: 'flex', pointerEvents: 'all' });
 
     const tl = gsap.timeline({
       onComplete: () => {
         gsap.set(loaderRef.current, { display: 'none', pointerEvents: 'none' });
-        setIsLoaded(true); // Safety fallback
+        setIsLoaded(true);
         setIsExiting(false);
       }
     });
 
     masterTl.current = tl;
 
-    // Use query selectors for more reliable element targeting during route shifts
     const activeTopBoxes = Array.from(loaderRef.current?.querySelectorAll('.top-box-animate') || []);
     const activeBottomBoxes = Array.from(loaderRef.current?.querySelectorAll('.bottom-box-animate') || []);
 
-    tl.to(logoRef.current, {
-      y: -40,
-      opacity: 0,
-      duration: 0.8,
-      ease: "power3.in"
-    })
-    .to(activeTopBoxes, {
-      yPercent: -101,
-      stagger: 0.04,
-      duration: 1.2,
-      ease: ease
-    }, "-=0.5")
-    .to(activeBottomBoxes, {
-      yPercent: 101,
-      stagger: 0.04,
-      duration: 1.2,
-      ease: ease
-    }, "<")
-    .add(() => {
-      setIsLoaded(true);
-      nProgress.done();
-    }, "-=0.8");
+    // If boxes are not at original position (0), snap them to 0 first (mostly for popstate)
+    // We animatethe transition FROM 0 to -101/101
+    tl.set([activeTopBoxes, activeBottomBoxes], { yPercent: 0 })
+      .set(logoRef.current, { y: 0, opacity: 1 })
+      .to(logoRef.current, {
+        y: -40,
+        opacity: 0,
+        duration: 0.8,
+        ease: "power3.in",
+        delay: 0.2 // Small delay to show the cover before revealing
+      })
+      .to(activeTopBoxes, {
+        yPercent: -101,
+        stagger: 0.04,
+        duration: 1.2,
+        ease: ease
+      }, "-=0.5")
+      .to(activeBottomBoxes, {
+        yPercent: 101,
+        stagger: 0.04,
+        duration: 1.2,
+        ease: ease
+      }, "<")
+      .add(() => {
+        setIsLoaded(true);
+        nProgress.done();
+      }, "-=0.8");
 
   }, [setIsLoaded, setIsExiting, ease]);
 
@@ -104,6 +111,31 @@ const Preloader = () => {
   useEffect(() => {
     window.triggerExitTransition = closeTransition;
   }, [closeTransition]);
+
+  useEffect(() => {
+    lastUrlRef.current = window.location.href;
+  }, [location.pathname, location.search]);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      // If URL hasn't changed, it's likely a modal closure or hash change - don't show preloader
+      if (window.location.href === lastUrlRef.current) return;
+      lastUrlRef.current = window.location.href;
+
+      // Force cover screen immediately on popstate
+      if (loaderRef.current) {
+        setIsLoaded(false);
+        setIsExiting(true);
+        gsap.set(loaderRef.current, { display: 'flex', pointerEvents: 'all' });
+        const boxes = loaderRef.current.querySelectorAll('.top-box-animate, .bottom-box-animate');
+        gsap.set(boxes, { yPercent: 0 });
+        gsap.set(logoRef.current, { y: 0, opacity: 1 });
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [setIsLoaded, setIsExiting]);
 
   useLayoutEffect(() => {
     revealTransition();

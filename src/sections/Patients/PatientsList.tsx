@@ -79,10 +79,10 @@ const PatientsList = () => {
   };
 
   return (
-    <main className="flex-1 overflow-auto">
+    <section className="flex-1 overflow-auto">
       <div className="space-y-6" dir="rtl">
       {/* Page Header */}
-      <section className={cn(
+      <header className={cn(
         "flex flex-col md:flex-row md:items-center md:justify-between gap-4 opacity-0",
         canAnimate && "animate-fadeDown animate-delay-100"
       )}>
@@ -97,7 +97,7 @@ const PatientsList = () => {
           <Plus className="size-4 ml-2" />
           إضافة مريض
         </Button>
-      </section>
+      </header>
 
       {/* Search and Table Card */}
       <article
@@ -121,13 +121,13 @@ const PatientsList = () => {
           </div>
 
           {/* Mobile Swipe Indicator */}
-          <div className="sm:hidden flex items-center justify-center gap-3 mb-4 py-2 px-4 rounded-full bg-muted/30 text-muted-foreground/80 text-xs font-bold ring-1 ring-border/50 animate-pulse backdrop-blur-xs">
+          <aside className="sm:hidden flex items-center justify-center gap-3 mb-4 py-2 px-4 rounded-full bg-muted/30 text-muted-foreground/80 text-xs font-bold ring-1 ring-border/50 animate-pulse backdrop-blur-xs">
             <Smartphone className="size-3.5" />
             <span>اسحب لليسار أو اليمين لتصفح الجدول</span>
             <MoveHorizontal className="size-3.5" />
-          </div>
+          </aside>
 
-          <div className="overflow-x-auto">
+          <section className="overflow-x-auto">
             <div data-slot="table-container" className="relative w-full overflow-x-auto">
               <table data-slot="table" className="w-full caption-bottom text-sm">
                 <thead data-slot="table-header" className="[&_tr]:border-b">
@@ -207,7 +207,7 @@ const PatientsList = () => {
                 </tbody>
               </table>
             </div>
-          </div>
+          </section>
         </article>
       </div>
 
@@ -230,7 +230,7 @@ const PatientsList = () => {
         cancelText="إلغاء"
         variant="danger"
       />
-    </main>
+    </section>
   );
 };
 

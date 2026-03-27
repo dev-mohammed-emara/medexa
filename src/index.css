@@ -157,6 +157,17 @@ html[dir='rtl']{
     display: none;
   }
 
+  header:has(> button[data-variant="default"]),
+  section:has(> button[data-variant="default"]){
+    flex-wrap: wrap;
+    gap: 1rem;
+    @media(max-width:480px){
+      justify-content: center;
+      text-align: center;
+      align-items: center;
+    }
+  }
+
   /* NProgress accent color styling */
   #nprogress .bar {
     background: #3FB8AF !important;
@@ -192,13 +203,20 @@ html[dir='rtl']{
   .no-pb {
     padding-bottom: 0 !important;
   }
-
+span.flatpickr-weekday{
+  background: transparent !important;
+}
   input,
   textarea,
   select {
     transition: 0.3s background ease;
   }
 
+
+  input[dir="ltr"]:focus::placeholder
+   {
+    transform-origin: left !important;
+  }
   :not(.timePicker)::placeholder {
     transform-origin: var(--dir);
     transition: var(--transition);

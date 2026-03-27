@@ -1,8 +1,10 @@
 import { gsap } from 'gsap'
-import { Bell, LogOut, Menu, Search, Settings, Shield, User } from 'lucide-react'
+import { Bell, LogOut, Mail, Menu, Phone, Search, Settings, User } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { TransitionLink } from '../transition/TransitionLink'
 import Modal from '../ui/Modal'
+import { useAuth } from '@/contexts/AuthContext'
 
 interface NavbarProps {
   onMenuClick: () => void;
@@ -18,6 +20,7 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
   const profileRef = useRef<HTMLDivElement>(null)
   const notifBtnRef = useRef<HTMLButtonElement>(null)
   const profileBtnRef = useRef<HTMLDivElement>(null)
+  const { profileImage } = useAuth()
 
   const handleLogout = async () => {
     setIsLogoutModalOpen(false)
@@ -32,6 +35,7 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
   }
 
   useEffect(() => {
+    if (!notifRef.current) return
     if (showNotifications) {
       gsap.fromTo(notifRef.current,
         { autoAlpha: 0, y: -10, scale: 0.95 },
@@ -43,6 +47,7 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
   }, [showNotifications])
 
   useEffect(() => {
+    if (!profileRef.current) return
     if (showProfile) {
       gsap.fromTo(profileRef.current,
         { autoAlpha: 0, y: -10, scale: 0.95 },
@@ -141,40 +146,63 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
               <p className="text-sm font-bold">د. أحمد الحشايكة</p>
               <p className="text-[10px] text-muted-foreground">مالك العيادة</p>
             </div>
-            <div className="size-10 rounded-full border-2 border-primary/20 bg-primary flex items-center justify-center text-white font-bold">
-              أ
+            <div className="size-10 rounded-full border-2 border-primary/20 bg-primary flex items-center justify-center text-white font-bold overflow-hidden shadow-inner">
+              {profileImage ? (
+                <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
+              ) : (
+                "أ"
+              )}
             </div>
           </div>
 
           {/* Profile Tooltip/Dropdown */}
           <div
             ref={profileRef}
-            className="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-64 bg-white border border-border shadow-2xl rounded-2xl overflow-hidden invisible will-change-transform z-60"
+            className="absolute top-full left-18 xs:left-1/2 -translate-x-1/2 mt-3 w-64 bg-white border border-border shadow-2xl rounded-2xl overflow-hidden invisible will-change-transform z-60"
             dir="rtl"
           >
             <div className="p-5 border-b border-border bg-linear-to-r from-primary/5 to-secondary/5">
               <div className="flex items-center gap-3 mb-1">
-                <div className="size-10 rounded-full bg-primary flex items-center justify-center text-white font-bold">أ</div>
+                <div className="size-10 rounded-full bg-primary flex items-center justify-center text-white font-bold overflow-hidden">
+                  {profileImage ? (
+                    <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
+                  ) : (
+                    "أ"
+                  )}
+                </div>
                 <div>
-                  <p className="text-sm font-bold">د. أحمد الحشايكة</p>
-                  <p className="text-[10px] text-muted-foreground">dr.ahmed@medexa.com</p>
+                  <p className="text-sm font-bold mb-1">د. أحمد الحشايكة</p>
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-1.5 text-muted-foreground">
+                      <Mail className="size-3 shrink-0" />
+                      <p className="text-[10px]">dr.ahmed@medexa.com</p>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-muted-foreground">
+                      <Phone className="size-3 shrink-0" />
+                      <p className="text-[10px]" dir="ltr">0789651800</p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
 
             <div className="p-2">
-              <button className="w-full flex items-center gap-3 px-4 py-2.5 text-sm rounded-lg hover:bg-slate-50 transition-colors">
+              <TransitionLink
+                href="/profile"
+                onClick={() => setShowProfile(false)}
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm rounded-lg hover:bg-slate-50 transition-colors"
+              >
                 <User className="size-4 text-muted-foreground" />
                 <span>عرض الملف الشخصي</span>
-              </button>
-              <button className="w-full flex items-center gap-3 px-4 py-2.5 text-sm rounded-lg hover:bg-slate-50 transition-colors">
+              </TransitionLink>
+              <TransitionLink
+                href="/settings"
+                onClick={() => setShowProfile(false)}
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm rounded-lg hover:bg-slate-50 transition-colors"
+              >
                 <Settings className="size-4 text-muted-foreground" />
                 <span>الإعدادات</span>
-              </button>
-              <button className="w-full flex items-center gap-3 px-4 py-2.5 text-sm rounded-lg hover:bg-slate-50 transition-colors">
-                <Shield className="size-4 text-muted-foreground" />
-                <span>الأمان</span>
-              </button>
+              </TransitionLink>
               <div className="h-px bg-border my-2" />
               <button
                 onClick={() => setIsLogoutModalOpen(true)}

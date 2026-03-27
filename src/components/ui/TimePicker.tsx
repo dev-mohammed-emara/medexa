@@ -1,39 +1,32 @@
 import React, { useState, useRef } from 'react';
+import { Clock } from 'lucide-react';
 import { cn } from '../../utils/cn';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
-} from './select';
 
 interface TimePickerProps {
-  value: string; // "HH:MM AM/PM" or "HH:MM" in 24h
+  value: string; // "HH:MM"
   onChange: (value: string) => void;
   className?: string;
+  noClock?: boolean;
 }
 
-const TimePicker: React.FC<TimePickerProps> = ({ value, onChange, className }) => {
+const TimePicker: React.FC<TimePickerProps> = ({ value, onChange, className, noClock = false }) => {
   // Parse initial value once
   const parseTime = (val: string) => {
-    const match = val.match(/(\d{1,2}):(\d{2})\s?(AM|PM)?/i);
+    const match = val.match(/(\d{1,2}):(\d{2})/);
     if (match) {
       return {
         h: match[1].padStart(2, '0'),
-        m: match[2],
-        p: (match[3] || 'AM').toUpperCase() as 'AM' | 'PM'
+        m: match[2]
       };
     }
-    return { h: '12', m: '00', p: 'AM' as const };
+    return { h: '08', m: '00' };
   };
 
   const initial = parseTime(value);
   const [hours, setHours] = useState(initial.h);
   const [minutes, setMinutes] = useState(initial.m);
-  const [period, setPeriod] = useState<'AM' | 'PM'>(initial.p);
-  const [isSelectOpen, setIsSelectOpen] = useState(false);
 
+  const containerRef = useRef<HTMLDivElement>(null);
   const hourRef = useRef<HTMLInputElement>(null);
   const minRef = useRef<HTMLInputElement>(null);
 
@@ -42,36 +35,33 @@ const TimePicker: React.FC<TimePickerProps> = ({ value, onChange, className }) =
     const next = parseTime(value);
     setHours(next.h);
     setMinutes(next.m);
-    setPeriod(next.p);
     setPrevValue(value);
   }
 
-  const updateTime = (h: string, m: string, p: 'AM' | 'PM') => {
-    // Ensure we don't send empty strings back
+  const updateTime = (h: string, m: string) => {
     const finalH = h.padStart(2, '0');
     const finalM = m.padStart(2, '0');
-    onChange(`${finalH}:${finalM} ${p}`);
+    onChange(`${finalH}:${finalM}`);
   };
 
   const handleHourChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let val = e.target.value.replace(/\D/g, '').slice(-2);
 
-    if (val.length === 1 && parseInt(val) > 1 && parseInt(val) <= 9) {
+    if (val.length === 1 && parseInt(val) >= 3 && parseInt(val) <= 9) {
       val = '0' + val;
       setHours(val);
       minRef.current?.focus();
       minRef.current?.select();
     } else if (val.length === 2) {
       const hInt = parseInt(val);
-      if (hInt > 12) val = '12';
-      if (hInt === 0) val = '12';
+      if (hInt > 23) val = '23';
       setHours(val);
       minRef.current?.focus();
       minRef.current?.select();
     } else {
       setHours(val || '00');
     }
-    updateTime(val || '12', minutes || '00', period);
+    updateTime(val || '08', minutes || '00');
   };
 
   const handleMinChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -79,36 +69,44 @@ const TimePicker: React.FC<TimePickerProps> = ({ value, onChange, className }) =
     if (val.length === 2) {
       if (parseInt(val) > 59) val = '59';
       setMinutes(val);
-      // Auto open select when minutes are done
-      setTimeout(() => setIsSelectOpen(true), 100);
+      
+      // Automatic focus shift logic
+      setTimeout(() => {
+        if (containerRef.current) {
+          const parent = containerRef.current.parentElement;
+          if (parent) {
+            const pickers = Array.from(parent.querySelectorAll('.time-picker-container'));
+            const currentIndex = pickers.indexOf(containerRef.current);
+            if (currentIndex !== -1 && currentIndex < pickers.length - 1) {
+              const nextPicker = pickers[currentIndex + 1];
+              const nextHourInput = nextPicker.querySelector('input') as HTMLInputElement;
+              if (nextHourInput) {
+                nextHourInput.focus();
+                nextHourInput.select();
+              }
+            }
+          }
+        }
+      }, 50);
     } else {
       setMinutes(val || '00');
     }
-    updateTime(hours || '12', val || '00', period);
+    updateTime(hours || '08', val || '00');
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, type: 'h' | 'm') => {
     if (e.key === 'Backspace') {
       if (type === 'h' && (hours === '' || hours === '00')) {
           e.preventDefault();
-          setHours('12'); // default back to 12 if backspacing empty
+          setHours('08');
           minRef.current?.focus();
           minRef.current?.select();
       } else if (type === 'm' && (minutes === '' || minutes === '00')) {
           e.preventDefault();
-          setMinutes('00'); // default back to 00 if backspacing empty
+          setMinutes('00');
           hourRef.current?.focus();
           hourRef.current?.select();
       }
-    }
-
-    if (e.key.toLowerCase() === 'a') {
-      setPeriod('AM');
-      updateTime(hours, minutes, 'AM');
-    }
-    if (e.key.toLowerCase() === 'p') {
-      setPeriod('PM');
-      updateTime(hours, minutes, 'PM');
     }
 
     if (e.key === 'ArrowRight' && type === 'h') {
@@ -126,48 +124,39 @@ const TimePicker: React.FC<TimePickerProps> = ({ value, onChange, className }) =
   };
 
   const handleBlur = (type: 'h' | 'm') => {
-    if (type === 'h' && hours === '') setHours('12');
+    if (type === 'h' && hours === '') setHours('08');
     if (type === 'm' && minutes === '') setMinutes('00');
   }
 
   return (
     <div
-      className={cn("flex justify-end whitespace-nowrap items-center gap-2 p-1 rounded-md border border-input bg-input-background focus-within:ring-4 focus-within:ring-primary/10 transition-all cursor-text", className)}
+      ref={containerRef}
+      className={cn("time-picker-container flex justify-end whitespace-nowrap items-center gap-1.5 sm:gap-2 p-1 pr-2 sm:pr-3 rounded-xl border border-input bg-input-background focus-within:ring-4 focus-within:ring-primary/10 transition-all cursor-text relative min-w-0 overflow-hidden", className)}
       onClick={(e) => {
         const target = e.target as HTMLElement;
-        if (!target.closest('.timePicker') && !target.closest('[data-slot="select-trigger"]')) {
+        if (!target.closest('.timePicker')) {
           hourRef.current?.focus();
         }
       }}
     >
-       {/* AM/PM Select next to the time (trailing) */}
-      <Select open={isSelectOpen} onOpenChange={setIsSelectOpen} value={period} onValueChange={(val: 'AM' | 'PM') => {
-        setPeriod(val);
-        updateTime(hours || '12', minutes || '00', val);
-      }}>
-        <SelectTrigger className="w-fit min-w-[70px] border-border bg-muted/30 h-10 rounded-lg text-sm font-bold focus:ring-0 px-3 shrink-0">
-          <SelectValue placeholder="AM/PM" />
-        </SelectTrigger>
-        <SelectContent className="rounded-xl">
-          <SelectItem value="AM">AM</SelectItem>
-          <SelectItem value="PM">PM</SelectItem>
-        </SelectContent>
-      </Select>
-      <div className="flex items-center gap-1  px-1" dir="ltr">
-
+      {!noClock &&
+      <Clock className="hidden xs:block size-3.5 sm:size-4 text-muted-foreground pointer-events-none absolute right-2 sm:right-3" />
+      }
+      
+      <div className="flex items-center gap-0.5 sm:gap-1 px-0.5 sm:px-1" dir="ltr">
         <input
           ref={hourRef}
           type="text"
           inputMode="numeric"
-          placeholder="12"
+          placeholder="08"
           value={hours}
           onFocus={handleFocus}
           onBlur={() => handleBlur('h')}
           onChange={handleHourChange}
           onKeyDown={(e) => handleKeyDown(e, 'h')}
-          className="timePicker w-8 bg-transparent text-center outline-none text-base font-bold placeholder:text-muted-foreground/50"
+          className="timePicker w-5 sm:w-8 bg-transparent text-center outline-none text-sm sm:text-base font-bold placeholder:text-muted-foreground/50 shrink-0"
         />
-        <span className="text-muted-foreground font-bold mb-0.5">:</span>
+        <span className="text-muted-foreground font-bold mb-0.5 text-xs sm:text-base">:</span>
         <input
           ref={minRef}
           type="text"
@@ -178,11 +167,9 @@ const TimePicker: React.FC<TimePickerProps> = ({ value, onChange, className }) =
           onBlur={() => handleBlur('m')}
           onChange={handleMinChange}
           onKeyDown={(e) => handleKeyDown(e, 'm')}
-          className="timePicker w-8 bg-transparent text-center outline-none text-base font-bold placeholder:text-muted-foreground/50"
+          className="timePicker w-5 sm:w-8 bg-transparent text-center outline-none text-sm sm:text-base font-bold placeholder:text-muted-foreground/50 shrink-0"
         />
       </div>
-
-
     </div>
   );
 };

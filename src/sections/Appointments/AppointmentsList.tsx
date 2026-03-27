@@ -15,7 +15,8 @@ import {
   subMonths
 } from 'date-fns';
 import { ar } from 'date-fns/locale';
-import { Calendar, ChevronRight, ChevronLeft, Plus, Clock, Trash2, User, Stethoscope, Eye, SquarePen, X, Smartphone, MoveHorizontal } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Plus, Clock, Trash2, User, Stethoscope, Eye, SquarePen, X, Smartphone, MoveHorizontal } from 'lucide-react';
+import { FaCalendarAlt } from 'react-icons/fa';
 import { useEffect, useRef, useState } from 'react';
 import { useMediaQuery } from 'react-responsive';
 import { Button } from '../../components/ui/Button';
@@ -193,9 +194,9 @@ const AppointmentsList = () => {
 
 
   return (
-    <div className="space-y-6" dir="rtl">
+    <section className="space-y-6" dir="rtl">
       {/* Page Header */}
-      <section className={cn(
+      <header className={cn(
         "flex flex-col md:flex-row md:items-center md:justify-between gap-4 opacity-0",
         canAnimate && "animate-fadeDown animate-delay-100"
       )}>
@@ -204,7 +205,7 @@ const AppointmentsList = () => {
           <p className="text-muted-foreground">تقويم المواعيد الطبية ومتابعة المرضى</p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center flex-wrap gap-3">
           <Select value={selectedDoctor} onValueChange={setSelectedDoctor}>
             <SelectTrigger className="w-56 h-10 bg-white border-border shadow-xs">
               <SelectValue placeholder="اختر الطبيب" />
@@ -225,10 +226,10 @@ const AppointmentsList = () => {
             إضافة موعد
           </Button>
         </div>
-      </section>
+      </header>
 
       {/* Calendar Grid Container */}
-      <div className={cn("flex justify-between flex-col md:flex-row items-start ", selectedDate ? "gap-6" : "gap-0")}>
+      <section className={cn("flex justify-between flex-col md:flex-row items-start ", selectedDate ? "gap-6" : "gap-0")}>
         <article
           ref={calendarRef}
           data-slot="card"
@@ -239,7 +240,7 @@ const AppointmentsList = () => {
           )}
         >
           {/* Calendar Header Controls */}
-          <section className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
+          <header className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
             <div className="flex items-center gap-2 order-2 sm:order-1 py-1">
               <Button
                 variant="outline"
@@ -282,14 +283,14 @@ const AppointmentsList = () => {
                 </SelectContent>
               </Select>
             </div>
-          </section>
+          </header>
 
           {/* Mobile Swipe Indicator */}
-          <div className="md:hidden flex items-center justify-center gap-3 mb-4 py-2 px-4 rounded-full bg-muted/30 text-muted-foreground/80 text-xs font-bold ring-1 ring-border/50 animate-pulse backdrop-blur-xs">
+          <aside className="md:hidden flex items-center justify-center gap-3 mb-4 py-2 px-4 rounded-full bg-muted/30 text-muted-foreground/80 text-xs font-bold ring-1 ring-border/50 animate-pulse backdrop-blur-xs">
             <Smartphone className="size-3.5" />
             <span>اسحب لليسار أو اليمين لتصفح التقويم</span>
             <MoveHorizontal className="size-3.5" />
-          </div>
+          </aside>
 
           <div className="overflow-x-auto pb-2 scrollbar-none md:scrollbar-auto">
             <div className="min-w-[800px] w-full lg:min-w-0">
@@ -376,7 +377,7 @@ const AppointmentsList = () => {
           </div>
         </article>
 
-        <div
+        <section
           ref={detailSidebarRef}
           className={cn(
             "transition-all duration-700 ease-in-out flex flex-col items-end",
@@ -393,7 +394,7 @@ const AppointmentsList = () => {
                 selectedDate ? "flex animate-fadeRight" : "hidden animate-fadeOutRight",
               )}
             >
-              <div className="flex items-center justify-between mb-4">
+              <header className="flex items-center justify-between mb-4">
                 <h3 className="text-xl font-bold">
                   {format(selectedDate || lastSelectedDate!, 'EEEE، d MMMM', { locale: ar })}
                 </h3>
@@ -405,7 +406,7 @@ const AppointmentsList = () => {
                 >
                   <X className="size-4" />
                 </Button>
-              </div>
+              </header>
 
               <div data-lenis-prevent>
                 <ScrollLockWrapper
@@ -420,7 +421,7 @@ const AppointmentsList = () => {
                           const config = statusConfig[app.status] || statusConfig['قيد الانتظار'];
 
                           return (
-                            <div
+                            <article
                               key={app.id}
                               data-slot="card"
                               className={cn(
@@ -431,10 +432,10 @@ const AppointmentsList = () => {
                             >
                               <div className="space-y-3">
                                 <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-2">
+                                  <figure className="flex items-center gap-2">
                                     <Clock className={cn("size-4", config.iconColor)} />
-                                    <span className={cn("text-sm font-bold", config.text)}>{app.time}</span>
-                                  </div>
+                                    <figcaption className={cn("text-sm font-bold", config.text)}>{app.time}</figcaption>
+                                  </figure>
                                   <span className={cn(
                                     "inline-flex items-center justify-center rounded-lg px-2 py-0.5 text-[10px] font-bold w-fit whitespace-nowrap shrink-0 border shadow-sm transition-all duration-300",
                                     config.bg,
@@ -478,12 +479,12 @@ const AppointmentsList = () => {
                                   </button>
                                 </div>
                               </div>
-                            </div>
+                            </article>
                           );
                         })
                     ) : (
                       <div className="text-center py-12 text-muted-foreground flex flex-col items-center gap-3">
-                        <Calendar className="size-12 opacity-10" />
+                        <FaCalendarAlt className="size-12 opacity-10" />
                         <p className="text-sm">لا توجد مواعيد في هذا اليوم</p>
                       </div>
                     )}
@@ -492,8 +493,8 @@ const AppointmentsList = () => {
               </div>
             </article>
           )}
-        </div>
-      </div>
+        </section>
+      </section>
 
       <AppointmentsDialog
         key={currentAppointment?.id || 'new'}
@@ -510,11 +511,11 @@ const AppointmentsList = () => {
         onConfirm={confirmDelete}
         title="حذف الموعد"
         message={`هل أنت متأكد من حذف موعد ${appointmentToDelete?.patientName || ''}؟ لن يمكنك التراجع عن هذا الإجراء.`}
-        confirmText="حذف الموعد"
-        cancelText="إلغاء"
+        confirmText="حذف"
+        cancelText="إلغاء والمحافظة على الموعد"
         variant="danger"
       />
-    </div>
+    </section>
   );
 };
 

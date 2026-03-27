@@ -2,13 +2,16 @@ import React, { createContext, useContext, useState } from 'react'
 
 interface AuthContextType {
   isAuthenticated: boolean
+  profileImage: string | null
   login: () => void
   logout: () => void
+  updateProfileImage: (image: string | null) => void
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [profileImage, setProfileImage] = useState<string | null>(null)
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
     return localStorage.getItem('isLoggedIn') === 'true'
   })
@@ -23,8 +26,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem('isLoggedIn')
   }
 
+  const updateProfileImage = (image: string | null) => {
+    setProfileImage(image)
+  }
+
   return (
-    <AuthContext.Provider value={{ isAuthenticated, login, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, profileImage, login, logout, updateProfileImage }}>
       {children}
     </AuthContext.Provider>
   )

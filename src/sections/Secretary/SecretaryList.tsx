@@ -113,7 +113,7 @@ const SecretaryList = () => {
                 opacity: canAnimate ? 1 : 0,
                 transform: canAnimate ? 'none' : 'translateY(20px)',
                 transition: 'all 0.5s ease-out',
-                transitionDelay: `${100 + (index * 50)}ms`
+                transitionDelay: `${150 + (index * 50)}ms`
               }}
             >
               <article

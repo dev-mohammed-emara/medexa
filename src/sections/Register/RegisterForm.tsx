@@ -374,7 +374,7 @@ const RegisterForm = () => {
 
               <div>
                 <label className="text-sm font-semibold text-[#1a2b3c] pr-1 block mb-2">تاريخ الميلاد</label>
-                <div className="relative group">
+                <div className="relative group flex items-center justify-between h-12 bg-input-background border border-border rounded-xl px-4 transition-all focus-within:ring-4 focus-within:ring-primary/10">
                   <Flatpickr
                     value={formData.dob}
                     onChange={([date]) => {
@@ -382,7 +382,7 @@ const RegisterForm = () => {
                     }}
                     options={{
                       locale: Arabic,
-                      dateFormat: "Y-F-d",
+                      dateFormat: "d F Y",
                       disableMobile: true,
                       maxDate: "today",
                       formatDate: (date: Date) => {
@@ -390,9 +390,9 @@ const RegisterForm = () => {
                       }
                     }}
                     placeholder="dd/mm/yyyy"
-                    className="w-full h-12 bg-input-background border border-border rounded-xl px-4 text-right flex items-center justify-between transition-all outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 text-base md:text-sm"
+                    className="flex-1 bg-transparent border-none outline-none text-right font-bold h-full text-base md:text-sm"
                   />
-                  <FaCalendarAlt className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none group-focus-within:text-primary transition-colors size-4" />
+                  <FaCalendarAlt className="text-muted-foreground pointer-events-none group-focus-within:text-primary transition-colors size-4" />
                 </div>
               </div>
             </div>

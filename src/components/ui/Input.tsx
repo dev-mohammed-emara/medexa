@@ -8,6 +8,35 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, type, icon, containerClassName, onChange, ...props }, ref) => {
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+      // Prevent negative sign and exponent 'e' in number inputs as per user request
+      if (type === 'number' && (e.key === '-' || e.key === 'e' || e.key === 'E')) {
+        e.preventDefault();
+      }
+      if (props.onKeyDown) props.onKeyDown(e);
+    };
+
+    const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+      if (type === 'number') {
+        const pasteData = e.clipboardData.getData('text');
+        if (pasteData.includes('-')) {
+          e.preventDefault();
+          const cleanData = pasteData.replace(/-/g, '');
+          const target = e.target as HTMLInputElement;
+          const start = target.selectionStart || 0;
+          const end = target.selectionEnd || 0;
+          const newValue = target.value.substring(0, start) + cleanData + target.value.substring(end);
+          
+          // Trigger change manually
+          const event = {
+            target: { value: newValue, name: props.name || '' }
+          } as unknown as React.ChangeEvent<HTMLInputElement>;
+          if (onChange) onChange(event);
+        }
+      }
+      if (props.onPaste) props.onPaste(e);
+    };
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       let value = e.target.value;
       
@@ -17,6 +46,10 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
       if (type === 'tel') {
         // Only allow numbers
         value = value.replace(/\D/g, '');
+      } else if (type === 'number') {
+        // Ensure no negative value even if bypasses keydown (e.g. mobile or weird browsers)
+        value = value.replace(/-/g, '');
+        if (value && parseFloat(value) < 0) value = '0';
       } else if (
         props.name?.toLowerCase().includes('name') || 
         props.name?.toLowerCase().includes('role') ||
@@ -38,10 +71,10 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     };
 
     return (
-      <div className={cn("relative w-full", containerClassName)}>
+      <div className={cn("relative w-full group", containerClassName)}>
         {icon && (
           <div className={cn(
-            "absolute top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none group-focus-within:text-primary transition-colors",
+            "absolute top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none group-focus-within:text-primary transition-colors z-10",
             props.dir === 'ltr' ? "left-4" : "right-4"
           )}>
             {icon}
@@ -49,7 +82,8 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         )}
         <input
           type={type === 'tel' ? 'text' : type} // Change tel to text to avoid mobile keyboard issues with regex stripping
-          inputMode={type === 'tel' ? 'numeric' : undefined}
+          inputMode={type === 'tel' || type === 'number' ? 'numeric' : undefined}
+          min={type === 'number' ? "0" : props.min}
           className={cn(
             "flex w-full rounded-xl border border-border bg-input-background h-12 px-4 py-2 text-base transition-all outline-none",
             "placeholder:text-muted-foreground",
@@ -60,6 +94,8 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           )}
           ref={ref}
           onChange={handleChange}
+          onKeyDown={handleKeyDown}
+          onPaste={handlePaste}
           {...props}
         />
       </div>

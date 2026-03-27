@@ -26,7 +26,7 @@ const ChartsOverview = () => {
     <div 
       className={cn(
         "space-y-6 mb-10 opacity-0", 
-        canAnimate && "animate-fadeUp opacity-100 animate-delay-300",
+        canAnimate && "animate-fadeUp opacity-100 animate-delay-[150ms]",
         isExiting && "animate-fadeDownOut"
       )}
     >
