@@ -141,6 +141,7 @@ const config: Config = {
       xs: '480px',
       sm: '640px',
       md: '768px',
+      special: '800px',
       lg: '1024px',
       larger: '1140px',
       xl: '1280px',

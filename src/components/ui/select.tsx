@@ -4,7 +4,8 @@ import * as React from "react"
 import { Select as SelectPrimitive } from "radix-ui"
 
 import { cn } from "../../utils/cn"
-import { ChevronDownIcon, CheckIcon, ChevronUpIcon } from "lucide-react"
+import { ChevronDownIcon, CheckIcon } from "lucide-react"
+import ScrollLockWrapper from "./ScrollLockWrapper"
 
 function Select({
   ...props
@@ -19,7 +20,7 @@ function SelectGroup({
   return (
     <SelectPrimitive.Group
       data-slot="select-group"
-      className={cn("scroll-my-1 p-1", className)}
+      className={cn("scroll-my-1 p-0", className)}
       {...props}
     />
   )
@@ -57,37 +58,42 @@ function SelectTrigger({
 }
 
 function SelectContent({
+  smallZ = false,
   className,
   children,
   position = "popper",
   align = "center",
   ...props
-}: React.ComponentProps<typeof SelectPrimitive.Content>) {
+}: React.ComponentProps<typeof SelectPrimitive.Content> & { smallZ?: boolean }) {
   return (
     <SelectPrimitive.Portal>
       <SelectPrimitive.Content
         data-slot="select-content"
         dir="rtl"
         className={cn(
-          "relative z-100 max-h-96 min-w-(--radix-select-trigger-width) overflow-hidden rounded-xl bg-popover text-popover-foreground shadow-lg ring-1 ring-border duration-100 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+          "relative max-h-96 min-w-(--radix-select-trigger-width) overflow-hidden rounded-xl bg-popover text-popover-foreground shadow-lg ring-1 ring-border overscroll-contain",
+          "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0 data-[state=open]:zoom-in-98 data-[state=closed]:zoom-out-98 data-[side=bottom]:slide-in-from-top-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:slide-out-to-top-2 duration-250",
           position === "popper" && "data-[side=bottom]:translate-y-1 data-[side=top]:-translate-y-1",
+          smallZ ? "z-10" : "z-110",
           className
         )}
         position={position}
         align={align}
         {...props}
       >
-        <SelectScrollUpButton />
         <SelectPrimitive.Viewport
           data-position={position}
+          data-lenis-prevent
           className={cn(
-            "data-[position=popper]:h-(--radix-select-trigger-height) data-[position=popper]:w-full data-[position=popper]:min-w-(--radix-select-trigger-width)",
-            position === "popper" && ""
+            "p-0 overflow-y-auto touch-pan-y scroll-smooth scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent",
+            position === "popper" &&
+              "h-(--radix-select-trigger-height) w-full min-w-(--radix-select-trigger-width)"
           )}
         >
-          {children}
-        </SelectPrimitive.Viewport>
-        <SelectScrollDownButton />
+           <ScrollLockWrapper>
+             {children}
+           </ScrollLockWrapper>
+         </SelectPrimitive.Viewport>
       </SelectPrimitive.Content>
     </SelectPrimitive.Portal>
   )
@@ -141,43 +147,6 @@ function SelectSeparator({
   )
 }
 
-function SelectScrollUpButton({
-  className,
-  ...props
-}: React.ComponentProps<typeof SelectPrimitive.ScrollUpButton>) {
-  return (
-    <SelectPrimitive.ScrollUpButton
-      data-slot="select-scroll-up-button"
-      className={cn(
-        "z-10 flex cursor-default items-center justify-center bg-popover py-1 [&_svg:not([class*='size-'])]:size-4",
-        className
-      )}
-      {...props}
-    >
-      <ChevronUpIcon
-      />
-    </SelectPrimitive.ScrollUpButton>
-  )
-}
-
-function SelectScrollDownButton({
-  className,
-  ...props
-}: React.ComponentProps<typeof SelectPrimitive.ScrollDownButton>) {
-  return (
-    <SelectPrimitive.ScrollDownButton
-      data-slot="select-scroll-down-button"
-      className={cn(
-        "z-10 flex cursor-default items-center justify-center bg-popover py-1 [&_svg:not([class*='size-'])]:size-4",
-        className
-      )}
-      {...props}
-    >
-      <ChevronDownIcon
-      />
-    </SelectPrimitive.ScrollDownButton>
-  )
-}
 
 export {
   Select,
@@ -185,8 +154,6 @@ export {
   SelectGroup,
   SelectItem,
   SelectLabel,
-  SelectScrollDownButton,
-  SelectScrollUpButton,
   SelectSeparator,
   SelectTrigger,
   SelectValue,

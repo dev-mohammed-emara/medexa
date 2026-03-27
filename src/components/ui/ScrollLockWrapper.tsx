@@ -23,16 +23,18 @@ const ScrollLockWrapper = ({
     if (!scrollable || !isActive) return;
 
     const handleWheel = (e: WheelEvent) => {
+      // Allow browser to handle native scrolling by stopping propagation only
+      // if it would cause the parent to scroll (overscroll).
       const delta = e.deltaY;
       const canScrollUp = scrollable.scrollTop > 0;
       const canScrollDown =
         scrollable.scrollTop + scrollable.clientHeight <
         scrollable.scrollHeight;
 
-      // If we can scroll within the element, prevent the event from bubbling to the parent/window
-      if ((delta < 0 && canScrollUp) || (delta > 0 && canScrollDown)) {
-        e.stopPropagation();
-      }
+      if (delta < 0 && !canScrollUp) return;
+      if (delta > 0 && !canScrollDown) return;
+      
+      e.stopPropagation();
     };
 
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -41,7 +43,7 @@ const ScrollLockWrapper = ({
       }
     };
 
-    scrollable.addEventListener('wheel', handleWheel, { passive: false });
+    scrollable.addEventListener('wheel', handleWheel, { passive: true });
     window.addEventListener('keydown', handleKeyDown);
 
     return () => {

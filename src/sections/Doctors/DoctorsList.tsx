@@ -15,6 +15,7 @@ import { cn } from '../../utils/cn'
 import DoctorDialog from './DoctorDialog'
 import Modal from '../../components/ui/Modal'
 import { initialDoctors } from '../../constants/Doctors_dummy'
+import { Button } from '../../components/ui/Button'
 
 interface Doctor {
   id: number;
@@ -89,19 +90,19 @@ const DoctorsList = () => {
       {/* Page Header */}
       <section className={cn(
         "flex items-center justify-between opacity-0",
-        canAnimate && "animate-fadeDown animate-delay-200"
+        canAnimate && "animate-fadeDown animate-delay-100"
       )}>
         <div>
           <h1 className="text-3xl mb-1" style={{ fontWeight: 700 }}>إدارة الأطباء</h1>
           <p className="text-muted-foreground">إدارة حسابات الأطباء وصلاحياتهم</p>
         </div>
-        <button
+        <Button
           onClick={() => handleOpenDialog('add')}
-          className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-300 disabled:pointer-events-none disabled:opacity-50 shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md text-primary-foreground hover:shadow-primary/20 bg-primary hover:bg-primary/90 h-9 px-4 py-2 shadow-sm"
+          className="h-10 px-6 rounded-xl"
         >
           <Plus className="size-4 ml-2" />
           إضافة طبيب
-        </button>
+        </Button>
       </section>
 
       {/* Cards Grid / Empty State */}
@@ -117,7 +118,7 @@ const DoctorsList = () => {
                 opacity: canAnimate ? 1 : 0,
                 transform: canAnimate ? 'none' : 'translateY(20px)',
                 transition: 'all 0.5s ease-out',
-                transitionDelay: `${300 + (index * 100)}ms`
+                transitionDelay: `${100 + (index * 50)}ms`
               }}
             >
               <article
@@ -132,12 +133,12 @@ const DoctorsList = () => {
                 <div className="relative z-10 flex flex-col h-full">
                   {/* Profile Header */}
                   <figure className="flex items-start gap-4 mb-4">
-                    <div 
-                      data-slot="avatar" 
+                    <div
+                      data-slot="avatar"
                       className="relative flex shrink-0 overflow-hidden rounded-full w-16 h-16 border-2 border-primary/20 shadow-md transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] group-hover:scale-115 group-hover:rotate-12 group-hover:shadow-primary/20"
                     >
-                      <span 
-                        data-slot="avatar-fallback" 
+                      <span
+                        data-slot="avatar-fallback"
                         className="flex size-full items-center justify-center rounded-full bg-primary text-white text-xl font-bold"
                       >
                         {doctor.initial}
@@ -150,7 +151,7 @@ const DoctorsList = () => {
                         data-slot="badge"
                         className={cn(
                           "inline-flex items-center justify-center rounded-md border px-2 py-0.5 text-xs font-medium w-fit whitespace-nowrap shrink-0 transition-[color,box-shadow] overflow-hidden border-transparent text-primary-foreground bg-secondary opacity-0",
-                          canAnimate && "animate-snappyToRight animate-delay-700"
+                          canAnimate && "animate-snappyToRight animate-delay-400"
                         )}
                       >
                         {doctor.status}
@@ -189,34 +190,40 @@ const DoctorsList = () => {
                   </div>
 
                   {/* Action Buttons */}
-                  <footer className="flex gap-2 mt-auto">
-                    <button
+                  <footer className="flex gap-2 mt-auto items-stretch">
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => handleOpenDialog('view', doctor)}
-                      className="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-all duration-300 border bg-background text-foreground hover:bg-accent hover:text-accent-foreground hover:border-primary/30 h-8 rounded-md gap-1.5 px-3 flex-1 shadow-xs"
+                      className="flex-1 rounded-lg gap-1.5 h-auto"
                     >
-                      <Eye className="size-4 ml-1" />
+                      <Eye className="size-4 ml-1 " />
                       عرض
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => handleOpenDialog('edit', doctor)}
-                      className="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-all duration-300 border bg-background text-foreground hover:bg-accent hover:text-accent-foreground hover:border-primary/30 h-8 rounded-md gap-1.5 px-3 flex-1 shadow-xs"
+                      className="flex-1 rounded-lg gap-1.5 h-auto"
                     >
                       <SquarePen className="size-4 ml-1" />
                       تعديل
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
                       onClick={() => handleDeleteClick(doctor)}
-                      className="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-all duration-300 border bg-background hover:bg-destructive/10 h-8 rounded-md px-3 text-destructive shadow-xs"
+                      className="size-8 rounded-lg px-2 text-destructive hover:bg-destructive/10 hover:border-destructive/30 "
                     >
                       <Trash2 className="size-4" />
-                    </button>
+                    </Button>
                   </footer>
                 </div>
               </article>
             </div>
           ))
         ) : (
-          <div 
+          <div
             className={cn(
               "flex flex-col items-center justify-center py-24 px-6 text-center bg-gray-50/40 rounded-4xl border-2 border-dashed border-border/60 animate-fadeUp self-center w-full",
               canAnimate ? "opacity-100" : "opacity-0"
@@ -229,7 +236,7 @@ const DoctorsList = () => {
             <p className="text-muted-foreground max-w-lg mb-10 text-lg">
               ابدأ ببناء فريقك الطبي المتميز. قم بإضافة الأطباء الآن لتتمكن من إدارة جداولهم ومرضاهم بكل سلاسة وإحترافية.
             </p>
-            <button 
+            <button
               onClick={() => handleOpenDialog('add')}
               className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-2xl text-lg font-bold transition-all duration-300 hover:shadow-2xl hover:shadow-primary/20 hover:-translate-y-1 active:translate-y-0 active:shadow-md text-primary-foreground bg-primary hover:bg-primary/90 h-14 px-10 shadow-lg"
             >

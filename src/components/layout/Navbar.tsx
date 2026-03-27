@@ -1,6 +1,6 @@
-import { Search, Bell, LogOut, Menu, User, Settings, Shield } from 'lucide-react'
-import { useState, useRef, useEffect } from 'react'
 import { gsap } from 'gsap'
+import { Bell, LogOut, Menu, Search, Settings, Shield, User } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Modal from '../ui/Modal'
 
@@ -81,11 +81,11 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
 
         {/* Search */}
         <div className="relative w-64 hidden md:block">
-          <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground size-4" />
+          <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground size-[18px]" />
           <input
             type="text"
             placeholder="بحث..."
-            className="w-full h-10 pr-10 pl-4 bg-input-background border border-border rounded-lg text-sm focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-right"
+            className="w-full h-10 pr-10 pl-4 bg-input-background border border-border rounded-xl text-sm focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-right"
           />
         </div>
       </div>

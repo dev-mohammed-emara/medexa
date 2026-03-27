@@ -41,7 +41,7 @@ const StatsOverview = () => {
                  y: 0,
                  scale: 1,
                  duration: 0.6,
-                 delay: 0.6 + (i * 0.05),
+                 delay: 0.2 + (i * 0.05),
                  ease: "power2.inOut"
                })
             }
@@ -50,7 +50,7 @@ const StatsOverview = () => {
               gsap.to(topBar, {
                 scaleX: 1,
                 duration: 0.75,
-                delay: 0.1 + (i * 0.1),
+                delay: 0.05 + (i * 0.05),
                 ease: 'power2.out'
               })
             }
@@ -59,7 +59,7 @@ const StatsOverview = () => {
               gsap.to(bar, {
                 width: stat.progress,
                 duration: 1.2,
-                delay: 0.3 + (i * 0.1),
+                delay: 0.1 + (i * 0.05),
                 ease: 'power2.out'
               })
             }

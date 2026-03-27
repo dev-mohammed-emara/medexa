@@ -22,7 +22,7 @@ const DashboardHeader = () => {
   return (
     <header className={cn(
       "flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8 opacity-0",
-      canAnimate && "animate-fadeDown animate-delay-500"
+      canAnimate && "animate-fadeDown animate-delay-100"
     )} style={{ opacity: canAnimate ? 1 : 0 }}>
       <div>
         <h1 className="text-3xl mb-1 font-bold">لوحة التحكم</h1>

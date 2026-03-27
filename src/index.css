@@ -149,7 +149,7 @@ html[dir='rtl']{
   }
 
   * {
-    scrollbar-width: none;
+    scrollbar-width: none !important;
     -ms-overflow-style: none;
   }
 
@@ -199,7 +199,7 @@ html[dir='rtl']{
     transition: 0.3s background ease;
   }
 
-  ::placeholder {
+  :not(.timePicker)::placeholder {
     transform-origin: var(--dir);
     transition: var(--transition);
     @apply max-xs:text-[12px];
@@ -586,5 +586,49 @@ span.flatpickr-weekday {
   background: var(--color-secondary) !important;
   border-color: var(--color-secondary) !important;
   color: white !important;
+}
+
+@keyframes fadeRight {
+  from { opacity: 0; transform: translateX(-30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes fadeOutRight {
+  from { opacity: 1; transform: translateX(0); }
+  to { opacity: 0; transform: translateX(30px); }
+}
+
+.animate-fadeRight {
+  animation: fadeRight 0.5s ease-out forwards;
+}
+
+.animate-fadeOutRight {
+  animation: fadeOutRight 0.5s ease-out forwards;
+}
+
+/* Only hide action buttons on devices that support hover */
+@media (hover: hover) {
+  .appointment-ops {
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+  }
+  .group:hover .appointment-ops {
+    opacity: 1 !important;
+  }
+}
+
+/* Always show for touch devices or others without hovering */
+@media (hover: none) {
+  .appointment-ops {
+    opacity: 1 !important;
+  }
+}
+
+/* Fix for sidebar scrolling */
+.detail-sidebar-scroll {
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--primary) transparent;
 }
 

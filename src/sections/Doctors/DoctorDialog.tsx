@@ -1,12 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { X, Eye, EyeOff, Printer, Save, Check, Mail, Phone, User, Plus } from 'lucide-react'
-import { FaCalendarAlt } from "react-icons/fa"
+import { X, Eye, EyeOff, Printer, Save, Check, Mail, Phone, User, Plus, Calendar as CalendarIcon } from 'lucide-react'
 import { format } from 'date-fns'
 import { ar } from 'date-fns/locale'
 import { Arabic } from "flatpickr/dist/l10n/ar.js"
 import { cn } from '../../utils/cn'
 import Input from '../../components/ui/Input'
-import BtnPrimary from '../../components/ui/BtnPrimary'
+import { Button } from '../../components/ui/Button'
 import ScrollLockWrapper from '../../components/ui/ScrollLockWrapper'
 import {
   Select,
@@ -121,7 +120,7 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
           isClosing ? "animate-scaleDownOut" : "animate-scaleUp"
         )}
       >
-        <button onClick={handleClose} className="absolute top-6 right-6 p-2 rounded-full hover:bg-muted transition-colors opacity-70 hover:opacity-100 outline-none z-20">
+        <button onClick={handleClose} type="button" className="absolute top-6 right-6 p-2 rounded-full hover:bg-muted transition-colors opacity-70 hover:opacity-100 outline-none z-20">
           <X size={20} />
         </button>
 
@@ -135,11 +134,11 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
             <div className="grid grid-cols-2 gap-6">
               <div className="flex flex-col gap-2">
                 <label htmlFor={inputId('name')} className="text-sm font-semibold text-foreground/80 pr-1">الاسم</label>
-                <Input id={inputId('name')} name="doctor-name" defaultValue={initialData?.name} required disabled={mode === 'view'} placeholder="د. أحمد محمد" icon={<User size={18} />} className={inputClass} />
+                <Input id={inputId('name')} name="doctor-name" defaultValue={initialData?.name} required disabled={mode === 'view'} placeholder="أدخل اسم الطبيب الرباعي" icon={<User size={18} />} className={inputClass} />
               </div>
               <div className="flex flex-col gap-2">
                 <label htmlFor={inputId('email')} className="text-sm font-semibold text-foreground/80 pr-1">البريد الإلكتروني</label>
-                <Input id={inputId('email')} type="email" name="doctor-email" defaultValue={initialData?.email} required disabled={mode === 'view'} placeholder="doctor@medexa.jo" icon={<Mail size={18} />} className={inputClass} />
+                <Input id={inputId('email')} type="email" name="doctor-email" defaultValue={initialData?.email} required disabled={mode === 'view'} placeholder="أدخل البريد الإلكتروني" icon={<Mail size={18} />} className={inputClass} />
               </div>
               <div className="flex flex-col gap-2">
                 <label htmlFor={inputId('phone')} className="text-sm font-semibold text-foreground/80 pr-1">رقم الهاتف</label>
@@ -197,15 +196,15 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
                     disabled={mode === 'view'}
                     options={{
                       locale: Arabic,
-                      dateFormat: "Y-F-d",
+                      dateFormat: "Y-m-d",
                       disableMobile: true,
                       maxDate: "today",
-                      formatDate: (date: Date) => format(date, "yyyy-MMMM-dd", { locale: ar })
+                      formatDate: (date: Date) => format(date, "d MMMM yyyy", { locale: ar })
                     }}
-                    placeholder="dd/mm/yyyy"
+                    placeholder="اختر التاريخ"
                     className={cn("w-full h-12 bg-input-background border border-border rounded-xl px-4 text-right transition-all outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 text-base md:text-sm", (initialData?.dob || selectedDob) && "text-foreground font-bold")}
                   />
-                  <FaCalendarAlt className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none group-focus-within:text-primary transition-colors size-4" />
+                  <CalendarIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none group-focus-within:text-primary transition-colors size-4" />
                 </div>
               </div>
             </div>
@@ -248,18 +247,23 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
 
         <div className="flex gap-4 pt-6 border-t border-border mt-6">
           {mode === 'view' ? (
-            <BtnPrimary type="button" onClick={() => window.print()} className="flex-1 h-12 rounded-xl gap-2 text-base shadow-lg shadow-primary/20">
-              <Printer size={20} /> طباعة التقرير
-            </BtnPrimary>
+            <Button type="button" onClick={() => window.print()} className="flex-1 h-12 rounded-xl text-base shadow-lg shadow-primary/20">
+              <Printer size={20} className="ml-2" /> طباعة التقرير
+            </Button>
           ) : (
-            <BtnPrimary type="submit" form="doctorForm" className="flex-1 h-12 rounded-xl gap-2 text-base shadow-lg shadow-primary/20">
-              {mode === 'add' ? <Plus size={20} /> : <Save size={20} />}
+            <Button type="submit" form="doctorForm" className="flex-1 h-12 rounded-xl text-base shadow-lg shadow-primary/20">
+              {mode === 'add' ? <Plus size={20} className="ml-2" /> : <Save size={20} className="ml-2" />}
               {mode === 'add' ? 'إضافة الطبيب' : 'حفظ التعديلات'}
-            </BtnPrimary>
+            </Button>
           )}
-          <button type="button" onClick={handleClose} className="flex-1 h-12 rounded-xl border border-border bg-background text-sm font-bold hover:bg-secondary hover:text-white transition-all duration-300 shadow-xs">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleClose}
+            className="flex-1 h-12 rounded-xl text-base"
+          >
             {mode === 'view' ? 'إغلاق' : 'إلغاء'}
-          </button>
+          </Button>
         </div>
       </figure>
     </div>

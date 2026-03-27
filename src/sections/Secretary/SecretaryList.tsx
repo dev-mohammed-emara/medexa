@@ -13,6 +13,7 @@ import { cn } from '../../utils/cn'
 import SecretaryDialog from './SecretaryDialog';
 import Modal from '../../components/ui/Modal';
 import { initialSecretaries } from '../../constants/Secretary_dummy'
+import { Button } from '../../components/ui/Button'
 
 interface Secretary {
   id: number;
@@ -83,19 +84,20 @@ const SecretaryList = () => {
       {/* Page Header */}
       <section className={cn(
         "flex items-center justify-between opacity-0",
-        canAnimate && "animate-fadeDown animate-delay-200"
+        canAnimate && "animate-fadeDown animate-delay-100"
       )}>
         <div>
           <h1 className="text-3xl mb-1" style={{ fontWeight: 700 }}>إدارة السكرتارية</h1>
           <p className="text-muted-foreground">إدارة حسابات السكرتارية وصلاحياتهم</p>
         </div>
-        <button
+        <Button
           onClick={() => handleOpenDialog('add')}
-          className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-300 disabled:pointer-events-none disabled:opacity-50 shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md text-primary-foreground hover:shadow-primary/20 bg-primary hover:bg-primary/90 h-9 px-4 py-2 shadow-sm"
+          variant="secondary"
+          className="h-10 px-6 rounded-xl"
         >
           <Plus className="size-4 ml-2" />
           إضافة سكرتير/ة
-        </button>
+        </Button>
       </section>
 
       {/* Cards Grid / Empty State */}
@@ -111,7 +113,7 @@ const SecretaryList = () => {
                 opacity: canAnimate ? 1 : 0,
                 transform: canAnimate ? 'none' : 'translateY(20px)',
                 transition: 'all 0.5s ease-out',
-                transitionDelay: `${300 + (index * 100)}ms`
+                transitionDelay: `${100 + (index * 50)}ms`
               }}
             >
               <article
@@ -142,7 +144,7 @@ const SecretaryList = () => {
                         data-slot="badge"
                         className={cn(
                           "inline-flex items-center justify-center rounded-md border px-2 py-0.5 text-xs font-medium w-fit whitespace-nowrap shrink-0 transition-[color,box-shadow] overflow-hidden border-transparent text-primary-foreground bg-secondary opacity-0",
-                          canAnimate && "animate-snappyToRight animate-delay-700"
+                          canAnimate && "animate-snappyToRight animate-delay-400"
                         )}
                       >
                         {secretary.status}
@@ -163,27 +165,33 @@ const SecretaryList = () => {
                   </section>
 
                   {/* Action Buttons */}
-                  <footer className="flex gap-2 mt-auto">
-                    <button
+                  <footer className="flex gap-2 mt-auto items-stretch">
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => handleOpenDialog('view', secretary)}
-                      className="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-all duration-300 border bg-background text-foreground hover:bg-accent hover:text-accent-foreground hover:border-primary/30 h-8 rounded-md gap-1.5 px-3 flex-1 shadow-xs"
+                      className="flex-1 rounded-lg gap-1.5 h-auto"
                     >
                       <Eye className="size-4 ml-1" />
                       عرض
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => handleOpenDialog('edit', secretary)}
-                      className="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-all duration-300 border bg-background text-foreground hover:bg-accent hover:text-accent-foreground hover:border-primary/30 h-8 rounded-md gap-1.5 px-3 flex-1 shadow-xs"
+                      className="flex-1 rounded-lg gap-1.5 h-auto"
                     >
                       <SquarePen className="size-4 ml-1" />
                       تعديل
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
                       onClick={() => handleDeleteClick(secretary)}
-                      className="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-all duration-300 border bg-background hover:bg-destructive/10 h-8 rounded-md px-3 text-destructive shadow-xs"
+                      className="size-8 rounded-lg px-2 text-destructive hover:bg-destructive/10 hover:border-destructive/30 "
                     >
                       <Trash2 className="size-4" />
-                    </button>
+                    </Button>
                   </footer>
                 </div>
               </article>

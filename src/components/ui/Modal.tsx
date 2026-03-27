@@ -95,8 +95,8 @@ const Modal = ({
 
           </div>
 
-          <h3 className="text-xl text-center font-bold text-[#1a2b3c] mb-2">{title}</h3>
-          <p className="text-muted-foreground text-center text-pretty mb-8 leading-relaxed">
+          <h3 className="text-xl text-left font-bold text-[#1a2b3c] mb-2">{title}</h3>
+          <p className="text-muted-foreground text-left text-pretty mb-8 leading-relaxed">
             {message}
           </p>
 

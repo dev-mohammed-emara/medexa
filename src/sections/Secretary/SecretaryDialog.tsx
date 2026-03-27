@@ -1,6 +1,7 @@
 import { Check, Mail, Phone, Plus, Save, User, X } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { cn } from '../../utils/cn'
+import { Button } from '../../components/ui/Button'
 import Input from '../../components/ui/Input'
 import ScrollLockWrapper from '../../components/ui/ScrollLockWrapper'
 import {
@@ -130,7 +131,7 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
                   defaultValue={initialData?.name}
                   required
                   disabled={mode === 'view'}
-                  placeholder="فاطمة الزهراء"
+                  placeholder="أدخل اسم الموظف الرباعي"
                   icon={<User size={18} />}
                   className={inputClass}
                 />
@@ -146,7 +147,7 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
                   defaultValue={initialData?.email}
                   required
                   disabled={mode === 'view'}
-                  placeholder="fatima@medexa.jo"
+                  placeholder="أدخل البريد الإلكتروني"
                   icon={<Mail size={18} />}
                   className={inputClass}
                 />
@@ -213,34 +214,35 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
           </form>
         </ScrollLockWrapper>
 
-        {/* Action Buttons */}
         <div className="flex gap-4 pt-6 border-t border-border mt-6">
           {mode !== 'view' ? (
             <>
-              <button
+              <Button
                 type="submit"
                 form="secretaryForm"
-                className="flex-1 h-12 rounded-xl gap-2 text-base font-bold text-white bg-primary hover:bg-primary/90 transition-all duration-300 shadow-lg shadow-primary/20 flex items-center justify-center"
+                className="flex-1 h-12 rounded-xl text-base shadow-lg shadow-primary/20"
               >
-                {mode === 'add' ? <Plus size={20} /> : <Save size={20} />}
+                {mode === 'add' ? <Plus size={20} className="ml-2" /> : <Save size={20} className="ml-2" />}
                 {mode === 'add' ? 'إضافة الموظف' : 'حفظ التعديلات'}
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                variant="outline"
                 onClick={handleClose}
-                className="flex-1 h-12 rounded-xl border border-border bg-background text-sm font-bold hover:bg-secondary hover:text-white hover:border-secondary transition-all duration-300 shadow-xs"
+                className="flex-1 h-12 rounded-xl text-base"
               >
                 إلغاء
-              </button>
+              </Button>
             </>
           ) : (
-            <button
+            <Button
               type="button"
+              variant="outline"
               onClick={handleClose}
-              className="flex-1 h-12 rounded-xl border border-border bg-background text-sm font-bold hover:bg-secondary hover:text-white hover:border-secondary transition-all duration-300 shadow-xs"
+              className="flex-1 h-12 rounded-xl text-base"
             >
               إغلاق
-            </button>
+            </Button>
           )}
         </div>
       </figure>
