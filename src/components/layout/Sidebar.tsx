@@ -1,3 +1,4 @@
+
 import { useEffect, useRef } from 'react'
 import { useMediaQuery } from 'react-responsive'
 import { useLocation } from 'react-router-dom'
@@ -16,19 +17,22 @@ import {
   X
 } from 'lucide-react'
 import { FaCalendarAlt } from 'react-icons/fa'
+import { useLanguage } from '../../contexts/LanguageContext'
+import { navTranslations } from '../../constants/nav'
 import { cn } from '../../utils/cn'
 import { TransitionLink } from '../transition/TransitionLink'
+import { usePreloader } from '../../contexts/PreloaderContext'
 
 const navItems = [
-  { icon: LayoutDashboard, label: 'لوحة التحكم', href: '/' },
-  { icon: Users, label: 'الأطباء', href: '/doctors' },
-  { icon: UserCog, label: 'السكرتارية', href: '/secretary' },
-  { icon: UsersRound, label: 'المرضى', href: '/patients' },
-  { icon: FaCalendarAlt, label: 'المواعيد', href: '/appointments' },
-  { icon: FileText, label: 'السجلات الطبية', href: '/records' },
-  { icon: DollarSign, label: 'المالية', href: '/finance' },
-  { icon: Settings, label: 'الإعدادات', href: '/settings' },
-  { icon: User, label: 'الملف الشخصي', href: '/profile' },
+  { icon: LayoutDashboard, label: 'dashboard', href: '/' },
+  { icon: Users, label: 'doctors', href: '/doctors' },
+  { icon: UserCog, label: 'secretary', href: '/secretary' },
+  { icon: UsersRound, label: 'patients', href: '/patients' },
+  { icon: FaCalendarAlt, label: 'appointments', href: '/appointments' },
+  { icon: FileText, label: 'records', href: '/records' },
+  { icon: DollarSign, label: 'finance', href: '/finance' },
+  { icon: Settings, label: 'settings', href: '/settings' },
+  { icon: User, label: 'profile', href: '/profile' },
 ]
 
 interface SidebarProps {
@@ -36,23 +40,22 @@ interface SidebarProps {
   onToggle: () => void
 }
 
-import { usePreloader } from '../../contexts/PreloaderContext'
-
 const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
   const { isLoaded, isExiting } = usePreloader()
+  const { isAr, t } = useLanguage()
   const canAnimate = isLoaded && !isExiting
   const location = useLocation()
   const navContainerRef = useRef<HTMLDivElement>(null)
 
+  const T_PAGE = navTranslations;
   const isWideScreen = useMediaQuery({ query: '(min-width: 1024px)' })
 
   useEffect(() => {
     if (!canAnimate || !isWideScreen) return
 
-    // Stagger entrance animation for nav items only on desktop
     const ctx = gsap.context(() => {
       gsap.fromTo(".nav-item-animate",
-        { x: 20, opacity: 0 },
+        { x: isAr ? 20 : -20, opacity: 0 },
         {
           x: 0,
           opacity: 1,
@@ -79,7 +82,6 @@ const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
 
   return (
     <>
-      {/* Backdrop for mobile/tablet when open */}
       {!isCollapsed && (
         <div
           className="fixed inset-0 bg-black/20 backdrop-blur-sm z-100 lg:hidden"
@@ -89,14 +91,13 @@ const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
 
       <aside
         className={cn(
-          "bg-sidebar border-l border-sidebar-border will-change-[transform,width] flex flex-col transition-all duration-300 ease-in-out",
-          // Mobile/Tablet: Fixed overlay (< 1024px)
-          "fixed inset-y-0 right-0 z-110 shadow-2xl",
+          "bg-sidebar border-sidebar-border will-change-[transform,width] flex flex-col transition-all duration-300 ease-in-out",
+          isAr ? "border-l" : "border-r",
+          "fixed inset-y-0 z-110 shadow-2xl",
+          isAr ? "right-0" : "left-0",
           isCollapsed
-            ? "translate-x-[120%] invisible pointer-events-none"
+            ? (isAr ? "translate-x-[120%] invisible pointer-events-none" : "-translate-x-[120%] invisible pointer-events-none")
             : "translate-x-0 w-full max-w-full sm:max-w-[300px] visible pointer-events-auto",
-
-          // Desktop: Sticky placement (>= 1024px)
           "lg:sticky lg:top-0 lg:h-screen lg:shadow-none lg:z-40 lg:translate-x-0 lg:visible lg:pointer-events-auto lg:transform-none",
           isCollapsed ? "lg:w-[80px]" : "lg:w-[280px]"
         )}
@@ -111,8 +112,6 @@ const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
               <img src="/images/logo.png" alt="Medexa" className="h-13 min-w-fit w-auto" />
             )}
           </div>
-          
-          {/* Mobile Close Button */}
           {!isWideScreen && !isCollapsed && (
             <button 
               onClick={onToggle}
@@ -151,8 +150,10 @@ const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
                     </div>
                     {(!isCollapsed || (isCollapsed && !isWideScreen)) && (
                       <>
-                        <span className="flex-1 text-right transition-all duration-300 group-hover:-translate-x-[6px]">{item.label}</span>
-                        {isActive && <ChevronLeft className="size-4 shrink-0 transition-transform duration-300 group-hover:-translate-x-1" />}
+                        <span className={cn("flex-1 transition-all duration-300 group-hover:-translate-x-[6px]", isAr ? "text-right" : "text-left")}>
+                          {t(`nav.${item.label}`, T_PAGE)}
+                        </span>
+                        {isActive && <ChevronLeft className={cn("size-4 shrink-0 transition-transform duration-300 group-hover:px-1", !isAr && "rotate-180")} />}
                       </>
                     )}
                   </div>
@@ -162,7 +163,6 @@ const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
           </div>
         </nav>
 
-        {/* Desktop Collapse Toggle (visible only on lg when desktop is wide) */}
         <div className="p-3 border-t border-sidebar-border hidden lg:block">
           <button
             onClick={onToggle}

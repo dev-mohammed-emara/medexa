@@ -303,7 +303,7 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: A
                       <TimePicker
                         value={selectedTime}
                         onChange={setSelectedTime}
-                        className="w-full h-12 bg-input-background max-xs:justify-center border border-border rounded-xl  text-right transition-all outline-none focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10"
+                        className="w-full h-12 bg-input-background justify-center xs:justify-end border border-border rounded-xl  text-right transition-all outline-none focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10"
                       />
                     </div>
                   </div>

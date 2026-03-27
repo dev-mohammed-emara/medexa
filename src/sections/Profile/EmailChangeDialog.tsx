@@ -4,6 +4,8 @@ import { cn } from '@/utils/cn';
 import { Key, Mail, Shield, X } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { FaLock } from 'react-icons/fa';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { profileTranslations } from '@/constants/profile';
 
 interface EmailChangeDialogProps {
   isOpen: boolean;
@@ -14,6 +16,8 @@ const EmailChangeDialog = ({ isOpen, onClose }: EmailChangeDialogProps) => {
   const overlayRef = useRef<HTMLDivElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
   const [isClosing, setIsClosing] = useState(false);
+  const { isAr, t, dir } = useLanguage();
+  const T_PAGE = profileTranslations;
 
   const handleClose = useCallback(() => {
     setIsClosing(true);
@@ -56,7 +60,7 @@ const EmailChangeDialog = ({ isOpen, onClose }: EmailChangeDialogProps) => {
   if (!isOpen) return null;
 
   const handleSubmit = () => {
-    window.showToast?.('تم إرسال رابط التأكيد للبريد الجديد', 'success');
+    window.showToast?.(t('profile.email_confirm_sent', T_PAGE), 'success');
     handleClose();
   };
 
@@ -68,7 +72,7 @@ const EmailChangeDialog = ({ isOpen, onClose }: EmailChangeDialogProps) => {
           "fixed inset-0 z-100 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm",
           isClosing ? "animate-fadeOut" : "animate-fade"
         )}
-        dir="rtl"
+        dir={dir}
         onClick={(e) => e.target === overlayRef.current && handleClose()}
       >
         <div
@@ -78,20 +82,20 @@ const EmailChangeDialog = ({ isOpen, onClose }: EmailChangeDialogProps) => {
             isClosing ? "animate-scaleDownOut" : "animate-scaleUp"
           )}
         >
-          <div className="flex flex-col gap-2 text-right">
+          <div className={cn("flex flex-col gap-2", isAr ? "text-right" : "text-left")}>
             <h2 className="text-lg leading-none font-semibold flex items-center gap-2">
               <Mail className="text-primary" size={24} />
-              تغيير البريد الإلكتروني
+              {t('profile.change_email', T_PAGE)}
             </h2>
             <p className="text-muted-foreground text-sm">
-              لأمان حسابك، يرجى إدخال البريد الجديد وتأكيد كلمة المرور
+              {t('profile.change_email_desc', T_PAGE)}
             </p>
           </div>
 
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <label className="flex items-center gap-2 font-medium text-sm" style={{ fontWeight: 600 }}>
-                البريد الإلكتروني الحالي
+                {t('profile.current_email', T_PAGE)}
               </label>
               <Input
                 readOnly
@@ -102,7 +106,7 @@ const EmailChangeDialog = ({ isOpen, onClose }: EmailChangeDialogProps) => {
 
             <div className="space-y-2">
               <label className="flex items-center gap-2 font-medium text-sm" style={{ fontWeight: 600 }}>
-                البريد الإلكتروني الجديد
+                {t('profile.new_email', T_PAGE)}
               </label>
               <Input
                 type="email"
@@ -113,7 +117,7 @@ const EmailChangeDialog = ({ isOpen, onClose }: EmailChangeDialogProps) => {
 
             <div className="space-y-2">
               <label className="flex items-center gap-2 font-medium text-sm" style={{ fontWeight: 600 }}>
-                كلمة المرور
+                {t('profile.password', T_PAGE)}
               </label>
               <Input
                 type="password"
@@ -121,14 +125,14 @@ const EmailChangeDialog = ({ isOpen, onClose }: EmailChangeDialogProps) => {
                 placeholder="••••••••"
                 className="h-11 bg-background border-border focus:border-primary focus:bg-white transition-all duration-300"
               />
-              <p className="text-xs text-muted-foreground">يرجى إدخال كلمة المرور الحالية لتأكيد التغيير</p>
+              <p className="text-xs text-muted-foreground">{t('profile.password_note', T_PAGE)}</p>
             </div>
 
             <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
               <div className="flex gap-2">
                 <Shield size={16} className="text-amber-600 shrink-0" />
                 <p className="text-xs text-amber-800">
-                  بعد تغيير البريد الإلكتروني، سيتم إرسال رابط تأكيد إلى البريد الجديد
+                  {t('profile.security_note', T_PAGE)}
                 </p>
               </div>
             </div>
@@ -138,14 +142,14 @@ const EmailChangeDialog = ({ isOpen, onClose }: EmailChangeDialogProps) => {
                 onClick={handleSubmit}
                 className="flex-1 inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-300 text-primary-foreground bg-primary hover:bg-primary/90 hover:shadow-lg hover:-translate-y-0.5 h-11 px-8"
               >
-                <Key size={16} className="ml-1" />
-                تأكيد التغيير
+                <Key size={16} className={isAr ? "ml-1" : "mr-1"} />
+                {t('profile.confirm_change', T_PAGE)}
               </button>
               <button
                 onClick={handleClose}
                 className="flex-1 inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-300 border bg-background text-foreground hover:bg-accent hover:text-accent-foreground h-11 px-8"
               >
-                إلغاء
+                {t('common.cancel')}
               </button>
             </div>
           </div>
@@ -155,7 +159,7 @@ const EmailChangeDialog = ({ isOpen, onClose }: EmailChangeDialogProps) => {
             className="absolute top-4 left-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
           >
             <X size={24} />
-            <span className="sr-only">إغلاق</span>
+            <span className="sr-only">{t('profile.close', T_PAGE)}</span>
           </button>
         </div>
       </div>

@@ -7,11 +7,14 @@ interface MainLayoutProps {
   children: React.ReactNode
 }
 
+import { useLanguage } from '../../contexts/LanguageContext'
+
 const MainLayout = ({ children }: MainLayoutProps) => {
-  const { isCollapsed, setIsCollapsed, toggleSidebar } = useSidebar()
+  const { isCollapsed, toggleSidebar } = useSidebar()
+  const { dir } = useLanguage()
 
   return (
-    <div className="flex min-h-screen w-full flex-row bg-background" dir="rtl">
+    <div className="flex min-h-screen w-full flex-row bg-background" dir={dir}>
       {/* Persistent Sidebar */}
       <Sidebar isCollapsed={isCollapsed} onToggle={toggleSidebar} />
 

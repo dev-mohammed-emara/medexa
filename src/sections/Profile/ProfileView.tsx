@@ -32,15 +32,22 @@ import Modal from '@/components/ui/Modal';
 import EmailChangeDialog from './EmailChangeDialog';
 import { FaCalendarAlt } from 'react-icons/fa';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePreloader } from '@/contexts/PreloaderContext';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { profileTranslations } from '@/constants/profile';
 
 const ProfileView = () => {
   const { profileImage, updateProfileImage } = useAuth();
-  const containerRef = useRef<HTMLDivElement>(null);
+  const { isLoaded, isExiting } = usePreloader();
+  const { dir, isAr, t } = useLanguage();
   const [activeTab, setActiveTab] = useState<'profile' | 'clinic'>('profile');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Removed entrance animations as requested
+  const T_PAGE = profileTranslations;
 
+  const canAnimate = isLoaded && !isExiting;
+
+  // Removed tab animation on switch as per user request
   const [isEditingHours, setIsEditingHours] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState<{ open: boolean; type: 'hours' | 'general' }>({ open: false, type: 'hours' });
 
@@ -70,13 +77,13 @@ const ProfileView = () => {
   };
 
   const [workingHours, setWorkingHours] = useState([
-    { day: 'الأحد', active: true, periods: [{ from: '08:00', to: '12:00' }, { from: '16:00', to: '20:00' }] },
-    { day: 'الاثنين', active: true, periods: [{ from: '08:00', to: '18:00' }] },
-    { day: 'الثلاثاء', active: true, periods: [{ from: '08:00', to: '18:00' }] },
-    { day: 'الأربعاء', active: true, periods: [{ from: '08:00', to: '18:00' }] },
-    { day: 'الخميس', active: true, periods: [{ from: '08:00', to: '14:00' }] },
-    { day: 'الجمعة', active: false, periods: [] },
-    { day: 'السبت', active: false, periods: [] },
+    { day: t('profile.sunday', T_PAGE), active: true, periods: [{ from: '08:00', to: '12:00' }, { from: '16:00', to: '20:00' }] },
+    { day: t('profile.monday', T_PAGE), active: true, periods: [{ from: '08:00', to: '18:00' }] },
+    { day: t('profile.tuesday', T_PAGE), active: true, periods: [{ from: '08:00', to: '18:00' }] },
+    { day: t('profile.wednesday', T_PAGE), active: true, periods: [{ from: '08:00', to: '18:00' }] },
+    { day: t('profile.thursday', T_PAGE), active: true, periods: [{ from: '08:00', to: '14:00' }] },
+    { day: t('profile.friday', T_PAGE), active: false, periods: [] },
+    { day: t('profile.saturday', T_PAGE), active: false, periods: [] },
   ]);
 
   const [clinicInfo, setClinicInfo] = useState({
@@ -100,7 +107,6 @@ const ProfileView = () => {
     setActiveTab(tab);
   };
 
-  // Removed active tab animation as requested
 
   const toggleDay = (index: number) => {
     const newHours = [...workingHours];
@@ -129,7 +135,7 @@ const ProfileView = () => {
       const reader = new FileReader();
       reader.onloadend = () => {
         updateProfileImage(reader.result as string);
-        window.showToast('تم تحديث صورة الملف الشخصي بنجاح', 'success');
+        window.showToast(t('profile.update_photo', T_PAGE), 'success');
       };
       reader.readAsDataURL(file);
     }
@@ -142,15 +148,21 @@ const ProfileView = () => {
   };
 
   return (
-    <div ref={containerRef} className="space-y-6" dir="rtl">
-      <div>
-        <h1 className="text-3xl mb-1 font-bold">الملف الشخصي</h1>
-        <p className="text-muted-foreground">إدارة المعلومات الشخصية ومعلومات العيادة</p>
+    <div className="space-y-6" dir={dir}>
+      <div className={cn(
+        "profile-header opacity-0",
+        canAnimate && "animate-fadeDown animate-delay-100"
+      )}>
+        <h1 className="text-3xl mb-1 font-bold">{t('profile.profile', T_PAGE)}</h1>
+        <p className="text-muted-foreground">{t('profile.manage_profile', T_PAGE)}</p>
       </div>
 
       {/* Tabs */}
       <div
-        className="inline-flex items-center bg-muted/50 p-1.5 rounded-xl border border-border shadow-sm"
+        className={cn(
+          "profile-tabs inline-flex items-center bg-muted/50 p-1.5 rounded-xl border border-border shadow-sm opacity-0",
+          canAnimate && "animate-fadeUp animate-delay-200"
+        )}
       >
         <button
           onClick={() => handleTabChange('profile')}
@@ -164,7 +176,7 @@ const ProfileView = () => {
           )}
           <span className="relative z-10 flex items-center gap-2">
             <User size={16} />
-            الملف الشخصي
+            {t('profile.profile', T_PAGE)}
           </span>
         </button>
         <button
@@ -179,32 +191,35 @@ const ProfileView = () => {
           )}
           <span className="relative z-10 flex items-center gap-2">
             <Building2 size={16} />
-            ملف العيادة
+            {t('profile.clinic_profile', T_PAGE)}
           </span>
         </button>
       </div>
 
-      <div className="space-y-6">
+      <div className={cn(
+        "profile-content space-y-6 opacity-0",
+        canAnimate && "animate-fadeUp animate-delay-300"
+      )}>
         {activeTab === 'profile' ? (
           <>
             {/* Profile Card */}
-            <div data-slot="card" className="text-card-foreground flex flex-col sm:flex-row items-center justify-between gap-6 rounded-xl border p-8 bg-linear-to-br from-white via-white to-primary/5 border-border shadow-lg hover:shadow-xl transition-all duration-300">
-              <div className="flex-1 text-center sm:text-right">
-                <h2 className="text-3xl mb-2 font-bold text-foreground">د. أحمد الحشايكة</h2>
+            <div data-slot="card" className="tab-pane  text-card-foreground flex flex-col sm:flex-row items-center justify-between gap-6 rounded-xl border p-8 bg-linear-to-br from-white via-white to-primary/5 border-border shadow-lg hover:shadow-xl transition-all duration-300">
+              <div className={cn("flex-1 text-center", isAr ? "sm:text-right" : "sm:text-left")}>
+                <h2 className="text-3xl mb-2 font-bold text-foreground">{t('common.name')}</h2>
                 <div className="flex flex-col gap-2">
-                  <div className="flex items-center justify-center sm:justify-start gap-2">
+                  <div className={cn("flex items-center justify-center", isAr ? "sm:justify-start" : "sm:justify-end")}>
                     <span className="inline-flex items-center justify-center rounded-md border text-xs font-medium bg-primary/10 text-primary border-primary/20 px-3 py-1 gap-1">
-                      <Shield size={14} className="ml-1" />
-                      مالك العيادة
+                      <Shield size={14} className={isAr ? "ml-1" : "mr-1"} />
+                      {t('profile.clinic_owner', T_PAGE)}
                     </span>
                   </div>
-                  <div className="flex items-center justify-center sm:justify-start gap-2 text-muted-foreground">
-                    <Mail size={16} />
-                    <span>ahmad@ahmad.com</span>
+                  <div className={cn("flex items-center justify-center text-muted-foreground", isAr ? "sm:justify-start" : "sm:justify-end")}>
+                    <Mail size={16} className={isAr ? "ml-2" : "mr-2"} />
+                    <span>dr.ahmed@medexa.com</span>
                   </div>
-                  <div className="flex items-center justify-center sm:justify-start gap-2 text-muted-foreground">
-                    <Phone size={16} />
-                    <span dir="ltr" className="text-right">0789651800</span>
+                  <div className={cn("flex items-center justify-center text-muted-foreground", isAr ? "sm:justify-start" : "sm:justify-end")}>
+                    <Phone size={16} className={isAr ? "ml-2" : "mr-2"} />
+                    <span dir="ltr">0789651800</span>
                   </div>
                 </div>
               </div>
@@ -218,7 +233,7 @@ const ProfileView = () => {
                     <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center text-white text-4xl font-bold">
-                      {"د. أحمد الحشايكة".replace(/^د\.\s*/, '').charAt(0)}
+                      {t('common.name').replace(/^د\.\s*/, '').charAt(0)}
                     </div>
                   )}
                 </div>
@@ -232,7 +247,7 @@ const ProfileView = () => {
                 <div className="absolute bottom-0 left-0 p-3 bg-primary rounded-full shadow-lg border-2 border-primary text-white group-hover:bg-white group-hover:text-primary transition-all duration-500 ease-out z-10">
                   <Camera size={24} />
                 </div>
-                <div className="absolute inset-0 bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center pointer-events-none">
+                <div className="absolute inset-0 bg-black/40 rounded-full opacity-0  group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center pointer-events-none">
                   <Pen size={24} className="text-white" />
                 </div>
               </div>
@@ -240,58 +255,58 @@ const ProfileView = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Personal Information */}
-              <div data-slot="card" className="bg-white rounded-xl border p-6 border-border shadow-lg hover:shadow-xl transition-all duration-300 h-full">
-                <h3 className="text-xl mb-6 font-bold">المعلومات الشخصية</h3>
+              <div data-slot="card" className="tab-pane  bg-white rounded-xl border p-6 border-border shadow-lg hover:shadow-xl transition-all duration-300 h-full">
+                <h3 className="text-xl mb-6 font-bold">{t('profile.personal_info', T_PAGE)}</h3>
                 <div className="space-y-5">
                   <div className="flex flex-col gap-2">
-                    <label className="text-sm font-semibold text-foreground/80 pr-1">الاسم الكامل</label>
-                    <Input defaultValue="د. أحمد السعيد" className="h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold" />
+                    <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('common.name')}</label>
+                    <Input defaultValue={t('common.name')} className="h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold" />
                   </div>
                   <div className="flex flex-col gap-2">
-                    <label className="text-sm font-semibold text-foreground/80 pr-1">البريد الإلكتروني</label>
+                    <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('common.email')}</label>
                     <div className="flex gap-2">
-                      <Input readOnly value="ahmad.alsaeed@medexa.jo" className="flex-1 h-11 bg-muted/50 border-border cursor-not-allowed text-muted-foreground" />
+                      <Input readOnly value="dr.ahmed@medexa.com" className="flex-1 h-11 bg-muted/50 border-border cursor-not-allowed text-muted-foreground" />
                       <button
                         onClick={() => setIsEmailModalOpen(true)}
                         className="h-11 px-4 border border-primary/30 rounded-md text-primary hover:bg-primary/5 transition-all flex items-center gap-2 text-sm font-medium"
                       >
                         <Key size={16} />
-                        تغيير
+                        {t('common.change')}
                       </button>
                     </div>
                   </div>
                   <div className="flex flex-col gap-2">
-                    <label className="text-sm font-semibold text-foreground/80 pr-1">رقم الهاتف</label>
+                    <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('common.phone')}</label>
                     <Input
                       value={personalPhone}
                       onChange={(e) => setPersonalPhone(e.target.value.replace(/\D/g, ''))}
                       dir="ltr"
-                      className="h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all text-right font-bold"
+                      className={cn("h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold", isAr ? "text-right" : "text-left")}
                     />
                   </div>
                   <div className="flex flex-col gap-6">
                     <div className="flex flex-col gap-2">
-                      <label className="text-sm font-semibold text-foreground/80 pr-1">الجنس</label>
+                      <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('common.gender')}</label>
                       <Select defaultValue="ذكر">
                         <SelectTrigger className="h-11 bg-muted/30 border-border font-bold">
-                          <SelectValue placeholder="اختر الجنس" />
+                          <SelectValue placeholder={t('common.gender')} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="ذكر">ذكر</SelectItem>
-                          <SelectItem value="أنثى">أنثى</SelectItem>
+                          <SelectItem value="ذكر">{t('common.male')}</SelectItem>
+                          <SelectItem value="أنثى">{t('common.female')}</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                     <div className="flex flex-col gap-2">
-                      <label className="text-sm font-semibold text-foreground/80 pr-1">تاريخ الميلاد</label>
+                      <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('common.birth_date')}</label>
                       <div className="relative">
                         <FaCalendarAlt
                           size={16}
-                          className="absolute left-5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none z-10"
+                          className={cn("absolute top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none z-10", isAr ? "left-5" : "right-5")}
                         />
                         <Flatpickr
                           value="1985-05-15"
-                          className="flex h-11 w-full rounded-xl border border-border bg-muted/30 pl-10 pr-3 py-2 text-sm font-bold focus:border-primary focus:bg-white transition-all outline-none"
+                          className={cn("flex h-11 w-full rounded-xl border border-border bg-muted/30 pr-3 py-2 text-sm font-bold focus:border-primary focus:bg-white transition-all outline-none", isAr ? "pl-10" : "pr-10")}
                           options={{
                             locale: Arabic,
                             dateFormat: "d F Y",
@@ -305,39 +320,39 @@ const ProfileView = () => {
               </div>
 
               {/* Account Information */}
-              <div data-slot="card" className="bg-white rounded-xl border p-6 border-border shadow-lg hover:shadow-xl transition-all duration-300 h-full">
-                <h3 className="text-xl mb-6 font-bold">معلومات الحساب</h3>
+              <div data-slot="card" className="tab-pane  bg-white rounded-xl border p-6 border-border shadow-lg hover:shadow-xl transition-all duration-300 h-full">
+                <h3 className="text-xl mb-6 font-bold">{t('profile.account_info', T_PAGE)}</h3>
                 <div className="space-y-5">
                   <div className="p-4 bg-muted/30 rounded-lg border border-border">
-                    <label className="text-xs text-muted-foreground mb-1 block">الدور</label>
+                    <label className="text-xs text-muted-foreground mb-1 block">{t('common.role')}</label>
                     <div className="flex items-center gap-2">
                       <Shield size={18} className="text-primary" />
-                      <span className="text-base font-bold text-foreground">مالك العيادة</span>
+                      <span className="text-base font-bold text-foreground">{t('profile.clinic_owner', T_PAGE)}</span>
                     </div>
                   </div>
                   <div className="p-4 bg-muted/30 rounded-lg border border-border">
-                    <label className="text-xs text-muted-foreground mb-1 block">الحالة</label>
+                    <label className="text-xs text-muted-foreground mb-1 block">{t('common.status')}</label>
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 bg-secondary rounded-full animate-pulse" />
-                      <span className="text-base text-secondary font-bold">نشط</span>
+                      <span className="text-base text-secondary font-bold">{t('common.active')}</span>
                     </div>
                   </div>
                   <div className="p-4 bg-muted/30 rounded-lg border border-border">
-                    <label className="text-xs text-muted-foreground mb-1 block">آخر تسجيل دخول</label>
+                    <label className="text-xs text-muted-foreground mb-1 block">{t('common.last_login')}</label>
                     <div className="flex items-center gap-2">
                       <Clock size={18} className="text-muted-foreground" />
-                      <span className="text-base font-bold text-foreground">اليوم، 10:30 صباحاً</span>
+                      <span className="text-base font-bold text-foreground">{t('common.today')}, 10:30 {t('common.am')}</span>
                     </div>
                   </div>
                   <div className="p-4 bg-muted/30 rounded-lg border border-border">
-                    <label className="text-xs text-muted-foreground mb-1 block">تاريخ الانضمام</label>
+                    <label className="text-xs text-muted-foreground mb-1 block">{t('common.join_date')}</label>
                     <div className="flex items-center justify-between">
-                      <span className="text-base font-bold text-foreground">15 يناير 2025</span>
+                      <span className="text-base font-bold text-foreground">15 Jan 2025</span>
                       <FaCalendarAlt size={16} className="text-muted-foreground" />
                     </div>
                   </div>
                   <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
-                    <label className="text-xs text-primary mb-1 block">معرّف المستخدم</label>
+                    <label className="text-xs text-primary mb-1 block">{t('common.user_id')}</label>
                     <span className="text-sm font-mono text-primary font-bold">USR-2026-0001</span>
                   </div>
                 </div>
@@ -345,15 +360,15 @@ const ProfileView = () => {
             </div>
 
             {/* Working Hours */}
-            <div data-slot="card" className="bg-white rounded-xl border p-6 border-border shadow-lg hover:shadow-xl transition-all duration-300">
+            <div data-slot="card" className="tab-pane  bg-white rounded-xl border p-6 border-border shadow-lg hover:shadow-xl transition-all duration-300">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
                     <Clock size={24} className="text-primary" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold">مواعيد العمل</h3>
-                    <p className="text-sm text-muted-foreground">جدول ساعات العمل الأسبوعي</p>
+                    <h3 className="text-xl font-bold">{t('common.working_hours')}</h3>
+                    <p className="text-sm text-muted-foreground">{t('common.working_days')}</p>
                   </div>
                 </div>
                 {!isEditingHours && (
@@ -362,7 +377,7 @@ const ProfileView = () => {
                     className="h-10 px-4 border border-primary/30 rounded-md text-primary hover:bg-primary/5 transition-all flex items-center gap-2 text-sm font-medium"
                   >
                     <Pen size={16} />
-                    تعديل مواعيد العمل
+                    {t('common.edit_working_hours')}
                   </button>
                 )}
               </div>
@@ -433,13 +448,13 @@ const ProfileView = () => {
                               className="w-full h-9 mt-2 flex items-center justify-center gap-2 rounded-md border border-dashed border-border bg-transparent text-xs text-muted-foreground hover:bg-muted/50 transition-all"
                             >
                               <Plus size={14} />
-                              إضافة فترة
+                              {t('common.add_period')}
                             </button>
                           )}
                         </>
                       ) : (
                         <div className="flex items-center gap-2 text-sm">
-                          <span className="text-destructive/70 font-medium italic">عطلة</span>
+                          <span className="text-destructive/70 font-medium italic">{t('common.holiday')}</span>
                         </div>
                       )}
                     </div>
@@ -470,7 +485,7 @@ const ProfileView = () => {
         ) : (
           <>
             {/* Clinic Card */}
-            <div data-slot="card" className="text-card-foreground flex flex-col gap-6 rounded-xl border p-8 bg-linear-to-br from-white via-white to-secondary/5 border-border shadow-lg hover:shadow-xl transition-all duration-300">
+            <div data-slot="card" className="tab-pane  text-card-foreground flex flex-col gap-6 rounded-xl border p-8 bg-linear-to-br from-white via-white to-secondary/5 border-border shadow-lg hover:shadow-xl transition-all duration-300">
               <div className="flex items-center gap-6">
                 <div className="w-24 h-24 bg-linear-to-br from-primary to-secondary rounded-2xl flex items-center justify-center shadow-lg shrink-0">
                   <Building2 size={40} className="text-white" />
@@ -483,7 +498,7 @@ const ProfileView = () => {
                     </span>
                     <div className="flex items-center gap-2 text-muted-foreground text-sm">
                       <MapPin size={16} />
-                      <span>{clinicInfo.city}، الأردن</span>
+                      <span>{clinicInfo.city}، {t('profile.jordan', T_PAGE)}</span>
                     </div>
                   </div>
                 </div>
@@ -491,11 +506,11 @@ const ProfileView = () => {
             </div>
 
             {/* Clinic Info Form */}
-            <div data-slot="card" className="bg-white rounded-xl border p-6 border-border shadow-lg hover:shadow-xl transition-all duration-300">
-              <h3 className="text-xl mb-6 font-bold">معلومات العيادة</h3>
+            <div data-slot="card" className="tab-pane  bg-white rounded-xl border p-6 border-border shadow-lg hover:shadow-xl transition-all duration-300">
+              <h3 className="text-xl mb-6 font-bold">{t('profile.clinic_info', T_PAGE)}</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div className="flex flex-col gap-2">
-                  <label className="text-sm font-semibold">اسم العيادة</label>
+                  <label className="text-sm font-semibold">{t('profile.clinic_name', T_PAGE)}</label>
                   <Input
                     value={clinicInfo.name}
                     onChange={(e) => setClinicInfo({ ...clinicInfo, name: e.target.value })}
@@ -503,7 +518,7 @@ const ProfileView = () => {
                   />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <label className="text-sm font-semibold">التخصص</label>
+                  <label className="text-sm font-semibold">{t('profile.specialty', T_PAGE)}</label>
                   <Input
                     value={clinicInfo.specialty}
                     onChange={(e) => setClinicInfo({ ...clinicInfo, specialty: e.target.value })}
@@ -511,25 +526,25 @@ const ProfileView = () => {
                   />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <label className="text-sm font-semibold">اسم التأمين</label>
+                  <label className="text-sm font-semibold">{t('profile.insurance', T_PAGE)}</label>
                   <Input
                     value={clinicInfo.insurance}
                     onChange={(e) => setClinicInfo({ ...clinicInfo, insurance: e.target.value })}
-                    placeholder="اسم شركة التأمين"
+                    placeholder={t('profile.insurance_placeholder', T_PAGE)}
                     className="h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold"
                   />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <label className="text-sm font-semibold">رقم الهاتف</label>
+                  <label className="text-sm font-semibold">{t('common.phone')}</label>
                   <Input
                     value={clinicInfo.phone}
                     dir="ltr"
                     onChange={(e) => setClinicInfo({ ...clinicInfo, phone: e.target.value.replace(/\D/g, '') })}
-                    className="h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all text-right font-bold"
+                    className={cn("h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold", isAr ? "text-right" : "text-left")}
                   />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <label className="text-sm font-semibold">البريد الإلكتروني</label>
+                  <label className="text-sm font-semibold">{t('common.email')}</label>
                   <Input
                     value={clinicInfo.email}
                     onChange={(e) => setClinicInfo({ ...clinicInfo, email: e.target.value })}
@@ -537,7 +552,7 @@ const ProfileView = () => {
                   />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <label className="text-sm font-semibold">المدينة</label>
+                  <label className="text-sm font-semibold">{t('profile.city', T_PAGE)}</label>
                   <Input
                     value={clinicInfo.city}
                     onChange={(e) => setClinicInfo({ ...clinicInfo, city: e.target.value })}
@@ -545,7 +560,7 @@ const ProfileView = () => {
                   />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <label className="text-sm font-semibold">المنطقة</label>
+                  <label className="text-sm font-semibold">{t('profile.area', T_PAGE)}</label>
                   <Input
                     value={clinicInfo.area}
                     onChange={(e) => setClinicInfo({ ...clinicInfo, area: e.target.value })}
@@ -553,7 +568,7 @@ const ProfileView = () => {
                   />
                 </div>
                 <div className="flex flex-col gap-2 md:col-span-2">
-                  <label className="text-sm font-semibold">العنوان الكامل</label>
+                  <label className="text-sm font-semibold">{t('profile.full_address', T_PAGE)}</label>
                   <Input
                     value={clinicInfo.address}
                     onChange={(e) => setClinicInfo({ ...clinicInfo, address: e.target.value })}
@@ -567,17 +582,17 @@ const ProfileView = () => {
 
         <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-border">
           <button
-            onClick={activeTab === 'profile' ? handleCancelGeneral : () => window.showToast('تم إلغاء التغييرات', 'info')}
+            onClick={activeTab === 'profile' ? handleCancelGeneral : () => window.showToast(t('cancel_success'), 'info')}
             className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-300 border bg-background text-foreground hover:bg-accent hover:text-white hover:border-accent h-11 px-8"
           >
-            إلغاء
+            {t('common.cancel')}
           </button>
           <button
-            onClick={activeTab === 'profile' ? handleSaveGeneral : () => window.showToast('تم حفظ بيانات العيادة بنجاح', 'success')}
+            onClick={activeTab === 'profile' ? handleSaveGeneral : () => window.showToast(t('save_clinic_success'), 'success')}
             className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-300 text-primary-foreground bg-primary hover:bg-primary/90 h-11 px-8 shadow-lg shadow-primary/20 hover:shadow-primary/30"
           >
-             <Check size={18} className="ml-1" />
-            حفظ التغييرات
+            <Check size={18} className={isAr ? "ml-1" : "mr-1"} />
+            {t('common.save_changes')}
           </button>
         </div>
 
@@ -585,10 +600,10 @@ const ProfileView = () => {
           isOpen={showConfirmModal.open}
           onClose={() => setShowConfirmModal({ ...showConfirmModal, open: false })}
           onConfirm={handleConfirmCancel}
-          title="تجاهل التغيير؟"
-          message="هل أنت متأكد من تجاهل التغييرات؟"
-          confirmText="نعم، تجاهل"
-          cancelText="إلغاء"
+          title={t('discard_change_q', T_PAGE)}
+          message={t('discard_confirm_msg', T_PAGE)}
+          confirmText={t('discard_btn', T_PAGE)}
+          cancelText={t('common.cancel')}
           variant="danger"
         />
 

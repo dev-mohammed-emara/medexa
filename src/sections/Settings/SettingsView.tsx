@@ -1,5 +1,4 @@
-import { gsap } from 'gsap';
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import Input from '../../components/ui/Input';
 import {
     Select,
@@ -9,6 +8,9 @@ import {
     SelectValue
 } from '../../components/ui/select';
 import { usePreloader } from '../../contexts/PreloaderContext';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { commonTranslations } from '../../constants/common';
+import { settingsTranslations } from '../../constants/settings';
 import { Switch } from '../../components/ui/Switch';
 import { cn } from '../../utils/cn';
 import Modal from '../../components/ui/Modal';
@@ -50,15 +52,18 @@ const INITIAL_DAYS: WorkingDay[] = [
 
 const SettingsView = () => {
   const { isLoaded, isExiting } = usePreloader();
-  const containerRef = useRef<HTMLDivElement>(null);
+  const canAnimate = isLoaded && !isExiting;
+  const { language, setLanguage, isAr, t, dir } = useLanguage();
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+
+  const T_COMMON = commonTranslations;
+  const T_PAGE = settingsTranslations;
 
   // Form State
   const [clinicName, setClinicName] = useState('عيادة النور الطبية');
   const [phone, setPhone] = useState('0789651800');
   const [email, setEmail] = useState('info@medexa-clinic.jo');
   const [address, setAddress] = useState('عمّان - خلدا');
-  const [language, setLanguage] = useState('ar');
   const [currency, setCurrency] = useState('JOD');
   const [days, setDays] = useState<WorkingDay[]>(INITIAL_DAYS);
   const [emailError, setEmailError] = useState(false);
@@ -69,24 +74,7 @@ const SettingsView = () => {
   const nameRef = useRef<HTMLDivElement>(null);
   const phoneRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (isLoaded && !isExiting) {
-      const cards = containerRef.current?.querySelectorAll('[data-slot="card"]');
-      if (cards) {
-        gsap.fromTo(cards,
-          { y: 15, opacity: 0 },
-          { y: 0, opacity: 1, duration: 0.5, stagger: 0.08, ease: 'power2.out', delay: 0.1 }
-        );
-      }
-      const title = containerRef.current?.querySelector('.header-content');
-      if (title) {
-        gsap.fromTo(title,
-          { x: -15, opacity: 0 },
-          { x: 0, opacity: 1, duration: 0.5, ease: 'power2.out' }
-        );
-      }
-    }
-  }, [isLoaded, isExiting]);
+  // Animations are handled via Tailwind classes to match Appointments page style
 
   const toggleDay = (id: string) => {
     setDays(prev => prev.map(day => {
@@ -195,29 +183,35 @@ const SettingsView = () => {
   const offDaysCount = days.length - workingDaysCount;
 
   return (
-    <section ref={containerRef} className="space-y-8 pb-12" dir="rtl">
-          <header data-slot="dialog-header" className="flex flex-col gap-2 text-center mb-6">
-            <h1 className="text-3xl font-bold mb-1">الإعدادات</h1>
-            <p className="text-muted-foreground">إدارة إعدادات العيادة والنظام</p>
+    <section className="space-y-8 pb-12" dir={dir}>
+          <header className={cn(
+            "flex flex-col gap-2  mb-6 ",
+            canAnimate && "animate-fadeDown animate-delay-100"
+          )}>
+            <h1 className="text-3xl font-bold mb-1">{t('settings.settings', T_PAGE)}</h1>
+            <p className="text-muted-foreground">{t('settings.manage_settings', T_PAGE)}</p>
           </header>
 
       <div className="grid grid-cols-1 gap-8">
         {/* Clinic Information Card */}
-        <article data-slot="card" className="bg-white rounded-3xl border border-border p-4 sm:p-8 shadow-sm hover:shadow-md transition-all duration-300 opacity-0 transform translate-y-4">
+        <article className={cn(
+          "bg-white rounded-3xl border border-border p-4 sm:p-8 shadow-sm hover:shadow-md transition-all duration-300 opacity-0",
+          canAnimate && "animate-fadeUp animate-delay-200"
+        )}>
           <figure className="flex items-center gap-4 mb-8">
             <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center shrink-0">
               <Building2 className="size-7 text-primary" />
             </div>
             <figcaption>
-              <h3 className="text-xl font-bold">معلومات العيادة</h3>
-              <p className="text-sm text-muted-foreground">البيانات الأساسية للعيادة التي تظهر في التقارير</p>
+              <h3 className="text-xl font-bold">{t('settings.clinic_info', T_PAGE)}</h3>
+              <p className="text-sm text-muted-foreground">{t('settings.clinic_info_desc', T_PAGE)}</p>
             </figcaption>
           </figure>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2" ref={nameRef}>
-              <label className="text-sm font-bold text-[#1a2b3c] mr-1 flex items-center gap-2">
-                اسم العيادة
+              <label className={cn("text-sm font-bold text-[#1a2b3c] flex items-center gap-2", isAr ? "mr-1" : "ml-1")}>
+                {t('common.clinic_name', T_COMMON)}
               </label>
               <Input
                 value={clinicName}
@@ -231,12 +225,12 @@ const SettingsView = () => {
                 )}
               />
               {nameError && (
-                <p className="text-xs text-destructive font-bold mr-1">هذا الحقل مطلوب</p>
+                <p className={cn("text-xs text-destructive font-bold", isAr ? "mr-1" : "ml-1")}>{t('common.required_field', T_COMMON)}</p>
               )}
             </div>
             <div className="space-y-2" ref={phoneRef}>
-              <label className="text-sm font-bold text-[#1a2b3c] mr-1 flex items-center gap-2">
-                رقم الهاتف
+              <label className={cn("text-sm font-bold text-[#1a2b3c] flex items-center gap-2", isAr ? "mr-1" : "ml-1")}>
+                {t('common.phone_number', T_COMMON)}
               </label>
               <Input
                 type="tel"
@@ -252,12 +246,12 @@ const SettingsView = () => {
                 )}
               />
               {phoneError && (
-                <p className="text-xs text-destructive font-bold mr-1">يرجى إدخال رقم هاتف صحيح (8 أرقام على الأقل)</p>
+                <p className={cn("text-xs text-destructive font-bold", isAr ? "mr-1" : "ml-1")}>{t('settings.phone_number_error', T_PAGE)}</p>
               )}
             </div>
             <div className="space-y-2" ref={emailRef}>
-              <label className="text-sm font-bold text-[#1a2b3c] mr-1 flex items-center gap-2">
-                البريد الإلكتروني
+              <label className={cn("text-sm font-bold text-[#1a2b3c] flex items-center gap-2", isAr ? "mr-1" : "ml-1")}>
+                {t('common.email', T_COMMON)}
               </label>
               <Input
                 value={email}
@@ -273,12 +267,12 @@ const SettingsView = () => {
                 placeholder="example@email.com"
               />
               {emailError && (
-                <p className="text-xs text-destructive font-bold mr-1">يرجى إدخال بريد إلكتروني صحيح</p>
+                <p className={cn("text-xs text-destructive font-bold", isAr ? "mr-1" : "ml-1")}>{t('settings.email_error', T_PAGE)}</p>
               )}
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-bold text-[#1a2b3c] mr-1 flex items-center gap-2">
-                العنوان
+              <label className={cn("text-sm font-bold text-[#1a2b3c] flex items-center gap-2", isAr ? "mr-1" : "ml-1")}>
+                {t('common.address', T_COMMON)}
               </label>
               <Input
                 value={address}
@@ -290,37 +284,40 @@ const SettingsView = () => {
         </article>
 
         {/* General Settings Card */}
-        <article data-slot="card" className="bg-white rounded-3xl border border-border p-4 sm:p-8 shadow-sm hover:shadow-md transition-all duration-300 opacity-0 transform translate-y-4">
+        <article className={cn(
+          "bg-white rounded-3xl border border-border p-4 sm:p-8 shadow-sm hover:shadow-md transition-all duration-300 opacity-0",
+          canAnimate && "animate-fadeUp animate-delay-300"
+        )}>
           <figure className="flex items-center gap-4 mb-8">
             <div className="w-14 h-14 bg-secondary/10 rounded-2xl flex items-center justify-center shrink-0">
               <SettingsIcon className="size-7 text-secondary" />
             </div>
             <figcaption>
-              <h3 className="text-xl font-bold">الإعدادات العامة</h3>
-              <p className="text-sm text-muted-foreground">تفضيلات اللغة والعملة الافتراضية للنظام</p>
+              <h3 className="text-xl font-bold">{t('settings.general_settings', T_PAGE)}</h3>
+              <p className="text-sm text-muted-foreground">{t('settings.general_settings_desc', T_PAGE)}</p>
             </figcaption>
           </figure>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
-              <label className="text-sm font-bold text-[#1a2b3c] mr-1 flex items-center gap-2">
+              <label className={cn("text-sm font-bold text-[#1a2b3c] flex items-center gap-2", isAr ? "mr-1" : "ml-1")}>
                 <Globe className="size-4 text-primary" />
-                اللغة
+                {t('settings.language', T_PAGE)}
               </label>
-              <Select value={language} onValueChange={setLanguage}>
+              <Select value={language} onValueChange={(val: 'ar' | 'en') => setLanguage(val)}>
                 <SelectTrigger className="h-12 rounded-xl bg-muted/30 border-border focus:bg-white transition-all">
-                  <SelectValue placeholder="اختر اللغة" />
+                  <SelectValue placeholder={t('settings.select_language', T_PAGE)} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ar">العربية</SelectItem>
-                  <SelectItem value="en">English</SelectItem>
+                  <SelectItem value="ar">{t('settings.arabic', T_PAGE)}</SelectItem>
+                  <SelectItem value="en">{t('settings.english', T_PAGE)}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-bold text-[#1a2b3c] mr-1 flex items-center gap-2">
+              <label className={cn("text-sm font-bold text-[#1a2b3c] flex items-center gap-2", isAr ? "mr-1" : "ml-1")}>
                 <DollarSign className="size-4 text-secondary" />
-                العملة الافتراضية
+                {t('settings.default_currency', T_PAGE)}
               </label>
               <Select value={currency} onValueChange={setCurrency}>
                 <SelectTrigger className="h-12 rounded-xl bg-muted/30 border-border focus:bg-white transition-all">
@@ -336,14 +333,17 @@ const SettingsView = () => {
         </article>
 
         {/* Working Hours Card */}
-        <article data-slot="card" className="bg-white rounded-3xl border border-border p-4 sm:p-8 shadow-sm hover:shadow-md transition-all duration-300 opacity-0 transform translate-y-4">
+        <article className={cn(
+          "bg-white rounded-3xl border border-border p-4 sm:p-8 shadow-sm hover:shadow-md transition-all duration-300 opacity-0",
+          canAnimate && "animate-fadeUp animate-delay-400"
+        )}>
           <figure className="flex items-center gap-4 mb-8">
             <div className="w-14 h-14 bg-accent/10 rounded-2xl flex items-center justify-center shrink-0">
               <FaCalendarAlt className="size-7 text-accent" />
             </div>
             <figcaption>
-              <h3 className="text-xl font-bold">أيام وساعات العمل</h3>
-              <p className="text-sm text-muted-foreground">جدول العمل الأسبوعي وساعات استقبال المرضى</p>
+              <h3 className="text-xl font-bold">{t('settings.working_hours', T_COMMON)}</h3>
+              <p className="text-sm text-muted-foreground">{t('settings.working_hours_desc', T_PAGE)}</p>
             </figcaption>
           </figure>
 
@@ -371,7 +371,7 @@ const SettingsView = () => {
                           day.isActive ? "text-emerald-500" : "text-muted-foreground"
                         )}
                       >
-                        {day.isActive ? 'يوم عمل' : 'عطلة'}
+                        {day.isActive ? t('settings.working_day', T_PAGE) : t('settings.holiday', T_PAGE)}
                       </p>
                       <Switch
                         checked={day.isActive}
@@ -389,7 +389,7 @@ const SettingsView = () => {
                       className="inline-flex items-center justify-center gap-2 h-9 px-4 rounded-lg border border-primary/30 bg-background text-primary hover:bg-primary/10 transition-all font-bold text-sm"
                     >
                       <Plus className="size-4" />
-                      إضافة فترة
+                      {t('settings.add_period', T_PAGE)}
                     </button>
                   )}
                 </summary>
@@ -404,7 +404,7 @@ const SettingsView = () => {
                             <TimePicker
                               value={period.from}
                               onChange={(val) => updatePeriod(day.id, period.id, 'from', val)}
-                              className="h-10 xs:h-8 w-full xs:w-28 border-border"
+                              className="h-10 xs:h-8 w-full xs:w-37 border-border"
                             />
                           </div>
                           <div className="flex items-center gap-3">
@@ -412,7 +412,7 @@ const SettingsView = () => {
                             <TimePicker
                               value={period.to}
                               onChange={(val) => updatePeriod(day.id, period.id, 'to', val)}
-                              className="h-10 xs:h-8 w-full xs:w-28  border-border"
+                              className="h-10 xs:h-8 w-full xs:w-37  border-border"
                             />
                           </div>
                         </div>
@@ -435,30 +435,33 @@ const SettingsView = () => {
           <figure className="mt-8 text-center xs:text-start text-pretty flex-wrap gap-4 p-4 xs:p-6 bg-linear-to-br from-primary/5 to-secondary/5 rounded-2xl border border-primary/10 flex items-center justify-between">
             <div className="flex items-center flex-col xs:flex-row gap-4">
               <Clock className="size-6 text-primary" />
-              <figcaption className="text-muted-foreground">
-                أيام العمل: <span className="text-primary font-bold">{workingDaysCount} أيام</span>
+              <figcaption className={cn("text-muted-foreground", isAr ? "text-right" : "text-left")}>
+                {t('common.working_days')}: <span className="text-primary font-bold">{workingDaysCount} {t('common.days')}</span>
                 <span className="mx-2 opacity-30 text-muted-foreground">|</span>
-                أيام العطل: <span className="text-destructive font-bold">{offDaysCount} أيام</span>
+                {t('common.off_days')}: <span className="text-destructive font-bold">{offDaysCount} {t('common.days')}</span>
               </figcaption>
             </div>
-            <p className="text-xs text-muted-foreground italic">سيتم تطبيق هذه الأوقات على نظام المواعيد والحجز</p>
+            <p className="text-xs text-muted-foreground italic">{t('settings.working_hours_note', T_PAGE)}</p>
           </figure>
         </article>
 
         {/* Footer Actions */}
-        <footer className="flex justify-center xs:justify-end flex-wrap  gap-4 mt-4">
+        <footer className={cn(
+          "flex justify-center xs:justify-end flex-wrap gap-4 mt-4 opacity-0",
+          canAnimate && "animate-fadeUp animate-delay-500"
+        )}>
           <button
             onClick={() => setIsCancelModalOpen(true)}
             className="h-12 px-10 w-full rounded-xl xs:w-auto border border-border font-bold text-foreground hover:bg-accent hover:text-white transition-all active:scale-95"
           >
-            إلغاء
+            {t('settings.cancel_changes', T_PAGE)}
           </button>
           <button
             onClick={handleSave}
             className="h-12 px-10 rounded-xl w-full justify-center xs:w-auto whitespace-nowrap bg-primary text-white font-bold hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all active:scale-95 flex items-center gap-2"
           >
             <Check className="size-5" />
-            حفظ الإعدادات
+            {t('settings.save_settings', T_PAGE)}
           </button>
         </footer>
       </div>
@@ -467,10 +470,10 @@ const SettingsView = () => {
         isOpen={isCancelModalOpen}
         onClose={() => setIsCancelModalOpen(false)}
         onConfirm={handleCancelConfirm}
-        title="إلغاء التغييرات"
-        message="هل أنت متأكد من رغبتك في إلغاء التغييرات؟ لن يتم حفظ أي تعديلات قمت بها."
-        confirmText="نعم، إلغاء"
-        cancelText="تراجع"
+        title={t('settings.cancel_changes', T_PAGE)}
+        message={t('settings.cancel_confirm_msg', T_PAGE)}
+        confirmText={t('settings.cancel_btn', T_PAGE)}
+        cancelText={t('settings.back_btn', T_PAGE)}
         variant="danger"
       />
     </section>

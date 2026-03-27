@@ -1,67 +1,84 @@
-import React, { useState, useRef } from 'react';
+
 import { Clock } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
 import { cn } from '../../utils/cn';
 
 interface TimePickerProps {
-  value: string; // "HH:MM"
+  value: string; // "HH:MM" (24h format internally)
   onChange: (value: string) => void;
   className?: string;
   noClock?: boolean;
 }
 
 const TimePicker: React.FC<TimePickerProps> = ({ value, onChange, className, noClock = false }) => {
-  // Parse initial value once
-  const parseTime = (val: string) => {
-    const match = val.match(/(\d{1,2}):(\d{2})/);
-    if (match) {
-      return {
-        h: match[1].padStart(2, '0'),
-        m: match[2]
-      };
-    }
-    return { h: '08', m: '00' };
+  const parseTo12h = (val: string) => {
+    const [h24Str, m] = val.split(':');
+    const h24 = parseInt(h24Str || '8');
+    const p = h24 >= 12 ? 'PM' : 'AM';
+    let h12 = h24 % 12;
+    if (h12 === 0) h12 = 12;
+    return {
+      h: h12.toString().padStart(2, '0'),
+      m: m || '00',
+      p: p as 'AM' | 'PM'
+    };
   };
 
-  const initial = parseTime(value);
-  const [hours, setHours] = useState(initial.h);
-  const [minutes, setMinutes] = useState(initial.m);
+  const [hours, setHours] = useState('');
+  const [minutes, setMinutes] = useState('');
+  const [period, setPeriod] = useState<'AM' | 'PM'>('AM');
+
+  useEffect(() => {
+    const initial = parseTo12h(value || '08:00');
+    setHours(initial.h);
+    setMinutes(initial.m);
+    setPeriod(initial.p);
+  }, []);
+
+  useEffect(() => {
+    const next = parseTo12h(value);
+    const currentH24 = (parseInt(hours) % 12 + (period === 'PM' ? 12 : 0)).toString().padStart(2, '0');
+    if (value !== `${currentH24}:${minutes}`) {
+      setHours(next.h);
+      setMinutes(next.m);
+      setPeriod(next.p);
+    }
+  }, [value]);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const hourRef = useRef<HTMLInputElement>(null);
   const minRef = useRef<HTMLInputElement>(null);
 
-  const [prevValue, setPrevValue] = useState(value);
-  if (value !== prevValue) {
-    const next = parseTime(value);
-    setHours(next.h);
-    setMinutes(next.m);
-    setPrevValue(value);
-  }
+  const updateTime = (h: string, m: string, p: 'AM' | 'PM') => {
+    let hInt = parseInt(h);
+    if (isNaN(hInt)) hInt = 12;
+    if (p === 'PM' && hInt < 12) hInt += 12;
+    if (p === 'AM' && hInt === 12) hInt = 0;
 
-  const updateTime = (h: string, m: string) => {
-    const finalH = h.padStart(2, '0');
-    const finalM = m.padStart(2, '0');
-    onChange(`${finalH}:${finalM}`);
+    const finalH24 = hInt.toString().padStart(2, '0');
+    const finalM = (m || '00').padStart(2, '0');
+    onChange(`${finalH24}:${finalM}`);
   };
 
   const handleHourChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let val = e.target.value.replace(/\D/g, '').slice(-2);
+    const hInt = parseInt(val);
 
-    if (val.length === 1 && parseInt(val) >= 3 && parseInt(val) <= 9) {
+    if (val.length === 1 && hInt >= 2 && hInt <= 9) {
       val = '0' + val;
       setHours(val);
       minRef.current?.focus();
       minRef.current?.select();
     } else if (val.length === 2) {
-      const hInt = parseInt(val);
-      if (hInt > 23) val = '23';
+      if (hInt > 12) val = '12';
+      if (hInt === 0) val = '12';
       setHours(val);
       minRef.current?.focus();
       minRef.current?.select();
     } else {
-      setHours(val || '00');
+      setHours(val);
     }
-    updateTime(val || '08', minutes || '00');
+    updateTime(val, minutes, period);
   };
 
   const handleMinChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -69,106 +86,73 @@ const TimePicker: React.FC<TimePickerProps> = ({ value, onChange, className, noC
     if (val.length === 2) {
       if (parseInt(val) > 59) val = '59';
       setMinutes(val);
-      
-      // Automatic focus shift logic
-      setTimeout(() => {
-        if (containerRef.current) {
-          const parent = containerRef.current.parentElement;
-          if (parent) {
-            const pickers = Array.from(parent.querySelectorAll('.time-picker-container'));
-            const currentIndex = pickers.indexOf(containerRef.current);
-            if (currentIndex !== -1 && currentIndex < pickers.length - 1) {
-              const nextPicker = pickers[currentIndex + 1];
-              const nextHourInput = nextPicker.querySelector('input') as HTMLInputElement;
-              if (nextHourInput) {
-                nextHourInput.focus();
-                nextHourInput.select();
-              }
-            }
-          }
-        }
-      }, 50);
     } else {
-      setMinutes(val || '00');
+      setMinutes(val);
     }
-    updateTime(hours || '08', val || '00');
+    updateTime(hours, val, period);
+  };
+
+  const togglePeriod = () => {
+    const nextP = period === 'AM' ? 'PM' : 'AM';
+    setPeriod(nextP);
+    updateTime(hours, minutes, nextP);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, type: 'h' | 'm') => {
-    if (e.key === 'Backspace') {
-      if (type === 'h' && (hours === '' || hours === '00')) {
-          e.preventDefault();
-          setHours('08');
-          minRef.current?.focus();
-          minRef.current?.select();
-      } else if (type === 'm' && (minutes === '' || minutes === '00')) {
-          e.preventDefault();
-          setMinutes('00');
-          hourRef.current?.focus();
-          hourRef.current?.select();
+    if (e.key === 'Backspace' && (e.currentTarget.value === '' || e.currentTarget.value === '00')) {
+      if (type === 'm') {
+        hourRef.current?.focus();
+        hourRef.current?.select();
       }
     }
-
     if (e.key === 'ArrowRight' && type === 'h') {
       minRef.current?.focus();
-      minRef.current?.select();
     }
     if (e.key === 'ArrowLeft' && type === 'm') {
       hourRef.current?.focus();
-      hourRef.current?.select();
     }
   };
-
-  const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
-    e.target.select();
-  };
-
-  const handleBlur = (type: 'h' | 'm') => {
-    if (type === 'h' && hours === '') setHours('08');
-    if (type === 'm' && minutes === '') setMinutes('00');
-  }
 
   return (
     <div
       ref={containerRef}
-      className={cn("time-picker-container flex justify-end whitespace-nowrap items-center gap-1.5 sm:gap-2 p-1 pr-2 sm:pr-3 rounded-xl border border-input bg-input-background focus-within:ring-4 focus-within:ring-primary/10 transition-all cursor-text relative min-w-0 overflow-hidden", className)}
-      onClick={(e) => {
-        const target = e.target as HTMLElement;
-        if (!target.closest('.timePicker')) {
-          hourRef.current?.focus();
-        }
-      }}
+      className={cn(
+        "time-picker-container flex items-center bg-white border border-border rounded-xl transition-all focus-within:ring-2 focus-within:ring-primary/20",
+        className
+      )}
     >
-      {!noClock &&
-      <Clock className="hidden xs:block size-3.5 sm:size-4 text-muted-foreground pointer-events-none absolute right-2 sm:right-3" />
-      }
-      
-      <div className="flex items-center gap-0.5 sm:gap-1 px-0.5 sm:px-1" dir="ltr">
+      <div className="flex items-center gap-1 px-3 py-1.5" dir="ltr">
+        {!noClock && <Clock className="size-3.5 text-muted-foreground mr-1" />}
         <input
           ref={hourRef}
           type="text"
           inputMode="numeric"
-          placeholder="08"
           value={hours}
-          onFocus={handleFocus}
-          onBlur={() => handleBlur('h')}
           onChange={handleHourChange}
           onKeyDown={(e) => handleKeyDown(e, 'h')}
-          className="timePicker w-5 sm:w-8 bg-transparent text-center outline-none text-sm sm:text-base font-bold placeholder:text-muted-foreground/50 shrink-0"
+          onFocus={(e) => e.target.select()}
+          className="w-6 bg-transparent text-center outline-none text-sm font-bold"
+          placeholder="12"
         />
-        <span className="text-muted-foreground font-bold mb-0.5 text-xs sm:text-base">:</span>
+        <span className="text-muted-foreground font-bold mb-0.5">:</span>
         <input
           ref={minRef}
           type="text"
           inputMode="numeric"
-          placeholder="00"
           value={minutes}
-          onFocus={handleFocus}
-          onBlur={() => handleBlur('m')}
           onChange={handleMinChange}
           onKeyDown={(e) => handleKeyDown(e, 'm')}
-          className="timePicker w-5 sm:w-8 bg-transparent text-center outline-none text-sm sm:text-base font-bold placeholder:text-muted-foreground/50 shrink-0"
+          onFocus={(e) => e.target.select()}
+          className="w-6 bg-transparent text-center outline-none text-sm font-bold"
+          placeholder="00"
         />
+        <button
+          type="button"
+          onClick={togglePeriod}
+          className="ml-2 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+        >
+          {period}
+        </button>
       </div>
     </div>
   );

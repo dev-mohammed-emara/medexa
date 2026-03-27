@@ -5,6 +5,9 @@ import { useNavigate } from 'react-router-dom'
 import { TransitionLink } from '../transition/TransitionLink'
 import Modal from '../ui/Modal'
 import { useAuth } from '@/contexts/AuthContext'
+import { useLanguage } from '@/contexts/LanguageContext'
+import { navTranslations } from '@/constants/nav'
+import { cn } from '../../utils/cn'
 
 interface NavbarProps {
   onMenuClick: () => void;
@@ -21,6 +24,8 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
   const notifBtnRef = useRef<HTMLButtonElement>(null)
   const profileBtnRef = useRef<HTMLDivElement>(null)
   const { profileImage } = useAuth()
+  const { isAr, t } = useLanguage()
+  const T_PAGE = navTranslations;
 
   const handleLogout = async () => {
     setIsLogoutModalOpen(false)
@@ -30,7 +35,7 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
       await window.triggerExitTransition()
     }
 
-    window.showToast('تم تسجيل الخروج بنجاح')
+    window.showToast(t('nav.logout_success'))
     navigate('/login')
   }
 
@@ -74,7 +79,7 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
 
   return (
     <header className="h-20 bg-white border-b border-border px-6 flex items-center justify-between shadow-sm sticky top-0 z-30">
-      <div className="flex items-center gap-4 flex-row-reverse">
+      <div className={cn("flex items-center gap-4", isAr ? "flex-row-reverse" : "flex-row")}>
         {/* Menu toggle for all screen sizes */}
         <button
           onClick={onMenuClick}
@@ -86,17 +91,20 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
 
         {/* Search */}
         <div className="relative w-64 hidden md:block">
-          <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground size-[18px]" />
+          <Search className={cn("absolute top-1/2 -translate-y-1/2 text-muted-foreground size-[18px]", isAr ? "right-3" : "left-3")} />
           <input
             type="text"
-            placeholder="بحث..."
-            className="w-full h-10 pr-10 pl-4 bg-input-background border border-border rounded-xl text-sm focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all text-right"
+            placeholder={t('nav.search', T_PAGE)}
+            className={cn(
+              "w-full h-10 bg-input-background border border-border rounded-xl text-sm focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all",
+              isAr ? "pr-10 pl-4 text-right" : "pl-10 pr-4 text-left"
+            )}
           />
         </div>
       </div>
 
       <div className="flex items-center gap-4 ">
-        <span className="text-sm text-muted-foreground hidden md:block border-l border-border pl-4">عيادة النور الطبية</span>
+        <span className={cn("text-sm text-muted-foreground hidden md:block border-border", isAr ? "border-l pl-4" : "border-r pr-4")}>{t('nav.clinic_name', T_PAGE)}</span>
 
         {/* Notifications */}
         <div className="relative">
@@ -112,11 +120,11 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
           {/* Notifications Tooltip/Dropdown */}
           <div
             ref={notifRef}
-            className="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-80 bg-white border border-border shadow-2xl rounded-2xl overflow-hidden invisible will-change-transform z-60"
-            dir="rtl"
+            className="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-80 bg-white border border-border shadow-2xl rounded-2xl overflow-hidden invisible opacity-0 will-change-transform z-60"
+            dir={isAr ? "rtl" : "ltr"}
           >
             <div className="p-4 border-b border-border bg-slate-50/50">
-              <h3 className="font-bold text-sm">التنبيهات</h3>
+              <h3 className={cn("font-bold text-sm", isAr ? "text-right" : "text-left")}>{t('nav.notifications', T_PAGE)}</h3>
             </div>
             <div className="max-h-80 overflow-y-auto">
               {[
@@ -131,7 +139,7 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
                 </div>
               ))}
             </div>
-            <button className="w-full py-3 text-xs text-primary font-bold hover:bg-primary/5 transition-colors">عرض كل التنبيهات</button>
+            <button className="w-full py-3 text-xs text-primary font-bold hover:bg-primary/5 transition-colors">{t('nav.view_all', T_PAGE)}</button>
           </div>
         </div>
 
@@ -140,11 +148,11 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
           <div
             ref={profileBtnRef}
             onClick={() => setShowProfile(!showProfile)}
-            className="flex items-center gap-3 border-r border-border pr-4 cursor-pointer hover:opacity-80 transition-opacity"
+            className={cn("flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity", isAr ? "border-r border-border pr-4" : "border-l border-border pl-4")}
           >
-            <div className="text-right hidden md:block">
-              <p className="text-sm font-bold">د. أحمد الحشايكة</p>
-              <p className="text-[10px] text-muted-foreground">مالك العيادة</p>
+            <div className={cn("hidden md:block", isAr ? "text-right" : "text-left")}>
+              <p className="text-sm font-bold">{t('common.name')}</p>
+              <p className="text-[10px] text-muted-foreground">{t('profile.clinic_owner', T_PAGE)}</p>
             </div>
             <div className="size-10 rounded-full border-2 border-primary/20 bg-primary flex items-center justify-center text-white font-bold overflow-hidden shadow-inner">
               {profileImage ? (
@@ -158,8 +166,8 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
           {/* Profile Tooltip/Dropdown */}
           <div
             ref={profileRef}
-            className="absolute top-full left-18 xs:left-1/2 -translate-x-1/2 mt-3 w-64 bg-white border border-border shadow-2xl rounded-2xl overflow-hidden invisible will-change-transform z-60"
-            dir="rtl"
+            className="absolute top-full left-18 xs:left-1/2 -translate-x-1/2 mt-3 w-64 bg-white border border-border shadow-2xl rounded-2xl overflow-hidden invisible opacity-0 will-change-transform z-60"
+            dir={isAr ? "rtl" : "ltr"}
           >
             <div className="p-5 border-b border-border bg-linear-to-r from-primary/5 to-secondary/5">
               <div className="flex items-center gap-3 mb-1">
@@ -170,8 +178,8 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
                     "أ"
                   )}
                 </div>
-                <div>
-                  <p className="text-sm font-bold mb-1">د. أحمد الحشايكة</p>
+                <div className={cn(isAr ? "text-right" : "text-left")}>
+                  <p className="text-sm font-bold mb-1">{t('common.name')}</p>
                   <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-1.5 text-muted-foreground">
                       <Mail className="size-3 shrink-0" />
@@ -193,7 +201,7 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
                 className="w-full flex items-center gap-3 px-4 py-2.5 text-sm rounded-lg hover:bg-slate-50 transition-colors"
               >
                 <User className="size-4 text-muted-foreground" />
-                <span>عرض الملف الشخصي</span>
+                <span>{t('nav.profile', T_PAGE)}</span>
               </TransitionLink>
               <TransitionLink
                 href="/settings"
@@ -201,7 +209,7 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
                 className="w-full flex items-center gap-3 px-4 py-2.5 text-sm rounded-lg hover:bg-slate-50 transition-colors"
               >
                 <Settings className="size-4 text-muted-foreground" />
-                <span>الإعدادات</span>
+                <span>{t('nav.settings', T_PAGE)}</span>
               </TransitionLink>
               <div className="h-px bg-border my-2" />
               <button
@@ -209,7 +217,7 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
                 className="w-full flex items-center gap-3 px-4 py-2.5 text-sm rounded-lg text-destructive hover:bg-destructive/10 transition-colors font-bold"
               >
                 <LogOut className="size-4" />
-                <span>تسجيل الخروج</span>
+                <span>{t('nav.logout', T_PAGE)}</span>
               </button>
             </div>
           </div>
@@ -228,10 +236,10 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
         isOpen={isLogoutModalOpen}
         onClose={() => setIsLogoutModalOpen(false)}
         onConfirm={handleLogout}
-        title="تسجيل الخروج"
-        message="هل أنت متأكد من رغبتك في تسجيل الخروج من النظام؟"
-        confirmText="تسجيل الخروج"
-        cancelText="إلغاء"
+        title={t('nav.logout', T_PAGE)}
+        message={t('nav.logout_confirm', T_PAGE)}
+        confirmText={t('nav.logout', T_PAGE)}
+        cancelText={t('common.cancel')}
         variant="danger"
       />
     </header>
