@@ -21,6 +21,11 @@ export const settingsTranslations = {
       working_hours_note: "سيتم تطبيق هذه الأوقات على نظام المواعيد والحجز",
       email_error: "يرجى إدخال بريد إلكتروني صحيح",
       phone_number_error: "يرجى إدخال رقم هاتف صحيح (8 أرقام على الأقل)",
+      save_settings: "حفظ الإعدادات",
+      cancel_changes: "إلغاء التغييرات",
+      cancel_confirm_msg: "هل أنت متأكد من إلغاء كافة التغييرات؟ لن يتم حفظ أي تعديلات أجريتها.",
+      cancel_btn: "تجاهل التغييرات",
+      back_btn: "العودة للتعديل",
     }
   },
   en: {
@@ -44,6 +49,11 @@ export const settingsTranslations = {
       working_hours_note: "These times will be applied to the appointment and booking system",
       email_error: "Please enter a valid email address",
       phone_number_error: "Please enter a valid phone number (at least 8 digits)",
+      save_settings: "Save Settings",
+      cancel_changes: "Cancel Changes",
+      cancel_confirm_msg: "Are you sure you want to cancel all changes? none of your modifications will be saved.",
+      cancel_btn: "Discard Changes",
+      back_btn: "Back to Editing",
     }
   }
 };

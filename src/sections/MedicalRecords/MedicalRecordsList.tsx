@@ -223,13 +223,13 @@ const MedicalRecordsList = () => {
 
                         {/* Action Buttons */}
                         <div className="flex gap-2 pt-2">
-                          <button 
+                          <button
                             onClick={() => window.print()}
                             className="inline-flex items-center justify-center whitespace-nowrap text-sm font-bold transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md border bg-background text-foreground hover:bg-accent hover:text-accent-foreground hover:border-primary/30 h-8 rounded-md gap-1.5 px-3 flex-1"
                           >
                             طباعة السجل
                           </button>
-                          <button 
+                          <button
                             onClick={() => window.print()}
                             className="inline-flex items-center justify-center whitespace-nowrap text-sm font-bold transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md border bg-background text-foreground hover:bg-accent hover:text-accent-foreground hover:border-primary/30 h-8 rounded-md gap-1.5 px-3 flex-1"
                           >

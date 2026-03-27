@@ -1,21 +1,5 @@
-import { useRef, useState } from 'react';
-import {
-  User,
-  Building2,
-  Shield,
-  Mail,
-  Phone,
-  Camera,
-  Pen,
-  Key,
-  Clock,
-  Check,
-  X,
-  Plus,
-  MapPin
-} from 'lucide-react';
-import { cn } from '@/utils/cn';
 import Input from '@/components/ui/Input';
+import Modal from '@/components/ui/Modal';
 import {
   Select,
   SelectContent,
@@ -24,17 +8,33 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/Switch';
-import Flatpickr from "react-flatpickr";
-import "flatpickr/dist/themes/material_blue.css";
-import { Arabic } from "flatpickr/dist/l10n/ar.js";
 import TimePicker from '@/components/ui/TimePicker';
-import Modal from '@/components/ui/Modal';
-import EmailChangeDialog from './EmailChangeDialog';
-import { FaCalendarAlt } from 'react-icons/fa';
-import { useAuth } from '@/contexts/AuthContext';
-import { usePreloader } from '@/contexts/PreloaderContext';
-import { useLanguage } from '@/contexts/LanguageContext';
 import { profileTranslations } from '@/constants/profile';
+import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
+import { usePreloader } from '@/contexts/PreloaderContext';
+import { cn } from '@/utils/cn';
+import { Arabic } from "flatpickr/dist/l10n/ar.js";
+import "flatpickr/dist/themes/material_blue.css";
+import {
+  Building2,
+  Camera,
+  Check,
+  Clock,
+  Key,
+  Mail,
+  MapPin,
+  Pen,
+  Phone,
+  Plus,
+  Shield,
+  User,
+  X
+} from 'lucide-react';
+import { useRef, useState } from 'react';
+import Flatpickr from "react-flatpickr";
+import { FaCalendarAlt } from 'react-icons/fa';
+import EmailChangeDialog from './EmailChangeDialog';
 
 const ProfileView = () => {
   const { profileImage, updateProfileImage } = useAuth();
@@ -203,9 +203,9 @@ const ProfileView = () => {
         {activeTab === 'profile' ? (
           <>
             {/* Profile Card */}
-            <div data-slot="card" className="tab-pane  text-card-foreground flex flex-col sm:flex-row items-center justify-between gap-6 rounded-xl border p-8 bg-linear-to-br from-white via-white to-primary/5 border-border shadow-lg hover:shadow-xl transition-all duration-300">
-              <div className={cn("flex-1 text-center", isAr ? "sm:text-right" : "sm:text-left")}>
-                <h2 className="text-3xl mb-2 font-bold text-foreground">{t('common.name')}</h2>
+            <div data-slot="card" className="tab-pane text-card-foreground flex flex-col sm:flex-row items-center justify-between gap-6 rounded-xl border p-8 bg-linear-to-br from-white via-white to-primary/5 border-border shadow-lg hover:shadow-xl transition-all duration-300">
+              <div className={cn("flex-1 text-center font-bold", isAr ? "sm:text-right" : "sm:text-left")}>
+                <h2 className="text-3xl mb-2 font-bold text-foreground">{'أحمد الحشيكا'}</h2>
                 <div className="flex flex-col gap-2">
                   <div className={cn("flex items-center justify-center", isAr ? "sm:justify-start" : "sm:justify-end")}>
                     <span className="inline-flex items-center justify-center rounded-md border text-xs font-medium bg-primary/10 text-primary border-primary/20 px-3 py-1 gap-1">
@@ -260,7 +260,7 @@ const ProfileView = () => {
                 <div className="space-y-5">
                   <div className="flex flex-col gap-2">
                     <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('common.name')}</label>
-                    <Input defaultValue={t('common.name')} className="h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold" />
+                    <Input defaultValue={'أحمد الحشيكا'} className="h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold" />
                   </div>
                   <div className="flex flex-col gap-2">
                     <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('common.email')}</label>
@@ -600,9 +600,9 @@ const ProfileView = () => {
           isOpen={showConfirmModal.open}
           onClose={() => setShowConfirmModal({ ...showConfirmModal, open: false })}
           onConfirm={handleConfirmCancel}
-          title={t('discard_change_q', T_PAGE)}
-          message={t('discard_confirm_msg', T_PAGE)}
-          confirmText={t('discard_btn', T_PAGE)}
+          title={t('profile.discard_change_q', T_PAGE)}
+          message={t('profile.discard_confirm_msg', T_PAGE)}
+          confirmText={t('profile.discard_btn', T_PAGE)}
           cancelText={t('common.cancel')}
           variant="danger"
         />

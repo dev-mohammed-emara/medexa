@@ -113,7 +113,7 @@ const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
             )}
           </div>
           {!isWideScreen && !isCollapsed && (
-            <button 
+            <button
               onClick={onToggle}
               className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 flex items-center justify-center rounded-xl bg-muted/40 text-muted-foreground hover:bg-red-50 hover:text-red-500 transition-all active:scale-95"
             >

@@ -26,7 +26,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           const start = target.selectionStart || 0;
           const end = target.selectionEnd || 0;
           const newValue = target.value.substring(0, start) + cleanData + target.value.substring(end);
-          
+
           // Trigger change manually
           const event = {
             target: { value: newValue, name: props.name || '' }
@@ -39,7 +39,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       let value = e.target.value;
-      
+
       // Always convert Arabic numerals to English numbers
       value = value.replace(/[٠-٩]/g, (d) => "٠١٢٣٤٥٦٧٨٩".indexOf(d).toString());
 
@@ -51,7 +51,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         value = value.replace(/-/g, '');
         if (value && parseFloat(value) < 0) value = '0';
       } else if (
-        props.name?.toLowerCase().includes('name') || 
+        props.name?.toLowerCase().includes('name') ||
         props.name?.toLowerCase().includes('role') ||
         props.name?.toLowerCase().includes('country') ||
         props.name?.toLowerCase().includes('city')

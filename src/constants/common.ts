@@ -49,6 +49,9 @@ export const commonTranslations = {
     required_field: "هذا الحقل مطلوب",
     phone_number: "رقم الهاتف",
     clinic_name: "اسم العيادة",
+    settings_saved: "تم حفظ الإعدادات بنجاح",
+    settings_canceled: "تم إلغاء التغييرات بنجاح",
+    fix_errors: "يرجى تصحيح الأخطاء قبل الحفظ",
   },
   en: {
     save: "Save",
@@ -99,5 +102,8 @@ export const commonTranslations = {
     required_field: "This field is required",
     phone_number: "Phone Number",
     clinic_name: "Clinic Name",
+    settings_saved: "Settings saved successfully",
+    settings_canceled: "Changes canceled successfully",
+    fix_errors: "Please fix errors before saving",
   }
 };

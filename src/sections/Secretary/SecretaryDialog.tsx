@@ -275,4 +275,5 @@ const PermissionCheckbox = ({ id, label, defaultChecked = false, disabled = fals
   )
 }
 
-export default SecretaryDialog;
+
+export default SecretaryDialog

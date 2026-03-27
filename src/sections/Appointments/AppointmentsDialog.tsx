@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../../components/ui/select";
+import { useLanguage } from '../../contexts/LanguageContext'
 import TimePicker from '../../components/ui/TimePicker';
 import { cn } from '../../utils/cn';
 import { statusConfig } from './constants';
@@ -41,6 +42,7 @@ interface AppointmentsDialogProps {
 }
 
 const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: AppointmentsDialogProps) => {
+  const { isAr, dir, t } = useLanguage();
   const overlayRef = useRef<HTMLDivElement>(null);
   const [isClosing, setIsClosing] = useState(false);
 
@@ -110,7 +112,7 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: A
           "fixed inset-0 z-500 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4",
           isClosing ? "animate-fadeOut" : "animate-fade"
         )}
-        dir="rtl"
+        dir={dir}
         onClick={(e) => e.target === overlayRef.current && handleClose()}
       >
         <div
@@ -123,7 +125,10 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: A
           <button
             onClick={handleClose}
             type="button"
-            className="absolute top-6 right-6 p-2 rounded-full hover:bg-muted transition-colors opacity-70 hover:opacity-100 outline-none z-20"
+            className={cn(
+              "absolute top-6 p-2 rounded-full hover:bg-muted transition-colors opacity-70 hover:opacity-100 outline-none z-20",
+              isAr ? "right-6" : "left-6"
+            )}
           >
             <X className="size-5" />
             <span className="sr-only">Close</span>
@@ -249,7 +254,7 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: A
               <div className="space-y-6 py-2">
                 <div className="md:grid flex flex-col  md:grid-cols-2 gap-6">
                   <div className="flex flex-col gap-2">
-                    <label className="text-sm font-semibold text-foreground/80 pr-1">المريض</label>
+                    <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{isAr ? "المريض" : "Patient"}</label>
                     <Select value={selectedPatient} onValueChange={setSelectedPatient}>
                       <SelectTrigger className={cn("rounded-xl h-12 bg-input-background transition-all focus:ring-4 focus:ring-primary/10", (selectedPatient) && "text-foreground font-bold")}>
                         <SelectValue placeholder="اختر المريض" />
@@ -264,7 +269,7 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: A
                   </div>
 
                   <div className="flex flex-col gap-2">
-                    <label className="text-sm font-semibold text-foreground/80 pr-1">الطبيب</label>
+                    <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{isAr ? "الطبيب" : "Doctor"}</label>
                     <Select value={selectedDoctor} onValueChange={setSelectedDoctor}>
                       <SelectTrigger className={cn("rounded-xl h-12 bg-input-background transition-all focus:ring-4 focus:ring-primary/10", (selectedDoctor) && "text-foreground font-bold")}>
                         <SelectValue placeholder="اختر الطبيب" />
@@ -278,8 +283,8 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: A
                   </div>
 
                   <div className="flex flex-col gap-2">
-                    <label className="text-sm font-semibold text-foreground/80 pr-1">التاريخ</label>
-                    <div className="relative group flex items-center justify-between h-12 bg-input-background border border-border rounded-xl px-4 focus-within:ring-4 focus-within:ring-primary/10 transition-all">
+                    <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{isAr ? "التاريخ" : "Date"}</label>
+                    <div className={cn("relative group flex items-center justify-between h-12 bg-input-background border border-border rounded-xl px-4 focus-within:ring-4 focus-within:ring-primary/10 transition-all", isAr ? "flex-row" : "flex-row-reverse")}>
                       <Flatpickr
                         value={selectedDate}
                         onChange={([date]) => setSelectedDate(date ? date.toISOString().split('T')[0] : '')}
@@ -291,25 +296,25 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: A
                           formatDate: (date: Date) => format(date, "d MMMM yyyy", { locale: ar })
                         }}
                         placeholder="اختر التاريخ"
-                        className="flex-1 bg-transparent border-none outline-none text-right font-bold h-full text-base md:text-sm"
+                        className={cn("flex-1 bg-transparent border-none outline-none font-bold h-full text-base md:text-sm", isAr ? "text-right" : "text-left")}
                       />
                       <FaCalendarAlt className="text-muted-foreground pointer-events-none group-focus-within:text-primary transition-colors size-[18px]" />
                     </div>
                   </div>
 
                   <div className="flex flex-col gap-2">
-                    <label className="text-sm font-semibold text-foreground/80 pr-1">الوقت</label>
+                    <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{isAr ? "الوقت" : "Time"}</label>
                     <div className="relative group">
                       <TimePicker
                         value={selectedTime}
                         onChange={setSelectedTime}
-                        className="w-full h-12 bg-input-background justify-center xs:justify-end border border-border rounded-xl  text-right transition-all outline-none focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10"
+                        className={cn("w-full h-12 bg-input-background justify-center xs:justify-end border border-border rounded-xl transition-all outline-none focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10", isAr ? "text-right" : "text-left")}
                       />
                     </div>
                   </div>
 
                   <div className="flex flex-col gap-2 col-span-2">
-                    <label className="text-sm font-semibold text-foreground/80 pr-1">حالة الموعد</label>
+                    <label className={cn("text-sm font-semibold text-foreground/80 col-span-2", isAr ? "pr-1" : "pl-1")}>{isAr ? "حالة الموعد" : "Appointment Status"}</label>
                     <Select value={selectedStatus} onValueChange={setSelectedStatus}>
                       <SelectTrigger className={cn("rounded-xl h-12 bg-input-background transition-all focus:ring-4 focus:ring-primary/10", (selectedStatus) && "text-foreground font-bold")}>
                         <SelectValue placeholder="حالة الموعد" />
@@ -345,7 +350,7 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: A
             {mode === 'add' && (
               <>
                 <Button onClick={handleSubmit} className="flex-1 h-12 rounded-xl text-base shadow-lg shadow-primary/20">
-                  <Plus size={20} className="ml-2" /> حفظ الموعد
+                  <Plus size={20} className={isAr ? "ml-2" : "mr-2"} /> حفظ الموعد
                 </Button>
                 <Button
                   type="button"

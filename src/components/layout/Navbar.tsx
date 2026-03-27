@@ -151,10 +151,10 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
             className={cn("flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity", isAr ? "border-r border-border pr-4" : "border-l border-border pl-4")}
           >
             <div className={cn("hidden md:block", isAr ? "text-right" : "text-left")}>
-              <p className="text-sm font-bold">{t('common.name')}</p>
-              <p className="text-[10px] text-muted-foreground">{t('profile.clinic_owner', T_PAGE)}</p>
+              <p className="text-sm font-bold">{'أحمد الحشيكا'}</p>
+              <p className="text-[10px] text-muted-foreground">{t('nav.clinic_owner', T_PAGE)}</p>
             </div>
-            <div className="size-10 rounded-full border-2 border-primary/20 bg-primary flex items-center justify-center text-white font-bold overflow-hidden shadow-inner">
+            <div className="size-10 rounded-full border-2 border-primary bg-primary flex items-center justify-center text-white font-bold overflow-hidden shadow-md">
               {profileImage ? (
                 <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
               ) : (
@@ -171,7 +171,7 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
           >
             <div className="p-5 border-b border-border bg-linear-to-r from-primary/5 to-secondary/5">
               <div className="flex items-center gap-3 mb-1">
-                <div className="size-10 rounded-full bg-primary flex items-center justify-center text-white font-bold overflow-hidden">
+                <div className="size-10 rounded-full border-2 border-primary bg-primary flex items-center justify-center text-white font-bold overflow-hidden shadow-sm">
                   {profileImage ? (
                     <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
                   ) : (
@@ -179,7 +179,7 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
                   )}
                 </div>
                 <div className={cn(isAr ? "text-right" : "text-left")}>
-                  <p className="text-sm font-bold mb-1">{t('common.name')}</p>
+                  <p className="text-sm font-bold mb-1">{'أحمد الحشيكا'}</p>
                   <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-1.5 text-muted-foreground">
                       <Mail className="size-3 shrink-0" />

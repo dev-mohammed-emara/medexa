@@ -116,8 +116,9 @@ const TimePicker: React.FC<TimePickerProps> = ({ value, onChange, className, noC
   return (
     <div
       ref={containerRef}
+      onClick={() => hourRef.current?.focus()}
       className={cn(
-        "time-picker-container flex items-center bg-white border border-border rounded-xl transition-all focus-within:ring-2 focus-within:ring-primary/20",
+        "time-picker-container flex items-center bg-white border border-border rounded-xl transition-all focus-within:ring-2 focus-within:ring-primary/20 cursor-text",
         className
       )}
     >

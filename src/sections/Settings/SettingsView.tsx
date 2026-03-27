@@ -60,10 +60,10 @@ const SettingsView = () => {
   const T_PAGE = settingsTranslations;
 
   // Form State
-  const [clinicName, setClinicName] = useState('عيادة النور الطبية');
+  const [clinicName, setClinicName] = useState('Clinic Al-Noor');
   const [phone, setPhone] = useState('0789651800');
   const [email, setEmail] = useState('info@medexa-clinic.jo');
-  const [address, setAddress] = useState('عمّان - خلدا');
+  const [address, setAddress] = useState('Amman - Khalda');
   const [currency, setCurrency] = useState('JOD');
   const [days, setDays] = useState<WorkingDay[]>(INITIAL_DAYS);
   const [emailError, setEmailError] = useState(false);
@@ -164,19 +164,19 @@ const SettingsView = () => {
     }
 
     if (hasError) {
-      window.showToast('يرجى تصحيح الأخطاء قبل الحفظ', 'error');
+      window.showToast(t('common.fix_errors'), 'error');
       return;
     }
 
     // In a real app, you'd send data to API here
-    window.showToast('تم حفظ الإعدادات بنجاح', 'success');
+    window.showToast(t('common.settings_saved'), 'success');
   };
 
   const handleCancelConfirm = () => {
     setIsCancelModalOpen(false);
     setEmailError(false);
     // Reset state here if needed
-    window.showToast('تم إلغاء التغييرات بنجاح', 'success');
+    window.showToast(t('common.settings_canceled'), 'success');
   };
 
   const workingDaysCount = days.filter(d => d.isActive).length;
@@ -241,7 +241,8 @@ const SettingsView = () => {
                 }}
                 dir="ltr"
                 className={cn(
-                  "h-12 bg-muted/30 border-border focus:bg-white focus:border-primary transition-all duration-300 text-right",
+                  "h-12 bg-muted/30 border-border focus:bg-white focus:border-primary transition-all duration-300",
+                  isAr ? "text-right" : "text-left",
                   phoneError && "border-destructive focus:border-destructive focus:ring-destructive/10"
                 )}
               />
@@ -342,7 +343,7 @@ const SettingsView = () => {
               <FaCalendarAlt className="size-7 text-accent" />
             </div>
             <figcaption>
-              <h3 className="text-xl font-bold">{t('settings.working_hours', T_COMMON)}</h3>
+              <h3 className="text-xl font-bold">{t('common.working_hours')}</h3>
               <p className="text-sm text-muted-foreground">{t('settings.working_hours_desc', T_PAGE)}</p>
             </figcaption>
           </figure>
@@ -400,7 +401,7 @@ const SettingsView = () => {
                       <div key={period.id} className="flex items-center gap-4 bg-white/60 p-3 rounded-xl border border-border/50 animate-in fade-in slide-in-from-top-1">
                         <div className="flex flex-wrap justify-center special:justify-start items-center gap-6 flex-1 ">
                           <div className="flex items-center gap-3">
-                            <label className="text-sm font-medium text-muted-foreground">من</label>
+                            <label className="text-sm font-medium text-muted-foreground">{t('common.from')}</label>
                             <TimePicker
                               value={period.from}
                               onChange={(val) => updatePeriod(day.id, period.id, 'from', val)}
@@ -408,7 +409,7 @@ const SettingsView = () => {
                             />
                           </div>
                           <div className="flex items-center gap-3">
-                            <label className="text-sm font-medium text-muted-foreground">إلى</label>
+                            <label className="text-sm font-medium text-muted-foreground">{t('common.to')}</label>
                             <TimePicker
                               value={period.to}
                               onChange={(val) => updatePeriod(day.id, period.id, 'to', val)}
