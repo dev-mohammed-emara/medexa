@@ -1,6 +1,6 @@
 import useLenis from '@/hooks/useLenis'
 import { Route, BrowserRouter as Router, Routes, Navigate } from 'react-router-dom'
-import ProtectedRoute from './components/auth/ProtectedRoute'
+// import ProtectedRoute from './components/auth/ProtectedRoute'
 import { ToastContainer } from './components/ui/Toast'
 import { AuthProvider } from './contexts/AuthContext'
 import { SidebarProvider } from './contexts/SidebarContext'
@@ -39,7 +39,23 @@ const App = () => {
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
 
-                {/* Main Protected Application Routes */}
+                {/* All Application Routes (open, no auth required) */}
+                <Route index element={<Dashboard />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/doctors" element={<Doctors />} />
+                <Route path="/secretary" element={<Secretary />} />
+                <Route path="/patients" element={<Patients />} />
+                <Route path="/appointments" element={<Appointments />} />
+                <Route path="/records" element={<Records />} />
+                <Route path="/finance" element={<Finance />} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="/profile" element={<Profile />} />
+
+                {/* System/Error Routes */}
+                <Route path="/500" element={<ServerError />} />
+                <Route path="/419" element={<SessionExpired />} />
+
+                {/* --- COMMENTED OUT: Protected Route wrapper (for future use) ---
                 <Route element={<ProtectedRoute />}>
                   <Route index element={<Dashboard />} />
                   <Route path="/dashboard" element={<Dashboard />} />
@@ -51,11 +67,10 @@ const App = () => {
                   <Route path="/finance" element={<Finance />} />
                   <Route path="/settings" element={<Settings />} />
                   <Route path="/profile" element={<Profile />} />
-                  
-                  {/* System/Error Routes */}
                   <Route path="/500" element={<ServerError />} />
                   <Route path="/419" element={<SessionExpired />} />
                 </Route>
+                --- END COMMENTED OUT --- */}
 
                 {/* Aliases for misspelled routes reported in production - preserved as redirects */}
                 <Route path="/dcotros" element={<Navigate to="/doctors" replace />} />
