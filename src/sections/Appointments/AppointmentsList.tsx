@@ -17,7 +17,7 @@ import {
 import { ar } from 'date-fns/locale';
 import { ChevronRight, ChevronLeft, Plus, Clock, Trash2, User, Stethoscope, Eye, SquarePen, X, Smartphone, MoveHorizontal } from 'lucide-react';
 import { FaCalendarAlt } from 'react-icons/fa';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useMediaQuery } from 'react-responsive';
 import { Button } from '../../components/ui/Button';
 import Modal from '../../components/ui/Modal';
@@ -96,6 +96,52 @@ const AppointmentsList = () => {
   const [draggedApp, setDraggedApp] = useState<Appointment | null>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [dropTargetDate, setDropTargetDate] = useState<Date | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const scrollSpeed = useRef(0);
+
+  // Auto-scroll loop effect
+  useEffect(() => {
+    if (!draggedApp) {
+      scrollSpeed.current = 0;
+      return;
+    }
+
+    let animationFrameId: number;
+    const scroll = () => {
+      if (scrollContainerRef.current && scrollSpeed.current !== 0) {
+        scrollContainerRef.current.scrollLeft += scrollSpeed.current;
+      }
+      animationFrameId = requestAnimationFrame(scroll);
+    };
+
+    animationFrameId = requestAnimationFrame(scroll);
+    return () => cancelAnimationFrame(animationFrameId);
+  }, [draggedApp]);
+
+  const handleAutoScroll = useCallback((clientX: number) => {
+    if (!scrollContainerRef.current || !draggedApp) {
+      scrollSpeed.current = 0;
+      return;
+    }
+
+    const container = scrollContainerRef.current;
+    const rect = container.getBoundingClientRect();
+    const edgeSize = 80; // Distance from edge to start scrolling
+    const maxSpeed = 15;
+
+    // Relative position within the container
+    if (clientX < rect.left + edgeSize) {
+      // Near left edge
+      const factor = Math.max(0, (rect.left + edgeSize - clientX) / edgeSize);
+      scrollSpeed.current = -maxSpeed * factor;
+    } else if (clientX > rect.right - edgeSize) {
+      // Near right edge
+      const factor = Math.max(0, (clientX - (rect.right - edgeSize)) / edgeSize);
+      scrollSpeed.current = maxSpeed * factor;
+    } else {
+      scrollSpeed.current = 0;
+    }
+  }, [draggedApp]);
 
   const handleDragStart = (e: React.DragEvent, app: Appointment) => {
     // Custom drag ghosting
@@ -111,6 +157,7 @@ const AppointmentsList = () => {
   const handleDragOver = (e: React.DragEvent, date: Date) => {
     e.preventDefault();
     setMousePos({ x: e.clientX, y: e.clientY });
+    handleAutoScroll(e.clientX);
     setDropTargetDate(date);
     e.dataTransfer.dropEffect = 'move';
   };
@@ -151,6 +198,7 @@ const AppointmentsList = () => {
     // Update preview position
     const touch = e.touches[0];
     setMousePos({ x: touch.clientX, y: touch.clientY });
+    handleAutoScroll(touch.clientX);
 
     // Find if floating over a day
     const target = document.elementFromPoint(touch.clientX, touch.clientY);
@@ -188,10 +236,12 @@ const AppointmentsList = () => {
 
     const handleGlobalMouseMove = (e: MouseEvent) => {
       setMousePos({ x: e.clientX, y: e.clientY });
+      handleAutoScroll(e.clientX);
     };
 
     const handleGlobalTouchMove = (e: TouchEvent) => {
       setMousePos({ x: e.touches[0].clientX, y: e.touches[0].clientY });
+      handleAutoScroll(e.touches[0].clientX);
     };
 
     window.addEventListener('mousemove', handleGlobalMouseMove);
@@ -201,7 +251,7 @@ const AppointmentsList = () => {
       window.removeEventListener('mousemove', handleGlobalMouseMove);
       window.removeEventListener('touchmove', handleGlobalTouchMove);
     };
-  }, [draggedApp]);
+  }, [draggedApp, handleAutoScroll]);
 
   useEffect(() => {
     if (!calendarRef.current) return;
@@ -409,7 +459,10 @@ const AppointmentsList = () => {
             <MoveHorizontal className={cn("size-3.5", isAr ? "rotate-0" : "rotate-180")} />
           </aside>
 
-          <div className="overflow-x-auto pb-2 scrollbar-none md:scrollbar-auto">
+          <div 
+            ref={scrollContainerRef}
+            className="overflow-x-auto pb-2 scrollbar-none md:scrollbar-auto"
+          >
             <div className="min-w-[800px] w-full lg:min-w-0">
               {/* Day Headers */}
               <figure className="grid grid-cols-7 gap-3 mb-2">
