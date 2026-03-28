@@ -92,6 +92,119 @@ const AppointmentsList = () => {
   const detailSidebarRef = useRef<HTMLDivElement>(null);
   const [gridHeight, setGridHeight] = useState<number>(600);
 
+  // Drag and Drop States
+  const [draggedApp, setDraggedApp] = useState<Appointment | null>(null);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [dropTargetDate, setDropTargetDate] = useState<Date | null>(null);
+
+  const handleDragStart = (e: React.DragEvent, app: Appointment) => {
+    // Custom drag ghosting
+    const emptyImg = new Image();
+    emptyImg.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+    e.dataTransfer.setDragImage(emptyImg, 0, 0);
+    
+    setDraggedApp(app);
+    e.dataTransfer.setData('appId', app.id.toString());
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent, date: Date) => {
+    e.preventDefault();
+    setMousePos({ x: e.clientX, y: e.clientY });
+    setDropTargetDate(date);
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = (e: React.DragEvent, newDate: Date) => {
+    e.preventDefault();
+    const appId = parseInt(e.dataTransfer.getData('appId'));
+    const app = draggedApp || appointments.find(a => a.id === appId);
+
+    if (app) {
+      if (isSameDay(app.date, newDate)) {
+         window.showToast?.(isAr ? 'الموعد موجود بالفعل في هذا اليوم' : 'Appointment is already on this day', 'error');
+      } else {
+        setAppointments(prev => prev.map(a => 
+          a.id === app.id ? { ...a, date: newDate } : a
+        ));
+        window.showToast?.(isAr ? 'تم نقل الموعد بنجاح' : 'Appointment moved successfully', 'success');
+      }
+    }
+
+    setDraggedApp(null);
+    setDropTargetDate(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedApp(null);
+    setDropTargetDate(null);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent, app: Appointment) => {
+    setDraggedApp(app);
+    setMousePos({ x: e.touches[0].clientX, y: e.touches[0].clientY });
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!draggedApp) return;
+    e.preventDefault();
+    
+    // Update preview position
+    const touch = e.touches[0];
+    setMousePos({ x: touch.clientX, y: touch.clientY });
+
+    // Find if floating over a day
+    const target = document.elementFromPoint(touch.clientX, touch.clientY);
+    const dayElement = target?.closest('[data-date]');
+    if (dayElement) {
+      const dateStr = dayElement.getAttribute('data-date');
+      if (dateStr) {
+        setDropTargetDate(new Date(dateStr));
+      }
+    } else {
+      setDropTargetDate(null);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (!draggedApp) return;
+
+    if (dropTargetDate) {
+      if (isSameDay(draggedApp.date, dropTargetDate)) {
+        window.showToast?.(isAr ? 'الموعد موجود بالفعل في هذا اليوم' : 'Appointment is already on this day', 'error');
+      } else {
+        setAppointments(prev => prev.map(a => 
+          a.id === draggedApp.id ? { ...a, date: dropTargetDate } : a
+        ));
+        window.showToast?.(isAr ? 'تم نقل الموعد بنجاح' : 'Appointment moved successfully', 'success');
+      }
+    }
+
+    setDraggedApp(null);
+    setDropTargetDate(null);
+  };
+
+  useEffect(() => {
+    if (!draggedApp) return;
+
+    const handleGlobalMouseMove = (e: MouseEvent) => {
+      setMousePos({ x: e.clientX, y: e.clientY });
+    };
+
+    const handleGlobalTouchMove = (e: TouchEvent) => {
+      if (draggedApp) e.preventDefault();
+      setMousePos({ x: e.touches[0].clientX, y: e.touches[0].clientY });
+    };
+
+    window.addEventListener('mousemove', handleGlobalMouseMove);
+    window.addEventListener('touchmove', handleGlobalTouchMove, { passive: false });
+    
+    return () => {
+      window.removeEventListener('mousemove', handleGlobalMouseMove);
+      window.removeEventListener('touchmove', handleGlobalTouchMove);
+    };
+  }, [draggedApp]);
+
   useEffect(() => {
     if (!calendarRef.current) return;
     const observer = new ResizeObserver((entries) => {
@@ -332,11 +445,15 @@ const AppointmentsList = () => {
                     <article
                       key={date.toString()}
                       onClick={() => handleDateSelect(date)}
+                      onDragOver={(e) => handleDragOver(e, date)}
+                      onDrop={(e) => handleDrop(e, date)}
+                      data-date={date.toISOString()}
                       className={cn(
-                        "min-h-[100px] p-2 rounded-xl border-2 transition-all duration-300 cursor-pointer group relative",
+                        "min-h-[100px] p-2 rounded-xl border-2 transition-all duration-300 cursor-pointer group relative touch-none",
                         isSelected ? "border-primary bg-primary/10 shadow-lg shadow-primary/20" :
                         isToday ? "border-primary/50 bg-primary/5 shadow-md shadow-primary/5" :
-                        "border-border bg-muted/20 hover:border-primary/50 hover:bg-muted/40 hover:shadow-md"
+                        "border-border bg-muted/20 hover:border-primary/50 hover:bg-muted/40 hover:shadow-md",
+                        dropTargetDate && isSameDay(date, dropTargetDate) && "border-dashed border-primary ring-4 ring-primary/10 scale-[1.02] z-30"
                       )}
                     >
                       <div className="flex flex-col h-full relative z-10">
@@ -353,8 +470,15 @@ const AppointmentsList = () => {
                             return (
                               <div
                                 key={app.id}
+                                draggable
+                                onDragStart={(e) => handleDragStart(e, app)}
+                                onDragEnd={handleDragEnd}
+                                onTouchStart={(e) => handleTouchStart(e, app)}
+                                onTouchMove={handleTouchMove}
+                                onTouchEnd={handleTouchEnd}
                                 className={cn(
-                                  "text-xs p-1.5 rounded-lg border shadow-sm hover:shadow-md transition-all duration-200 hover:scale-[1.02] relative z-20 group/app",
+                                  "text-xs p-1.5 rounded-lg border shadow-sm cursor-grab active:cursor-grabbing transition-all duration-200 hover:scale-[1.02] relative z-20 group/app touch-none",
+                                  draggedApp?.id === app.id ? "opacity-30 scale-95" : "opacity-100",
                                   config.bg,
                                   config.border,
                                   config.text
@@ -524,6 +648,35 @@ const AppointmentsList = () => {
         cancelText={t('cancel', T)}
         variant="danger"
       />
+
+      {/* Drag Preview Portal */}
+      {draggedApp && (
+        <div 
+          className="fixed pointer-events-none z-150 transition-transform duration-75"
+          style={{ 
+            left: mousePos.x, 
+            top: mousePos.y, 
+            transform: 'translate(-50%, -50%) rotate(3deg)',
+            width: '160px'
+          }}
+        >
+          <article
+            className={cn(
+              "text-xs p-3 rounded-xl border-2 shadow-2xl backdrop-blur-sm",
+              statusConfig[draggedApp.status]?.bg || "bg-white",
+              statusConfig[draggedApp.status]?.border || "border-primary/20",
+              statusConfig[draggedApp.status]?.text || "text-foreground"
+            )}
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <Clock className="size-3.5" />
+              <span className="font-bold">{draggedApp.time}</span>
+            </div>
+            <div className="font-bold truncate">{draggedApp.patientName}</div>
+            <div className="text-[10px] opacity-70 truncate">{draggedApp.doctorName}</div>
+          </article>
+        </div>
+      )}
     </section>
   );
 };

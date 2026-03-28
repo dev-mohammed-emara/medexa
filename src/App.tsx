@@ -82,6 +82,10 @@ const App = () => {
                     </ProtectedRoute>
                   }
                 />
+                {/* Aliases for misspelled routes reported in production */}
+                <Route path="/dcotros" element={<ProtectedRoute><Doctors /></ProtectedRoute>} />
+                <Route path="/dctros" element={<ProtectedRoute><Doctors /></ProtectedRoute>} />
+                
                 <Route
                   path="/secretary"
                   element={
@@ -90,6 +94,10 @@ const App = () => {
                     </ProtectedRoute>
                   }
                 />
+                {/* Aliases for misspelled routes reported in production */}
+                <Route path="/secrates" element={<ProtectedRoute><Secretary /></ProtectedRoute>} />
+                <Route path="/secraters" element={<ProtectedRoute><Secretary /></ProtectedRoute>} />
+
                 <Route
                   path="/patients"
                   element={

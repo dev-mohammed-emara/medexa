@@ -1,6 +1,6 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
 import { gsap } from 'gsap';
-import { CheckCircle2, AlertCircle, X, Info } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Info, X } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 export type ToastType = 'success' | 'error' | 'info';
 
@@ -14,20 +14,20 @@ const Toast = ({ message, type = 'success', onClose }: ToastProps) => {
   const toastRef = useRef<HTMLDivElement>(null);
 
   const hide = useCallback(() => {
-    gsap.to(toastRef.current, { 
-      y: 20, 
-      opacity: 0, 
-      scale: 0.95, 
-      duration: 0.3, 
+    gsap.to(toastRef.current, {
+      y: 20,
+      opacity: 0,
+      scale: 0.95,
+      duration: 0.3,
       ease: 'power2.in',
-      onComplete: onClose 
+      onComplete: onClose
     });
   }, [onClose]);
 
   useEffect(() => {
     const ctx = gsap.context(() => {
-      gsap.fromTo(toastRef.current, 
-        { y: 50, opacity: 0, scale: 0.9 }, 
+      gsap.fromTo(toastRef.current,
+        { y: 50, opacity: 0, scale: 0.9 },
         { y: 0, opacity: 1, scale: 1, duration: 0.5, ease: 'back.out(1.7)' }
       );
     });
@@ -55,7 +55,7 @@ const Toast = ({ message, type = 'success', onClose }: ToastProps) => {
   };
 
   return (
-    <div 
+    <div
       ref={toastRef}
       className={`flex items-center gap-3 px-4 py-3 rounded-xl border shadow-lg backdrop-blur-md min-w-[300px] pointer-events-auto ${styles[type]}`}
       dir="rtl"
@@ -82,11 +82,11 @@ export const ToastContainer = () => {
   return (
     <div className="fixed top-6 left-1/2 -translate-x-1/2 z-100 flex flex-col gap-2 pointer-events-none">
       {toasts.map(toast => (
-        <Toast 
-          key={toast.id} 
-          message={toast.message} 
-          type={toast.type} 
-          onClose={() => setToasts(prev => prev.filter(t => t.id !== toast.id))} 
+        <Toast
+          key={toast.id}
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToasts(prev => prev.filter(t => t.id !== toast.id))}
         />
       ))}
     </div>
