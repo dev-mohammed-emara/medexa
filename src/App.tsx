@@ -35,7 +35,7 @@ const App = () => {
             <Router>
               <Preloader />
               <Routes>
-                {/* ... existing routes ... */}
+                {/* Auth Routes */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
 
@@ -57,9 +57,17 @@ const App = () => {
                   }
                 />
 
-                {/* Protected Routes */}
+                {/* Main Application Routes */}
                 <Route
                   path="/"
+                  element={
+                    <ProtectedRoute>
+                      <Dashboard />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/dashboard"
                   element={
                     <ProtectedRoute>
                       <Dashboard />
@@ -122,7 +130,6 @@ const App = () => {
                     </ProtectedRoute>
                   }
                 />
-
                 <Route
                   path="/profile"
                   element={
