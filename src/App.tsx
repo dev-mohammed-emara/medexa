@@ -1,5 +1,5 @@
 import useLenis from '@/hooks/useLenis'
-import { Route, BrowserRouter as Router, Routes } from 'react-router-dom'
+import { Route, BrowserRouter as Router, Routes, Navigate } from 'react-router-dom'
 import ProtectedRoute from './components/auth/ProtectedRoute'
 import { ToastContainer } from './components/ui/Toast'
 import { AuthProvider } from './contexts/AuthContext'
@@ -35,117 +35,33 @@ const App = () => {
             <Router>
               <Preloader />
               <Routes>
-                {/* Auth Routes */}
+                {/* Public Routes */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
 
-                {/* Protected Error Routes */}
-                <Route
-                  path="/500"
-                  element={
-                    <ProtectedRoute>
-                      <ServerError />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/419"
-                  element={
-                    <ProtectedRoute>
-                      <SessionExpired />
-                    </ProtectedRoute>
-                  }
-                />
+                {/* Main Protected Application Routes */}
+                <Route element={<ProtectedRoute />}>
+                  <Route index element={<Dashboard />} />
+                  <Route path="/dashboard" element={<Dashboard />} />
+                  <Route path="/doctors" element={<Doctors />} />
+                  <Route path="/secretary" element={<Secretary />} />
+                  <Route path="/patients" element={<Patients />} />
+                  <Route path="/appointments" element={<Appointments />} />
+                  <Route path="/records" element={<Records />} />
+                  <Route path="/finance" element={<Finance />} />
+                  <Route path="/settings" element={<Settings />} />
+                  <Route path="/profile" element={<Profile />} />
+                  
+                  {/* System/Error Routes */}
+                  <Route path="/500" element={<ServerError />} />
+                  <Route path="/419" element={<SessionExpired />} />
+                </Route>
 
-                {/* Main Application Routes */}
-                <Route
-                  path="/"
-                  element={
-                    <ProtectedRoute>
-                      <Dashboard />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/dashboard"
-                  element={
-                    <ProtectedRoute>
-                      <Dashboard />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/doctors"
-                  element={
-                    <ProtectedRoute>
-                      <Doctors />
-                    </ProtectedRoute>
-                  }
-                />
-                {/* Aliases for misspelled routes reported in production */}
-                <Route path="/dcotros" element={<ProtectedRoute><Doctors /></ProtectedRoute>} />
-                <Route path="/dctros" element={<ProtectedRoute><Doctors /></ProtectedRoute>} />
-                
-                <Route
-                  path="/secretary"
-                  element={
-                    <ProtectedRoute>
-                      <Secretary />
-                    </ProtectedRoute>
-                  }
-                />
-                {/* Aliases for misspelled routes reported in production */}
-                <Route path="/secrates" element={<ProtectedRoute><Secretary /></ProtectedRoute>} />
-                <Route path="/secraters" element={<ProtectedRoute><Secretary /></ProtectedRoute>} />
-
-                <Route
-                  path="/patients"
-                  element={
-                    <ProtectedRoute>
-                      <Patients />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/appointments"
-                  element={
-                    <ProtectedRoute>
-                      <Appointments />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/records"
-                  element={
-                    <ProtectedRoute>
-                      <Records />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/finance"
-                  element={
-                    <ProtectedRoute>
-                      <Finance />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/settings"
-                  element={
-                    <ProtectedRoute>
-                      <Settings />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/profile"
-                  element={
-                    <ProtectedRoute>
-                      <Profile />
-                    </ProtectedRoute>
-                  }
-                />
+                {/* Aliases for misspelled routes reported in production - preserved as redirects */}
+                <Route path="/dcotros" element={<Navigate to="/doctors" replace />} />
+                <Route path="/dctros" element={<Navigate to="/doctors" replace />} />
+                <Route path="/secrates" element={<Navigate to="/secretary" replace />} />
+                <Route path="/secraters" element={<Navigate to="/secretary" replace />} />
 
                 {/* Catch-all route for 404 */}
                 <Route path="*" element={<ErrorRoute><NotFound /></ErrorRoute>} />
