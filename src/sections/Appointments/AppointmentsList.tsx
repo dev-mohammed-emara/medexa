@@ -147,7 +147,6 @@ const AppointmentsList = () => {
 
   const handleTouchMove = (e: React.TouchEvent) => {
     if (!draggedApp) return;
-    e.preventDefault();
     
     // Update preview position
     const touch = e.touches[0];
@@ -192,7 +191,6 @@ const AppointmentsList = () => {
     };
 
     const handleGlobalTouchMove = (e: TouchEvent) => {
-      if (draggedApp) e.preventDefault();
       setMousePos({ x: e.touches[0].clientX, y: e.touches[0].clientY });
     };
 
