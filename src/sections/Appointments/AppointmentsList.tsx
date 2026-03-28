@@ -37,6 +37,7 @@ import { appointmentsTranslations } from '../../constants/translations/appointme
 import { enUS } from 'date-fns/locale';
 import AppointmentsDialog, { type Appointment } from './AppointmentsDialog';
 import { statusConfig } from './constants';
+import { useBroadcast } from '../../hooks/useBroadcast';
 
 // Mock data for appointments
 const INITIAL_APPOINTMENTS: Appointment[] = [
@@ -77,6 +78,26 @@ const AppointmentsList = () => {
 
   // Data State
   const [appointments, setAppointments] = useState<Appointment[]>(INITIAL_APPOINTMENTS);
+
+  // Cross-tab broadcast: serialize appointments for broadcasting
+  const serializeAppointments = (apps: Appointment[]) =>
+    apps.map(a => ({ ...a, date: a.date instanceof Date ? a.date.toISOString() : String(a.date) }));
+
+  const { broadcast } = useBroadcast((event) => {
+    if (event.type === 'APPOINTMENTS_UPDATE') {
+      // Incoming sync from another tab — rehydrate dates
+      setAppointments(event.appointments.map(a => ({ ...a, date: new Date(a.date) })));
+    }
+  });
+
+  // Helper to update appointments and broadcast to other tabs
+  const updateAndBroadcast = (updater: (prev: Appointment[]) => Appointment[]) => {
+    setAppointments(prev => {
+      const next = updater(prev);
+      broadcast({ type: 'APPOINTMENTS_UPDATE', appointments: serializeAppointments(next) });
+      return next;
+    });
+  };
 
   // Dialog States
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -171,7 +192,7 @@ const AppointmentsList = () => {
       if (isSameDay(app.date, newDate)) {
          window.showToast?.(isAr ? 'الموعد موجود بالفعل في هذا اليوم' : 'Appointment is already on this day', 'error');
       } else {
-        setAppointments(prev => prev.map(a => 
+        updateAndBroadcast(prev => prev.map(a => 
           a.id === app.id ? { ...a, date: newDate } : a
         ));
         window.showToast?.(isAr ? 'تم نقل الموعد بنجاح' : 'Appointment moved successfully', 'success');
@@ -220,7 +241,7 @@ const AppointmentsList = () => {
       if (isSameDay(draggedApp.date, dropTargetDate)) {
         window.showToast?.(isAr ? 'الموعد موجود بالفعل في هذا اليوم' : 'Appointment is already on this day', 'error');
       } else {
-        setAppointments(prev => prev.map(a => 
+        updateAndBroadcast(prev => prev.map(a => 
           a.id === draggedApp.id ? { ...a, date: dropTargetDate } : a
         ));
         window.showToast?.(isAr ? 'تم نقل الموعد بنجاح' : 'Appointment moved successfully', 'success');
@@ -330,9 +351,9 @@ const AppointmentsList = () => {
         time: data.time || '',
         status: data.status || 'pending',
       };
-      setAppointments(prev => [...prev, newApp]);
+      updateAndBroadcast(prev => [...prev, newApp]);
     } else if (dialogMode === 'edit' && currentAppointment) {
-      setAppointments(prev => prev.map(a => a.id === currentAppointment.id ? { ...a, ...data } : a));
+      updateAndBroadcast(prev => prev.map(a => a.id === currentAppointment.id ? { ...a, ...data } : a));
     }
     setIsDialogOpen(false);
   };
@@ -347,7 +368,7 @@ const AppointmentsList = () => {
 
   const confirmDelete = () => {
     if (appointmentToDelete) {
-      setAppointments(prev => prev.filter(a => a.id !== appointmentToDelete.id));
+      updateAndBroadcast(prev => prev.filter(a => a.id !== appointmentToDelete.id));
       window.showToast?.(t('toast_delete_success', T));
     }
     setIsDeleteModalOpen(false);

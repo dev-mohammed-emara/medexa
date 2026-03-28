@@ -51,7 +51,7 @@ const FinanceOverview = () => {
   const { isLoaded, isExiting } = usePreloader();
   const canAnimate = isLoaded && !isExiting;
 
-  const { broadcast } = useBroadcast((event) => {
+  const { broadcast: _broadcast } = useBroadcast((event) => {
     if (event.type === 'DATA_UPDATE' && event.module === 'finance') {
       console.log('Finance data updated in another tab');
     }
