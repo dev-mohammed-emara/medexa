@@ -1,7 +1,6 @@
 import React from 'react'
-import { Outlet } from 'react-router-dom'
+import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
-import NotFound from '../../pages/NotFound'
 
 interface ProtectedRouteProps {
   children?: React.ReactNode
@@ -9,9 +8,11 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { isAuthenticated } = useAuth()
+  const location = useLocation()
 
   if (!isAuthenticated) {
-    return <NotFound />
+    // Redirect to login, preserving the intended destination
+    return <Navigate to="/login" state={{ from: location }} replace />
   }
 
   return children ? <>{children}</> : <Outlet />

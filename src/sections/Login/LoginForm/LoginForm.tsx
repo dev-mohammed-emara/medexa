@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { TransitionLink } from '../../../components/transition/TransitionLink'
 import { useAuth } from '../../../contexts/AuthContext'
 import { FiMail, FiLock, FiEye, FiEyeOff, FiLogIn } from 'react-icons/fi'
@@ -17,6 +17,10 @@ const LoginForm = () => {
   const [showPassword, setShowPassword] = useState(false)
   const { login } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
+
+  // Get the page user was trying to visit before being redirected to login
+  const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/'
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -28,7 +32,7 @@ const LoginForm = () => {
 
       login()
       window.showToast('تم تسجيل الدخول بنجاح')
-      navigate('/')
+      navigate(from, { replace: true })
     }
   }
 
