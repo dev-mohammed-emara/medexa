@@ -1,13 +1,13 @@
+import { navTranslations } from '@/constants/nav'
+import { useAuth } from '@/contexts/AuthContext'
+import { useLanguage } from '@/contexts/LanguageContext'
 import { gsap } from 'gsap'
 import { Bell, LogOut, Mail, Menu, Phone, Search, Settings, User } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { cn } from '../../utils/cn'
 import { TransitionLink } from '../transition/TransitionLink'
 import Modal from '../ui/Modal'
-import { useAuth } from '@/contexts/AuthContext'
-import { useLanguage } from '@/contexts/LanguageContext'
-import { navTranslations } from '@/constants/nav'
-import { cn } from '../../utils/cn'
 
 interface NavbarProps {
   onMenuClick: () => void;
@@ -24,7 +24,7 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
   const notifBtnRef = useRef<HTMLButtonElement>(null)
   const profileBtnRef = useRef<HTMLDivElement>(null)
   const { profileImage } = useAuth()
-  const { isAr, t } = useLanguage()
+  const { isAr, t, language, setLanguage } = useLanguage()
   const T_PAGE = navTranslations;
 
   const handleLogout = async () => {
@@ -38,6 +38,17 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
     window.showToast(t('nav.logout_success'))
     navigate('/login')
   }
+
+  const handleLanguageChange = async (newLang: 'ar' | 'en') => {
+    if (language === newLang) return;
+    setShowProfile(false);
+
+    if (window.triggerExitTransition) {
+      await window.triggerExitTransition();
+    }
+
+    setLanguage(newLang);
+  };
 
   useEffect(() => {
     if (!notifRef.current) return
@@ -128,11 +139,11 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
             </div>
             <div className="max-h-80 overflow-y-auto">
               {[
-                { title: 'موعد جديد', desc: 'مريض محمد علي قام بحجز موعد جديد', time: 'منذ 5 دقائق' },
-                { title: 'تذكير', desc: 'يجب مراجعة التقارير الطبية المسائية', time: 'منذ ساعة' },
-                { title: 'دفعة مالية', desc: 'تم استلام دفعة جديدة بقيمة 50 دينار', time: 'منذ ساعتين' },
+                { title: t('nav.notif_1_title', T_PAGE), desc: t('nav.notif_1_desc', T_PAGE), time: t('nav.minutes_ago', T_PAGE).replace('{n}', '5') },
+                { title: t('nav.notif_2_title', T_PAGE), desc: t('nav.notif_2_desc', T_PAGE), time: t('nav.hour_ago', T_PAGE) },
+                { title: t('nav.notif_3_title', T_PAGE), desc: t('nav.notif_3_desc', T_PAGE), time: t('nav.hours_ago', T_PAGE).replace('{n}', '2') },
               ].map((item, i) => (
-                <div key={i} className="p-4 border-b border-border/50 hover:bg-slate-50 transition-colors cursor-pointer">
+                <div key={i} className={cn("p-4 border-b border-border/50 hover:bg-slate-50 transition-colors cursor-pointer", isAr ? "text-right" : "text-left")}>
                   <p className="text-sm font-bold mb-1">{item.title}</p>
                   <p className="text-xs text-muted-foreground mb-1">{item.desc}</p>
                   <p className="text-[10px] text-primary/70">{item.time}</p>
@@ -148,17 +159,17 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
           <div
             ref={profileBtnRef}
             onClick={() => setShowProfile(!showProfile)}
-            className={cn("flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity", isAr ? "border-r border-border pr-4" : "border-l border-border pl-4")}
+            className={cn("flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity", isAr ? "border-r border-border pr-4" : "border-l border-border pl-4 flex-row-reverse")}
           >
             <div className={cn("hidden md:block", isAr ? "text-right" : "text-left")}>
-              <p className="text-sm font-bold">{'أحمد الحشيكا'}</p>
+              <p className="text-sm font-bold">{t('nav.doctor_name', T_PAGE)}</p>
               <p className="text-[10px] text-muted-foreground">{t('nav.clinic_owner', T_PAGE)}</p>
             </div>
             <div className="size-10 rounded-full border-2 border-primary bg-primary flex items-center justify-center text-white font-bold overflow-hidden shadow-md">
               {profileImage ? (
                 <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
               ) : (
-                "أ"
+                isAr ? "أ" : "A"
               )}
             </div>
           </div>
@@ -175,11 +186,11 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
                   {profileImage ? (
                     <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
                   ) : (
-                    "أ"
+                    isAr ? "أ" : "A"
                   )}
                 </div>
                 <div className={cn(isAr ? "text-right" : "text-left")}>
-                  <p className="text-sm font-bold mb-1">{'أحمد الحشيكا'}</p>
+                  <p className="text-sm font-bold mb-1">{t('nav.doctor_name', T_PAGE)}</p>
                   <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-1.5 text-muted-foreground">
                       <Mail className="size-3 shrink-0" />
@@ -211,9 +222,43 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
                 <Settings className="size-4 text-muted-foreground" />
                 <span>{t('nav.settings', T_PAGE)}</span>
               </TransitionLink>
+
               <div className="h-px bg-border my-2" />
+
+              {/* Language Changer */}
+              <div className="px-4 py-2">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">
+                  {t('nav.change_language', T_PAGE)}
+                </p>
+                <div className="flex bg-slate-100 p-1 rounded-lg">
+                  <button
+                    onClick={() => handleLanguageChange('ar')}
+                    className={cn(
+                      "flex-1 py-1 text-xs rounded-md transition-all font-bold",
+                      isAr ? "bg-white text-primary shadow-sm" : "text-muted-foreground hover:bg-white/50"
+                    )}
+                  >
+                    {t('nav.language_arabic', T_PAGE)}
+                  </button>
+                  <button
+                    onClick={() => handleLanguageChange('en')}
+                    className={cn(
+                      "flex-1 py-1 text-xs rounded-md transition-all font-bold",
+                      !isAr ? "bg-white text-primary shadow-sm" : "text-muted-foreground hover:bg-white/50"
+                    )}
+                  >
+                    {t('nav.language_english', T_PAGE)}
+                  </button>
+                </div>
+              </div>
+
+              <div className="h-px bg-border my-2" />
+
               <button
-                onClick={() => setIsLogoutModalOpen(true)}
+                onClick={() => {
+                  setShowProfile(false);
+                  setIsLogoutModalOpen(true);
+                }}
                 className="w-full flex items-center gap-3 px-4 py-2.5 text-sm rounded-lg text-destructive hover:bg-destructive/10 transition-colors font-bold"
               >
                 <LogOut className="size-4" />

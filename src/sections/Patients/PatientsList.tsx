@@ -12,11 +12,16 @@ import { usePreloader } from '../../contexts/PreloaderContext';
 import { cn } from '../../utils/cn';
 import { initialPatients } from '../../constants/Patients_dummy';
 import type { Patient } from '../../constants/Patients_dummy';
+import { useBroadcast } from '../../hooks/useBroadcast';
 import PatientsDialog from './PatientsDialog';
 import Modal from '../../components/ui/Modal';
 import { Button } from '../../components/ui/Button';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { patientsTranslations } from '../../constants/translations/patients';
 
 const PatientsList = () => {
+  const { isAr, t } = useLanguage();
+  const T = patientsTranslations;
   const { isLoaded, isExiting } = usePreloader();
   const canAnimate = isLoaded && !isExiting;
 
@@ -32,8 +37,15 @@ const PatientsList = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [patientToDelete, setPatientToDelete] = useState<Patient | null>(null);
 
+  const { broadcast } = useBroadcast((event) => {
+    if (event.type === 'DATA_UPDATE' && event.module === 'patients') {
+      // In a real app, we would re-fetch. For mock, we just log or could sync via localStorage.
+      console.log('Patients data updated in another tab');
+    }
+  });
+
   const filteredPatients = patients.filter(patient =>
-    patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (isAr ? patient.name_ar : patient.name_en).toLowerCase().includes(searchTerm.toLowerCase()) ||
     patient.phone.includes(searchTerm)
   );
 
@@ -47,20 +59,26 @@ const PatientsList = () => {
     if (dialogMode === 'add') {
       const newPatient: Patient = {
         id: Date.now(),
-        name: data.name || '',
+        name_ar: data.name_ar || (isAr ? data.name_en || '' : ''),
+        name_en: data.name_en || (!isAr ? data.name_ar || '' : ''),
         phone: data.phone || '',
         age: data.age || 0,
-        gender: data.gender || 'غير محدد',
+        gender_ar: data.gender_ar || (isAr ? data.gender_en || 'ذكر' : 'Male'),
+        gender_en: data.gender_en || (!isAr ? data.gender_ar || 'Male' : 'Male'),
         lastVisit: new Date().toISOString().split('T')[0],
         dob: data.dob as string || '',
-        address: data.address as string || '',
-        notes: data.notes as string || ''
+        address_ar: data.address_ar as string || '',
+        address_en: data.address_en as string || '',
+        notes_ar: data.notes_ar as string || '',
+        notes_en: data.notes_en as string || ''
       };
       setPatients(prev => [...prev, newPatient]);
-      window.showToast?.('تم إضافة المريض بنجاح');
+      broadcast({ type: 'DATA_UPDATE', module: 'patients' });
+      window.showToast?.(t('toast_add_success', T));
     } else if (dialogMode === 'edit' && currentPatient) {
       setPatients(prev => prev.map(p => p.id === currentPatient.id ? { ...p, ...data } : p));
-      window.showToast?.('تم تحديث بيانات المريض بنجاح');
+      broadcast({ type: 'DATA_UPDATE', module: 'patients' });
+      window.showToast?.(t('toast_update_success', T));
     }
     setIsDialogOpen(false);
   };
@@ -73,29 +91,30 @@ const PatientsList = () => {
   const confirmDelete = () => {
     if (patientToDelete) {
       setPatients(prev => prev.filter(p => p.id !== patientToDelete.id));
-      window.showToast?.('تم حذف سجل المريض بنجاح');
+      broadcast({ type: 'DATA_UPDATE', module: 'patients' });
+      window.showToast?.(t('toast_delete_success', T));
     }
     setIsDeleteModalOpen(false);
   };
 
   return (
     <section className="flex-1 overflow-auto">
-      <div className="space-y-6" dir="rtl">
+      <div className="space-y-6" dir={isAr ? "rtl" : "ltr"}>
       {/* Page Header */}
       <header className={cn(
         "flex flex-col md:flex-row md:items-center md:justify-between gap-4 opacity-0",
         canAnimate && "animate-fadeDown animate-delay-100"
       )}>
-        <div>
-          <h1 className="text-3xl mb-1" style={{ fontWeight: 700 }}>إدارة المرضى</h1>
-          <p className="text-muted-foreground">إدارة سجلات ومعلومات المرضى</p>
+        <div className="text-start">
+          <h1 className="text-3xl mb-1" style={{ fontWeight: 700 }}>{t('page_title', T)}</h1>
+          <p className="text-muted-foreground">{t('page_desc', T)}</p>
         </div>
         <Button
           onClick={() => handleOpenDialog('add')}
           className="h-10 px-6 rounded-xl"
         >
-          <Plus className="size-4 ml-2" />
-          إضافة مريض
+          <Plus className={cn("size-4", isAr ? "ml-2" : "mr-2")} />
+          {t('add_button', T)}
         </Button>
       </header>
 
@@ -110,34 +129,34 @@ const PatientsList = () => {
           <div className="mb-4">
             <div className="relative w-full md:w-96">
               <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground size-[18px]" />
-              <input
-                data-slot="input"
-                className="file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-border flex w-full min-w-0 rounded-xl border px-3 py-1 text-base transition-[color,box-shadow] outline-none md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive pr-10 h-10 bg-input-background"
-                placeholder="ابحث عن مريض..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
+                <input
+                  data-slot="input"
+                  className="file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-border flex w-full min-w-0 rounded-xl border px-3 py-1 text-base transition-[color,box-shadow] outline-none md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive pr-10 h-10 bg-input-background"
+                  placeholder={t('search_placeholder', T)}
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
             </div>
           </div>
 
           {/* Mobile Swipe Indicator */}
           <aside className="sm:hidden flex items-center justify-center gap-3 mb-4 py-2 px-4 rounded-full bg-muted/30 text-muted-foreground/80 text-xs font-bold ring-1 ring-border/50 animate-pulse backdrop-blur-xs">
             <Smartphone className="size-3.5" />
-            <span>اسحب لليسار أو اليمين لتصفح الجدول</span>
-            <MoveHorizontal className="size-3.5" />
+            <span>{t('mobile_swipe', T)}</span>
+            <MoveHorizontal className={cn("size-3.5", isAr ? "rotate-0" : "rotate-180")} />
           </aside>
 
           <section className="overflow-x-auto">
             <div data-slot="table-container" className="relative w-full overflow-x-auto">
               <table data-slot="table" className="w-full caption-bottom text-sm">
                 <thead data-slot="table-header" className="[&_tr]:border-b">
-                  <tr data-slot="table-row" className="hover:bg-muted/50 data-[state=selected]:bg-muted border-b transition-colors">
-                    <th data-slot="table-head" className="text-foreground h-10 px-2 align-middle font-medium whitespace-nowrap *:[[role=checkbox]]:translate-y-[2px] text-right">الاسم</th>
-                    <th data-slot="table-head" className="text-foreground h-10 px-2 align-middle font-medium whitespace-nowrap *:[[role=checkbox]]:translate-y-[2px] text-right">الهاتف</th>
-                    <th data-slot="table-head" className="text-foreground h-10 px-2 align-middle font-medium whitespace-nowrap *:[[role=checkbox]]:translate-y-[2px] text-right">العمر</th>
-                    <th data-slot="table-head" className="text-foreground h-10 px-2 align-middle font-medium whitespace-nowrap *:[[role=checkbox]]:translate-y-[2px] text-right">الجنس</th>
-                    <th data-slot="table-head" className="text-foreground h-10 px-2 align-middle font-medium whitespace-nowrap *:[[role=checkbox]]:translate-y-[2px] text-right">آخر زيارة</th>
-                    <th data-slot="table-head" className="text-foreground h-10 px-2 align-middle font-medium whitespace-nowrap *:[[role=checkbox]]:translate-y-[2px] text-right">الإجراءات</th>
+                  <tr data-slot="table-row" className="hover:bg-muted/50 data-[state=selected]:bg-muted border-b transition-colors text-start">
+                    <th data-slot="table-head" className={cn("text-foreground h-10 px-2 align-middle font-medium whitespace-nowrap *:[[role=checkbox]]:translate-y-[2px]", isAr ? "text-right" : "text-left")}>{t('table.name', T)}</th>
+                    <th data-slot="table-head" className={cn("text-foreground h-10 px-2 align-middle font-medium whitespace-nowrap *:[[role=checkbox]]:translate-y-[2px]", isAr ? "text-right" : "text-left")}>{t('table.phone', T)}</th>
+                    <th data-slot="table-head" className={cn("text-foreground h-10 px-2 align-middle font-medium whitespace-nowrap *:[[role=checkbox]]:translate-y-[2px]", isAr ? "text-right" : "text-left")}>{t('table.age', T)}</th>
+                    <th data-slot="table-head" className={cn("text-foreground h-10 px-2 align-middle font-medium whitespace-nowrap *:[[role=checkbox]]:translate-y-[2px]", isAr ? "text-right" : "text-left")}>{t('table.gender', T)}</th>
+                    <th data-slot="table-head" className={cn("text-foreground h-10 px-2 align-middle font-medium whitespace-nowrap *:[[role=checkbox]]:translate-y-[2px]", isAr ? "text-right" : "text-left")}>{t('table.last_visit', T)}</th>
+                    <th data-slot="table-head" className={cn("text-foreground h-10 px-2 align-middle font-medium whitespace-nowrap *:[[role=checkbox]]:translate-y-[2px]", isAr ? "text-right" : "text-left")}>{t('table.actions', T)}</th>
                   </tr>
                 </thead>
                 <tbody data-slot="table-body" className="[&_tr:last-child]:border-0">
@@ -147,19 +166,19 @@ const PatientsList = () => {
                       data-slot="table-row"
                       className="hover:bg-muted/50 data-[state=selected]:bg-muted border-b transition-colors"
                     >
-                      <td data-slot="table-cell" className="p-2 align-middle whitespace-nowrap *:[[role=checkbox]]:translate-y-[2px]" style={{ fontWeight: 600 }}>
-                        {patient.name}
+                      <td data-slot="table-cell" className={cn("p-2 align-middle whitespace-nowrap *:[[role=checkbox]]:translate-y-[2px]", isAr ? "text-right" : "text-left")} style={{ fontWeight: 600 }}>
+                        {isAr ? patient.name_ar : patient.name_en}
                       </td>
-                      <td data-slot="table-cell" className="p-2 align-middle whitespace-nowrap *:[[role=checkbox]]:translate-y-[2px] text-muted-foreground">
+                      <td data-slot="table-cell" className={cn("p-2 align-middle whitespace-nowrap *:[[role=checkbox]]:translate-y-[2px] text-muted-foreground", isAr ? "text-right" : "text-left")}>
                         {patient.phone}
                       </td>
-                      <td data-slot="table-cell" className="p-2 align-middle whitespace-nowrap *:[[role=checkbox]]:translate-y-[2px]">
+                      <td data-slot="table-cell" className={cn("p-2 align-middle whitespace-nowrap *:[[role=checkbox]]:translate-y-[2px]", isAr ? "text-right" : "text-left")}>
                         {patient.age}
                       </td>
-                      <td data-slot="table-cell" className="p-2 align-middle whitespace-nowrap *:[[role=checkbox]]:translate-y-[2px]">
-                        {patient.gender}
+                      <td data-slot="table-cell" className={cn("p-2 align-middle whitespace-nowrap *:[[role=checkbox]]:translate-y-[2px]", isAr ? "text-right" : "text-left")}>
+                        {patient.gender_ar === 'ذكر' ? t('dialog.male', T) : patient.gender_ar === 'أنثى' ? t('dialog.female', T) : t('dialog.other', T)}
                       </td>
-                      <td data-slot="table-cell" className="p-2 align-middle whitespace-nowrap *:[[role=checkbox]]:translate-y-[2px]">
+                      <td data-slot="table-cell" className={cn("p-2 align-middle whitespace-nowrap *:[[role=checkbox]]:translate-y-[2px]", isAr ? "text-right" : "text-left")}>
                         <span
                           data-slot="badge"
                           className="inline-flex items-center justify-center rounded-md border px-2 py-0.5 text-xs font-medium w-fit whitespace-nowrap shrink-0 transition-[color,box-shadow] overflow-hidden border-transparent [a&]:hover:bg-secondary/90 bg-secondary/10 text-secondary"
@@ -200,7 +219,7 @@ const PatientsList = () => {
                   {filteredPatients.length === 0 && (
                     <tr>
                       <td colSpan={6} className="h-24 text-center text-muted-foreground p-4">
-                        لا يوجد سجلات مرضى تطابق بحثك.
+                        {t('no_results', T)}
                       </td>
                     </tr>
                   )}
@@ -224,10 +243,10 @@ const PatientsList = () => {
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={confirmDelete}
-        title="تأكيد الحذف"
-        message={`هل أنت متأكد من حذف سجل المريض ${patientToDelete?.name || ''}؟`}
-        confirmText="حذف"
-        cancelText="إلغاء"
+        title={t('delete_confirm_title', T)}
+        message={t('delete_confirm_msg', T).replace('{name}', isAr ? patientToDelete?.name_ar || '' : patientToDelete?.name_en || '')}
+        confirmText={t('delete', T)}
+        cancelText={t('cancel', T)}
         variant="danger"
       />
     </section>

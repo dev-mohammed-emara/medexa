@@ -12,18 +12,25 @@ import {
   SelectValue,
 } from "../../components/ui/select"
 import Portal from '../../components/ui/Portal'
+import { useLanguage } from '../../contexts/LanguageContext'
+import { secretaryTranslations } from '../../constants/translations/secretary'
+
+import { useBroadcast } from '../../hooks/useBroadcast';
 
 interface Secretary {
   id: number;
-  name: string;
-  role: string;
+  name_ar: string;
+  name_en: string;
+  role_ar: string;
+  role_en: string;
   status: string;
   phone: string;
   email: string;
-  initial: string;
-  description?: string;
-  gender?: string;
-  dob?: string;
+  gender_ar: string;
+  gender_en: string;
+  dob: string;
+  description_ar: string;
+  description_en: string;
   permissions?: string[];
 }
 
@@ -36,9 +43,12 @@ interface SecretaryDialogProps {
 }
 
 const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: SecretaryDialogProps) => {
+  const { isAr, t } = useLanguage();
+  const { broadcast } = useBroadcast();
+  const T = secretaryTranslations;
   const overlayRef = useRef<HTMLDivElement>(null);
-  const [selectedRole, setSelectedRole] = useState(initialData?.role || "");
-  const [selectedGender, setSelectedGender] = useState(initialData?.gender || "");
+  const [selectedRole, setSelectedRole] = useState((isAr ? initialData?.role_ar : initialData?.role_en) || "");
+  const [selectedGender, setSelectedGender] = useState((isAr ? initialData?.gender_ar : initialData?.gender_en) || "");
   const [isClosing, setIsClosing] = useState(false);
 
   const handleClose = useCallback(() => {
@@ -70,22 +80,36 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
       return;
     }
     const formData = new FormData(e.target as HTMLFormElement);
-    const data = Object.fromEntries(formData.entries());
+    const formDataObj = Object.fromEntries(formData.entries());
 
-    onConfirm({
+    const data: Partial<Secretary> = {
       ...initialData,
-      name: data['secretary-name'] as string,
-      email: data['secretary-email'] as string,
-      phone: data['secretary-phone'] as string,
-      role: selectedRole,
-      gender: selectedGender,
-      status: 'نشط',
-    });
+      name_ar: isAr ? formDataObj['secretary-name'] as string : initialData?.name_ar || '',
+      name_en: !isAr ? formDataObj['secretary-name'] as string : initialData?.name_en || '',
+      email: formDataObj['secretary-email'] as string,
+      phone: formDataObj['secretary-phone'] as string,
+      role_ar: isAr ? selectedRole : initialData?.role_ar || '',
+      role_en: !isAr ? selectedRole : initialData?.role_en || '',
+      gender_ar: isAr ? selectedGender : initialData?.gender_ar || '',
+      gender_en: !isAr ? selectedGender : initialData?.gender_en || '',
+      status: 'active',
+    };
+
+    onConfirm(data);
+    broadcast({ type: 'DATA_UPDATE', module: 'secretaries' });
     handleClose();
   };
 
-  const titles = { add: 'إضافة سكرتير/ة جديد', edit: 'تعديل بيانات السكرتارية', view: 'عرض بيانات السكرتارية' };
-  const descriptions = { add: 'أدخل معلومات الحساب الجديد للسكرتارية', edit: 'قم بتحديث معلومات الدخول والصلاحيات', view: 'عرض معلومات حساب السكرتارية' };
+  const titles = { 
+    add: t('title_add', T), 
+    edit: t('title_edit', T), 
+    view: t('title_view', T) 
+  };
+  const descriptions = { 
+    add: t('desc_add', T), 
+    edit: t('desc_edit', T), 
+    view: t('desc_view', T) 
+  };
   const inputId = (name: string) => `secretary-${name}-${mode}`;
   const inputClass = "rounded-xl h-12 text-foreground font-bold";
 
@@ -97,7 +121,7 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
           "fixed inset-0 z-500 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6",
           isClosing ? "animate-fadeOut" : "animate-fade"
         )}
-        dir="rtl"
+        dir={isAr ? "rtl" : "ltr"}
         onClick={(e) => e.target === overlayRef.current && handleClose()}
       >
         <figure
@@ -110,7 +134,10 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
           <button
             onClick={handleClose}
             type="button"
-            className="absolute top-6 right-6 p-2 rounded-full hover:bg-muted transition-colors opacity-70 hover:opacity-100 outline-none z-20"
+            className={cn(
+               "absolute top-6 p-2 rounded-full hover:bg-muted transition-colors opacity-70 hover:opacity-100 outline-none z-20",
+               isAr ? "right-6" : "left-6"
+            )}
           >
             <X size={20} />
             <span className="sr-only">Close</span>
@@ -125,23 +152,23 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
             <form id="secretaryForm" onSubmit={handleSubmit} className="space-y-6 py-2" autoComplete="off">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Name */}
-                <div className="flex flex-col gap-2">
-                  <label htmlFor={inputId('name')} className="text-sm font-semibold text-foreground/80 pr-1">الاسم الكامل</label>
+                <div className="flex flex-col gap-2 text-start">
+                  <label htmlFor={inputId('name')} className="text-sm font-semibold text-foreground/80 pr-1">{t('full_name', T)}</label>
                   <Input
                     id={inputId('name')}
                     name="secretary-name"
-                    defaultValue={initialData?.name}
+                    defaultValue={isAr ? initialData?.name_ar : initialData?.name_en}
                     required
                     disabled={mode === 'view'}
-                    placeholder="أدخل اسم الموظف الرباعي"
+                    placeholder={t('name_placeholder', T)}
                     icon={<User size={18} />}
                     className={inputClass}
                   />
                 </div>
 
                 {/* Email */}
-                <div className="flex flex-col gap-2">
-                  <label htmlFor={inputId('email')} className="text-sm font-semibold text-foreground/80 pr-1">البريد الإلكتروني</label>
+                <div className="flex flex-col gap-2 text-start">
+                  <label htmlFor={inputId('email')} className="text-sm font-semibold text-foreground/80 pr-1">{t('email', T)}</label>
                   <Input
                     id={inputId('email')}
                     type="email"
@@ -149,31 +176,31 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
                     defaultValue={initialData?.email}
                     required
                     disabled={mode === 'view'}
-                    placeholder="أدخل البريد الإلكتروني"
+                    placeholder={t('email_placeholder', T)}
                     icon={<Mail size={18} />}
                     className={inputClass}
                   />
                 </div>
 
                 {/* Role */}
-                <div className="flex flex-col gap-2">
-                  <label className="text-sm font-semibold text-foreground/80 pr-1">الدور الوظيفي</label>
+                <div className="flex flex-col gap-2 text-start">
+                  <label className="text-sm font-semibold text-foreground/80 pr-1">{t('job_role', T)}</label>
                   <Select value={selectedRole} onValueChange={setSelectedRole} disabled={mode === 'view'}>
-                    <SelectTrigger className={cn("rounded-xl h-12 bg-input-background transition-all focus:ring-4 focus:ring-primary/10", (initialData?.role || selectedRole) && "text-foreground font-bold")}>
-                      <SelectValue placeholder="اختر الدور" />
+                    <SelectTrigger className={cn("rounded-xl h-12 bg-input-background transition-all focus:ring-4 focus:ring-primary/10", ((isAr ? initialData?.role_ar : initialData?.role_en) || selectedRole) && "text-foreground font-bold")}>
+                      <SelectValue placeholder={t('choose_role', T)} />
                     </SelectTrigger>
-                    <SelectContent className="rounded-xl text-right z-[600]">
-                      <SelectItem value="سكرتيرة رئيسية">سكرتيرة رئيسية</SelectItem>
-                      <SelectItem value="استقبال">استقبال</SelectItem>
-                      <SelectItem value="محاسبة">محاسبة</SelectItem>
-                      <SelectItem value="إدارة عمليات">إدارة عمليات</SelectItem>
+                    <SelectContent className="rounded-xl z-[600]" dir={isAr ? "rtl" : "ltr"}>
+                      <SelectItem value="سكرتيرة رئيسية">{t('role_main', T)}</SelectItem>
+                      <SelectItem value="استقبال">{t('role_reception', T)}</SelectItem>
+                      <SelectItem value="محاسبة">{t('role_accounting', T)}</SelectItem>
+                      <SelectItem value="إدارة عمليات">{t('role_operations', T)}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 {/* Phone */}
-                <div className="flex flex-col gap-2">
-                  <label htmlFor={inputId('phone')} className="text-sm font-semibold text-foreground/80 pr-1">رقم الهاتف</label>
+                <div className="flex flex-col gap-2 text-start">
+                  <label htmlFor={inputId('phone')} className="text-sm font-semibold text-foreground/80 pr-1">{t('phone', T)}</label>
                   <Input
                     id={inputId('phone')}
                     name="secretary-phone"
@@ -188,29 +215,29 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
                 </div>
 
                 {/* Gender */}
-                <div className="flex flex-col gap-2">
-                  <label className="text-sm font-semibold text-foreground/80 pr-1">الجنس</label>
+                <div className="flex flex-col gap-2 text-start">
+                  <label className="text-sm font-semibold text-foreground/80 pr-1">{t('gender', T)}</label>
                   <Select value={selectedGender} onValueChange={setSelectedGender} disabled={mode === 'view'}>
-                    <SelectTrigger className={cn("rounded-xl h-12 bg-input-background transition-all focus:ring-4 focus:ring-primary/10", (initialData?.gender || selectedGender) && "text-foreground font-bold")}>
-                      <SelectValue placeholder="اختر الجنس" />
+                    <SelectTrigger className={cn("rounded-xl h-12 bg-input-background transition-all focus:ring-4 focus:ring-primary/10", ((isAr ? initialData?.gender_ar : initialData?.gender_en) || selectedGender) && "text-foreground font-bold")}>
+                      <SelectValue placeholder={t('choose_gender', T)} />
                     </SelectTrigger>
-                    <SelectContent className="rounded-xl text-right z-[600]">
-                      <SelectItem value="ذكر">ذكر</SelectItem>
-                      <SelectItem value="أنثى">أنثى</SelectItem>
+                    <SelectContent className="rounded-xl z-[600]" dir={isAr ? "rtl" : "ltr"}>
+                      <SelectItem value={isAr ? "ذكر" : "Male"}>{t('male', T)}</SelectItem>
+                      <SelectItem value={isAr ? "أنثى" : "Female"}>{t('female', T)}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
 
               {/* Permissions */}
-              <footer className="space-y-3 p-4 bg-muted/30 rounded-2xl border border-border">
-                <label className="text-lg font-bold block">الصلاحيات المتاحة</label>
-                <p className="text-xs text-muted-foreground mb-3">حدد صلاحيات الوصول والمهمات الموكلة للسكرتير/ة</p>
+              <footer className="space-y-3 p-4 bg-muted/30 rounded-2xl border border-border text-start">
+                <label className="text-lg font-bold block">{t('permissions', T)}</label>
+                <p className="text-xs text-muted-foreground mb-3">{t('permissions_desc', T)}</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 px-1">
-                  <PermissionCheckbox id="manageAppointments" label="إدارة المواعيد" defaultChecked={initialData?.permissions?.includes('manageAppointments') ?? true} disabled={mode === 'view'} />
-                  <PermissionCheckbox id="managePatients" label="إدارة المرضى" defaultChecked={initialData?.permissions?.includes('managePatients') ?? true} disabled={mode === 'view'} />
-                  <PermissionCheckbox id="medicalRecords" label="السجلات الطبية" defaultChecked={initialData?.permissions?.includes('medicalRecords') ?? false} disabled={mode === 'view'} />
-                  <PermissionCheckbox id="financialReports" label="التقارير المالية" defaultChecked={initialData?.permissions?.includes('financialReports')} disabled={mode === 'view'} />
+                  <PermissionCheckbox id="manageAppointments" label={t('perm_appointments', T)} defaultChecked={initialData?.permissions?.includes('manageAppointments') ?? true} disabled={mode === 'view'} />
+                  <PermissionCheckbox id="managePatients" label={t('perm_patients', T)} defaultChecked={initialData?.permissions?.includes('managePatients') ?? true} disabled={mode === 'view'} />
+                  <PermissionCheckbox id="medicalRecords" label={t('perm_records', T)} defaultChecked={initialData?.permissions?.includes('medicalRecords') ?? false} disabled={mode === 'view'} />
+                  <PermissionCheckbox id="financialReports" label={t('perm_financial', T)} defaultChecked={initialData?.permissions?.includes('financialReports')} disabled={mode === 'view'} />
                 </div>
               </footer>
             </form>
@@ -224,8 +251,8 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
                   form="secretaryForm"
                   className="flex-1 h-12 rounded-xl text-base shadow-lg shadow-primary/20"
                 >
-                  {mode === 'add' ? <Plus size={20} className="ml-2" /> : <Save size={20} className="ml-2" />}
-                  {mode === 'add' ? 'إضافة الموظف' : 'حفظ التعديلات'}
+                  {mode === 'add' ? <Plus size={20} className={cn(isAr ? "ml-2" : "mr-2")} /> : <Save size={20} className={cn(isAr ? "ml-2" : "mr-2")} />}
+                  {mode === 'add' ? t('add_employee', T) : t('save_changes', T)}
                 </Button>
                 <Button
                   type="button"
@@ -233,7 +260,7 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
                   onClick={handleClose}
                   className="flex-1 h-12 rounded-xl text-base"
                 >
-                  إلغاء
+                  {t('cancel', T)}
                 </Button>
               </>
             ) : (
@@ -243,7 +270,7 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
                 onClick={handleClose}
                 className="flex-1 h-12 rounded-xl text-base"
               >
-                إغلاق
+                {t('close', T)}
               </Button>
             )}
           </aside>

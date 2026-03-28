@@ -6,6 +6,7 @@ export const profileTranslations = {
       clinic_profile: "ملف العيادة",
       manage_profile: "إدارة المعلومات الشخصية ومعلومات العيادة",
       clinic_owner: "مالك العيادة",
+      doctor_name_val: "أحمد الحشيكا",
       change_email: "تغيير البريد الإلكتروني",
       personal_info: "المعلومات الشخصية",
       account_info: "معلومات الحساب",
@@ -14,6 +15,12 @@ export const profileTranslations = {
       discard_confirm_msg: "هل أنت متأكد من تجاهل التغييرات؟",
       discard_btn: "نعم، تجاهل",
       clinic_name: "اسم العيادة",
+      clinic_name_val: "عيادة النور الطبية",
+      specialty_val: "طب عام",
+      insurance_val: "التأمين الوطني الأردني",
+      city_val: "عمّان",
+      area_val: "الدوار السابع",
+      address_val: "عمّان، الدوار السابع، شارع الملكة رانيا العبدالله",
       full_address: "العنوان الكامل",
       sunday: "الأحد",
       monday: "الاثنين",
@@ -32,6 +39,8 @@ export const profileTranslations = {
       jordan: "الأردن",
       clinic_saved: "تم حفظ بيانات العيادة بنجاح",
       general_saved: "تم حفظ البيانات العامة بنجاح",
+      hours_saved: "تم حفظ مواعيد العمل بنجاح",
+      changes_canceled: "تم إلغاء التغييرات",
       discard_changes: "تجاهل التغييرات",
       change_email_desc: "لأمان حسابك، يرجى إدخال البريد الجديد وتأكيد كلمة المرور",
       current_email: "البريد الإلكتروني الحالي",
@@ -42,6 +51,8 @@ export const profileTranslations = {
       security_note: "بعد تغيير البريد الإلكتروني، سيتم إرسال رابط تأكيد إلى البريد الجديد",
       confirm_change: "تأكيد التغيير",
       close: "إغلاق",
+      cancel: "إلغاء",
+      save: "حفظ التعديلات"
     }
   },
   en: {
@@ -50,6 +61,7 @@ export const profileTranslations = {
       clinic_profile: "Clinic Profile",
       manage_profile: "Manage personal and clinic information",
       clinic_owner: "Clinic Owner",
+      doctor_name_val: "Ahmed Elhasaykeh",
       change_email: "Change Email",
       personal_info: "Personal Information",
       account_info: "Account Information",
@@ -58,6 +70,12 @@ export const profileTranslations = {
       discard_confirm_msg: "Are you sure you want to discard changes?",
       discard_btn: "Yes, Discard",
       clinic_name: "Clinic Name",
+      clinic_name_val: "Al-Noor Medical Clinic",
+      specialty_val: "General Medicine",
+      insurance_val: "Jordan National Insurance",
+      city_val: "Amman",
+      area_val: "Seventh Circle",
+      address_val: "Amman, Seventh Circle, Queen Rania Al Abdullah St.",
       full_address: "Full Address",
       sunday: "Sunday",
       monday: "Monday",
@@ -76,6 +94,8 @@ export const profileTranslations = {
       jordan: "Jordan",
       clinic_saved: "Clinic information saved successfully",
       general_saved: "General profile saved successfully",
+      hours_saved: "Working hours saved successfully",
+      changes_canceled: "Changes canceled",
       discard_changes: "Discard changes",
       change_email_desc: "For your security, please enter the new email and confirm your password",
       current_email: "Current Email",
@@ -86,6 +106,8 @@ export const profileTranslations = {
       security_note: "After changing the email, a confirmation link will be sent to the new email",
       confirm_change: "Confirm Change",
       close: "Close",
+      cancel: "Cancel",
+      save: "Save Changes"
     }
   }
 };

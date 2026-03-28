@@ -1,3 +1,4 @@
+import { useLanguage } from '@/contexts/LanguageContext';
 import { usePreloader } from '@/contexts/PreloaderContext';
 import gsap from 'gsap';
 import nProgress from 'nprogress';
@@ -7,6 +8,7 @@ import { useLocation } from 'react-router-dom';
 
 const Preloader = () => {
   const location = useLocation();
+  const { language } = useLanguage();
   const loaderRef = useRef<HTMLDivElement>(null);
   const logoRef = useRef<HTMLDivElement>(null);
   const { setIsLoaded, setIsExiting } = usePreloader();
@@ -139,7 +141,7 @@ const Preloader = () => {
 
   useLayoutEffect(() => {
     revealTransition();
-  }, [location.pathname, revealTransition]);
+  }, [location.pathname, language, revealTransition]);
 
   return (
     <div

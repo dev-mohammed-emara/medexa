@@ -16,26 +16,42 @@ import DoctorDialog from './DoctorDialog'
 import Modal from '../../components/ui/Modal'
 import { initialDoctors } from '../../constants/Doctors_dummy'
 import { Button } from '../../components/ui/Button'
+import { useLanguage } from '../../contexts/LanguageContext'
+import { doctorsTranslations } from '../../constants/translations/doctors'
+import { useBroadcast } from '../../hooks/useBroadcast'
 
 interface Doctor {
   id: number;
-  name: string;
-  specialty: string;
+  name_ar: string;
+  name_en: string;
+  specialty_ar: string;
+  specialty_en: string;
   status: string;
   phone: string;
   email: string;
   patients: number;
   revenue: string;
-  initial: string;
-  description?: string;
-  gender?: string;
-  dob?: string;
+  initial_ar: string;
+  initial_en: string;
+  gender_ar: string;
+  gender_en: string;
+  dob: string;
+  description_ar: string;
+  description_en: string;
   permissions?: string[];
 }
 
 const DoctorsList = () => {
+  const { isAr, t } = useLanguage();
+  const T = doctorsTranslations;
   const { isLoaded, isExiting } = usePreloader()
   const canAnimate = isLoaded && !isExiting
+
+  const { broadcast } = useBroadcast((event) => {
+    if (event.type === 'DATA_UPDATE' && event.module === 'doctors') {
+      console.log('Doctors data updated in another tab');
+    }
+  });
 
   // State management
   const [doctorsList, setDoctorsList] = useState<Doctor[]>(initialDoctors);
@@ -55,20 +71,30 @@ const DoctorsList = () => {
     if (dialogMode === 'add') {
       const newDoctor: Doctor = {
         id: Date.now(),
-        name: data.name || '',
-        specialty: data.specialty || '',
-        status: 'نشط',
+        name_ar: data.name_ar || (isAr ? data.name_en || '' : ''),
+        name_en: data.name_en || (!isAr ? data.name_ar || '' : ''),
+        specialty_ar: data.specialty_ar || (isAr ? data.specialty_en || '' : ''),
+        specialty_en: data.specialty_en || (!isAr ? data.specialty_ar || '' : ''),
+        status: 'active',
         phone: data.phone || '',
         email: data.email || '',
         patients: Number(data.patients) || 0,
         revenue: data.revenue || '0',
-        initial: (data.name as string)?.split(' ')[1]?.[0] || (data.name as string)?.[0] || 'د'
+        initial_ar: data.initial_ar || (isAr ? (data.name_ar as string)?.[0] || 'د' : 'د'),
+        initial_en: data.initial_en || (!isAr ? (data.name_en as string)?.[0] || 'D' : 'D'),
+        gender_ar: data.gender_ar || 'ذكر',
+        gender_en: data.gender_en || 'Male',
+        dob: data.dob || '1990-01-01',
+        description_ar: data.description_ar || '',
+        description_en: data.description_en || '',
       };
       setDoctorsList(prev => [...prev, newDoctor]);
-      window.showToast?.('تم إضافة الطبيب بنجاح');
+      broadcast({ type: 'DATA_UPDATE', module: 'doctors' });
+      window.showToast?.(t('toast_add_success', T));
     } else if (dialogMode === 'edit' && currentDoctor) {
       setDoctorsList(prev => prev.map(doc => doc.id === currentDoctor.id ? { ...doc, ...data } : doc));
-      window.showToast?.('تم تحديث بيانات الطبيب بنجاح');
+      broadcast({ type: 'DATA_UPDATE', module: 'doctors' });
+      window.showToast?.(t('toast_update_success', T));
     }
   };
 
@@ -80,28 +106,29 @@ const DoctorsList = () => {
   const confirmDelete = () => {
     if (doctorToDelete) {
       setDoctorsList(prev => prev.filter(doc => doc.id !== doctorToDelete.id));
+      broadcast({ type: 'DATA_UPDATE', module: 'doctors' });
     }
     setIsDeleteModalOpen(false);
-    window.showToast?.('تم حذف الطبيب بنجاح');
+    window.showToast?.(t('toast_delete_success', T));
   };
 
   return (
-    <div className="space-y-6" dir="rtl">
+    <div className="space-y-6" dir={isAr ? "rtl" : "ltr"}>
       {/* Page Header */}
       <section className={cn(
         "flex items-center justify-between opacity-0",
         canAnimate && "animate-fadeDown animate-delay-100"
       )}>
-        <div>
-          <h1 className="text-3xl mb-1" style={{ fontWeight: 700 }}>إدارة الأطباء</h1>
-          <p className="text-muted-foreground">إدارة حسابات الأطباء وصلاحياتهم</p>
+        <div className="text-start">
+          <h1 className="text-3xl mb-1" style={{ fontWeight: 700 }}>{t('page_title', T)}</h1>
+          <p className="text-muted-foreground">{t('page_desc', T)}</p>
         </div>
         <Button
           onClick={() => handleOpenDialog('add')}
           className="h-10 px-6 rounded-xl"
         >
-          <Plus className="size-4 ml-2" />
-          إضافة طبيب
+          <Plus className={cn("size-4", isAr ? "ml-2" : "mr-2")} />
+          {t('add_button', T)}
         </Button>
       </section>
 
@@ -141,12 +168,12 @@ const DoctorsList = () => {
                         data-slot="avatar-fallback"
                         className="flex size-full items-center justify-center rounded-full bg-primary text-white text-xl font-bold"
                       >
-                        {doctor.initial}
+                        {(isAr ? doctor.name_ar : doctor.name_en).replace(/^د\.\s*/, '').replace(/^Dr\.\s*/, '')[0]}
                       </span>
                     </div>
                     <div className="flex-1">
-                      <h3 className="text-lg mb-1 line-clamp-1" style={{ fontWeight: 600 }}>{doctor.name}</h3>
-                      <p className="text-sm text-muted-foreground mb-2 line-clamp-1">{doctor.specialty}</p>
+                      <h3 className="text-lg mb-1 line-clamp-1" style={{ fontWeight: 600 }}>{isAr ? doctor.name_ar : doctor.name_en}</h3>
+                      <p className="text-sm text-muted-foreground mb-2 line-clamp-1">{isAr ? doctor.specialty_ar : doctor.specialty_en}</p>
                       <span
                         data-slot="badge"
                         className={cn(
@@ -154,7 +181,7 @@ const DoctorsList = () => {
                           canAnimate && "animate-snappyToRight animate-delay-400"
                         )}
                       >
-                        {doctor.status}
+                        {t('active_status', T)}
                       </span>
                     </div>
                   </figure>
@@ -176,16 +203,16 @@ const DoctorsList = () => {
                     <div className="text-center">
                       <div className="flex items-center justify-center gap-1 mb-1">
                         <Users className="size-4 text-primary" />
-                        <p className="text-xs text-muted-foreground">المرضى</p>
+                        <p className="text-xs text-muted-foreground">{t('patients', T)}</p>
                       </div>
                       <p className="text-lg font-bold">{doctor.patients}</p>
                     </div>
                     <div className="text-center">
                       <div className="flex items-center justify-center gap-1 mb-1">
                         <DollarSign className="size-4 text-secondary" />
-                        <p className="text-xs text-muted-foreground">الإيرادات</p>
+                        <p className="text-xs text-muted-foreground">{t('revenue', T)}</p>
                       </div>
-                      <p className="text-sm font-bold">{doctor.revenue} د.أ</p>
+                      <p className="text-sm font-bold">{doctor.revenue} {t('currency', T)}</p>
                     </div>
                   </div>
 
@@ -197,8 +224,8 @@ const DoctorsList = () => {
                       onClick={() => handleOpenDialog('view', doctor)}
                       className="flex-1 rounded-lg gap-1.5 h-auto"
                     >
-                      <Eye className="size-4 ml-1 " />
-                      عرض
+                      <Eye className={cn("size-4", isAr ? "ml-1" : "mr-1")} />
+                      {t('view', T)}
                     </Button>
                     <Button
                       variant="outline"
@@ -206,8 +233,8 @@ const DoctorsList = () => {
                       onClick={() => handleOpenDialog('edit', doctor)}
                       className="flex-1 rounded-lg gap-1.5 h-auto"
                     >
-                      <SquarePen className="size-4 ml-1" />
-                      تعديل
+                      <SquarePen className={cn("size-4", isAr ? "ml-1" : "mr-1")} />
+                      {t('edit', T)}
                     </Button>
                     <Button
                       variant="outline"
@@ -232,16 +259,16 @@ const DoctorsList = () => {
             <div className="size-28 rounded-full bg-primary/10 flex items-center justify-center mb-8 animate-hovering border border-primary/20 shadow-inner backdrop-blur-sm">
               <HiOutlineXMark className="size-14 text-primary" />
             </div>
-            <h3 className="text-3xl font-bold text-foreground mb-3">لا يوجد أطباء مضافون</h3>
+            <h3 className="text-3xl font-bold text-foreground mb-3">{t('no_doctors', T)}</h3>
             <p className="text-muted-foreground max-w-lg mb-10 text-lg">
-              ابدأ ببناء فريقك الطبي المتميز. قم بإضافة الأطباء الآن لتتمكن من إدارة جداولهم ومرضاهم بكل سلاسة وإحترافية.
+              {t('no_doctors_desc', T)}
             </p>
             <button
               onClick={() => handleOpenDialog('add')}
               className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-2xl text-lg font-bold transition-all duration-300 hover:shadow-2xl hover:shadow-primary/20 hover:-translate-y-1 active:translate-y-0 active:shadow-md text-primary-foreground bg-primary hover:bg-primary/90 h-14 px-10 shadow-lg"
             >
-              <Plus className="size-6 ml-2" />
-              إضافة أول طبيب
+              <Plus className={cn("size-6", isAr ? "ml-2" : "mr-2")} />
+              {t('add_new_button', T)}
             </button>
           </div>
         )}
@@ -261,10 +288,10 @@ const DoctorsList = () => {
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={confirmDelete}
-        title="تأكيد الحذف"
-        message={`هل أنت متأكد من حذف الطبيب ${doctorToDelete?.name || ''}؟ لا يمكن التراجع عن هذا الإجراء.`}
-        confirmText="حذف"
-        cancelText="إلغاء"
+        title={t('delete_confirm_title', T)}
+        message={t('delete_confirm_msg', T).replace('{name}', isAr ? doctorToDelete?.name_ar || '' : doctorToDelete?.name_en || '')}
+        confirmText={t('delete', T)}
+        cancelText={t('cancel', T)}
         variant="danger"
       />
     </div>

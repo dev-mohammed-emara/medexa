@@ -1,80 +1,108 @@
 export interface Patient {
   id: number;
-  name: string;
+  name_ar: string;
+  name_en: string;
   phone: string;
   age: number;
-  gender: string;
+  gender_ar: string;
+  gender_en: string;
   lastVisit: string;
   dob: string;
-  address: string;
-  notes: string;
+  address_ar: string;
+  address_en: string;
+  notes_ar: string;
+  notes_en: string;
 }
 
 export const initialPatients: Patient[] = [
   {
     id: 1,
-    name: 'أحمد محمد',
+    name_ar: 'أحمد محمد',
+    name_en: 'Ahmed Mohammed',
     phone: '0791234567',
     age: 45,
-    gender: 'ذكر',
+    gender_ar: 'ذكر',
+    gender_en: 'Male',
     lastVisit: '2024-03-20',
     dob: '1979-05-15',
-    address: 'عمان، تلاع العلي، شارع الصحة، بناية 45',
-    notes: 'يعاني من ضغط الدم المرتفع ويحتاج لمتابعة شهرية مع دواء لوزارتان'
+    address_ar: 'عمان، تلاع العلي، شارع الصحة، بناية 45',
+    address_en: 'Amman, Tla Al-Ali, Health St, Building 45',
+    notes_ar: 'يعاني من ضغط الدم المرتفع ويحتاج لمتابعة شهرية مع دواء لوزارتان',
+    notes_en: 'Suffers from high blood pressure and needs monthly follow-up with Losartan'
   },
   {
     id: 2,
-    name: 'سارة أحمد',
+    name_ar: 'سارة أحمد',
+    name_en: 'Sara Ahmed',
     phone: '0787654321',
     age: 32,
-    gender: 'أنثى',
+    gender_ar: 'أنثى',
+    gender_en: 'Female',
     lastVisit: '2024-03-22',
     dob: '1992-10-10',
-    address: 'إربد، الحي الشمالي، دخلة مسجد عمار، منزل 12',
-    notes: 'متابعة دورية لحالة الصداع النصفي'
+    address_ar: 'إربد، الحي الشمالي، دخلة مسجد عمار، منزل 12',
+    address_en: 'Irbid, Northern District, Ammar Mosque, House 12',
+    notes_ar: 'متابعة دورية لحالة الصداع النصفي',
+    notes_en: 'Regular follow-up for migraine condition'
   },
   {
     id: 3,
-    name: 'محمود علي',
+    name_ar: 'محمود علي',
+    name_en: 'Mahmoud Ali',
     phone: '0771122334',
     age: 28,
-    gender: 'ذكر',
+    gender_ar: 'ذكر',
+    gender_en: 'Male',
     lastVisit: '2024-03-15',
     dob: '1996-02-25',
-    address: 'عمان، صويلح، حي الإرسال، مقابل البريد',
-    notes: 'لديه حساسية من البنسلين ومنتجات الألبان'
+    address_ar: 'عمان، صويلح، حي الإرسال، مقابل البريد',
+    address_en: 'Amman, Sweileh, Al-Irsal neighborhood, opposite the post office',
+    notes_ar: 'لديه حساسية من البنسلين ومنتجات الألبان',
+    notes_en: 'Allergic to penicillin and dairy products'
   },
   {
     id: 4,
-    name: 'ليلى يوسف',
+    name_ar: 'ليلى يوسف',
+    name_en: 'Layla Yousef',
     phone: '0790099887',
     age: 50,
-    gender: 'أنثى',
+    gender_ar: 'أنثى',
+    gender_en: 'Female',
     lastVisit: '2024-03-18',
     dob: '1974-07-30',
-    address: 'الزرقاء، الوسط التجاري، شارع الجيش، عمارة النجاح',
-    notes: 'مراجعة أولى لفحوصات السكري التراكمي'
+    address_ar: 'الزرقاء، الوسط التجاري، شارع الجيش، عمارة النجاح',
+    address_en: 'Zarqa, City Center, Army St, Al-Najah Building',
+    notes_ar: 'مراجعة أولى لفحوصات السكري التراكمي',
+    notes_en: 'First review for cumulative diabetes tests'
   },
   {
     id: 5,
-    name: 'خالد عمر',
+    name_ar: 'خالد عمر',
+    name_en: 'Khaled Omar',
     phone: '0785566778',
     age: 40,
-    gender: 'ذكر',
+    gender_ar: 'ذكر',
+    gender_en: 'Male',
     lastVisit: '2024-03-21',
     dob: '1984-12-05',
-    address: 'عمان، الجبيهة، حي الزيتونة، بناية الصقر',
-    notes: 'مريض سكري من النوع الثاني ويتمتع بنظام غذائي متوازن'
+    address_ar: 'عمان، الجبيهة، حي الزيتونة، بناية الصقر',
+    address_en: 'Amman, Jubaiha, Al-Zaitounah neighborhood, Al-Saqr Building',
+    notes_ar: 'مريض سكري من النوع الثاني ويتمتع بنظام غذائي متوازن',
+    notes_en: 'Type 2 diabetic with a balanced diet'
   },
   {
     id: 6,
-    name: 'منى عبدالله',
+    name_ar: 'منى عبدالله',
+    name_en: 'Muna Abdullah',
     phone: '0774433221',
     age: 25,
-    gender: 'أنثى',
+    gender_ar: 'أنثى',
+    gender_en: 'Female',
     lastVisit: '2024-03-19',
     dob: '1999-03-15',
-    address: 'عمان، مرج الحمام، حي السلام، منزل 88',
-    notes: 'متابعة بخصوص ضعف النظر وتحتاج لفحص دوري'
+    address_ar: 'عمان، مرج الحمام، حي السلام، منزل 88',
+    address_en: 'Amman, Marj Al-Hamam, Al-Salam neighborhood, House 88',
+    notes_ar: 'متابعة بخصوص ضعف النظر وتحتاج لفحص دوري',
+    notes_en: 'Follow-up regarding poor vision and needs a regular exam'
   },
 ];

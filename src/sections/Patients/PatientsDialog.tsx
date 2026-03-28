@@ -17,8 +17,12 @@ import {
   SelectValue,
 } from "../../components/ui/select";
 import type { Patient } from '../../constants/Patients_dummy';
+import { useBroadcast } from '../../hooks/useBroadcast';
 import { cn } from '../../utils/cn';
 import Portal from '../../components/ui/Portal';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { patientsTranslations } from '../../constants/translations/patients';
+import { enUS } from 'date-fns/locale';
 
 interface PatientsDialogProps {
   isOpen: boolean;
@@ -29,9 +33,13 @@ interface PatientsDialogProps {
 }
 
 const PatientsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: PatientsDialogProps) => {
+  const { t, isAr } = useLanguage();
+  const { broadcast } = useBroadcast();
+  const T = patientsTranslations;
+  const currentLocale = isAr ? ar : enUS;
   const overlayRef = useRef<HTMLDivElement>(null);
   const [isClosing, setIsClosing] = useState(false);
-  const [selectedGender, setSelectedGender] = useState(initialData?.gender || "");
+  const [selectedGender, setSelectedGender] = useState((isAr ? initialData?.gender_ar : initialData?.gender_en) || "");
   const [selectedDob, setSelectedDob] = useState<string>(initialData?.dob || "");
 
   const handleClose = useCallback(() => {
@@ -63,17 +71,23 @@ const PatientsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Patie
       return;
     }
     const formData = new FormData(e.target as HTMLFormElement);
-    const data = Object.fromEntries(formData.entries());
+    const formDataObj = Object.fromEntries(formData.entries());
 
     onConfirm({
-      name: data['name'] as string,
-      phone: data['phone'] as string,
-      gender: selectedGender,
+      ...initialData,
+      name_ar: isAr ? formDataObj['name'] as string : initialData?.name_ar || '',
+      name_en: !isAr ? formDataObj['name'] as string : initialData?.name_en || '',
+      phone: formDataObj['phone'] as string,
+      gender_ar: isAr ? selectedGender : initialData?.gender_ar || '',
+      gender_en: !isAr ? selectedGender : initialData?.gender_en || '',
       dob: selectedDob,
-      address: data['address'] as string,
-      notes: data['notes'] as string,
+      address_ar: isAr ? formDataObj['address'] as string : initialData?.address_ar || '',
+      address_en: !isAr ? formDataObj['address'] as string : initialData?.address_en || '',
+      notes_ar: isAr ? formDataObj['notes'] as string : initialData?.notes_ar || '',
+      notes_en: !isAr ? formDataObj['notes'] as string : initialData?.notes_en || '',
       age: calculateAge(selectedDob) || initialData?.age || 0,
     });
+    broadcast({ type: 'DATA_UPDATE', module: 'patients' });
     handleClose();
   };
 
@@ -90,8 +104,16 @@ const PatientsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Patie
     return age;
   };
 
-  const titles = { add: 'إضافة مريض جديد', edit: 'تعديل بيانات المريض', view: 'عرض بيانات المريض' };
-  const descriptions = { add: 'أدخل المعلومات الكاملة للمريض الجديد في النظام', edit: 'قم بتحديث سجل المعلومات الخاص بالمريض', view: 'عرض السجل الطبي والمعلومات الشخصية للمريض' };
+  const titles = { 
+    add: t('dialog.title_add', T), 
+    edit: t('dialog.title_edit', T), 
+    view: t('dialog.title_view', T) 
+  };
+  const descriptions = { 
+    add: t('dialog.desc_add', T), 
+    edit: t('dialog.desc_edit', T), 
+    view: t('dialog.desc_view', T) 
+  };
 
   return (
     <Portal>
@@ -101,7 +123,7 @@ const PatientsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Patie
           "fixed inset-0 z-500 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4",
           isClosing ? "animate-fadeOut" : "animate-fade"
         )}
-        dir="rtl"
+        dir={isAr ? "rtl" : "ltr"}
         onClick={(e) => e.target === overlayRef.current && handleClose()}
       >
         <div
@@ -114,10 +136,10 @@ const PatientsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Patie
           <button
             onClick={handleClose}
             type="button"
-            className="absolute top-6 right-6 p-2 rounded-full hover:bg-muted transition-colors opacity-70 hover:opacity-100 outline-none z-20"
+            className={cn("absolute top-6 p-2 rounded-full hover:bg-muted transition-colors opacity-70 hover:opacity-100 outline-none z-20", isAr ? "right-6" : "left-6")}
           >
             <X className="size-5" />
-            <span className="sr-only">Close</span>
+            <span className="sr-only">{t('dialog.close', T)}</span>
           </button>
 
           <header data-slot="dialog-header" className="flex flex-col gap-2 text-center mb-6">
@@ -133,10 +155,10 @@ const PatientsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Patie
                 <div className="flex flex-col xs:grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Name */}
                   <div className="flex flex-col gap-2 col-span-2">
-                    <label className="text-sm font-semibold text-foreground/80 pr-1">اسم المريض</label>
+                    <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.full_name', T)}</label>
                     <Input
                       name="name"
-                      defaultValue={initialData?.name || ""}
+                      defaultValue={isAr ? initialData?.name_ar : initialData?.name_en}
                       required
                       disabled={mode === 'view'}
                       placeholder="أدخل الاسم الرباعي"
@@ -147,7 +169,7 @@ const PatientsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Patie
 
                   {/* Phone */}
                   <div className="flex flex-col gap-2">
-                    <label className="text-sm font-semibold text-foreground/80 pr-1">رقم الهاتف</label>
+                    <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.phone', T)}</label>
                     <Input
                       name="phone"
                       defaultValue={initialData?.phone || ""}
@@ -162,36 +184,37 @@ const PatientsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Patie
 
                   {/* Gender */}
                   <div className="flex flex-col gap-2">
-                    <label className="text-sm font-semibold text-foreground/80 pr-1">الجنس</label>
+                    <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.gender', T)}</label>
                     <Select value={selectedGender} onValueChange={setSelectedGender} disabled={mode === 'view'}>
-                      <SelectTrigger className={cn("rounded-xl h-12 bg-input-background transition-all focus:ring-4 focus:ring-primary/10", (initialData?.gender || selectedGender) && "text-foreground font-bold")}>
-                        <SelectValue placeholder="اختر الجنس" />
+                      <SelectTrigger className={cn("rounded-xl h-12 bg-input-background transition-all focus:ring-4 focus:ring-primary/10", ((isAr ? initialData?.gender_ar : initialData?.gender_en) || selectedGender) && "text-foreground font-bold")}>
+                        <SelectValue placeholder={t('dialog.gender', T)} />
                       </SelectTrigger>
-                      <SelectContent className="rounded-xl text-right z-600">
-                        <SelectItem value="ذكر">ذكر</SelectItem>
-                        <SelectItem value="أنثى">أنثى</SelectItem>
+                      <SelectContent className={cn("rounded-xl z-600", isAr ? "text-right" : "text-left")}>
+                        <SelectItem value="ذكر">{t('dialog.male', T)}</SelectItem>
+                        <SelectItem value="أنثى">{t('dialog.female', T)}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   {/* DOB */}
                   <div className="flex flex-col gap-2">
-                    <label className="text-sm font-semibold text-foreground/80 pr-1">تاريخ الميلاد</label>
-                    <div className="relative group flex items-center justify-between h-12 bg-input-background border border-border rounded-xl px-4 transition-all focus-within:ring-4 focus-within:ring-primary/10">
+                    <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.dob', T)}</label>
+                    <div className={cn("relative group flex items-center justify-between h-12 bg-input-background border border-border rounded-xl px-4 transition-all focus-within:ring-4 focus-within:ring-primary/10", isAr ? "flex-row" : "flex-row-reverse")}>
                       <Flatpickr
                         value={selectedDob}
                         onChange={([date]) => setSelectedDob(date ? date.toISOString().split('T')[0] : '')}
                         disabled={mode === 'view'}
                         options={{
-                          locale: Arabic,
+                          locale: isAr ? Arabic : undefined,
                           dateFormat: "d F Y",
                           disableMobile: true,
                           maxDate: "today",
-                          formatDate: (date: Date) => format(date, "d MMMM yyyy", { locale: ar })
+                          formatDate: (date: Date) => format(date, "d MMMM yyyy", { locale: currentLocale })
                         }}
-                        placeholder="اختر التاريخ"
+                        placeholder={t('dialog.dob', T)}
                         className={cn(
-                          "flex-1 bg-transparent border-none outline-none text-right font-bold h-full text-base md:text-sm",
+                          "flex-1 bg-transparent border-none outline-none font-bold h-full text-base md:text-sm",
+                          isAr ? "text-right" : "text-left",
                           mode === 'view' && "opacity-50 cursor-not-allowed"
                         )}
                       />
@@ -201,12 +224,12 @@ const PatientsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Patie
 
                   {/* Address */}
                   <div className="flex flex-col gap-2">
-                    <label className="text-sm font-semibold text-foreground/80 pr-1">العنوان</label>
+                    <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.address', T)}</label>
                     <Input
                       name="address"
-                      defaultValue={initialData?.address || ""}
+                      defaultValue={isAr ? initialData?.address_ar : initialData?.address_en}
                       disabled={mode === 'view'}
-                      placeholder="المدينة، المنطقة، الشارع"
+                      placeholder={t('dialog.address', T)}
                       icon={<MapPin size={18} />}
                       className="font-bold rounded-xl h-12"
                     />
@@ -214,19 +237,20 @@ const PatientsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Patie
 
                   {/* Notes */}
                   <div className="flex flex-col gap-2 col-span-2">
-                    <label className="text-sm font-semibold text-foreground/80 pr-1">ملاحظات طبية / إضافية</label>
+                    <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.notes', T)}</label>
                     <div className="relative group">
                       <textarea
                         name="notes"
-                        defaultValue={initialData?.notes || ""}
+                        defaultValue={isAr ? initialData?.notes_ar : initialData?.notes_en}
                         disabled={mode === 'view'}
                         className={cn(
-                          "w-full min-h-24 p-4 pr-12 rounded-xl border border-border bg-input-background text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all resize-none disabled:opacity-50 placeholder:text-muted-foreground font-bold"
+                          "w-full min-h-24 p-4 rounded-xl border border-border bg-input-background text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all resize-none disabled:opacity-50 placeholder:text-muted-foreground font-bold",
+                          isAr ? "pr-12" : "pl-12"
                         )}
-                        placeholder="أدخل أي ملاحظات طبية أو حساسية..."
+                        placeholder={t('dialog.notes', T)}
                         rows={3}
                       />
-                      <FileText className="absolute right-4 top-4 text-muted-foreground pointer-events-none group-focus-within:text-primary transition-colors size-[18px]" />
+                      <FileText className={cn("absolute top-4 text-muted-foreground pointer-events-none group-focus-within:text-primary transition-colors size-[18px]", isAr ? "right-4" : "left-4")} />
                     </div>
                   </div>
                 </div>
@@ -238,7 +262,7 @@ const PatientsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Patie
             {mode === 'add' && (
               <>
                 <Button type="submit" form="patientForm" className="flex-1 h-12 rounded-xl text-base shadow-lg shadow-primary/20">
-                  <Plus size={20} className="ml-2" /> حفظ المريض
+                  <Plus size={20} className={isAr ? "ml-2" : "mr-2"} /> {t('dialog.add', T)}
                 </Button>
                 <Button
                   type="button"
@@ -246,14 +270,14 @@ const PatientsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Patie
                   onClick={handleClose}
                   className="flex-1 h-12 rounded-xl text-base"
                 >
-                  إلغاء
+                  {t('cancel', T)}
                 </Button>
               </>
             )}
             {mode === 'edit' && (
               <>
                 <Button type="submit" form="patientForm" className="flex-1 h-12 rounded-xl text-base shadow-lg shadow-primary/20">
-                  <Save size={20} className="ml-2" /> تحديث البيانات
+                  <Save size={20} className={isAr ? "ml-2" : "mr-2"} /> {t('dialog.save', T)}
                 </Button>
                 <Button
                   type="button"
@@ -261,14 +285,14 @@ const PatientsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Patie
                   onClick={handleClose}
                   className="flex-1 h-12 rounded-xl text-base"
                 >
-                  إلغاء
+                  {t('cancel', T)}
                 </Button>
               </>
             )}
             {mode === 'view' && (
               <>
                 <Button type="button" onClick={() => window.print()} className="flex-1 h-12 rounded-xl text-base shadow-lg shadow-primary/20">
-                   <Printer size={20} className="ml-2" /> طباعة السجل
+                   <Printer size={20} className={isAr ? "ml-2" : "mr-2"} /> {t('dialog.print', T) || 'طباعة'}
                 </Button>
                 <Button
                   type="button"
@@ -276,7 +300,7 @@ const PatientsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Patie
                   onClick={handleClose}
                   className="flex-1 h-12 rounded-xl text-base"
                 >
-                  إغلاق
+                  {t('dialog.close', T)}
                 </Button>
               </>
             )}

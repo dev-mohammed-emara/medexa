@@ -22,37 +22,51 @@ import {
 import Flatpickr from 'react-flatpickr';
 import 'flatpickr/dist/themes/material_green.css';
 import { usePreloader } from '../../contexts/PreloaderContext';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { financeTranslations } from '../../constants/translations/finance';
 import { cn } from '../../utils/cn';
+import { useBroadcast } from '../../hooks/useBroadcast';
 import AddOperationModal from './AddOperationModal';
 
-const CHART_DATA = [
-  { name: 'يناير', دخل: 25000, مصروفات: 15000 },
-  { name: 'فبراير', دخل: 32000, مصروفات: 21000 },
-  { name: 'مارس', دخل: 28000, مصروفات: 18000 },
-  { name: 'أبريل', دخل: 35000, مصروفات: 25000 },
-  { name: 'مايو', دخل: 40000, مصروفات: 28000 },
-  { name: 'يونيو', دخل: 38000, مصروفات: 22000 },
+const getChartData = (t: any, T: any) => [
+  { name: t('january', T) || 'Jan', دخل: 25000, مصروفات: 15000 },
+  { name: t('february', T) || 'Feb', دخل: 32000, مصروفات: 21000 },
+  { name: t('march', T) || 'Mar', دخل: 28000, مصروفات: 18000 },
+  { name: t('april', T) || 'Apr', دخل: 35000, مصروفات: 25000 },
+  { name: t('may', T) || 'May', دخل: 40000, مصروفات: 28000 },
+  { name: t('june', T) || 'Jun', دخل: 38000, مصروفات: 22000 },
 ];
 
-const TRANSACTIONS = [
-  { id: 1, type: 'دخل', amount: '500', currency: 'د.أ', date: '٢٨/٢/٢٠٢٦', related: 'موعد #123', notes: 'كشف عام' },
-  { id: 2, type: 'مصروف', amount: '1,200', currency: 'د.أ', date: '٢٧/٢/٢٠٢٦', related: '-', notes: 'شراء معدات طبية' },
-  { id: 3, type: 'دخل', amount: '750', currency: 'د.أ', date: '٢٦/٢/٢٠٢٦', related: 'موعد #122', notes: 'كشف أطفال' },
-  { id: 4, type: 'دخل', amount: '300', currency: 'د.أ', date: '٢٥/٢/٢٠٢٦', related: 'موعد #121', notes: 'متابعة ناتجة' },
-  { id: 5, type: 'مصروف', amount: '150', currency: 'د.أ', date: '٢٤/٢/٢٠٢٦', related: '-', notes: 'كهرباء ومياه' },
+const getTransactions = (t: any, T: any, isAr: boolean) => [
+  { id: 1, type: 'دخل', amount: '500', currency: 'د.أ', date: '28/02/2026', related: isAr ? 'موعد #123' : 'Appointment #123', notes: t('general_exam', T) || 'General Exam' },
+  { id: 2, type: 'مصروف', amount: '1,200', currency: 'د.أ', date: '27/02/2026', related: '-', notes: t('buy_equip', T) || 'Buy Medical Equipment' },
+  { id: 3, type: 'دخل', amount: '750', currency: 'د.أ', date: '26/02/2026', related: isAr ? 'موعد #122' : 'Appointment #122', notes: t('kids_exam', T) || 'Kids Exam' },
+  { id: 4, type: 'دخل', amount: '300', currency: 'د.أ', date: '25/02/2026', related: isAr ? 'موعد #121' : 'Appointment #121', notes: t('follow_up', T) || 'Follow-up' },
+  { id: 5, type: 'مصروف', amount: '150', currency: 'د.أ', date: '24/02/2026', related: '-', notes: t('utilities', T) || 'Electricity and Water' },
 ];
 
 const FinanceOverview = () => {
+  const { isAr, t, dir } = useLanguage();
+  const T = financeTranslations;
   const { isLoaded, isExiting } = usePreloader();
   const canAnimate = isLoaded && !isExiting;
+
+  const { broadcast } = useBroadcast((event) => {
+    if (event.type === 'DATA_UPDATE' && event.module === 'finance') {
+      console.log('Finance data updated in another tab');
+    }
+  });
 
   const [fromDate, setFromDate] = useState<Date | string>("2026-02-01");
   const [toDate, setToDate] = useState<Date | string>("2026-02-28");
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  const chartData = getChartData(t, T);
+  const transactions = getTransactions(t, T, isAr);
+
   const commonOptions = {
     dateFormat: 'd F Y',
-    locale: Arabic,
+    locale: isAr ? Arabic : undefined,
     disableMobile: true
   };
 
@@ -62,31 +76,31 @@ const FinanceOverview = () => {
   };
 
   return (
-    <section className="flex-1 space-y-6 overflow-auto" dir="rtl">
+    <section className="flex-1 space-y-6 overflow-auto" dir={dir}>
       {/* Header */}
       <header
         className="flex items-center justify-between transition-all duration-500"
         style={{ opacity: canAnimate ? 1 : 0, transform: canAnimate ? 'none' : 'translateY(10px)' }}
       >
-        <div>
-          <h1 className="text-3xl mb-1 font-bold">المالية</h1>
-          <p className="text-muted-foreground">إدارة الإيرادات والمصروفات</p>
+        <div className={cn(isAr ? "text-right" : "text-left")}>
+          <h1 className="text-3xl mb-1 font-bold">{t('page_title', T)}</h1>
+          <p className="text-muted-foreground">{t('page_desc', T)}</p>
         </div>
         <button
           onClick={() => setIsModalOpen(true)}
           className="inline-flex items-center justify-center gap-2 rounded-md text-sm font-bold transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md text-primary-foreground bg-primary hover:bg-primary/90 h-10 px-6 shadow-sm shadow-primary/20"
         >
-          <Plus className="size-5 ml-1" />
-          إضافة عملية
+          <Plus className={cn("size-5", isAr ? "ml-1" : "mr-1")} />
+          {t('add_operation', T)}
         </button>
       </header>
 
       {/* Stats Cards */}
       <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {[
-          { label: 'إجمالي الدخل', value: '1,250 د.أ', icon: TrendingUp, color: 'text-secondary', bgColor: 'bg-secondary/10', delay: 100 },
-          { label: 'إجمالي المصروفات', value: '1,200 د.أ', icon: TrendingDown, color: 'text-destructive', bgColor: 'bg-destructive/10', delay: 200 },
-          { label: 'صافي الربح', value: '50 د.أ', icon: DollarSign, color: 'text-primary', bgColor: 'bg-primary/10', delay: 300 }
+          { label: t('total_income', T), value: `1,250 ${t('jod', T)}`, icon: TrendingUp, color: 'text-secondary', bgColor: 'bg-secondary/10', delay: 100 },
+          { label: t('total_expenses', T), value: `1,200 ${t('jod', T)}`, icon: TrendingDown, color: 'text-destructive', bgColor: 'bg-destructive/10', delay: 200 },
+          { label: t('net_profit', T), value: `50 ${t('jod', T)}`, icon: DollarSign, color: 'text-primary', bgColor: 'bg-primary/10', delay: 300 }
         ].map((stat, idx) => (
           <article
             key={idx}
@@ -117,10 +131,10 @@ const FinanceOverview = () => {
         )}
         style={{ transitionDelay: '400ms' }}
       >
-        <h3 className="text-lg font-semibold mb-2">الدخل مقابل المصروفات</h3>
+        <h3 className={cn("text-lg font-semibold mb-2", isAr ? "text-right" : "text-left")}>{t('income_vs_expenses', T)}</h3>
         <figure className=" xs:h-[300px] xs:w-full w-[130%] h-[400px] xs:translate-x-0 translate-x-[30px] transition-all duration-300">
           <ResponsiveContainer>
-            <LineChart data={CHART_DATA} margin={{ top: 5, right: 30, left: 30, bottom: 25 }}>
+            <LineChart data={chartData} margin={{ top: 5, right: 30, left: 30, bottom: 25 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={true} stroke="#E8EEF2" />
               <XAxis
                 dataKey="name"
@@ -153,7 +167,7 @@ const FinanceOverview = () => {
                 wrapperStyle={{ paddingTop: '20px' }}
               />
               <Line
-                name="الدخل"
+                name={t('income', T)}
                 type="monotone"
                 dataKey="دخل"
                 stroke="#3FB8AF"
@@ -165,7 +179,7 @@ const FinanceOverview = () => {
                 animationEasing="ease-in-out"
               />
               <Line
-                name="المصروفات"
+                name={t('expenses', T)}
                 type="monotone"
                 dataKey="مصروفات"
                 stroke="#d4183d"
@@ -190,12 +204,12 @@ const FinanceOverview = () => {
         )}
         style={{ transitionDelay: '500ms' }}
       >
-        <header className="flex flex-col xl:flex-row xl:items-end justify-between gap-6 mb-8">
-          <h3 className="text-lg font-bold">العمليات المالية</h3>
+        <header className={cn("flex flex-col xl:flex-row xl:items-end justify-between gap-6 mb-8", isAr ? "xl:flex-row" : "xl:flex-row-reverse")}>
+          <h3 className="text-lg font-bold">{t('financial_operations', T)}</h3>
 
           <div className={cn("flex flex-wrap items-end gap-3 transition-all duration-700", canAnimate ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4")} style={{ transitionDelay: '550ms' }}>
             <div className="space-y-1.5 flex-1 min-w-[170px]">
-              <label className="flex items-center gap-2 font-bold select-none text-xs text-muted-foreground mr-1">من تاريخ</label>
+              <label className={cn("flex items-center gap-2 font-bold select-none text-xs text-muted-foreground", isAr ? "mr-1" : "ml-1")}>{t('from_date', T)}</label>
               <div className="relative group flex items-center justify-between h-11 bg-white border border-border rounded-xl px-4 transition-all focus-within:ring-4 focus-within:ring-primary/10">
                 <Flatpickr
                   value={fromDate}
@@ -208,7 +222,7 @@ const FinanceOverview = () => {
             </div>
 
             <div className="space-y-1.5 flex-1 min-w-[170px]">
-              <label className="flex items-center gap-2 font-bold select-none text-xs text-muted-foreground mr-1">إلى تاريخ</label>
+              <label className={cn("flex items-center gap-2 font-bold select-none text-xs text-muted-foreground", isAr ? "mr-1" : "ml-1")}>{t('to_date', T)}</label>
               <div className="relative group flex items-center justify-between h-11 bg-white border border-border rounded-xl px-4 transition-all focus-within:ring-4 focus-within:ring-primary/10">
                 <Flatpickr
                   value={toDate}
@@ -224,7 +238,7 @@ const FinanceOverview = () => {
               onClick={handleApply}
               className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-bold transition-all duration-300 outline-none hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md text-primary-foreground hover:shadow-primary/20 px-6 h-11 bg-primary hover:bg-primary/90 min-w-[100px]"
             >
-              تطبيق
+              {t('apply_filters', T)}
             </button>
           </div>
         </header>
@@ -232,7 +246,7 @@ const FinanceOverview = () => {
         {/* Mobile Swipe Indicator */}
         <aside className="sm:hidden flex items-center justify-center gap-3 mb-4 py-2 px-4 rounded-full bg-muted/30 text-muted-foreground/80 text-xs font-bold ring-1 ring-border/50 animate-pulse backdrop-blur-xs">
           <Smartphone className="size-3.5" />
-          <span>اسحب لليسار أو اليمين لتصفح الجدول</span>
+          <span>{t('mobile_swipe', T)}</span>
           <MoveHorizontal className="size-3.5" />
         </aside>
 
@@ -240,30 +254,30 @@ const FinanceOverview = () => {
           <table className="w-full text-sm text-right whitespace-nowrap">
             <thead className="bg-muted/30 border-b border-border/50 text-muted-foreground font-bold">
               <tr>
-                <th className="p-4">نوع العملية</th>
-                <th className="p-4">المبلغ</th>
-                <th className="p-4">العملة</th>
-                <th className="p-4">التاريخ</th>
-                <th className="p-4">الموعد المرتبط</th>
-                <th className="p-4">ملاحظات</th>
+                <th className={cn("p-4", isAr ? "text-right" : "text-left")}>{t('table_type', T)}</th>
+                <th className={cn("p-4", isAr ? "text-right" : "text-left")}>{t('table_amount', T)}</th>
+                <th className={cn("p-4", isAr ? "text-right" : "text-left")}>{t('table_currency', T)}</th>
+                <th className={cn("p-4", isAr ? "text-right" : "text-left")}>{t('table_date', T)}</th>
+                <th className={cn("p-4", isAr ? "text-right" : "text-left")}>{t('table_related', T)}</th>
+                <th className={cn("p-4", isAr ? "text-right" : "text-left")}>{t('table_notes', T)}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/30">
-              {TRANSACTIONS.map((tx) => (
+              {transactions.map((tx) => (
                 <tr key={tx.id} className="hover:bg-muted/20 transition-colors">
-                  <td className="p-4">
-                    <span className={cn(
-                      "inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold",
-                      tx.type === 'دخل' ? "bg-secondary/10 text-secondary" : "bg-destructive/10 text-destructive"
-                    )}>
-                      {tx.type}
-                    </span>
-                  </td>
-                  <td className="p-4 font-bold">{tx.amount}</td>
-                  <td className="p-4">{tx.currency}</td>
-                  <td className="p-4 font-medium text-muted-foreground">{tx.date}</td>
-                  <td className="p-4 text-muted-foreground">{tx.related}</td>
-                  <td className="p-4 text-muted-foreground">{tx.notes}</td>
+                    <td className="p-4">
+                      <span className={cn(
+                        "inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold",
+                        tx.type === 'دخل' ? "bg-secondary/10 text-secondary" : "bg-destructive/10 text-destructive"
+                      )}>
+                        {tx.type === 'دخل' ? t('type_income', T) : t('type_expense', T)}
+                      </span>
+                    </td>
+                    <td className="p-4 font-bold">{tx.amount}</td>
+                    <td className="p-4">{tx.currency === 'د.أ' ? t('jod', T) : tx.currency}</td>
+                    <td className="p-4 font-medium text-muted-foreground">{tx.date}</td>
+                    <td className="p-4 text-muted-foreground">{tx.related}</td>
+                    <td className={cn("p-4 text-muted-foreground", isAr ? "text-right" : "text-left")}>{tx.notes}</td>
                 </tr>
               ))}
             </tbody>

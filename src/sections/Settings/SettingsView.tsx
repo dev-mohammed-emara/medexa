@@ -11,6 +11,7 @@ import { usePreloader } from '../../contexts/PreloaderContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { commonTranslations } from '../../constants/common';
 import { settingsTranslations } from '../../constants/settings';
+import { navTranslations } from '../../constants/nav';
 import { Switch } from '../../components/ui/Switch';
 import { cn } from '../../utils/cn';
 import Modal from '../../components/ui/Modal';
@@ -58,6 +59,7 @@ const SettingsView = () => {
 
   const T_COMMON = commonTranslations;
   const T_PAGE = settingsTranslations;
+  const T_NAV = navTranslations;
 
   // Form State
   const [clinicName, setClinicName] = useState('Clinic Al-Noor');
@@ -322,11 +324,11 @@ const SettingsView = () => {
               </label>
               <Select value={currency} onValueChange={setCurrency}>
                 <SelectTrigger className="h-12 rounded-xl bg-muted/30 border-border focus:bg-white transition-all">
-                  <SelectValue placeholder="اختر العملة" />
+                  <SelectValue placeholder={t('settings.select_currency', T_PAGE)} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="JOD">دينار أردني (د.أ)</SelectItem>
-                  <SelectItem value="USD">دولار أمريكي (USD)</SelectItem>
+                  <SelectItem value="JOD">{t('settings.jod', T_PAGE)}</SelectItem>
+                  <SelectItem value="USD">{t('settings.usd', T_PAGE)}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -363,7 +365,7 @@ const SettingsView = () => {
                 <summary className="p-6 flex-wrap flex items-center justify-between gap-6 cursor-pointer list-none outline-none">
                   <div className="flex items-center gap-6">
                     <div className="min-w-[100px]">
-                      <p className="text-lg font-bold">{day.name}</p>
+                      <p className="text-lg font-bold">{t(`nav.days.${day.id}`, T_NAV)}</p>
                     </div>
                     <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
                       <p

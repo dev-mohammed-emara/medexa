@@ -25,20 +25,55 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     return 'ar';
   });
 
+  const isAr = language === 'ar';
+  const dir = isAr ? 'rtl' : 'ltr';
+
+  // Cross-tab Synchronization
+  useEffect(() => {
+    const channel = new BroadcastChannel('medexa_sync');
+    channel.onmessage = (event) => {
+      if (event.data.type === 'LANGUAGE_UPDATE') {
+        setLanguageState(event.data.language);
+      }
+    };
+    return () => channel.close();
+  }, []);
+
   const setLanguage = (lang: Language) => {
     setLanguageState(lang);
     if (typeof window !== 'undefined') {
       localStorage.setItem('medexa-lang', lang);
+      // Sync across tabs
+      const channel = new BroadcastChannel('medexa_sync');
+      channel.postMessage({ type: 'LANGUAGE_UPDATE', language: lang });
     }
   };
-
-  const isAr = language === 'ar';
-  const dir = isAr ? 'rtl' : 'ltr';
 
   useEffect(() => {
     document.documentElement.setAttribute('lang', language);
     document.documentElement.setAttribute('dir', dir);
     document.body.setAttribute('dir', dir);
+
+    // SEO / Helmet Management
+    const titles = {
+      ar: "ميديكسا - نظام الإدارة الطبية المتكامل",
+      en: "Medexa - Integrated Medical Management System"
+    };
+    const descriptions = {
+      ar: "ميديكسا هو نظام إدارة طبية متطور يوفر حلولاً مبتكرة لإدارة العيادات والمراكز الطبية بكفاءة واحترافية.",
+      en: "Medexa is an advanced medical management system providing innovative solutions for clinics and medical centers."
+    };
+
+    document.title = titles[language];
+    const metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) metaDesc.setAttribute('content', descriptions[language]);
+    
+    // OG Tags
+    const ogTitle = document.querySelector('meta[property="og:title"]');
+    if (ogTitle) ogTitle.setAttribute('content', titles[language]);
+    const ogDesc = document.querySelector('meta[property="og:description"]');
+    if (ogDesc) ogDesc.setAttribute('content', descriptions[language]);
+
   }, [language, dir]);
 
   const t = (key: string, pageConstants?: TranslationSource): string => {

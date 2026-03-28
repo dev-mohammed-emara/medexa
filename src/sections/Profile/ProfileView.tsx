@@ -53,7 +53,7 @@ const ProfileView = () => {
 
   const handleSaveHours = () => {
     setIsEditingHours(false);
-    window.showToast('تم حفظ مواعيد العمل بنجاح', 'success');
+    window.showToast(t('profile.hours_saved', T_PAGE), 'success');
   };
 
   const handleCancelHours = () => {
@@ -65,11 +65,11 @@ const ProfileView = () => {
       setIsEditingHours(false);
     }
     setShowConfirmModal({ open: false, type: 'hours' });
-    window.showToast('تم إلغاء التغييرات', 'info');
+    window.showToast(t('profile.changes_canceled', T_PAGE), 'info');
   };
 
   const handleSaveGeneral = () => {
-    window.showToast('تم حفظ التغييرات بنجاح', 'success');
+    window.showToast(t('profile.general_saved', T_PAGE), 'success');
   };
 
   const handleCancelGeneral = () => {
@@ -87,14 +87,14 @@ const ProfileView = () => {
   ]);
 
   const [clinicInfo, setClinicInfo] = useState({
-    name: 'عيادة النور الطبية',
-    specialty: 'طب عام',
-    insurance: 'التأمين الوطني الأردني',
+    name: t('profile.clinic_name_val', T_PAGE),
+    specialty: t('profile.specialty_val', T_PAGE),
+    insurance: t('profile.insurance_val', T_PAGE),
     phone: '+962 6 555 1234',
     email: 'info@alnoor-clinic.jo',
-    city: 'عمّان',
-    area: 'الدوار السابع',
-    address: 'عمّان، الدوار السابع، شارع الملكة رانيا العبدالله'
+    city: t('profile.city_val', T_PAGE),
+    area: t('profile.area_val', T_PAGE),
+    address: t('profile.address_val', T_PAGE)
   });
 
   const [personalPhone, setPersonalPhone] = useState('0789651800');
@@ -205,19 +205,19 @@ const ProfileView = () => {
             {/* Profile Card */}
             <div data-slot="card" className="tab-pane text-card-foreground flex flex-col sm:flex-row items-center justify-between gap-6 rounded-xl border p-8 bg-linear-to-br from-white via-white to-primary/5 border-border shadow-lg hover:shadow-xl transition-all duration-300">
               <div className={cn("flex-1 text-center font-bold", isAr ? "sm:text-right" : "sm:text-left")}>
-                <h2 className="text-3xl mb-2 font-bold text-foreground">{'أحمد الحشيكا'}</h2>
+                <h2 className="text-3xl mb-2 font-bold text-foreground">{t('profile.doctor_name_val', T_PAGE)}</h2>
                 <div className="flex flex-col gap-2">
-                  <div className={cn("flex items-center justify-center", isAr ? "sm:justify-start" : "sm:justify-end")}>
+                  <div className={cn("flex items-center justify-center", isAr ? "sm:justify-end" : "sm:justify-start")}>
                     <span className="inline-flex items-center justify-center rounded-md border text-xs font-medium bg-primary/10 text-primary border-primary/20 px-3 py-1 gap-1">
                       <Shield size={14} className={isAr ? "ml-1" : "mr-1"} />
                       {t('profile.clinic_owner', T_PAGE)}
                     </span>
                   </div>
-                  <div className={cn("flex items-center justify-center text-muted-foreground", isAr ? "sm:justify-start" : "sm:justify-end")}>
+                  <div className={cn("flex items-center justify-center text-muted-foreground", isAr ? "sm:justify-end" : "sm:justify-start")}>
                     <Mail size={16} className={isAr ? "ml-2" : "mr-2"} />
                     <span>dr.ahmed@medexa.com</span>
                   </div>
-                  <div className={cn("flex items-center justify-center text-muted-foreground", isAr ? "sm:justify-start" : "sm:justify-end")}>
+                  <div className={cn("flex items-center justify-center text-muted-foreground", isAr ? "sm:justify-end" : "sm:justify-start")}>
                     <Phone size={16} className={isAr ? "ml-2" : "mr-2"} />
                     <span dir="ltr">0789651800</span>
                   </div>
@@ -233,7 +233,7 @@ const ProfileView = () => {
                     <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center text-white text-4xl font-bold">
-                      {t('common.name').replace(/^د\.\s*/, '').charAt(0)}
+                      {isAr ? "أ" : "A"}
                     </div>
                   )}
                 </div>
@@ -260,7 +260,7 @@ const ProfileView = () => {
                 <div className="space-y-5">
                   <div className="flex flex-col gap-2">
                     <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('common.name')}</label>
-                    <Input defaultValue={'أحمد الحشيكا'} className="h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold" />
+                    <Input defaultValue={t('profile.doctor_name_val', T_PAGE)} className="h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold" />
                   </div>
                   <div className="flex flex-col gap-2">
                     <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('common.email')}</label>
@@ -306,9 +306,9 @@ const ProfileView = () => {
                         />
                         <Flatpickr
                           value="1985-05-15"
-                          className={cn("flex h-11 w-full rounded-xl border border-border bg-muted/30 pr-3 py-2 text-sm font-bold focus:border-primary focus:bg-white transition-all outline-none", isAr ? "pl-10" : "pr-10")}
+                          className={cn("flex h-11 w-full rounded-xl border border-border bg-muted/30 px-3 py-2 text-sm font-bold focus:border-primary focus:bg-white transition-all outline-none", isAr ? "pl-10" : "pr-10 text-left")}
                           options={{
-                            locale: Arabic,
+                            locale: isAr ? Arabic : undefined,
                             dateFormat: "d F Y",
                             disableMobile: true
                           }}
@@ -468,15 +468,15 @@ const ProfileView = () => {
                     onClick={handleCancelHours}
                     className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-300 border bg-background text-foreground hover:bg-accent hover:text-white hover:border-accent h-9 px-6 py-2"
                   >
-                    <X size={16} className="ml-1" />
-                    إلغاء
+                    <X size={16} className={isAr ? "ml-1" : "mr-1"} />
+                    {t('profile.cancel', T_PAGE)}
                   </button>
                   <button
                     onClick={handleSaveHours}
                     className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-300 text-primary-foreground bg-primary hover:bg-primary/90 h-9 px-6 py-2 shadow-lg shadow-primary/20 hover:shadow-primary/30"
                   >
-                    <Check size={16} className="ml-1" />
-                    حفظ التعديلات
+                    <Check size={16} className={isAr ? "ml-1" : "mr-1"} />
+                    {t('profile.save', T_PAGE)}
                   </button>
                 </div>
               )}

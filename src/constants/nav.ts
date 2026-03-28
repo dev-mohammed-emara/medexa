@@ -23,11 +23,30 @@ export const navTranslations = {
       logout: "تسجيل الخروج",
       logout_confirm: "هل أنت متأكد من رغبتك في تسجيل الخروج من النظام؟",
       logout_success: "تم تسجيل الخروج بنجاح",
+      notif_1_title: "موعد جديد",
+      notif_1_desc: "مريض محمد علي قام بحجز موعد جديد",
+      notif_2_title: "تذكير",
+      notif_2_desc: "يجب مراجعة التقارير الطبية المسائية",
+      notif_3_title: "دفعة مالية",
+      notif_3_desc: "تم استلام دفعة جديدة بقيمة 50 دينار",
+      days: {
+        sat: "السبت",
+        sun: "الأحد",
+        mon: "الاثنين",
+        tue: "الثلاثاء",
+        wed: "الأربعاء",
+        thu: "الخميس",
+        fri: "الجمعة"
+      },
       clinic_name: "عيادة النور الطبية",
       clinic_owner: "مالك العيادة",
+      doctor_name: "أحمد الحشيكا",
       minutes_ago: "منذ {n} دقائق",
       hour_ago: "منذ ساعة",
       hours_ago: "منذ {n} ساعات",
+      language_arabic: "العربية",
+      language_english: "English",
+      change_language: "تغيير اللغة"
     }
   },
   en: {
@@ -41,7 +60,7 @@ export const navTranslations = {
       finance: "Finance",
       settings: "Settings",
       profile: "Profile",
-      search: "Search for a patient by name or number...",
+      search: "Search...",
       notifications: "Notifications",
       new_notif: "New Appointment",
       new_notif_desc: "Patient Mohammed Ali booked a new appointment",
@@ -53,11 +72,30 @@ export const navTranslations = {
       logout: "Logout",
       logout_confirm: "Are you sure you want to logout from the system?",
       logout_success: "Logged out successfully",
+      notif_1_title: "New Appointment",
+      notif_1_desc: "Patient Mohammed Ali booked a new appointment",
+      notif_2_title: "Reminder",
+      notif_2_desc: "Evening medical reports need review",
+      notif_3_title: "Payment",
+      notif_3_desc: "Payment received: 50 JOD",
+      days: {
+        sat: "Saturday",
+        sun: "Sunday",
+        mon: "Monday",
+        tue: "Tuesday",
+        wed: "Wednesday",
+        thu: "Thursday",
+        fri: "Friday"
+      },
       clinic_name: "Al-Noor Medical Clinic",
       clinic_owner: "Clinic Owner",
+      doctor_name: "Ahmed Elhasaykeh",
       minutes_ago: "{n} minutes ago",
       hour_ago: "1 hour ago",
       hours_ago: "{n} hours ago",
+      language_arabic: "Arabic",
+      language_english: "English",
+      change_language: "Change Language"
     }
   }
 };

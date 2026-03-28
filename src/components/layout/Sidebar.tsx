@@ -1,27 +1,27 @@
 
-import { useEffect, useRef } from 'react'
-import { useMediaQuery } from 'react-responsive'
-import { useLocation } from 'react-router-dom'
 import { gsap } from 'gsap'
 import {
-  LayoutDashboard,
-  Users,
-  UserCog,
-  UsersRound,
-  FileText,
-  DollarSign,
-  Settings,
-  User,
-  ChevronLeft,
-  Menu,
-  X
+    ChevronLeft,
+    DollarSign,
+    FileText,
+    LayoutDashboard,
+    Menu,
+    Settings,
+    User,
+    UserCog,
+    Users,
+    UsersRound,
+    X
 } from 'lucide-react'
+import { useEffect, useRef } from 'react'
 import { FaCalendarAlt } from 'react-icons/fa'
-import { useLanguage } from '../../contexts/LanguageContext'
+import { useMediaQuery } from 'react-responsive'
+import { useLocation } from 'react-router-dom'
 import { navTranslations } from '../../constants/nav'
+import { useLanguage } from '../../contexts/LanguageContext'
+import { usePreloader } from '../../contexts/PreloaderContext'
 import { cn } from '../../utils/cn'
 import { TransitionLink } from '../transition/TransitionLink'
-import { usePreloader } from '../../contexts/PreloaderContext'
 
 const navItems = [
   { icon: LayoutDashboard, label: 'dashboard', href: '/' },
@@ -68,7 +68,7 @@ const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
     }, navContainerRef)
 
     return () => ctx.revert()
-  }, [canAnimate, isWideScreen])
+  }, [canAnimate, isWideScreen, isAr])
 
   useEffect(() => {
     const handlePopState = () => {
@@ -150,7 +150,10 @@ const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
                     </div>
                     {(!isCollapsed || (isCollapsed && !isWideScreen)) && (
                       <>
-                        <span className={cn("flex-1 transition-all duration-300 group-hover:-translate-x-[6px]", isAr ? "text-right" : "text-left")}>
+                        <span className={cn(
+                          "flex-1 transition-all duration-300",
+                          isAr ? "group-hover:-translate-x-[6px] text-right" : "group-hover:translate-x-[6px] text-left"
+                        )}>
                           {t(`nav.${item.label}`, T_PAGE)}
                         </span>
                         {isActive && <ChevronLeft className={cn("size-4 shrink-0 transition-transform duration-300 group-hover:px-1", !isAr && "rotate-180")} />}

@@ -26,6 +26,9 @@ export const settingsTranslations = {
       cancel_confirm_msg: "هل أنت متأكد من إلغاء كافة التغييرات؟ لن يتم حفظ أي تعديلات أجريتها.",
       cancel_btn: "تجاهل التغييرات",
       back_btn: "العودة للتعديل",
+      select_currency: "اختر العملة",
+      jod: "دينار أردني (د.أ)",
+      usd: "دولار أمريكي (USD)",
     }
   },
   en: {
@@ -54,6 +57,9 @@ export const settingsTranslations = {
       cancel_confirm_msg: "Are you sure you want to cancel all changes? none of your modifications will be saved.",
       cancel_btn: "Discard Changes",
       back_btn: "Back to Editing",
+      select_currency: "Select Currency",
+      jod: "Jordanian Dinar (JOD)",
+      usd: "US Dollar (USD)",
     }
   }
 };

@@ -196,6 +196,8 @@ html[dir='rtl']{
     --font: 'Tajawal';
   }
 
+
+
   .contact {
     text-transform: uppercase !important;
   }
@@ -504,8 +506,17 @@ input[type='checkbox']{
   accent-color: var(--primary);
 }
 
-input,select{
-  direction: rtl;
+html[dir='rtl']{
+
+  input,select{
+    direction: rtl;
+  }
+}
+
+html[dir='ltr']{
+  .flatpickr-input{
+    text-align: right;
+  }
 }
 
  ::-webkit-scrollbar{

@@ -40,14 +40,13 @@ function SelectTrigger({
   return (
     <SelectPrimitive.Trigger
       data-slot="select-trigger"
-      dir="rtl"
       className={cn(
         "flex w-full items-center justify-between gap-2 rounded-xl border border-border bg-input-background h-12 px-4 transition-all outline-none select-none focus:ring-4 focus:ring-primary/10 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive md:text-sm data-placeholder:text-muted-foreground dark:bg-input/30 dark:hover:bg-input/50",
         className
       )}
       {...props}
     >
-      <div className="flex-1 text-right overflow-hidden text-ellipsis whitespace-nowrap">
+      <div className="flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-start">
         {children}
       </div>
       <SelectPrimitive.Icon asChild>
@@ -69,7 +68,6 @@ function SelectContent({
     <SelectPrimitive.Portal>
       <SelectPrimitive.Content
         data-slot="select-content"
-        dir="rtl"
         className={cn(
           "relative max-h-96 min-w-(--radix-select-trigger-width) overflow-hidden rounded-xl bg-popover text-popover-foreground shadow-lg ring-1 ring-border overscroll-contain",
           "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0 data-[state=open]:zoom-in-98 data-[state=closed]:zoom-out-98 data-[side=bottom]:slide-in-from-top-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:slide-out-to-top-2 duration-250",

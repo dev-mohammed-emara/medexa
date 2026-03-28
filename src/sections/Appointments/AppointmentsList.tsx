@@ -32,6 +32,9 @@ import {
 import { usePreloader } from '../../contexts/PreloaderContext';
 import { useSidebar } from '../../contexts/SidebarContext';
 import { cn } from '../../utils/cn';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { appointmentsTranslations } from '../../constants/translations/appointments';
+import { enUS } from 'date-fns/locale';
 import AppointmentsDialog, { type Appointment } from './AppointmentsDialog';
 import { statusConfig } from './constants';
 
@@ -58,6 +61,9 @@ const INITIAL_APPOINTMENTS: Appointment[] = [
 ];
 
 const AppointmentsList = () => {
+  const { isAr, t } = useLanguage();
+  const T = appointmentsTranslations;
+  const currentLocale = isAr ? ar : enUS;
   const { isLoaded, isExiting } = usePreloader();
   const canAnimate = isLoaded && !isExiting;
 
@@ -128,8 +134,8 @@ const AppointmentsList = () => {
 
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(monthStart);
-  const startDate = startOfWeek(monthStart, { locale: ar });
-  const endDate = endOfWeek(monthEnd, { locale: ar });
+  const startDate = startOfWeek(monthStart, { locale: currentLocale });
+  const endDate = endOfWeek(monthEnd, { locale: currentLocale });
 
   const calendarDays = eachDayOfInterval({
     start: startDate,
@@ -161,7 +167,7 @@ const AppointmentsList = () => {
         doctorName: data.doctorName || '',
         date: new Date(data.date as string),
         time: data.time || '',
-        status: data.status || 'قيد الانتظار',
+        status: data.status || 'pending',
       };
       setAppointments(prev => [...prev, newApp]);
     } else if (dialogMode === 'edit' && currentAppointment) {
@@ -181,37 +187,37 @@ const AppointmentsList = () => {
   const confirmDelete = () => {
     if (appointmentToDelete) {
       setAppointments(prev => prev.filter(a => a.id !== appointmentToDelete.id));
-      window.showToast?.('تم حذف الموعد بنجاح');
+      window.showToast?.(t('toast_delete_success', T));
     }
     setIsDeleteModalOpen(false);
   };
 
   const years = Array.from({ length: 10 }, (_, i) => (getYear(new Date()) - 5 + i).toString());
   const months = Array.from({ length: 12 }, (_, i) => ({
-    label: format(new Date(2026, i, 1), 'MMMM', { locale: ar }),
+    label: format(new Date(2026, i, 1), 'MMMM', { locale: currentLocale }),
     value: i.toString()
   }));
 
 
   return (
-    <section className="space-y-6" dir="rtl">
+    <section className="space-y-6" dir={isAr ? "rtl" : "ltr"}>
       {/* Page Header */}
       <header className={cn(
         "flex flex-col md:flex-row md:items-center md:justify-between gap-4 opacity-0",
         canAnimate && "animate-fadeDown animate-delay-100"
       )}>
-        <div>
-          <h1 className="text-3xl mb-1 font-extrabold">إدارة المواعيد</h1>
-          <p className="text-muted-foreground">تقويم المواعيد الطبية ومتابعة المرضى</p>
+        <div className="text-start">
+          <h1 className="text-3xl mb-1 font-extrabold">{t('page_title', T)}</h1>
+          <p className="text-muted-foreground">{t('page_desc', T)}</p>
         </div>
 
         <div className="flex items-center flex-wrap gap-3">
           <Select value={selectedDoctor} onValueChange={setSelectedDoctor}>
             <SelectTrigger className="w-56 h-10 bg-white border-border shadow-xs">
-              <SelectValue placeholder="اختر الطبيب" />
+              <SelectValue placeholder={t('select_doctor', T)} />
             </SelectTrigger>
             <SelectContent smallZ={true}>
-              <SelectItem value="all">جميع الأطباء</SelectItem>
+              <SelectItem value="all">{t('all_doctors', T)}</SelectItem>
               <SelectItem value="1">د. أحمد علي</SelectItem>
               <SelectItem value="2">د. سامي يوسف</SelectItem>
               <SelectItem value="3">د. ليلى خالد</SelectItem>
@@ -222,8 +228,8 @@ const AppointmentsList = () => {
             className="h-10 px-6 rounded-xl"
             onClick={() => handleOpenDialog('add')}
           >
-            <Plus className="size-4 ml-2" />
-            إضافة موعد
+            <Plus className={cn("size-4", isAr ? "ml-2" : "mr-2")} />
+            {t('add_appointment', T)}
           </Button>
         </div>
       </header>
@@ -248,7 +254,7 @@ const AppointmentsList = () => {
                 onClick={nextMonth}
                 className="size-10 px-2.5 rounded-xl hover:-translate-y-1 duration-200 hover:bg-primary/5 hover:border-primary/30 transition-all shadow-xs"
               >
-                <ChevronRight className="size-5" />
+                {isAr ? <ChevronRight className="size-5" /> : <ChevronLeft className="size-5" />}
               </Button>
               <Button
                 variant="outline"
@@ -256,7 +262,7 @@ const AppointmentsList = () => {
                 onClick={prevMonth}
                 className="size-10 px-2.5 hover:-translate-y-1 duration-200 rounded-xl hover:bg-primary/5 hover:border-primary/30 transition-all shadow-xs"
               >
-                <ChevronLeft className="size-5" />
+                {isAr ? <ChevronLeft className="size-5" /> : <ChevronRight className="size-5" />}
               </Button>
             </div>
 
@@ -288,15 +294,15 @@ const AppointmentsList = () => {
           {/* Mobile Swipe Indicator */}
           <aside className="md:hidden flex items-center justify-center gap-3 mb-4 py-2 px-4 rounded-full bg-muted/30 text-muted-foreground/80 text-xs font-bold ring-1 ring-border/50 animate-pulse backdrop-blur-xs">
             <Smartphone className="size-3.5" />
-            <span>اسحب لليسار أو اليمين لتصفح التقويم</span>
-            <MoveHorizontal className="size-3.5" />
+            <span>{t('mobile_swipe', T)}</span>
+            <MoveHorizontal className={cn("size-3.5", isAr ? "rotate-0" : "rotate-180")} />
           </aside>
 
           <div className="overflow-x-auto pb-2 scrollbar-none md:scrollbar-auto">
             <div className="min-w-[800px] w-full lg:min-w-0">
               {/* Day Headers */}
               <figure className="grid grid-cols-7 gap-3 mb-2">
-                {['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'].map((day) => (
+                {[t('days.sun', T), t('days.mon', T), t('days.tue', T), t('days.wed', T), t('days.thu', T), t('days.fri', T), t('days.sat', T)].map((day) => (
                   <div key={day} className="text-center py-3">
                     <span className="text-sm font-bold text-muted-foreground/80 tracking-wide uppercase">{day}</span>
                   </div>
@@ -338,12 +344,12 @@ const AppointmentsList = () => {
                           "text-sm mb-2 font-medium transition-colors",
                           isSelected || isToday ? "text-primary font-bold" : "text-foreground group-hover:text-primary"
                         )}>
-                          {format(date, 'd')}
+                          {format(date, 'd', { locale: currentLocale })}
                         </div>
 
                         <div className="space-y-1 flex-1">
                           {dayAppointments.slice(0, 2).map((app) => {
-                            const config = statusConfig[app.status] || statusConfig['قيد الانتظار'];
+                            const config = statusConfig[app.status] || statusConfig[isAr ? 'قيد الانتظار' : 'pending'];
                             return (
                               <div
                                 key={app.id}
@@ -364,7 +370,7 @@ const AppointmentsList = () => {
                           })}
                           {dayAppointments.length > 2 && (
                             <div className="text-[10px] text-muted-foreground text-center mt-1">
-                              +{dayAppointments.length - 2} أخرى
+                              {t('more', T).replace('{n}', (dayAppointments.length - 2).toString())}
                             </div>
                           )}
                         </div>
@@ -396,7 +402,7 @@ const AppointmentsList = () => {
             >
               <header className="flex items-center justify-between mb-4">
                 <h3 className="text-xl font-bold">
-                  {format(selectedDate || lastSelectedDate!, 'EEEE، d MMMM', { locale: ar })}
+                  {format(selectedDate || lastSelectedDate!, isAr ? 'EEEE، d MMMM' : 'EEEE, d MMMM', { locale: currentLocale })}
                 </h3>
                 <Button
                   variant="ghost"
@@ -442,8 +448,11 @@ const AppointmentsList = () => {
                                     config.text,
                                     config.border
                                   )}>
-                                    <div className={cn("size-1 rounded-full ml-1", config.dotColor)} />
-                                    {app.status}
+                                    <div className={cn("size-1 rounded-full", isAr ? "ml-1" : "mr-1", config.dotColor)} />
+                                    {app.status === 'قيد الانتظار' ? t('dialog.status_pending', T) : 
+                                     app.status === 'مكتمل' ? t('dialog.status_completed', T) : 
+                                     app.status === 'ملغي' ? t('dialog.status_canceled', T) :
+                                     app.status}
                                   </span>
                                 </div>
 
@@ -458,18 +467,18 @@ const AppointmentsList = () => {
                                   </div>
                                 </div>
 
-                                <div className="flex gap-2 pt-2">
+                                <div className={cn("flex gap-2 pt-2", isAr ? "flex-row" : "flex-row-reverse")}>
                                   <button
                                     onClick={() => handleOpenDialog('view', app)}
                                     className="inline-flex items-center justify-center whitespace-nowrap font-medium transition-all duration-300 border bg-background text-foreground hover:bg-accent hover:text-accent-foreground rounded-md gap-1.5 px-3 flex-1 h-8 text-xs hover:border-primary/30 hover:shadow-lg hover:-translate-y-0.5"
                                   >
-                                    <Eye className="size-3.5 ml-1" /> عرض
+                                    <Eye className={cn("size-3.5", isAr ? "ml-1" : "mr-1")} /> {t('actions.view', T)}
                                   </button>
                                   <button
                                     onClick={() => handleOpenDialog('edit', app)}
                                     className="inline-flex items-center justify-center whitespace-nowrap font-medium transition-all duration-300 border bg-background text-foreground hover:bg-accent hover:text-accent-foreground rounded-md gap-1.5 px-3 flex-1 h-8 text-xs hover:border-primary/30 hover:shadow-lg hover:-translate-y-0.5"
                                   >
-                                    <SquarePen className="size-3.5 ml-1" /> تعديل
+                                    <SquarePen className={cn("size-3.5", isAr ? "ml-1" : "mr-1")} /> {t('actions.edit', T)}
                                   </button>
                                   <button
                                     onClick={() => handleDeleteAppointment(app.id)}
@@ -485,7 +494,7 @@ const AppointmentsList = () => {
                     ) : (
                       <div className="text-center py-12 text-muted-foreground flex flex-col items-center gap-3">
                         <FaCalendarAlt className="size-12 opacity-10" />
-                        <p className="text-sm">لا توجد مواعيد في هذا اليوم</p>
+                        <p className="text-sm">{t('no_appointments', T)}</p>
                       </div>
                     )}
                   </div>
@@ -509,10 +518,10 @@ const AppointmentsList = () => {
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={confirmDelete}
-        title="حذف الموعد"
-        message={`هل أنت متأكد من حذف موعد ${appointmentToDelete?.patientName || ''}؟ لن يمكنك التراجع عن هذا الإجراء.`}
-        confirmText="حذف"
-        cancelText="إلغاء والمحافظة على الموعد"
+        title={t('delete_confirm_title', T)}
+        message={t('delete_confirm_msg', T).replace('{name}', appointmentToDelete?.patientName || '')}
+        confirmText={t('delete', T)}
+        cancelText={t('cancel', T)}
         variant="danger"
       />
     </section>

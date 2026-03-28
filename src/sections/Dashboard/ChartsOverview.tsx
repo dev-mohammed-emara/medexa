@@ -15,31 +15,58 @@ import {
 } from 'recharts'
 import { usePreloader } from '../../contexts/PreloaderContext'
 import { cn } from '../../utils/cn'
+import { useLanguage } from '../../contexts/LanguageContext'
+import { dashboardTranslations } from '../../constants/translations/dashboard'
+import { navTranslations } from '../../constants/nav'
 
 import { genderData, ageData, appointmentData } from '../../constants/Dashboard_dummy'
 
 const ChartsOverview = () => {
+  const { isAr, t } = useLanguage()
+  const T = dashboardTranslations
+  const T_NAV = navTranslations
   const { isLoaded, isExiting } = usePreloader()
   const canAnimate = isLoaded && !isExiting
+
+  const translatedAppointmentData = appointmentData.map(item => {
+    let dayKey = ''
+    if (item.name === 'السبت') dayKey = 'sat'
+    else if (item.name === 'الأحد') dayKey = 'sun'
+    else if (item.name === 'الاثنين') dayKey = 'mon'
+    else if (item.name === 'الثلاثاء') dayKey = 'tue'
+    else if (item.name === 'الأربعاء') dayKey = 'wed'
+    else if (item.name === 'الخميس') dayKey = 'thu'
+    else if (item.name === 'الجمعة') dayKey = 'fri'
+    
+    return {
+      ...item,
+      name: dayKey ? t(`nav.days.${dayKey}`, T_NAV) : item.name
+    }
+  })
+
+  const translatedGenderData = genderData.map(item => ({
+    ...item,
+    name: item.name === 'ذكر' ? t('charts.male', T) : t('charts.female', T)
+  }))
 
   return (
     <div
       className={cn(
         "space-y-6 mb-10 opacity-0",
-        canAnimate && "animate-fadeUp opacity-100 animate-delay-[150ms]",
+        canAnimate && "animate-fadeUp opacity-100 animate-delay-150",
         isExiting && "animate-fadeDownOut"
       )}
     >
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Gender Distribution */}
         <section className="bg-white p-6 border border-border shadow-lg rounded-2xl hover:shadow-xl transition-all duration-300">
-          <h3 className="text-lg font-bold mb-6 text-right">توزيع المرضى حسب الجنس</h3>
+          <h3 className={cn("text-lg font-bold mb-6", isAr ? "text-right" : "text-left")}>{t('charts.gender_dist', T)}</h3>
           <figure className="h-[300px] w-full">
             {isLoaded && (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={genderData}
+                    data={translatedGenderData}
                     cx="50%"
                     cy="50%"
                     innerRadius={60}
@@ -68,7 +95,7 @@ const ChartsOverview = () => {
 
         {/* Age Distribution */}
         <section className="bg-white p-6 border border-border shadow-lg rounded-2xl hover:shadow-xl transition-all duration-300">
-          <h3 className="text-lg font-bold mb-6 text-right">توزيع المرضى حسب العمر</h3>
+          <h3 className={cn("text-lg font-bold mb-6", isAr ? "text-right" : "text-left")}>{t('charts.age_dist', T)}</h3>
           <figure className="h-[300px] w-full">
             {isLoaded && (
               <ResponsiveContainer width="100%" height="100%">
@@ -87,18 +114,18 @@ const ChartsOverview = () => {
 
       {/* Daily Appointments */}
       <section className="bg-white p-6 border border-border shadow-lg rounded-2xl hover:shadow-xl transition-all duration-300">
-        <h3 className="text-lg font-bold mb-6 text-right">المواعيد اليومية</h3>
+        <h3 className={cn("text-lg font-bold mb-6", isAr ? "text-right" : "text-left")}>{t('charts.daily_appointments', T)}</h3>
         <figure className="h-[300px] w-full">
           {isLoaded && (
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={appointmentData}>
+              <LineChart data={translatedAppointmentData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E8EEF2" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#666' }} />
                 <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#666' }} orientation="right" />
                 <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} />
                 <Legend verticalAlign="bottom" height={36} />
                 <Line
-                  name="عدد المواعيد"
+                  name={t('charts.appointment_count', T)}
                   type="monotone"
                   dataKey="value"
                   stroke="#3FB8AF"

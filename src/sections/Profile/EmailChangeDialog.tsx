@@ -156,7 +156,7 @@ const EmailChangeDialog = ({ isOpen, onClose }: EmailChangeDialogProps) => {
 
           <button
             onClick={handleClose}
-            className="absolute top-4 left-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            className={`absolute top-4 ${isAr ? 'left-4' : 'right-4'} rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2`}
           >
             <X size={24} />
             <span className="sr-only">{t('profile.close', T_PAGE)}</span>

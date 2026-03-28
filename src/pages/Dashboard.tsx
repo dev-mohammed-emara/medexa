@@ -1,7 +1,7 @@
 import MainLayout from '../components/layout/MainLayout'
+import ChartsOverview from '../sections/Dashboard/ChartsOverview'
 import DashboardHeader from '../sections/Dashboard/DashboardHeader'
 import StatsOverview from '../sections/Dashboard/StatsOverview'
-import ChartsOverview from '../sections/Dashboard/ChartsOverview'
 
 const Dashboard = () => {
   return (

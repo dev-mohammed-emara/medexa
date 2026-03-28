@@ -16,10 +16,12 @@ import {
   SelectValue,
 } from "../../components/ui/select";
 import { useLanguage } from '../../contexts/LanguageContext'
+import { appointmentsTranslations } from '../../constants/translations/appointments';
 import TimePicker from '../../components/ui/TimePicker';
 import { cn } from '../../utils/cn';
 import { statusConfig } from './constants';
 import Portal from '../../components/ui/Portal';
+import { enUS } from 'date-fns/locale';
 
 export interface Appointment {
   id: number;
@@ -43,6 +45,8 @@ interface AppointmentsDialogProps {
 
 const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: AppointmentsDialogProps) => {
   const { isAr, dir, t } = useLanguage();
+  const T = appointmentsTranslations;
+  const currentLocale = isAr ? ar : enUS;
   const overlayRef = useRef<HTMLDivElement>(null);
   const [isClosing, setIsClosing] = useState(false);
 
@@ -51,7 +55,7 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: A
     initialData?.date ? (typeof initialData.date === 'string' ? initialData.date : initialData.date.toISOString().split('T')[0]) : ""
   );
   const [selectedTime, setSelectedTime] = useState<string>(initialData?.time || "");
-  const [selectedStatus, setSelectedStatus] = useState(initialData?.status || "قيد الانتظار");
+  const [selectedStatus, setSelectedStatus] = useState(initialData?.status || 'pending');
   const [selectedDoctor, setSelectedDoctor] = useState(initialData?.doctorName || "");
   const [selectedPatient, setSelectedPatient] = useState(initialData?.patientName || "");
 
@@ -93,15 +97,15 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: A
       status: selectedStatus,
     });
 
-    window.showToast?.(mode === 'add' ? 'تم حفظ الموعد بنجاح' : 'تم تحديث الموعد بنجاح');
+    window.showToast?.(mode === 'add' ? t('toast_save_success', T) : t('toast_update_success', T));
     handleClose();
   };
 
-  const titles = { add: 'إضافة موعد جديد', edit: 'تعديل الموعد', view: 'تفاصيل الموعد' };
+  const titles = { add: t('dialog.title_add', T), edit: t('dialog.title_edit', T), view: t('dialog.title_view', T) };
   const descriptions = {
-    add: 'أدخل تفاصيل الموعد الجديد للمريض',
-    edit: 'قم بتحديث بيانات الموعد المختار',
-    view: 'عرض كافة تفاصيل الموعد والملاحظات الطبية'
+    add: t('dialog.desc_add', T),
+    edit: t('dialog.desc_edit', T),
+    view: t('dialog.desc_view', T)
   };
 
   return (
@@ -146,15 +150,15 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: A
               <div className="space-y-4 py-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="flex items-center gap-2 font-medium text-muted-foreground text-xs">اسم المريض</label>
+                    <label className="flex items-center gap-2 font-medium text-muted-foreground text-xs">{t('dialog.patient', T)}</label>
                     <div className="flex items-center gap-2">
                       <User className="size-4 text-primary" />
-                      <span className="font-medium">{initialData?.patientName || "محمد العمري"}</span>
+                      <span className="font-medium">{initialData?.patientName || (isAr ? "محمد العمري" : "Mohammed Al-Omari")}</span>
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <label className="flex items-center gap-2 font-medium text-muted-foreground text-xs">رقم الهاتف</label>
+                    <label className="flex items-center gap-2 font-medium text-muted-foreground text-xs">{t('dialog.phone', T)}</label>
                     <div className="flex items-center gap-2" dir="ltr">
                       <Phone className="size-4 text-primary" />
                       <span className="font-medium">+962 79 123 4567</span>
@@ -162,15 +166,15 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: A
                   </div>
 
                   <div className="space-y-2">
-                    <label className="flex items-center gap-2 font-medium text-muted-foreground text-xs">اسم الطبيب</label>
+                    <label className="flex items-center gap-2 font-medium text-muted-foreground text-xs">{t('dialog.doctor', T)}</label>
                     <div className="flex items-center gap-2">
                       <Stethoscope className="size-4 text-primary" />
-                      <span className="font-medium">{initialData?.doctorName || "د. ليلى الخطيب"}</span>
+                      <span className="font-medium">{initialData?.doctorName || (isAr ? "د. ليلى الخطيب" : "Dr. Layla Al-Khatib")}</span>
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <label className="flex items-center gap-2 font-medium text-muted-foreground text-xs">وقت الموعد</label>
+                    <label className="flex items-center gap-2 font-medium text-muted-foreground text-xs">{t('dialog.time', T)}</label>
                     <div className="flex items-center gap-2">
                       <Clock className="size-4 text-primary" />
                       <span className="font-medium">{initialData?.time || "10:00"}</span>
@@ -178,10 +182,10 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: A
                   </div>
 
                   <div className="space-y-2">
-                    <label className="flex items-center gap-2 font-medium text-muted-foreground text-xs">حالة الموعد</label>
+                    <label className="flex items-center gap-2 font-medium text-muted-foreground text-xs">{t('dialog.status', T)}</label>
                     {(() => {
-                      const status = initialData?.status || "قيد الانتظار";
-                      const config = statusConfig[status] || statusConfig['قيد الانتظار'];
+                      const status = initialData?.status || 'pending';
+                      const config = statusConfig[status] || statusConfig[isAr ? 'قيد الانتظار' : 'pending'];
                       return (
                         <span className={cn(
                           "inline-flex items-center justify-center rounded-lg px-3 py-1 text-xs font-bold w-fit border-2 shadow-sm transition-all animate-in fade-in zoom-in duration-300",
@@ -189,61 +193,82 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: A
                           config.text,
                           config.border
                         )}>
-                           <div className={cn("size-1.5 rounded-full ml-1.5", config.dotColor)} />
-                          {status}
+                           <div className={cn("size-1.5 rounded-full", isAr ? "ml-1.5" : "mr-1.5", config.dotColor)} />
+                          {status === 'قيد الانتظار' ? t('dialog.status_pending', T) : 
+                           status === 'مكتمل' ? t('dialog.status_completed', T) : 
+                           status === 'ملغي' ? t('dialog.status_canceled', T) :
+                           status}
                         </span>
                       );
                     })()}
                   </div>
 
                   <div className="space-y-2">
-                    <label className="flex items-center gap-2 font-medium text-muted-foreground text-xs">سعر الكشف</label>
+                    <label className="flex items-center gap-2 font-medium text-muted-foreground text-xs">{t('dialog.fee', T)}</label>
                     <div className="flex items-center gap-2">
                       <DollarSign className="size-4 text-primary" />
-                      <span className="font-medium">25 د.أ</span>
+                      <span className="font-medium">25 {t('dialog.currency', T)}</span>
                     </div>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="flex items-center gap-2 font-medium text-muted-foreground text-xs">ملاحظات المريض</label>
+                  <label className="flex items-center gap-2 font-medium text-muted-foreground text-xs">{t('dialog.patient_notes', T)}</label>
                   <div className="p-3 bg-muted/30 rounded-lg border border-border min-h-[60px]">
-                    <p className="text-sm">{initialData?.patientNotes || "لا توجد ملاحظات"}</p>
+                    <p className="text-sm">{initialData?.patientNotes || t('dialog.no_notes', T)}</p>
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="flex items-center gap-2 font-medium text-muted-foreground text-xs">ملاحظات الطبيب</label>
+                  <label className="flex items-center gap-2 font-medium text-muted-foreground text-xs">{t('dialog.doctor_notes', T)}</label>
                   <div className="p-3 bg-muted/30 rounded-lg border border-border min-h-[60px]">
-                    <p className="text-sm">{initialData?.doctorNotes || "لا توجد ملاحظات"}</p>
+                    <p className="text-sm">{initialData?.doctorNotes || t('dialog.no_notes', T)}</p>
                   </div>
                 </div>
               </div>
             ) : mode === 'edit' ? (
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">حالة الموعد</label>
+                  <label className="text-sm font-medium">{t('dialog.status', T)}</label>
                   <Select value={selectedStatus} onValueChange={setSelectedStatus}>
                     <SelectTrigger className={cn("rounded-xl h-12 bg-input-background transition-all focus:ring-4 focus:ring-primary/10", (selectedStatus) && "text-foreground font-bold")}>
-                      <SelectValue placeholder="حالة الموعد" />
+                      <SelectValue placeholder={t('dialog.status', T)} />
                     </SelectTrigger>
-                    <SelectContent className="rounded-xl text-right z-600">
-                      <SelectItem value="قيد الانتظار">
+                    <SelectContent className={cn("rounded-xl z-600", isAr ? "text-right" : "text-left")}>
+                      <SelectItem value="قيد الانتظار" hidden={!isAr}>
                         <div className="flex items-center gap-2">
                           <div className="size-2 rounded-full bg-amber-500" />
                           <span>قيد الانتظار</span>
                         </div>
                       </SelectItem>
-                      <SelectItem value="مكتمل">
+                      <SelectItem value="pending" hidden={isAr}>
+                        <div className="flex items-center gap-2">
+                          <div className="size-2 rounded-full bg-amber-500" />
+                          <span>Pending</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="مكتمل" hidden={!isAr}>
                         <div className="flex items-center gap-2">
                           <div className="size-2 rounded-full bg-emerald-500" />
                           <span>مكتمل</span>
                         </div>
                       </SelectItem>
-                      <SelectItem value="ملغي">
+                      <SelectItem value="completed" hidden={isAr}>
+                        <div className="flex items-center gap-2">
+                          <div className="size-2 rounded-full bg-emerald-500" />
+                          <span>Completed</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="ملغي" hidden={!isAr}>
                         <div className="flex items-center gap-2">
                           <div className="size-2 rounded-full bg-rose-500" />
                           <span>ملغي</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="canceled" hidden={isAr}>
+                        <div className="flex items-center gap-2">
+                          <div className="size-2 rounded-full bg-rose-500" />
+                          <span>Canceled</span>
                         </div>
                       </SelectItem>
                     </SelectContent>
@@ -254,48 +279,48 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: A
               <div className="space-y-6 py-2">
                 <div className="md:grid flex flex-col  md:grid-cols-2 gap-6">
                   <div className="flex flex-col gap-2">
-                    <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{isAr ? "المريض" : "Patient"}</label>
+                    <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.patient', T)}</label>
                     <Select value={selectedPatient} onValueChange={setSelectedPatient}>
                       <SelectTrigger className={cn("rounded-xl h-12 bg-input-background transition-all focus:ring-4 focus:ring-primary/10", (selectedPatient) && "text-foreground font-bold")}>
-                        <SelectValue placeholder="اختر المريض" />
+                        <SelectValue placeholder={t('dialog.select_patient', T)} />
                       </SelectTrigger>
-                      <SelectContent className="rounded-xl text-right z-600" >
-                        <SelectItem value="محمد أحمد">محمد أحمد</SelectItem>
-                        <SelectItem value="سارة علي">سارة علي</SelectItem>
-                        <SelectItem value="ياسين محمود">ياسين محمود</SelectItem>
-                        <SelectItem value="ليلى حسن">ليلى حسن</SelectItem>
+                      <SelectContent className={cn("rounded-xl z-600", isAr ? "text-right" : "text-left")} >
+                        <SelectItem value="محمد أحمد">{isAr ? "محمد أحمد" : "Mohammed Ahmed"}</SelectItem>
+                        <SelectItem value="سارة علي">{isAr ? "سارة علي" : "Sara Ali"}</SelectItem>
+                        <SelectItem value="ياسين محمود">{isAr ? "ياسين محمود" : "Yassin Mahmoud"}</SelectItem>
+                        <SelectItem value="ليلى حسن">{isAr ? "ليلى حسن" : "Layla Hassan"}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div className="flex flex-col gap-2">
-                    <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{isAr ? "الطبيب" : "Doctor"}</label>
+                    <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.doctor', T)}</label>
                     <Select value={selectedDoctor} onValueChange={setSelectedDoctor}>
                       <SelectTrigger className={cn("rounded-xl h-12 bg-input-background transition-all focus:ring-4 focus:ring-primary/10", (selectedDoctor) && "text-foreground font-bold")}>
-                        <SelectValue placeholder="اختر الطبيب" />
+                        <SelectValue placeholder={t('dialog.select_doctor', T)} />
                       </SelectTrigger>
-                      <SelectContent className="rounded-xl text-right z-600" >
-                        <SelectItem value="د. أحمد علي">د. أحمد علي</SelectItem>
-                        <SelectItem value="د. سامي يوسف">د. سامي يوسف</SelectItem>
-                        <SelectItem value="د. ليلى خالد">د. ليلى خالد</SelectItem>
+                      <SelectContent className={cn("rounded-xl z-600", isAr ? "text-right" : "text-left")} >
+                        <SelectItem value="د. أحمد علي">{isAr ? "د. أحمد علي" : "Dr. Ahmed Ali"}</SelectItem>
+                        <SelectItem value="د. سامي يوسف">{isAr ? "د. سامي يوسف" : "Dr. Sami Youssef"}</SelectItem>
+                        <SelectItem value="د. ليلى خالد">{isAr ? "د. ليلى خالد" : "Dr. Layla Khaled"}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div className="flex flex-col gap-2">
-                    <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{isAr ? "التاريخ" : "Date"}</label>
+                    <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.date', T)}</label>
                     <div className={cn("relative group flex items-center justify-between h-12 bg-input-background border border-border rounded-xl px-4 focus-within:ring-4 focus-within:ring-primary/10 transition-all", isAr ? "flex-row" : "flex-row-reverse")}>
                       <Flatpickr
                         value={selectedDate}
                         onChange={([date]) => setSelectedDate(date ? date.toISOString().split('T')[0] : '')}
                         options={{
-                          locale: Arabic,
+                          locale: isAr ? Arabic : undefined,
                           dateFormat: "d F Y",
                            disableMobile: true,
                           minDate: "today",
-                          formatDate: (date: Date) => format(date, "d MMMM yyyy", { locale: ar })
+                          formatDate: (date: Date) => format(date, "d MMMM yyyy", { locale: currentLocale })
                         }}
-                        placeholder="اختر التاريخ"
+                        placeholder={t('dialog.select_date', T)}
                         className={cn("flex-1 bg-transparent border-none outline-none font-bold h-full text-base md:text-sm", isAr ? "text-right" : "text-left")}
                       />
                       <FaCalendarAlt className="text-muted-foreground pointer-events-none group-focus-within:text-primary transition-colors size-[18px]" />
@@ -314,28 +339,46 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: A
                   </div>
 
                   <div className="flex flex-col gap-2 col-span-2">
-                    <label className={cn("text-sm font-semibold text-foreground/80 col-span-2", isAr ? "pr-1" : "pl-1")}>{isAr ? "حالة الموعد" : "Appointment Status"}</label>
+                    <label className={cn("text-sm font-semibold text-foreground/80 col-span-2", isAr ? "pr-1" : "pl-1")}>{t('dialog.status', T)}</label>
                     <Select value={selectedStatus} onValueChange={setSelectedStatus}>
                       <SelectTrigger className={cn("rounded-xl h-12 bg-input-background transition-all focus:ring-4 focus:ring-primary/10", (selectedStatus) && "text-foreground font-bold")}>
-                        <SelectValue placeholder="حالة الموعد" />
+                        <SelectValue placeholder={t('dialog.status', T)} />
                       </SelectTrigger>
-                      <SelectContent className="rounded-xl text-right z-600">
-                        <SelectItem value="قيد الانتظار">
+                      <SelectContent className={cn("rounded-xl z-600", isAr ? "text-right" : "text-left")}>
+                        <SelectItem value="قيد الانتظار" hidden={!isAr}>
                           <div className="flex items-center gap-2">
                             <div className="size-2 rounded-full bg-amber-500" />
                             <span>قيد الانتظار</span>
                           </div>
                         </SelectItem>
-                        <SelectItem value="مكتمل">
+                        <SelectItem value="pending" hidden={isAr}>
+                          <div className="flex items-center gap-2">
+                            <div className="size-2 rounded-full bg-amber-500" />
+                            <span>Pending</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="مكتمل" hidden={!isAr}>
                           <div className="flex items-center gap-2">
                             <div className="size-2 rounded-full bg-emerald-500" />
                             <span>مكتمل</span>
                           </div>
                         </SelectItem>
-                        <SelectItem value="ملغي">
+                        <SelectItem value="completed" hidden={isAr}>
+                          <div className="flex items-center gap-2">
+                            <div className="size-2 rounded-full bg-emerald-500" />
+                            <span>Completed</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="ملغي" hidden={!isAr}>
                           <div className="flex items-center gap-2">
                             <div className="size-2 rounded-full bg-rose-500" />
                             <span>ملغي</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="canceled" hidden={isAr}>
+                          <div className="flex items-center gap-2">
+                            <div className="size-2 rounded-full bg-rose-500" />
+                            <span>Canceled</span>
                           </div>
                         </SelectItem>
                       </SelectContent>
@@ -350,7 +393,7 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: A
             {mode === 'add' && (
               <>
                 <Button onClick={handleSubmit} className="flex-1 h-12 rounded-xl text-base shadow-lg shadow-primary/20">
-                  <Plus size={20} className={isAr ? "ml-2" : "mr-2"} /> حفظ الموعد
+                  <Plus size={20} className={isAr ? "ml-2" : "mr-2"} /> {t('dialog.save', T)}
                 </Button>
                 <Button
                   type="button"
@@ -358,14 +401,14 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: A
                   onClick={handleClose}
                   className="flex-1 h-12 rounded-xl text-base"
                 >
-                  إلغاء
+                  {t('dialog.cancel', T)}
                 </Button>
               </>
             )}
             {mode === 'edit' && (
               <div className="flex gap-3 w-full">
                 <Button onClick={handleSubmit} className="flex-1 shadow-lg shadow-primary/20 bg-primary hover:bg-primary/90 h-10 rounded-lg">
-                  حفظ التغييرات
+                  {t('dialog.save_changes', T)}
                 </Button>
                 <Button
                   type="button"
@@ -373,7 +416,7 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: A
                   onClick={handleClose}
                   className="flex-1 h-10 rounded-lg"
                 >
-                  إلغاء
+                  {t('dialog.cancel', T)}
                 </Button>
               </div>
             )}
@@ -385,7 +428,7 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: A
                   onClick={handleClose}
                   className="flex-1 h-10 rounded-lg hover:border-primary/30"
                 >
-                  إغلاق
+                  {t('dialog.close', T)}
                 </Button>
               </div>
             )}

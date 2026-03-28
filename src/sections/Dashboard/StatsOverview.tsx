@@ -6,13 +6,16 @@ import { cn } from '../../utils/cn'
 import { usePreloader } from "../../contexts/PreloaderContext"
 import ShineHover from '../../components/ui/ShineHover'
 import { useLanguage } from '../../contexts/LanguageContext'
+import { dashboardTranslations } from '../../constants/translations/dashboard'
 
 import { statsData as stats } from '../../constants/Dashboard_dummy'
 
 const StatsOverview = () => {
+  const { isAr, t } = useLanguage()
+  const T = dashboardTranslations
+  const statKeys = ['total_patients', 'appointments', 'revenue', 'new_patients']
   const { isLoaded, isExiting } = usePreloader()
   const canAnimate = isLoaded && !isExiting
-  const { isAr } = useLanguage()
   const [isInView, setIsInView] = useState(false)
   const sectionRef = useRef<HTMLElement>(null)
   const barsRef = useRef<(HTMLDivElement | null)[]>([])
@@ -125,8 +128,8 @@ const StatsOverview = () => {
           <div className="relative z-10">
             <div className="flex items-start justify-between mb-6">
               <div className={cn("flex-1", isAr ? "text-right" : "text-left")}>
-                <h4 className="text-sm font-medium text-muted-foreground mb-1">{stat.label}</h4>
-                <p className="text-xs text-muted-foreground/70">{stat.sub}</p>
+                <h4 className="text-sm font-medium text-muted-foreground mb-1">{t(`stats.${statKeys[index]}`, T)}</h4>
+                <p className="text-xs text-muted-foreground/70">{t(`stats.${statKeys[index]}_sub`, T)}</p>
               </div>
               <div className={cn(
                 "size-16 rounded-2xl animate-hovering flex items-center justify-center shadow-lg transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 will-change-transform group-hover:shadow-2xl",
@@ -143,8 +146,8 @@ const StatsOverview = () => {
             </div>
 
             <div className={cn("mb-4", isAr ? "text-right" : "text-left")}>
-              <div className={cn("flex items-baseline gap-1 mb-2 h-10", isAr ? "justify-start" : "justify-start flex-row-reverse")}>
-                {stat.label === 'معدل النمو' && <span className="text-4xl font-bold">%</span>}
+              <div className={cn("flex items-baseline gap-1 mb-2 h-10", isAr ? "justify-start" : "justify-end flex-row-reverse")}>
+                {statKeys[index] === 'growth_rate' && <span className="text-4xl font-bold">%</span>}
                 <Counter
                   value={stat.value}
                   fontSize={36}
@@ -166,7 +169,7 @@ const StatsOverview = () => {
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-700 self-start w-fit transition-transform group-hover:scale-105 will-change-transform">
               <ArrowUp className="size-3.5 stroke-3" />
               <span>{stat.change}</span>
-              <span className="text-[10px] font-bold opacity-70">{isAr ? "من الشهر السابق" : "From last month"}</span>
+              <span className="text-[10px] font-bold opacity-70">{t('stats.from_last_month', T)}</span>
             </div>
           </div>
         </article>

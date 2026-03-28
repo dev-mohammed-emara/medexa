@@ -18,20 +18,28 @@ import {
 } from "../../components/ui/select"
 import { cn } from '../../utils/cn'
 import Portal from '../../components/ui/Portal'
+import { useLanguage } from '../../contexts/LanguageContext'
+import { doctorsTranslations } from '../../constants/translations/doctors'
+import { enUS } from 'date-fns/locale'
 
 interface Doctor {
   id: number;
-  name: string;
-  specialty: string;
+  name_ar: string;
+  name_en: string;
+  specialty_ar: string;
+  specialty_en: string;
   status: string;
   phone: string;
   email: string;
   patients: number;
   revenue: string;
-  initial: string;
-  description?: string;
-  gender?: string;
-  dob?: string;
+  initial_ar: string;
+  initial_en: string;
+  gender_ar: string;
+  gender_en: string;
+  dob: string;
+  description_ar: string;
+  description_en: string;
   permissions?: string[];
 }
 
@@ -44,12 +52,15 @@ interface DoctorDialogProps {
 }
 
 const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorDialogProps) => {
+  const { isAr, t } = useLanguage();
+  const T = doctorsTranslations;
+  const currentLocale = isAr ? ar : enUS;
   const overlayRef = useRef<HTMLDivElement>(null)
   const modalRef = useRef<HTMLDivElement>(null)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [selectedSpecialty, setSelectedSpecialty] = useState(initialData?.specialty || "")
-  const [selectedGender, setSelectedGender] = useState(initialData?.gender || "")
+  const [selectedSpecialty, setSelectedSpecialty] = useState(isAr ? initialData?.specialty_ar : initialData?.specialty_en || "")
+  const [selectedGender, setSelectedGender] = useState(isAr ? initialData?.gender_ar : initialData?.gender_en || "")
   const [selectedDob, setSelectedDob] = useState<string>(initialData?.dob || "")
   const [isClosing, setIsClosing] = useState(false)
 
@@ -83,9 +94,11 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
       return
     }
     const formData = new FormData(e.target as HTMLFormElement)
-    const data = Object.fromEntries(formData.entries())
-    data.specialty = selectedSpecialty
-    data.gender = selectedGender
+    const data: Record<string, any> = Object.fromEntries(formData.entries())
+    data.specialty_ar = isAr ? selectedSpecialty : ''
+    data.specialty_en = !isAr ? selectedSpecialty : ''
+    data.gender_ar = isAr ? selectedGender : ''
+    data.gender_en = !isAr ? selectedGender : ''
     data.dob = selectedDob
     const permissions: string[] = []
     const permissionCheckboxes = ['managePatients', 'manageAppointments', 'medicalRecords', 'financialReports']
@@ -97,8 +110,16 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
     handleClose()
   }
 
-  const titles = { add: 'إضافة طبيب جديد', edit: 'تعديل بيانات الطبيب', view: 'تفاصيل الطبيب' }
-  const descriptions = { add: 'أدخل المعلومات التفصيلية للطبيب الجديد', edit: 'قم بتحديث المعلومات التفصيلية للطبيب', view: 'عرض المعلومات التفصيلية للطبيب' }
+  const titles = { 
+    add: t('dialog.title_add', T), 
+    edit: t('dialog.title_edit', T), 
+    view: t('dialog.title_view', T) 
+  };
+  const descriptions = { 
+    add: t('dialog.desc_add', T), 
+    edit: t('dialog.desc_edit', T), 
+    view: t('dialog.desc_view', T) 
+  };
   const inputId = (name: string) => `doctor-${name}-${mode}`
 
   // Style class for filled inputs as requested (Lil' darker)
@@ -112,7 +133,7 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
           "fixed inset-0 z-500 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6",
           isClosing ? "animate-fadeOut" : "animate-fade"
         )}
-        dir="rtl"
+        dir={isAr ? "rtl" : "ltr"}
         onClick={(e) => e.target === overlayRef.current && handleClose()}
       >
         <figure
@@ -123,7 +144,7 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
             isClosing ? "animate-scaleDownOut" : "animate-scaleUp"
           )}
         >
-          <button onClick={handleClose} type="button" className="absolute top-6 right-6 p-2 rounded-full hover:bg-muted transition-colors opacity-70 hover:opacity-100 outline-none z-20">
+          <button onClick={handleClose} type="button" className={cn("absolute top-6 p-2 rounded-full hover:bg-muted transition-colors opacity-70 hover:opacity-100 outline-none z-20", isAr ? "right-6" : "left-6")}>
             <X size={20} />
           </button>
 
@@ -136,76 +157,76 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
             <form id="doctorForm" onSubmit={handleSubmit} className="space-y-6 py-2" autoComplete="off">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="flex flex-col gap-2">
-                  <label htmlFor={inputId('name')} className="text-sm font-semibold text-foreground/80 pr-1">الاسم</label>
-                  <Input id={inputId('name')} name="doctor-name" defaultValue={initialData?.name} required disabled={mode === 'view'} placeholder="أدخل اسم الطبيب الرباعي" icon={<User size={18} />} className={inputClass} />
+                  <label htmlFor={inputId('name')} className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.name', T)}</label>
+                  <Input id={inputId('name')} name={isAr ? "name_ar" : "name_en"} defaultValue={isAr ? initialData?.name_ar : initialData?.name_en} required disabled={mode === 'view'} placeholder={t('dialog.name_placeholder', T)} icon={<User size={18} />} className={inputClass} />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <label htmlFor={inputId('email')} className="text-sm font-semibold text-foreground/80 pr-1">البريد الإلكتروني</label>
-                  <Input id={inputId('email')} type="email" name="doctor-email" defaultValue={initialData?.email} required disabled={mode === 'view'} placeholder="أدخل البريد الإلكتروني" icon={<Mail size={18} />} className={inputClass} />
+                  <label htmlFor={inputId('email')} className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.email', T)}</label>
+                  <Input id={inputId('email')} type="email" name="doctor-email" defaultValue={initialData?.email} required disabled={mode === 'view'} placeholder={t('dialog.email_placeholder', T)} icon={<Mail size={18} />} className={inputClass} />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <label htmlFor={inputId('phone')} className="text-sm font-semibold text-foreground/80 pr-1">رقم الهاتف</label>
+                  <label htmlFor={inputId('phone')} className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.phone', T)}</label>
                   <Input id={inputId('phone')} name="doctor-phone" defaultValue={initialData?.phone} required disabled={mode === 'view'} placeholder="07XXXXXXXX" icon={<Phone size={18} />} className={inputClass} dir="ltr" />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <label className="text-sm font-semibold text-foreground/80 pr-1">التخصص الطبي</label>
+                  <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.specialty', T)}</label>
                   <Select value={selectedSpecialty} onValueChange={setSelectedSpecialty} disabled={mode === 'view'}>
-                    <SelectTrigger className={cn("rounded-xl h-12 bg-input-background transition-all focus:ring-4 focus:ring-primary/10", (initialData?.specialty || selectedSpecialty) && "text-foreground font-bold")}>
-                      <SelectValue placeholder="اختر التخصص" />
+                    <SelectTrigger className={cn("rounded-xl h-12 bg-input-background transition-all focus:ring-4 focus:ring-primary/10", ((isAr ? initialData?.specialty_ar : initialData?.specialty_en) || selectedSpecialty) && "text-foreground font-bold")}>
+                      <SelectValue placeholder={t('dialog.select_specialty', T)} />
                     </SelectTrigger>
-                    <SelectContent className="rounded-xl text-right z-[600]">
-                      <SelectItem value="طب عام">طب عام</SelectItem>
-                      <SelectItem value="أطفال">أطفال</SelectItem>
-                      <SelectItem value="أسنان">أسنان</SelectItem>
-                      <SelectItem value="باطني">باطني</SelectItem>
-                      <SelectItem value="جراحة">جراحة</SelectItem>
+                    <SelectContent className={cn("rounded-xl z-600", isAr ? "text-right" : "text-left")}>
+                      <SelectItem value="طب عام">{isAr ? "طب عام" : "General Medicine"}</SelectItem>
+                      <SelectItem value="أطفال">{isAr ? "أطفال" : "Pediatrics"}</SelectItem>
+                      <SelectItem value="أسنان">{isAr ? "أسنان" : "Dentistry"}</SelectItem>
+                      <SelectItem value="باطني">{isAr ? "باطني" : "Internal Medicine"}</SelectItem>
+                      <SelectItem value="جراحة">{isAr ? "جراحة" : "Surgery"}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
 
               <div className="flex flex-col gap-2">
-                <label htmlFor={inputId('description')} className="text-sm font-semibold text-foreground/80 pr-1">وصف الطبيب</label>
+                <label htmlFor={inputId('description')} className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.description', T)}</label>
                 <textarea
                   id={inputId('description')}
-                  name="doctor-description"
-                  defaultValue={initialData?.description}
+                  name={isAr ? "description_ar" : "description_en"}
+                  defaultValue={isAr ? initialData?.description_ar : initialData?.description_en}
                   disabled={mode === 'view'}
-                  className={cn("w-full min-h-24 p-4 rounded-xl border border-border bg-input-background text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all resize-none disabled:opacity-50 placeholder:text-muted-foreground", initialData?.description && "text-foreground font-bold")}
-                  placeholder="الشهادات، الخبرات، التخصصات الفرعية..."
+                  className={cn("w-full min-h-24 p-4 rounded-xl border border-border bg-input-background text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all resize-none disabled:opacity-50 placeholder:text-muted-foreground", (isAr ? initialData?.description_ar : initialData?.description_en) && "text-foreground font-bold")}
+                  placeholder={t('dialog.description_placeholder', T)}
                   rows={3}
                 />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="flex flex-col gap-2">
-                  <label className="text-sm font-semibold text-foreground/80 pr-1">الجنس</label>
+                  <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.gender', T)}</label>
                   <Select value={selectedGender} onValueChange={setSelectedGender} disabled={mode === 'view'}>
-                    <SelectTrigger className={cn("rounded-xl h-12 bg-input-background transition-all focus:ring-4 focus:ring-primary/10", (initialData?.gender || selectedGender) && "text-foreground font-bold")}>
-                      <SelectValue placeholder="اختر الجنس" />
+                    <SelectTrigger className={cn("rounded-xl h-12 bg-input-background transition-all focus:ring-4 focus:ring-primary/10", ((isAr ? initialData?.gender_ar : initialData?.gender_en) || selectedGender) && "text-foreground font-bold")}>
+                      <SelectValue placeholder={t('dialog.select_gender', T)} />
                     </SelectTrigger>
-                    <SelectContent className="rounded-xl text-right z-[600]">
-                      <SelectItem value="ذكر">ذكر</SelectItem>
-                      <SelectItem value="أنثى">أنثى</SelectItem>
+                    <SelectContent className={cn("rounded-xl z-600", isAr ? "text-right" : "text-left")}>
+                      <SelectItem value="ذكر">{isAr ? "ذكر" : "Male"}</SelectItem>
+                      <SelectItem value="أنثى">{isAr ? "أنثى" : "Female"}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="flex flex-col gap-2">
-                  <label className="text-sm font-semibold text-foreground/80 pr-1">تاريخ الميلاد</label>
-                  <div className="relative group flex items-center justify-between h-12 bg-input-background border border-border rounded-xl px-4 transition-all focus-within:ring-4 focus-within:ring-primary/10">
+                  <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.dob', T)}</label>
+                  <div className={cn("relative group flex items-center justify-between h-12 bg-input-background border border-border rounded-xl px-4 transition-all focus-within:ring-4 focus-within:ring-primary/10", isAr ? "flex-row" : "flex-row-reverse")}>
                     <Flatpickr
                       value={selectedDob}
                       onChange={([date]) => setSelectedDob(date ? date.toISOString().split('T')[0] : '')}
                       disabled={mode === 'view'}
                       options={{
-                        locale: Arabic,
+                        locale: isAr ? Arabic : undefined,
                         dateFormat: "d F Y",
                         disableMobile: true,
                         maxDate: "today",
-                        formatDate: (date: Date) => format(date, "d MMMM yyyy", { locale: ar })
+                        formatDate: (date: Date) => format(date, "d MMMM yyyy", { locale: currentLocale })
                       }}
-                      placeholder="اختر التاريخ"
-                      className={cn("flex-1 bg-transparent border-none outline-none text-right font-bold text-base md:text-sm h-full", mode === "view" && "opacity-50 pointer-events-none")}
+                      placeholder={t('dialog.select_date', T)}
+                      className={cn("flex-1 bg-transparent border-none outline-none font-bold text-base md:text-sm h-full", isAr ? "text-right" : "text-left", mode === "view" && "opacity-50 pointer-events-none")}
                     />
                     <FaCalendarAlt className="text-muted-foreground pointer-events-none group-focus-within:text-primary transition-colors size-4" />
                   </div>
@@ -215,19 +236,19 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
               {mode !== 'view' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="flex flex-col gap-2">
-                    <label htmlFor={inputId('password')} className="text-sm font-semibold text-foreground/80 pr-1">كلمة المرور</label>
+                    <label htmlFor={inputId('password')} className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.password', T)}</label>
                     <div className="relative group">
-                      <Input id={inputId('password')} type={showPassword ? "text" : "password"} name="doctor-password" placeholder="••••••••" autoComplete="new-password" className={cn(inputClass, "pl-12")} />
-                      <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors outline-none z-10">
+                      <Input id={inputId('password')} type={showPassword ? "text" : "password"} name="doctor-password" placeholder="••••••••" autoComplete="new-password" className={cn(inputClass, isAr ? "pl-12" : "pr-12")} />
+                      <button type="button" onClick={() => setShowPassword(!showPassword)} className={cn("absolute top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors outline-none z-10", isAr ? "left-4" : "right-4")}>
                         {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                       </button>
                     </div>
                   </div>
                   <div className="flex flex-col gap-2">
-                    <label htmlFor={inputId('confirm-password')} className="text-sm font-semibold text-foreground/80 pr-1">تأكيد كلمة المرور</label>
+                    <label htmlFor={inputId('confirm-password')} className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.confirm_password', T)}</label>
                     <div className="relative group">
-                      <Input id={inputId('confirm-password')} type={showConfirmPassword ? "text" : "password"} name="doctor-confirm-password" placeholder="••••••••" autoComplete="new-password" className={cn(inputClass, "pl-12")} />
-                      <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors outline-none z-10">
+                      <Input id={inputId('confirm-password')} type={showConfirmPassword ? "text" : "password"} name="doctor-confirm-password" placeholder="••••••••" autoComplete="new-password" className={cn(inputClass, isAr ? "pl-12" : "pr-12")} />
+                      <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className={cn("absolute top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors outline-none z-10", isAr ? "left-4" : "right-4")}>
                         {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                       </button>
                     </div>
@@ -236,13 +257,13 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
               )}
 
               <footer className="space-y-3 p-4 bg-muted/30 rounded-2xl border border-border">
-                <label className="text-lg font-bold block">الصلاحيات</label>
-                <p className="text-xs text-muted-foreground mb-3">حدد الصلاحيات المتاحة للطبيب في النظام</p>
+                <label className="text-lg font-bold block">{t('permissions', T)}</label>
+                <p className="text-xs text-muted-foreground mb-3">{t('permissions_desc', T)}</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-1">
-                  <PermissionCheckbox id="managePatients" label="إدارة المرضى" defaultChecked={initialData?.permissions?.includes('managePatients') ?? true} disabled={mode === 'view'} />
-                  <PermissionCheckbox id="manageAppointments" label="إدارة المواعيد" defaultChecked={initialData?.permissions?.includes('manageAppointments') ?? true} disabled={mode === 'view'} />
-                  <PermissionCheckbox id="medicalRecords" label="السجلات الطبية" defaultChecked={initialData?.permissions?.includes('medicalRecords') ?? true} disabled={mode === 'view'} />
-                  <PermissionCheckbox id="financialReports" label="التقارير المالية" defaultChecked={initialData?.permissions?.includes('financialReports')} disabled={mode === 'view'} />
+                  <PermissionCheckbox id="managePatients" label={t('perm_patients', T)} defaultChecked={initialData?.permissions?.includes('managePatients') ?? true} disabled={mode === 'view'} />
+                  <PermissionCheckbox id="manageAppointments" label={t('perm_appointments', T)} defaultChecked={initialData?.permissions?.includes('manageAppointments') ?? true} disabled={mode === 'view'} />
+                  <PermissionCheckbox id="medicalRecords" label={t('perm_records', T)} defaultChecked={initialData?.permissions?.includes('medicalRecords') ?? true} disabled={mode === 'view'} />
+                  <PermissionCheckbox id="financialReports" label={t('perm_finance', T)} defaultChecked={initialData?.permissions?.includes('financialReports')} disabled={mode === 'view'} />
                 </div>
               </footer>
             </form>
@@ -251,12 +272,12 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
           <aside className="flex gap-4 pt-6 border-t border-border mt-6">
             {mode === 'view' ? (
               <Button type="button" onClick={() => window.print()} className="flex-1 h-12 rounded-xl text-base shadow-lg shadow-primary/20">
-                <Printer size={20} className="ml-2" /> طباعة التقرير
+                <Printer size={20} className={isAr ? "ml-2" : "mr-2"} /> {t('dialog.print', T)}
               </Button>
             ) : (
               <Button type="submit" form="doctorForm" className="flex-1 h-12 rounded-xl text-base shadow-lg shadow-primary/20">
-                {mode === 'add' ? <Plus size={20} className="ml-2" /> : <Save size={20} className="ml-2" />}
-                {mode === 'add' ? 'إضافة الطبيب' : 'حفظ التعديلات'}
+                {mode === 'add' ? <Plus size={20} className={isAr ? "ml-2" : "mr-2"} /> : <Save size={20} className={isAr ? "ml-2" : "mr-2"} />}
+                {mode === 'add' ? t('dialog.save_add', T) : t('dialog.save_edit', T)}
               </Button>
             )}
             <Button
@@ -265,7 +286,7 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
               onClick={handleClose}
               className="flex-1 h-12 rounded-xl text-base"
             >
-              {mode === 'view' ? 'إغلاق' : 'إلغاء'}
+              {mode === 'view' ? t('dialog.close', T) : t('dialog.cancel', T)}
             </Button>
           </aside>
         </figure>

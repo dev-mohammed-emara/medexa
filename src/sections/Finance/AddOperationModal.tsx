@@ -16,8 +16,11 @@ import {
 import Input from '../../components/ui/Input';
 import Flatpickr from 'react-flatpickr';
 import { Arabic } from 'flatpickr/dist/l10n/ar.js';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { financeTranslations } from '../../constants/translations/finance';
 import { cn } from '../../utils/cn';
 import Portal from '../../components/ui/Portal';
+import { useBroadcast } from '../../hooks/useBroadcast';
 
 interface OperationData {
   type: string;
@@ -35,6 +38,9 @@ interface AddOperationModalProps {
 }
 
 const AddOperationModal = ({ isOpen, onClose, onSuccess }: AddOperationModalProps) => {
+  const { isAr, t, dir } = useLanguage();
+  const { broadcast } = useBroadcast();
+  const T = financeTranslations;
   const overlayRef = useRef<HTMLDivElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -77,6 +83,7 @@ const AddOperationModal = ({ isOpen, onClose, onSuccess }: AddOperationModalProp
     if (!type || !amount || !date) return;
 
     onSuccess({ type, amount, currency, date, appointment, notes });
+    broadcast({ type: 'DATA_UPDATE', module: 'finance' });
     handleClose();
   };
 
@@ -90,7 +97,7 @@ const AddOperationModal = ({ isOpen, onClose, onSuccess }: AddOperationModalProp
           "fixed inset-0 z-500 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm",
           isClosing ? "animate-fadeOut" : "animate-fade"
         )}
-        dir="rtl"
+        dir={dir}
         onClick={(e) => {
           if (e.target === overlayRef.current) handleClose();
         }}
@@ -105,7 +112,10 @@ const AddOperationModal = ({ isOpen, onClose, onSuccess }: AddOperationModalProp
           {/* Close Button - Physically Absolute but stays visible */}
           <button
             onClick={handleClose}
-            className="absolute left-6 top-6 w-11 h-11 flex items-center justify-center rounded-xl bg-muted/40 text-muted-foreground hover:bg-red-50 hover:text-red-500 transition-all active:scale-95 z-20"
+            className={cn(
+              "absolute top-6 w-11 h-11 flex items-center justify-center rounded-xl bg-muted/40 text-muted-foreground hover:bg-red-50 hover:text-red-500 transition-all active:scale-95 z-20",
+              isAr ? "left-6" : "right-6"
+            )}
           >
             <X className="size-5" />
           </button>
@@ -122,8 +132,8 @@ const AddOperationModal = ({ isOpen, onClose, onSuccess }: AddOperationModalProp
                   <DollarSign className="size-7 text-primary" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-[#1a2b3c]">إضافة عملية مالية</h2>
-                  <p className="text-muted-foreground">قم بإدخال تفاصيل العملية المالية الجديدة</p>
+                  <h2 className="text-2xl font-bold text-[#1a2b3c]">{t('modal_title', T)}</h2>
+                  <p className="text-muted-foreground">{t('modal_desc', T)}</p>
                 </div>
               </div>
             </div>
@@ -132,24 +142,24 @@ const AddOperationModal = ({ isOpen, onClose, onSuccess }: AddOperationModalProp
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Operation Type */}
                 <div className="space-y-2">
-                  <label className="block text-sm font-bold text-[#1a2b3c] mr-1">
-                    نوع العملية <span className="text-destructive">*</span>
+                  <label className={cn("block text-sm font-bold text-[#1a2b3c]", isAr ? "mr-1" : "ml-1")}>
+                    {t('type_label', T)} <span className="text-destructive">*</span>
                   </label>
                   <Select value={type} onValueChange={setType}>
                     <SelectTrigger className="h-12 rounded-xl bg-muted/30 border-border border">
-                      <SelectValue placeholder="اختر نوع العملية" />
+                      <SelectValue placeholder={t('select_type', T)} />
                     </SelectTrigger>
                     <SelectContent className="z-600">
-                      <SelectItem value="دخل">دخل</SelectItem>
-                      <SelectItem value="مصروف">مصروف</SelectItem>
+                      <SelectItem value="دخل">{t('type_income', T)}</SelectItem>
+                      <SelectItem value="مصروف">{t('type_expense', T)}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 {/* Amount */}
                 <div className="space-y-2">
-                  <label className="block text-sm font-bold text-[#1a2b3c] mr-1">
-                    المبلغ <span className="text-destructive">*</span>
+                  <label className={cn("block text-sm font-bold text-[#1a2b3c]", isAr ? "mr-1" : "ml-1")}>
+                    {t('amount_label', T)} <span className="text-destructive">*</span>
                   </label>
                   <div className="relative group">
                     <Input
@@ -158,11 +168,11 @@ const AddOperationModal = ({ isOpen, onClose, onSuccess }: AddOperationModalProp
                       min="0"
                       value={amount}
                       onChange={(e) => setAmount(e.target.value)}
-                      className="h-12 bg-muted/30 border-border focus:bg-white pl-12 text-left"
+                      className={cn("h-12 bg-muted/30 border-border focus:bg-white text-left", isAr ? "pl-12" : "pr-12")}
                       dir='ltr'
                     />
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-sm font-bold text-muted-foreground pointer-events-none group-focus-within:text-primary">
-                      د.أ
+                    <div className={cn("absolute top-1/2 -translate-y-1/2 text-sm font-bold text-muted-foreground pointer-events-none group-focus-within:text-primary", isAr ? "left-4" : "right-4")}>
+                      {currency === 'د.أ' ? t('jod', T) : currency}
                     </div>
                   </div>
                 </div>
@@ -171,22 +181,22 @@ const AddOperationModal = ({ isOpen, onClose, onSuccess }: AddOperationModalProp
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Currency */}
                 <div className="space-y-2">
-                  <label className="block text-sm font-bold text-[#1a2b3c] mr-1">العملة</label>
+                  <label className={cn("block text-sm font-bold text-[#1a2b3c]", isAr ? "mr-1" : "ml-1")}>{t('table_currency', T)}</label>
                   <Select value={currency} onValueChange={setCurrency}>
                     <SelectTrigger className="h-12 rounded-xl bg-muted/30 border-border border">
-                      <SelectValue placeholder="دينار أردني (د.أ)" />
+                      <SelectValue placeholder={t('jod', T)} />
                     </SelectTrigger>
                     <SelectContent className="z-600">
-                      <SelectItem value="د.أ">دينار أردني (د.أ)</SelectItem>
-                      <SelectItem value="USD">دولار أمريكي (USD)</SelectItem>
+                      <SelectItem value="د.أ">{t('jod', T)}</SelectItem>
+                      <SelectItem value="USD">{t('usd', T)}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 {/* Date */}
                 <div className="space-y-2">
-                  <label className="block text-sm font-bold text-[#1a2b3c] mr-1">
-                    التاريخ <span className="text-destructive">*</span>
+                  <label className={cn("block text-sm font-bold text-[#1a2b3c]", isAr ? "mr-1" : "ml-1")}>
+                    {t('date_label', T)} <span className="text-destructive">*</span>
                   </label>
                   <div className="relative group flex items-center justify-between h-12 bg-muted/30 border border-border rounded-xl px-4 transition-all focus-within:ring-4 focus-within:ring-primary/10 focus-within:bg-white">
                     <Flatpickr
@@ -194,10 +204,10 @@ const AddOperationModal = ({ isOpen, onClose, onSuccess }: AddOperationModalProp
                       onChange={([d]) => setDate(d)}
                       options={{
                         dateFormat: 'd F Y',
-                        locale: Arabic,
+                        locale: isAr ? Arabic : undefined,
                         disableMobile: true
                       }}
-                      className="flex-1 bg-transparent border-none outline-none text-right text-sm font-bold h-full"
+                      className={cn("flex-1 bg-transparent border-none outline-none text-sm font-bold h-full", isAr ? "text-right" : "text-left")}
                     />
                     <FaCalendarAlt className="size-4 text-muted-foreground pointer-events-none group-focus-within:text-primary transition-colors" />
                   </div>
@@ -206,39 +216,42 @@ const AddOperationModal = ({ isOpen, onClose, onSuccess }: AddOperationModalProp
 
               {/* Related Appointment */}
               <div className="space-y-2">
-                <label className="block text-sm font-bold text-[#1a2b3c] mr-1">الموعد المرتبط</label>
+                <label className={cn("block text-sm font-bold text-[#1a2b3c]", isAr ? "mr-1" : "ml-1")}>{t('related_appt_label', T)}</label>
                 <Select value={appointment} onValueChange={setAppointment}>
                   <SelectTrigger className="h-12 rounded-xl bg-muted/30 border-border border">
-                    <SelectValue placeholder="اختر موعد (اختياري)" />
+                    <SelectValue placeholder={t('select_appt', T)} />
                   </SelectTrigger>
                   <SelectContent className="z-600">
-                    <SelectItem value="None">بدون موعد</SelectItem>
-                    <SelectItem value="123">موعد #123 - أحمد محمد</SelectItem>
-                    <SelectItem value="124">موعد #124 - سارة علي</SelectItem>
+                    <SelectItem value="None">{t('no_appt', T)}</SelectItem>
+                    <SelectItem value="123">{t('appt_prefix', T)}123 - أحمد محمد</SelectItem>
+                    <SelectItem value="124">{t('appt_prefix', T)}124 - سارة علي</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               {/* Notes */}
               <div className="space-y-2">
-                <label className="block text-sm font-bold text-[#1a2b3c] mr-1">ملاحظات</label>
+                <label className={cn("block text-sm font-bold text-[#1a2b3c]", isAr ? "mr-1" : "ml-1")}>{t('table_notes', T)}</label>
                 <div className="relative group">
                   <textarea
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    placeholder="أدخل أي ملاحظات إضافية..."
-                    className="w-full min-h-[120px] rounded-xl border border-border bg-muted/30 px-4 py-3 text-sm transition-all outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 focus:bg-white resize-none pl-12"
+                    placeholder={t('notes_placeholder', T)}
+                    className={cn(
+                      "w-full min-h-[120px] rounded-xl border border-border bg-muted/30 px-4 py-3 text-sm transition-all outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 focus:bg-white resize-none",
+                      isAr ? "pl-12" : "pr-12"
+                    )}
                   />
-                  <FileText className="absolute left-4 top-4 size-4 text-muted-foreground pointer-events-none group-focus-within:text-primary" />
+                  <FileText className={cn("absolute top-4 size-4 text-muted-foreground pointer-events-none group-focus-within:text-primary", isAr ? "left-4" : "right-4")} />
                 </div>
               </div>
 
               {/* Information Alert */}
               <div className="p-5 bg-primary/5 border border-primary/20 rounded-2xl flex gap-3 mb-2">
                 <DollarSign className="size-6 text-primary shrink-0 transition-transform hover:scale-110" />
-                <div className="text-xs text-primary/80 leading-relaxed">
-                  <p className="font-bold mb-1 text-sm">ملاحظة هامة:</p>
-                  <p>سيتم تسجيل هذه العملية في النظام المالي وسيتم احتسابها ضمن التقارير المالية والإحصائيات.</p>
+                <div className={cn("text-xs text-primary/80 leading-relaxed", isAr ? "text-right" : "text-left")}>
+                  <p className="font-bold mb-1 text-sm">{t('important_note', T)}</p>
+                  <p>{t('disclaimer', T)}</p>
                 </div>
               </div>
             </div>
@@ -257,14 +270,14 @@ const AddOperationModal = ({ isOpen, onClose, onSuccess }: AddOperationModalProp
               )}
             >
               <Check className="size-5" />
-              إضافة العملية
+              {t('add_btn', T)}
             </button>
             <button
               onClick={handleClose}
               className="flex-1 h-12 rounded-xl border border-border font-bold text-foreground hover:text-white transition-all active:scale-95 flex items-center justify-center gap-2 hover:bg-accent"
             >
               <X className="size-4" />
-              إلغاء
+              {t('cancel', T)}
             </button>
           </div>
         </div>
