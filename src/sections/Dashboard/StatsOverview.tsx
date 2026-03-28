@@ -13,7 +13,7 @@ import { statsData as stats } from '../../constants/Dashboard_dummy'
 const StatsOverview = () => {
   const { isAr, t } = useLanguage()
   const T = dashboardTranslations
-  const statKeys = ['total_patients', 'appointments', 'revenue', 'new_patients']
+  const statKeys = ['total_patients', 'appointments', 'revenue', 'growth_rate']
   const { isLoaded, isExiting } = usePreloader()
   const canAnimate = isLoaded && !isExiting
   const [isInView, setIsInView] = useState(false)
