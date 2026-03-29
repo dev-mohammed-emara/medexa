@@ -41,24 +41,24 @@ import { useBroadcast } from '../../hooks/useBroadcast';
 
 // Mock data for appointments
 const INITIAL_APPOINTMENTS: Appointment[] = [
-  { id: 1, date: new Date(2026, 2, 2), time: '10:00', patientName: 'أحمد محمد', doctorName: 'د. أحمد علي', status: 'مكتمل' },
-  { id: 2, date: new Date(2026, 2, 2), time: '11:30', patientName: 'سارة أحمد', doctorName: 'د. ليلى خالد', status: 'مكتمل' },
-  { id: 3, date: new Date(2026, 2, 6), time: '09:00', patientName: 'محمود علي', doctorName: 'د. أحمد علي', status: 'مكتمل' },
-  { id: 4, date: new Date(2026, 2, 6), time: '14:00', patientName: 'ليلى يوسف', doctorName: 'د. ليلى خالد', status: 'ملغي' },
-  { id: 5, date: new Date(2026, 2, 10), time: '10:00', patientName: 'خالد عمر', doctorName: 'د. سامي يوسف', status: 'مكتمل' },
-  { id: 6, date: new Date(2026, 2, 10), time: '11:00', patientName: 'منى عبدالله', doctorName: 'د. أحمد علي', status: 'قيد الانتظار' },
-  { id: 7, date: new Date(2026, 2, 15), time: '09:30', patientName: 'أحمد محمد', doctorName: 'د. ليلى خالد', status: 'مكتمل' },
-  { id: 8, date: new Date(2026, 2, 15), time: '16:00', patientName: 'سارة أحمد', doctorName: 'د. سامي يوسف', status: 'ملغي' },
-  { id: 9, date: new Date(2026, 2, 20), time: '13:00', patientName: 'محمود علي', doctorName: 'د. أحمد علي', status: 'مكتمل' },
-  { id: 10, date: new Date(2026, 2, 20), time: '15:00', patientName: 'ليلى يوسف', doctorName: 'د. ليلى خالد', status: 'مكتمل' },
-  { id: 11, date: new Date(2026, 2, 21), time: '10:30', patientName: 'خالد عمر', doctorName: 'د. سامي يوسف', status: 'مكتمل' },
-  { id: 12, date: new Date(2026, 2, 24), time: '09:00', patientName: 'منى عبدالله', doctorName: 'د. أحمد علي', status: 'مكتمل' },
-  { id: 13, date: new Date(2026, 2, 25), time: '14:30', patientName: 'أحمد محمد', doctorName: 'د. ليلى خالد', status: 'مكتمل' },
-  { id: 14, date: new Date(2026, 2, 26), time: '11:00', patientName: 'سارة أحمد', doctorName: 'د. سامي يوسف', status: 'مكتمل' },
-  { id: 15, date: new Date(2026, 2, 27), patientName: 'محمود علي', doctorName: 'د. سامي يوسف', time: '10:30', status: 'مكتمل' },
-  { id: 16, date: new Date(2026, 2, 27), patientName: 'ليلى يوسف', doctorName: 'د. أحمد علي', time: '12:00', status: 'مكتمل' },
-  { id: 17, date: new Date(2026, 2, 27), patientName: 'خالد عمر', doctorName: 'د. ليلى خالد', time: '14:00', status: 'قيد الانتظار' },
-  { id: 18, date: new Date(2026, 2, 28), patientName: 'منى عبدالله', doctorName: 'د. سامي يوسف', time: '09:30', status: 'قيد الانتظار' },
+  { id: 1, date: new Date(2026, 2, 2), time: '10:00', patientName: 'ahmed', doctorName: 'ahmed', status: 'completed' },
+  { id: 2, date: new Date(2026, 2, 2), time: '11:30', patientName: 'sara', doctorName: 'layla', status: 'completed' },
+  { id: 3, date: new Date(2026, 2, 6), time: '09:00', patientName: 'mahmoud', doctorName: 'ahmed', status: 'completed' },
+  { id: 4, date: new Date(2026, 2, 6), time: '14:00', patientName: 'layla', doctorName: 'layla', status: 'canceled' },
+  { id: 5, date: new Date(2026, 2, 10), time: '10:00', patientName: 'khaled', doctorName: 'sami', status: 'completed' },
+  { id: 6, date: new Date(2026, 2, 10), time: '11:00', patientName: 'muna', doctorName: 'ahmed', status: 'pending' },
+  { id: 7, date: new Date(2026, 2, 15), time: '09:30', patientName: 'ahmed', doctorName: 'layla', status: 'completed' },
+  { id: 8, date: new Date(2026, 2, 15), time: '16:00', patientName: 'sara', doctorName: 'sami', status: 'canceled' },
+  { id: 9, date: new Date(2026, 2, 20), time: '13:00', patientName: 'mahmoud', doctorName: 'ahmed', status: 'completed' },
+  { id: 10, date: new Date(2026, 2, 20), time: '15:00', patientName: 'layla', doctorName: 'layla', status: 'completed' },
+  { id: 11, date: new Date(2026, 2, 21), time: '10:30', patientName: 'khaled', doctorName: 'sami', status: 'completed' },
+  { id: 12, date: new Date(2026, 2, 24), time: '09:00', patientName: 'muna', doctorName: 'ahmed', status: 'completed' },
+  { id: 13, date: new Date(2026, 2, 25), time: '14:30', patientName: 'ahmed', doctorName: 'layla', status: 'completed' },
+  { id: 14, date: new Date(2026, 2, 26), time: '11:00', patientName: 'sara', doctorName: 'sami', status: 'completed' },
+  { id: 15, date: new Date(2026, 2, 27), patientName: 'mahmoud', doctorName: 'sami', time: '10:30', status: 'completed' },
+  { id: 16, date: new Date(2026, 2, 27), patientName: 'layla', doctorName: 'ahmed', time: '12:00', status: 'completed' },
+  { id: 17, date: new Date(2026, 2, 27), patientName: 'khaled', doctorName: 'layla', time: '14:00', status: 'pending' },
+  { id: 18, date: new Date(2026, 2, 28), patientName: 'muna', doctorName: 'sami', time: '09:30', status: 'pending' },
 ];
 
 const AppointmentsList = () => {
@@ -400,9 +400,9 @@ const AppointmentsList = () => {
             </SelectTrigger>
             <SelectContent smallZ={true}>
               <SelectItem value="all">{t('all_doctors', T)}</SelectItem>
-              <SelectItem value="1">د. أحمد علي</SelectItem>
-              <SelectItem value="2">د. سامي يوسف</SelectItem>
-              <SelectItem value="3">د. ليلى خالد</SelectItem>
+              <SelectItem value="ahmed">{t('dialog.doctors.ahmed', T)}</SelectItem>
+              <SelectItem value="sami">{t('dialog.doctors.sami', T)}</SelectItem>
+              <SelectItem value="layla">{t('dialog.doctors.layla', T)}</SelectItem>
             </SelectContent>
           </Select>
 
@@ -538,7 +538,7 @@ const AppointmentsList = () => {
 
                         <div className="space-y-1 flex-1">
                           {dayAppointments.slice(0, 2).map((app) => {
-                            const config = statusConfig[app.status] || statusConfig[isAr ? 'قيد الانتظار' : 'pending'];
+                            const config = statusConfig[app.status] || statusConfig['pending'];
                             return (
                               <div
                                 key={app.id}
@@ -560,7 +560,13 @@ const AppointmentsList = () => {
                                   <div className={cn("w-1.5 h-1.5 rounded-full transition-transform duration-300 group-hover/app:scale-125", config.dotColor)} />
                                   <span className="truncate font-medium">{app.time}</span>
                                 </div>
-                                <div className="truncate text-[10px] mt-0.5 font-bold">{app.patientName}</div>
+                                <div className="truncate text-[10px] mt-0.5 font-bold">
+                                  {(() => {
+                                    const key = `dialog.patients.${app.patientName}`;
+                                    const translated = t(key, T);
+                                    return translated === key ? app.patientName : translated;
+                                  })()}
+                                </div>
                               </div>
                             );
                           })}
@@ -620,7 +626,7 @@ const AppointmentsList = () => {
                       appointments
                         .filter(app => isSameDay(app.date, selectedDate || lastSelectedDate!))
                         .map((app) => {
-                          const config = statusConfig[app.status] || statusConfig['قيد الانتظار'];
+                          const config = statusConfig[app.status] || statusConfig['pending'];
 
                           return (
                             <article
@@ -645,9 +651,9 @@ const AppointmentsList = () => {
                                     config.border
                                   )}>
                                     <div className={cn("size-1 rounded-full", isAr ? "ml-1" : "mr-1", config.dotColor)} />
-                                    {app.status === 'قيد الانتظار' ? t('dialog.status_pending', T) : 
-                                     app.status === 'مكتمل' ? t('dialog.status_completed', T) : 
-                                     app.status === 'ملغي' ? t('dialog.status_canceled', T) :
+                                    {app.status === 'pending' ? t('dialog.status_pending', T) : 
+                                     app.status === 'completed' ? t('dialog.status_completed', T) : 
+                                     app.status === 'canceled' ? t('dialog.status_canceled', T) :
                                      app.status}
                                   </span>
                                 </div>
@@ -655,11 +661,23 @@ const AppointmentsList = () => {
                                 <div className="space-y-2">
                                   <div className="flex items-center gap-2">
                                     <User className="size-3.5 text-muted-foreground" />
-                                    <span className="text-sm font-medium">{app.patientName}</span>
+                                    <span className="text-sm font-medium">
+                                      {(() => {
+                                        const key = `dialog.patients.${app.patientName}`;
+                                        const translated = t(key, T);
+                                        return translated === key ? app.patientName : translated;
+                                      })()}
+                                    </span>
                                   </div>
                                   <div className="flex items-center gap-2">
                                     <Stethoscope className="size-3.5 text-muted-foreground" />
-                                    <span className="text-sm text-muted-foreground">{app.doctorName}</span>
+                                    <span className="text-sm text-muted-foreground">
+                                      {(() => {
+                                        const key = `dialog.doctors.${app.doctorName}`;
+                                        const translated = t(key, T);
+                                        return translated === key ? app.doctorName : translated;
+                                      })()}
+                                    </span>
                                   </div>
                                 </div>
 
@@ -715,7 +733,11 @@ const AppointmentsList = () => {
         onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={confirmDelete}
         title={t('delete_confirm_title', T)}
-        message={t('delete_confirm_msg', T).replace('{name}', appointmentToDelete?.patientName || '')}
+        message={t('delete_confirm_msg', T).replace('{name}', (() => {
+          const key = `dialog.patients.${appointmentToDelete?.patientName}`;
+          const translated = t(key, T);
+          return translated === key ? (appointmentToDelete?.patientName || '') : translated;
+        })())}
         confirmText={t('delete', T)}
         cancelText={t('cancel', T)}
         variant="danger"
@@ -744,8 +766,20 @@ const AppointmentsList = () => {
               <Clock className="size-3.5" />
               <span className="font-bold">{draggedApp.time}</span>
             </div>
-            <div className="font-bold truncate">{draggedApp.patientName}</div>
-            <div className="text-[10px] opacity-70 truncate">{draggedApp.doctorName}</div>
+            <div className="font-bold truncate">
+              {(() => {
+                const key = `dialog.patients.${draggedApp.patientName}`;
+                const translated = t(key, T);
+                return translated === key ? draggedApp.patientName : translated;
+              })()}
+            </div>
+            <div className="text-[10px] opacity-70 truncate">
+              {(() => {
+                const key = `dialog.doctors.${draggedApp.doctorName}`;
+                const translated = t(key, T);
+                return translated === key ? draggedApp.doctorName : translated;
+              })()}
+            </div>
           </article>
         </div>
       )}

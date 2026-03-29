@@ -1,7 +1,11 @@
 import { usePreloader } from "../../../contexts/PreloaderContext"
 import { cn } from "../../../utils/cn"
+import { useLanguage } from "../../../contexts/LanguageContext"
+import { loginTranslations } from "../../../constants/translations/login"
 
 const LoginHero = () => {
+  const { t } = useLanguage()
+  const T = loginTranslations
   const { isLoaded, isExiting } = usePreloader()
   const canAnimate = isLoaded && !isExiting
 
@@ -35,10 +39,10 @@ const LoginHero = () => {
             </div>
           </div>
           <h2 className="text-3xl mb-4" style={{ fontWeight: 700 }}>
-            أهلاً بك في Medexa Cloud
+            {t('hero_title', T)}
           </h2>
           <p className="text-lg opacity-90 max-w-md mx-auto">
-            نظام شامل لإدارة العيادات الطبية مع تقنيات الذكاء الاصطناعي
+            {t('hero_desc', T)}
           </p>
         </div>
       </div>

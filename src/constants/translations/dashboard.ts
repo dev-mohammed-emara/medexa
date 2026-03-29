@@ -15,6 +15,8 @@ export const dashboardTranslations = {
       revenue_sub: "إيرادات هذا الشهر",
       new_patients: "مرضى جدد",
       new_patients_sub: "هذا الأسبوع",
+      growth_rate: "معدل النمو",
+      growth_rate_sub: "الزيادة السنوية",
       from_last_month: "من الشهر السابق"
     },
     charts: {
@@ -44,6 +46,8 @@ export const dashboardTranslations = {
       revenue_sub: "This month's revenue",
       new_patients: "New Patients",
       new_patients_sub: "This week",
+      growth_rate: "Growth Rate",
+      growth_rate_sub: "Annual increase",
       from_last_month: "from last month"
     },
     charts: {

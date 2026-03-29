@@ -57,7 +57,20 @@ export const appointmentsTranslations = {
       select_patient: "اختر المريض",
       select_doctor: "اختر الطبيب",
       select_date: "اختر التاريخ",
-      currency: "د.أ"
+      currency: "د.أ",
+      doctors: {
+        ahmed: "د. أحمد علي",
+        sami: "د. سامي يوسف",
+        layla: "د. ليلى خالد"
+      },
+      patients: {
+        ahmed: "أحمد محمد",
+        sara: "سارة أحمد",
+        mahmoud: "محمود علي",
+        layla: "ليلى يوسف",
+        khaled: "خالد عمر",
+        muna: "منى عبدالله"
+      }
     }
   },
   en: {
@@ -117,7 +130,20 @@ export const appointmentsTranslations = {
       select_patient: "Select Patient",
       select_doctor: "Select Doctor",
       select_date: "Select Date",
-      currency: "JOD"
+      currency: "JOD",
+      doctors: {
+        ahmed: "Dr. Ahmed Ali",
+        sami: "Dr. Sami Youssef",
+        layla: "Dr. Layla Khaled"
+      },
+      patients: {
+        ahmed: "Ahmed Mohammed",
+        sara: "Sara Ahmed",
+        mahmoud: "Mahmoud Ali",
+        layla: "Layla Youssef",
+        khaled: "Khaled Omar",
+        muna: "Muna Abdullah"
+      }
     }
   }
 };

@@ -28,21 +28,21 @@ import { cn } from '../../utils/cn';
 import { useBroadcast } from '../../hooks/useBroadcast';
 import AddOperationModal from './AddOperationModal';
 
-const getChartData = (t: any, T: any) => [
-  { name: t('january', T) || 'Jan', دخل: 25000, مصروفات: 15000 },
-  { name: t('february', T) || 'Feb', دخل: 32000, مصروفات: 21000 },
-  { name: t('march', T) || 'Mar', دخل: 28000, مصروفات: 18000 },
-  { name: t('april', T) || 'Apr', دخل: 35000, مصروفات: 25000 },
-  { name: t('may', T) || 'May', دخل: 40000, مصروفات: 28000 },
-  { name: t('june', T) || 'Jun', دخل: 38000, مصروفات: 22000 },
+const getChartData = (t: (key: string, T: any) => string, T: any) => [
+  { name: t('january', T), income: 25000, expenses: 15000 },
+  { name: t('february', T), income: 32000, expenses: 21000 },
+  { name: t('march', T), income: 28000, expenses: 18000 },
+  { name: t('april', T), income: 35000, expenses: 25000 },
+  { name: t('may', T), income: 40000, expenses: 28000 },
+  { name: t('june', T), income: 38000, expenses: 22000 },
 ];
 
-const getTransactions = (t: any, T: any, isAr: boolean) => [
-  { id: 1, type: 'دخل', amount: '500', currency: 'د.أ', date: '28/02/2026', related: isAr ? 'موعد #123' : 'Appointment #123', notes: t('general_exam', T) || 'General Exam' },
-  { id: 2, type: 'مصروف', amount: '1,200', currency: 'د.أ', date: '27/02/2026', related: '-', notes: t('buy_equip', T) || 'Buy Medical Equipment' },
-  { id: 3, type: 'دخل', amount: '750', currency: 'د.أ', date: '26/02/2026', related: isAr ? 'موعد #122' : 'Appointment #122', notes: t('kids_exam', T) || 'Kids Exam' },
-  { id: 4, type: 'دخل', amount: '300', currency: 'د.أ', date: '25/02/2026', related: isAr ? 'موعد #121' : 'Appointment #121', notes: t('follow_up', T) || 'Follow-up' },
-  { id: 5, type: 'مصروف', amount: '150', currency: 'د.أ', date: '24/02/2026', related: '-', notes: t('utilities', T) || 'Electricity and Water' },
+const getTransactions = (t: (key: string, T: any) => string, T: any, isAr: boolean) => [
+  { id: 1, type: 'income', amount: '500', currency: 'jod', date: '28/02/2026', related: isAr ? 'موعد #123' : 'Appointment #123', notes: t('general_exam', T) },
+  { id: 2, type: 'expense', amount: '1,200', currency: 'jod', date: '27/02/2026', related: '-', notes: t('buy_equip', T) },
+  { id: 3, type: 'income', amount: '750', currency: 'jod', date: '26/02/2026', related: isAr ? 'موعد #122' : 'Appointment #122', notes: t('kids_exam', T) },
+  { id: 4, type: 'income', amount: '300', currency: 'jod', date: '25/02/2026', related: isAr ? 'موعد #121' : 'Appointment #121', notes: t('follow_up', T) },
+  { id: 5, type: 'expense', amount: '150', currency: 'jod', date: '24/02/2026', related: '-', notes: t('utilities', T) },
 ];
 
 const FinanceOverview = () => {
@@ -51,7 +51,7 @@ const FinanceOverview = () => {
   const { isLoaded, isExiting } = usePreloader();
   const canAnimate = isLoaded && !isExiting;
 
-  const { broadcast: _broadcast } = useBroadcast((event) => {
+  useBroadcast((event) => {
     if (event.type === 'DATA_UPDATE' && event.module === 'finance') {
       console.log('Finance data updated in another tab');
     }
@@ -169,8 +169,8 @@ const FinanceOverview = () => {
               <Line
                 name={t('income', T)}
                 type="monotone"
-                dataKey="دخل"
-                stroke="#3FB8AF"
+                dataKey="income"
+                stroke="#3FB89F"
                 strokeWidth={3}
                 dot={{ r: 3, strokeWidth: 3, fill: '#fff' }}
                 activeDot={{ r: 5, strokeWidth: 0 }}
@@ -181,7 +181,7 @@ const FinanceOverview = () => {
               <Line
                 name={t('expenses', T)}
                 type="monotone"
-                dataKey="مصروفات"
+                dataKey="expenses"
                 stroke="#d4183d"
                 strokeWidth={3}
                 dot={{ r: 3, strokeWidth: 3, fill: '#fff' }}
@@ -268,13 +268,13 @@ const FinanceOverview = () => {
                     <td className="p-4">
                       <span className={cn(
                         "inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold",
-                        tx.type === 'دخل' ? "bg-secondary/10 text-secondary" : "bg-destructive/10 text-destructive"
+                        tx.type === 'income' ? "bg-secondary/10 text-secondary" : "bg-destructive/10 text-destructive"
                       )}>
-                        {tx.type === 'دخل' ? t('type_income', T) : t('type_expense', T)}
+                        {tx.type === 'income' ? t('type_income', T) : t('type_expense', T)}
                       </span>
                     </td>
                     <td className="p-4 font-bold">{tx.amount}</td>
-                    <td className="p-4">{tx.currency === 'د.أ' ? t('jod', T) : tx.currency}</td>
+                    <td className="p-4">{t('jod', T)}</td>
                     <td className="p-4 font-medium text-muted-foreground">{tx.date}</td>
                     <td className="p-4 text-muted-foreground">{tx.related}</td>
                     <td className={cn("p-4 text-muted-foreground", isAr ? "text-right" : "text-left")}>{tx.notes}</td>

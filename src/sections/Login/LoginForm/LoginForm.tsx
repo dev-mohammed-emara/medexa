@@ -8,8 +8,12 @@ import Input from '../../../components/ui/Input'
 
 import { usePreloader } from '../../../contexts/PreloaderContext'
 import { cn } from '../../../utils/cn'
+import { useLanguage } from '../../../contexts/LanguageContext'
+import { loginTranslations } from '../../../constants/translations/login'
 
 const LoginForm = () => {
+  const { isAr, t } = useLanguage()
+  const T = loginTranslations
   const { isLoaded, isExiting } = usePreloader()
   const canAnimate = isLoaded && !isExiting
   const [email, setEmail] = useState('')
@@ -31,7 +35,7 @@ const LoginForm = () => {
       }
 
       login()
-      window.showToast('تم تسجيل الدخول بنجاح')
+      window.showToast?.(t('toast_success', T))
       navigate(from, { replace: true })
     }
   }
@@ -50,15 +54,15 @@ const LoginForm = () => {
           <h1 className="text-4xl mb-2 flex justify-start" style={{ fontWeight: 700, color: 'rgb(11, 90, 142)' }}>
              <img src="/images/logo.png" alt="Medexa Cloud" className="h-20 mb-2 w-auto" />
           </h1>
-          <p className="text-muted-foreground">منصة إدارة العيادات الطبية</p>
+          <p className={cn("text-muted-foreground", isAr ? "text-right" : "text-left")}>{t('platform_name', T)}</p>
         </div>
         <form className="space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-2">
               <label
-                className="text-sm font-semibold text-[#1a2b3c] pr-1 block mb-2"
+                className={cn("text-sm font-semibold text-[#1a2b3c] block mb-2", isAr ? "pr-1 text-right" : "pl-1 text-left")}
                 htmlFor="email"
               >
-                البريد الإلكتروني
+                {t('email_label', T)}
               </label>
             <Input
               type="email"
@@ -74,10 +78,10 @@ const LoginForm = () => {
           </div>
           <div className="space-y-2">
               <label
-                className="text-sm font-semibold text-[#1a2b3c] pr-1 block mb-2"
+                className={cn("text-sm font-semibold text-[#1a2b3c] block mb-2", isAr ? "pr-1 text-right" : "pl-1 text-left")}
                 htmlFor="password"
               >
-                كلمة المرور
+                {t('password_label', T)}
               </label>
             <div className="relative group">
               <Input
@@ -102,22 +106,22 @@ const LoginForm = () => {
               </button>
             </div>
           </div>
-          <div className="flex items-center justify-between">
+          <div className={cn("flex items-center", isAr ? "justify-start" : "justify-end")}>
             <TransitionLink className="text-sm text-primary hover:underline" href="/">
-              نسيت كلمة المرور؟
+              {t('forgot_password', T)}
             </TransitionLink>
           </div>
           <BtnPrimary
-            className="w-full"
+            className="w-full h-12 rounded-xl"
             type="submit"
           >
-            <FiLogIn className="ml-2 size-5" />
-            تسجيل الدخول
+            <FiLogIn className={cn("size-5", isAr ? "ml-2" : "mr-2")} />
+            {t('login_btn', T)}
           </BtnPrimary>
           <div className="text-center text-sm text-muted-foreground">
-            ليس لديك حساب؟{' '}
+            {t('no_account', T)}{' '}
             <TransitionLink className="text-primary hover:underline" href="/register">
-              سجل الآن
+              {t('register_now', T)}
             </TransitionLink>
           </div>
         </form>

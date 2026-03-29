@@ -21,6 +21,7 @@ import { financeTranslations } from '../../constants/translations/finance';
 import { cn } from '../../utils/cn';
 import Portal from '../../components/ui/Portal';
 import { useBroadcast } from '../../hooks/useBroadcast';
+import { appointmentsTranslations } from '../../constants/translations/appointments';
 
 interface OperationData {
   type: string;
@@ -223,8 +224,8 @@ const AddOperationModal = ({ isOpen, onClose, onSuccess }: AddOperationModalProp
                   </SelectTrigger>
                   <SelectContent className="z-600">
                     <SelectItem value="None">{t('no_appt', T)}</SelectItem>
-                    <SelectItem value="123">{t('appt_prefix', T)}123 - أحمد محمد</SelectItem>
-                    <SelectItem value="124">{t('appt_prefix', T)}124 - سارة علي</SelectItem>
+                    <SelectItem value="123">{t('appt_prefix', T)}123 - {t('dialog.patients.ahmed', appointmentsTranslations)}</SelectItem>
+                    <SelectItem value="124">{t('appt_prefix', T)}124 - {t('dialog.patients.sara', appointmentsTranslations)}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

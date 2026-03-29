@@ -40,7 +40,18 @@ export const financeTranslations = {
     important_note: "ملاحظة هامة:",
     disclaimer: "سيتم تسجيل هذه العملية في النظام المالي وسيتم احتسابها ضمن التقارير المالية والإحصائيات.",
     add_btn: "إضافة العملية",
-    cancel: "إلغاء"
+    cancel: "إلغاء",
+    january: "يناير",
+    february: "فبراير",
+    march: "مارس",
+    april: "أبريل",
+    may: "مايو",
+    june: "يونيو",
+    general_exam: "كشف عام",
+    buy_equip: "شراء معدات طبية",
+    kids_exam: "كشف أطفال",
+    follow_up: "متابعة",
+    utilities: "كهرباء ومياه"
   },
   en: {
     page_title: "Finance",
@@ -82,6 +93,17 @@ export const financeTranslations = {
     important_note: "Important Note:",
     disclaimer: "This operation will be recorded in the financial system and will be included in financial reports and statistics.",
     add_btn: "Add Operation",
-    cancel: "Cancel"
+    cancel: "Cancel",
+    january: "January",
+    february: "February",
+    march: "March",
+    april: "April",
+    may: "May",
+    june: "June",
+    general_exam: "General Exam",
+    buy_equip: "Buy Medical Equipment",
+    kids_exam: "Kids Exam",
+    follow_up: "Follow-up",
+    utilities: "Electricity and Water"
   }
 };

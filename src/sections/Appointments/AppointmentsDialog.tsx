@@ -153,7 +153,14 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: A
                     <label className="flex items-center gap-2 font-medium text-muted-foreground text-xs">{t('dialog.patient', T)}</label>
                     <div className="flex items-center gap-2">
                       <User className="size-4 text-primary" />
-                      <span className="font-medium">{initialData?.patientName || (isAr ? "محمد العمري" : "Mohammed Al-Omari")}</span>
+                      <span className="font-medium">
+                        {(() => {
+                          const patient = initialData?.patientName || 'ahmed';
+                          const key = `dialog.patients.${patient}`;
+                          const translated = t(key, T);
+                          return translated === key ? patient : translated;
+                        })()}
+                      </span>
                     </div>
                   </div>
 
@@ -169,7 +176,14 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: A
                     <label className="flex items-center gap-2 font-medium text-muted-foreground text-xs">{t('dialog.doctor', T)}</label>
                     <div className="flex items-center gap-2">
                       <Stethoscope className="size-4 text-primary" />
-                      <span className="font-medium">{initialData?.doctorName || (isAr ? "د. ليلى الخطيب" : "Dr. Layla Al-Khatib")}</span>
+                      <span className="font-medium">
+                        {(() => {
+                          const doctor = initialData?.doctorName || 'ahmed';
+                          const key = `dialog.doctors.${doctor}`;
+                          const translated = t(key, T);
+                          return translated === key ? doctor : translated;
+                        })()}
+                      </span>
                     </div>
                   </div>
 
@@ -185,7 +199,7 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: A
                     <label className="flex items-center gap-2 font-medium text-muted-foreground text-xs">{t('dialog.status', T)}</label>
                     {(() => {
                       const status = initialData?.status || 'pending';
-                      const config = statusConfig[status] || statusConfig[isAr ? 'قيد الانتظار' : 'pending'];
+                      const config = statusConfig[status] || statusConfig['pending'];
                       return (
                         <span className={cn(
                           "inline-flex items-center justify-center rounded-lg px-3 py-1 text-xs font-bold w-fit border-2 shadow-sm transition-all animate-in fade-in zoom-in duration-300",
@@ -194,9 +208,9 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: A
                           config.border
                         )}>
                            <div className={cn("size-1.5 rounded-full", isAr ? "ml-1.5" : "mr-1.5", config.dotColor)} />
-                          {status === 'قيد الانتظار' ? t('dialog.status_pending', T) : 
-                           status === 'مكتمل' ? t('dialog.status_completed', T) : 
-                           status === 'ملغي' ? t('dialog.status_canceled', T) :
+                          {status === 'pending' ? t('dialog.status_pending', T) : 
+                           status === 'completed' ? t('dialog.status_completed', T) : 
+                           status === 'canceled' ? t('dialog.status_canceled', T) :
                            status}
                         </span>
                       );
@@ -235,40 +249,22 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: A
                       <SelectValue placeholder={t('dialog.status', T)} />
                     </SelectTrigger>
                     <SelectContent className={cn("rounded-xl z-600", isAr ? "text-right" : "text-left")}>
-                      <SelectItem value="قيد الانتظار" hidden={!isAr}>
+                      <SelectItem value="pending">
                         <div className="flex items-center gap-2">
                           <div className="size-2 rounded-full bg-amber-500" />
-                          <span>قيد الانتظار</span>
+                          <span>{t('dialog.status_pending', T)}</span>
                         </div>
                       </SelectItem>
-                      <SelectItem value="pending" hidden={isAr}>
-                        <div className="flex items-center gap-2">
-                          <div className="size-2 rounded-full bg-amber-500" />
-                          <span>Pending</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="مكتمل" hidden={!isAr}>
+                      <SelectItem value="completed">
                         <div className="flex items-center gap-2">
                           <div className="size-2 rounded-full bg-emerald-500" />
-                          <span>مكتمل</span>
+                          <span>{t('dialog.status_completed', T)}</span>
                         </div>
                       </SelectItem>
-                      <SelectItem value="completed" hidden={isAr}>
-                        <div className="flex items-center gap-2">
-                          <div className="size-2 rounded-full bg-emerald-500" />
-                          <span>Completed</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="ملغي" hidden={!isAr}>
+                      <SelectItem value="canceled">
                         <div className="flex items-center gap-2">
                           <div className="size-2 rounded-full bg-rose-500" />
-                          <span>ملغي</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="canceled" hidden={isAr}>
-                        <div className="flex items-center gap-2">
-                          <div className="size-2 rounded-full bg-rose-500" />
-                          <span>Canceled</span>
+                          <span>{t('dialog.status_canceled', T)}</span>
                         </div>
                       </SelectItem>
                     </SelectContent>
@@ -285,10 +281,12 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: A
                         <SelectValue placeholder={t('dialog.select_patient', T)} />
                       </SelectTrigger>
                       <SelectContent className={cn("rounded-xl z-600", isAr ? "text-right" : "text-left")} >
-                        <SelectItem value="محمد أحمد">{isAr ? "محمد أحمد" : "Mohammed Ahmed"}</SelectItem>
-                        <SelectItem value="سارة علي">{isAr ? "سارة علي" : "Sara Ali"}</SelectItem>
-                        <SelectItem value="ياسين محمود">{isAr ? "ياسين محمود" : "Yassin Mahmoud"}</SelectItem>
-                        <SelectItem value="ليلى حسن">{isAr ? "ليلى حسن" : "Layla Hassan"}</SelectItem>
+                        <SelectItem value="ahmed">{t('dialog.patients.ahmed', T)}</SelectItem>
+                        <SelectItem value="sara">{t('dialog.patients.sara', T)}</SelectItem>
+                        <SelectItem value="mahmoud">{t('dialog.patients.mahmoud', T)}</SelectItem>
+                        <SelectItem value="layla">{t('dialog.patients.layla', T)}</SelectItem>
+                        <SelectItem value="khaled">{t('dialog.patients.khaled', T)}</SelectItem>
+                        <SelectItem value="muna">{t('dialog.patients.muna', T)}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -300,9 +298,9 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: A
                         <SelectValue placeholder={t('dialog.select_doctor', T)} />
                       </SelectTrigger>
                       <SelectContent className={cn("rounded-xl z-600", isAr ? "text-right" : "text-left")} >
-                        <SelectItem value="د. أحمد علي">{isAr ? "د. أحمد علي" : "Dr. Ahmed Ali"}</SelectItem>
-                        <SelectItem value="د. سامي يوسف">{isAr ? "د. سامي يوسف" : "Dr. Sami Youssef"}</SelectItem>
-                        <SelectItem value="د. ليلى خالد">{isAr ? "د. ليلى خالد" : "Dr. Layla Khaled"}</SelectItem>
+                        <SelectItem value="ahmed">{t('dialog.doctors.ahmed', T)}</SelectItem>
+                        <SelectItem value="sami">{t('dialog.doctors.sami', T)}</SelectItem>
+                        <SelectItem value="layla">{t('dialog.doctors.layla', T)}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -345,40 +343,22 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: A
                         <SelectValue placeholder={t('dialog.status', T)} />
                       </SelectTrigger>
                       <SelectContent className={cn("rounded-xl z-600", isAr ? "text-right" : "text-left")}>
-                        <SelectItem value="قيد الانتظار" hidden={!isAr}>
+                        <SelectItem value="pending">
                           <div className="flex items-center gap-2">
                             <div className="size-2 rounded-full bg-amber-500" />
-                            <span>قيد الانتظار</span>
+                            <span>{t('dialog.status_pending', T)}</span>
                           </div>
                         </SelectItem>
-                        <SelectItem value="pending" hidden={isAr}>
-                          <div className="flex items-center gap-2">
-                            <div className="size-2 rounded-full bg-amber-500" />
-                            <span>Pending</span>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="مكتمل" hidden={!isAr}>
+                        <SelectItem value="completed">
                           <div className="flex items-center gap-2">
                             <div className="size-2 rounded-full bg-emerald-500" />
-                            <span>مكتمل</span>
+                            <span>{t('dialog.status_completed', T)}</span>
                           </div>
                         </SelectItem>
-                        <SelectItem value="completed" hidden={isAr}>
-                          <div className="flex items-center gap-2">
-                            <div className="size-2 rounded-full bg-emerald-500" />
-                            <span>Completed</span>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="ملغي" hidden={!isAr}>
+                        <SelectItem value="canceled">
                           <div className="flex items-center gap-2">
                             <div className="size-2 rounded-full bg-rose-500" />
-                            <span>ملغي</span>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="canceled" hidden={isAr}>
-                          <div className="flex items-center gap-2">
-                            <div className="size-2 rounded-full bg-rose-500" />
-                            <span>Canceled</span>
+                            <span>{t('dialog.status_canceled', T)}</span>
                           </div>
                         </SelectItem>
                       </SelectContent>
