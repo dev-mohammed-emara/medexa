@@ -27,6 +27,7 @@ import { financeTranslations } from '../../constants/translations/finance';
 import { cn } from '../../utils/cn';
 import { useBroadcast } from '../../hooks/useBroadcast';
 import AddOperationModal from './AddOperationModal';
+import TableFooter from '../../components/ui/TableFooter';
 
 const getChartData = (t: (key: string, T: any) => string, T: any) => [
   { name: t('january', T), income: 25000, expenses: 15000 },
@@ -60,6 +61,8 @@ const FinanceOverview = () => {
   const [fromDate, setFromDate] = useState<Date | string>("2026-02-01");
   const [toDate, setToDate] = useState<Date | string>("2026-02-28");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(12);
 
   const chartData = getChartData(t, T);
   const transactions = getTransactions(t, T, isAr);
@@ -199,12 +202,12 @@ const FinanceOverview = () => {
       <article
         data-slot="card"
         className={cn(
-          "text-card-foreground flex flex-col gap-6 rounded-xl border p-6 bg-white border-border shadow-sm transition-all duration-500",
+          "text-card-foreground flex flex-col rounded-xl border transition-all duration-500 bg-white border-border shadow-sm overflow-hidden",
           canAnimate ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
         )}
         style={{ transitionDelay: '500ms' }}
       >
-        <header className={cn("flex flex-col xl:flex-row xl:items-end justify-between gap-6 mb-8", isAr ? "xl:flex-row" : "xl:flex-row-reverse")}>
+        <header className={cn("flex flex-col xl:flex-row xl:items-end justify-between gap-6 mb-8 p-6 pb-0", isAr ? "xl:flex-row" : "xl:flex-row-reverse")}>
           <h3 className="text-lg font-bold">{t('financial_operations', T)}</h3>
 
           <div className={cn("flex flex-wrap items-end gap-3 transition-all duration-700", canAnimate ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4")} style={{ transitionDelay: '550ms' }}>
@@ -215,7 +218,7 @@ const FinanceOverview = () => {
                   value={fromDate}
                   onChange={([date]) => setFromDate(date)}
                   options={commonOptions}
-                  className="flex-1 bg-transparent border-none outline-none text-right text-sm font-bold h-full"
+                  className="flex-1 bg-transparent border-none outline-none text-left! text-sm font-bold h-full"
                 />
                 <FaCalendarAlt className="text-muted-foreground pointer-events-none group-focus-within:text-primary transition-colors size-4" />
               </div>
@@ -228,7 +231,7 @@ const FinanceOverview = () => {
                   value={toDate}
                   onChange={([date]) => setToDate(date)}
                   options={commonOptions}
-                  className="flex-1 bg-transparent border-none outline-none text-right text-sm font-bold h-full"
+                  className="flex-1 bg-transparent border-none outline-none text-left! text-sm font-bold h-full"
                 />
                 <FaCalendarAlt className="text-muted-foreground pointer-events-none group-focus-within:text-primary transition-colors size-4" />
               </div>
@@ -250,7 +253,7 @@ const FinanceOverview = () => {
           <MoveHorizontal className="size-3.5" />
         </aside>
 
-        <section className="overflow-x-auto rounded-lg border border-border/50">
+        <section className="overflow-x-auto">
           <table className="w-full text-sm text-right whitespace-nowrap">
             <thead className="bg-muted/30 border-b border-border/50 text-muted-foreground font-bold">
               <tr>
@@ -263,7 +266,7 @@ const FinanceOverview = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-border/30">
-              {transactions.map((tx) => (
+              {transactions.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((tx) => (
                 <tr key={tx.id} className="hover:bg-muted/20 transition-colors">
                     <td className="p-4">
                       <span className={cn(
@@ -280,8 +283,27 @@ const FinanceOverview = () => {
                     <td className={cn("p-4 text-muted-foreground", isAr ? "text-right" : "text-left")}>{tx.notes}</td>
                 </tr>
               ))}
+              {transactions.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="h-40 text-center text-muted-foreground p-4">
+                    {t('no_results', T)}
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
+
+          <TableFooter
+            variant="table"
+            totalItems={transactions.length}
+            itemsPerPage={itemsPerPage}
+            currentPage={currentPage}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={(val) => {
+              setItemsPerPage(val === 'all' ? transactions.length : Number(val));
+              setCurrentPage(1);
+            }}
+          />
         </section>
       </article>
 

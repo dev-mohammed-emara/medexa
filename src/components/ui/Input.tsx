@@ -54,10 +54,11 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         props.name?.toLowerCase().includes('name') ||
         props.name?.toLowerCase().includes('role') ||
         props.name?.toLowerCase().includes('country') ||
-        props.name?.toLowerCase().includes('city')
+        props.name?.toLowerCase().includes('city') ||
+        props.name?.toLowerCase().includes('surname')
       ) {
-        // Only allow letters (including Arabic) and spaces
-        value = value.replace(/[^a-zA-Z\u0600-\u06FF\s]/g, '');
+        // Only allow letters (any language) and spaces
+        value = value.replace(/[^\p{L}\s]/gu, '');
       }
 
       if (onChange) {

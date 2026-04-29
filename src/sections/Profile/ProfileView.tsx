@@ -258,9 +258,19 @@ const ProfileView = () => {
               <div data-slot="card" className="tab-pane  bg-white rounded-xl border p-6 border-border shadow-lg hover:shadow-xl transition-all duration-300 h-full">
                 <h3 className="text-xl mb-6 font-bold">{t('profile.personal_info', T_PAGE)}</h3>
                 <div className="space-y-5">
-                  <div className="flex flex-col gap-2">
-                    <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('common.name')}</label>
-                    <Input defaultValue={t('profile.doctor_name_val', T_PAGE)} className="h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold" />
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="flex flex-col gap-2">
+                      <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('common.first_name')}</label>
+                      <Input defaultValue={t('profile.first_name_val', T_PAGE)} icon={<User size={18} />} className="h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold" />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('common.surname')}</label>
+                      <Input defaultValue={t('profile.surname_val', T_PAGE)} icon={<User size={18} />} className="h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold" />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('common.last_name')}</label>
+                      <Input defaultValue={t('profile.last_name_val', T_PAGE)} icon={<User size={18} />} className="h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold" />
+                    </div>
                   </div>
                   <div className="flex flex-col gap-2">
                     <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('common.email')}</label>
@@ -306,7 +316,7 @@ const ProfileView = () => {
                         />
                         <Flatpickr
                           value="1985-05-15"
-                          className={cn("flex h-11 w-full rounded-xl border border-border bg-muted/30 px-3 py-2 text-sm font-bold focus:border-primary focus:bg-white transition-all outline-none", isAr ? "pl-10" : "pr-10 text-left")}
+                          className={cn("flex h-11 w-full rounded-xl border border-border bg-muted/30 px-3 py-2 text-sm font-bold focus:border-primary focus:bg-white transition-all outline-none", isAr ? "pl-10" : "pr-10 text-left!")}
                           options={{
                             locale: isAr ? Arabic : undefined,
                             dateFormat: "d F Y",

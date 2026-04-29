@@ -8,10 +8,12 @@ interface ModalProps {
   onClose: () => void;
   onConfirm: () => void;
   title: string;
-  message: string;
+  message?: string;
   confirmText: string;
   cancelText: string;
   variant?: 'danger' | 'primary';
+  children?: React.ReactNode;
+  isConfirmDisabled?: boolean;
 }
 
 const Modal = ({
@@ -22,7 +24,9 @@ const Modal = ({
   message,
   confirmText,
   cancelText,
-  variant = 'primary'
+  variant = 'primary',
+  children,
+  isConfirmDisabled = false
 }: ModalProps) => {
   const overlayRef = useRef<HTMLDivElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
@@ -45,7 +49,7 @@ const Modal = ({
 
       const handleKeyDown = (e: KeyboardEvent) => {
         if (e.key === 'Escape') handleClose();
-        if (e.key === 'Enter') onConfirm();
+        if (e.key === 'Enter' && !isConfirmDisabled) onConfirm();
       };
 
       const handlePopState = () => {
@@ -96,14 +100,23 @@ const Modal = ({
             </header>
 
             <h3 className="text-xl text-center font-bold text-[#1a2b3c] mb-2">{title}</h3>
-            <p className="text-muted-foreground text-center text-pretty mb-8 leading-relaxed">
-              {message}
-            </p>
+            {message && (
+              <p className="text-muted-foreground text-center text-pretty mb-8 leading-relaxed">
+                {message}
+              </p>
+            )}
+
+            {children && (
+              <div className="mb-8">
+                {children}
+              </div>
+            )}
 
             <div className="flex gap-3">
               <button
                 onClick={onConfirm}
-                className={`flex-1 h-12 rounded-xl font-bold transition-all duration-300 ${
+                disabled={isConfirmDisabled}
+                className={`flex-1 h-12 rounded-xl font-bold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed ${
                   variant === 'danger'
                   ? 'bg-destructive text-white hover:bg-destructive/90 shadow-lg shadow-destructive/20'
                   : 'bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/20'

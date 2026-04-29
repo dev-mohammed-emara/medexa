@@ -17,9 +17,16 @@ import { Button } from '../../components/ui/Button'
 import { useLanguage } from '../../contexts/LanguageContext'
 import { secretaryTranslations } from '../../constants/translations/secretary'
 import { useBroadcast } from '../../hooks/useBroadcast'
+import TableFooter from '../../components/ui/TableFooter'
 
 interface Secretary {
   id: number;
+  first_name_ar: string;
+  surname_ar: string;
+  last_name_ar: string;
+  first_name_en: string;
+  surname_en: string;
+  last_name_en: string;
   name_ar: string;
   name_en: string;
   role_ar: string;
@@ -48,12 +55,14 @@ const SecretaryList = () => {
   });
 
   // State management
-  const [secretaryList, setSecretaryList] = useState<Secretary[]>(initialSecretaries);
+  const [secretaryList, setSecretaryList] = useState<Secretary[]>(initialSecretaries as Secretary[]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogMode, setDialogMode] = useState<'add' | 'edit' | 'view'>('add');
   const [currentSecretary, setCurrentSecretary] = useState<Secretary | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [secretaryToDelete, setSecretaryToDelete] = useState<Secretary | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 12;
 
   const handleOpenDialog = (mode: 'add' | 'edit' | 'view', secretary?: Secretary) => {
     setDialogMode(mode);
@@ -65,8 +74,14 @@ const SecretaryList = () => {
     if (dialogMode === 'add') {
       const newSecretary: Secretary = {
         id: Date.now(),
-        name_ar: data.name_ar || (isAr ? data.name_en || '' : ''),
-        name_en: data.name_en || (!isAr ? data.name_ar || '' : ''),
+        first_name_ar: data.first_name_ar || '',
+        surname_ar: data.surname_ar || '',
+        last_name_ar: data.last_name_ar || '',
+        first_name_en: data.first_name_en || '',
+        surname_en: data.surname_en || '',
+        last_name_en: data.last_name_en || '',
+        name_ar: data.name_ar || '',
+        name_en: data.name_en || '',
         role_ar: data.role_ar || (isAr ? data.role_en || 'استقبال' : 'Receptionist'),
         role_en: data.role_en || (!isAr ? data.role_ar || 'Receptionist' : 'Receptionist'),
         status: 'active',
@@ -95,15 +110,25 @@ const SecretaryList = () => {
 
   const confirmDelete = () => {
     if (secretaryToDelete) {
-      setSecretaryList(prev => prev.filter(s => s.id !== secretaryToDelete.id));
+      setSecretaryList(prev => {
+        const newList = prev.filter(s => s.id !== secretaryToDelete.id);
+        const maxPage = Math.ceil(newList.length / itemsPerPage);
+        if (currentPage > maxPage && maxPage > 0) setCurrentPage(maxPage);
+        return newList;
+      });
       broadcast({ type: 'DATA_UPDATE', module: 'secretaries' });
     }
     setIsDeleteModalOpen(false);
     window.showToast?.(t('toast_delete_success', T));
   };
 
+  const paginatedSecretaries = secretaryList.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   return (
-    <div className="space-y-6" dir={isAr ? "rtl" : "ltr"}>
+    <div className="space-y-6 pb-10" dir={isAr ? "rtl" : "ltr"}>
       {/* Page Header */}
       <section className={cn(
         "flex items-center justify-between opacity-0",
@@ -125,11 +150,11 @@ const SecretaryList = () => {
 
       {/* Cards Grid / Empty State */}
       <div className={cn(
-        "grid gap-4 pb-20",
-        secretaryList.length > 0 ? "grid-cols-1 sm:grid-cols-2 xl:grid-cols-3" : "grid-cols-1"
+        "grid gap-4",
+        paginatedSecretaries.length > 0 ? "grid-cols-1 sm:grid-cols-2 xl:grid-cols-3" : "grid-cols-1"
       )}>
-        {secretaryList.length > 0 ? (
-          secretaryList.map((secretary, index) => (
+        {paginatedSecretaries.length > 0 ? (
+          paginatedSecretaries.map((secretary, index) => (
             <div
               key={secretary.id}
               style={{
@@ -157,7 +182,7 @@ const SecretaryList = () => {
                         data-slot="avatar-fallback"
                         className="flex size-full items-center justify-center rounded-full bg-secondary text-white text-xl font-bold"
                       >
-                        {(isAr ? secretary.name_ar : secretary.name_en)[0]}
+                        {(isAr ? secretary.first_name_ar : secretary.first_name_en)[0] || (isAr ? 'س' : 'S')}
                       </span>
                     </div>
                     <div className="flex-1">
@@ -244,6 +269,16 @@ const SecretaryList = () => {
           </div>
         )}
       </div>
+
+      {secretaryList.length > 0 && (
+        <TableFooter
+          variant="list"
+          totalItems={secretaryList.length}
+          itemsPerPage={itemsPerPage}
+          currentPage={currentPage}
+          onPageChange={setCurrentPage}
+        />
+      )}
 
       {/* Popups */}
       <SecretaryDialog

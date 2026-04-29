@@ -1,6 +1,6 @@
 import { useLanguage } from '../contexts/LanguageContext'
-import LoginForm from '../sections/Login/LoginForm/LoginForm'
-import LoginHero from '../sections/Login/LoginHero/LoginHero'
+import LoginForm from '../sections/Login/LoginForm'
+import LoginHero from '../sections/Login/LoginHero'
 
 const Login = () => {
   const { isAr } = useLanguage()

@@ -58,6 +58,8 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: A
   const [selectedStatus, setSelectedStatus] = useState(initialData?.status || 'pending');
   const [selectedDoctor, setSelectedDoctor] = useState(initialData?.doctorName || "");
   const [selectedPatient, setSelectedPatient] = useState(initialData?.patientName || "");
+  const [doctorNotes, setDoctorNotes] = useState(initialData?.doctorNotes || "");
+  const [patientNotes, setPatientNotes] = useState(initialData?.patientNotes || "");
 
   const handleClose = useCallback(() => {
     setIsClosing(true);
@@ -89,12 +91,19 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: A
       return;
     }
 
+    if (!selectedDate || !selectedTime || !doctorNotes || !patientNotes || !selectedPatient || !selectedDoctor) {
+      window.showToast(isAr ? "يرجى ملء جميع الحقول المطلوبة" : "Please fill all required fields", "error");
+      return;
+    }
+
     onConfirm({
       patientName: selectedPatient,
       doctorName: selectedDoctor,
       date: selectedDate,
       time: selectedTime,
       status: selectedStatus,
+      doctorNotes: doctorNotes,
+      patientNotes: patientNotes,
     });
 
     window.showToast?.(mode === 'add' ? t('toast_save_success', T) : t('toast_update_success', T));
@@ -242,33 +251,65 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: A
               </div>
             ) : mode === 'edit' ? (
               <div className="space-y-4 py-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-2">
+                    <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.date', T)} <span className="text-destructive">*</span></label>
+                    <div className={cn("relative group flex items-center justify-between h-12 bg-input-background border border-border rounded-xl px-4 focus-within:ring-4 focus-within:ring-primary/10 transition-all", isAr ? "flex-row" : "flex-row-reverse")}>
+                      <Flatpickr
+                        value={selectedDate}
+                        onChange={([date]) => setSelectedDate(date ? date.toISOString().split('T')[0] : '')}
+                        options={{
+                          locale: isAr ? Arabic : undefined,
+                          dateFormat: "d F Y",
+                          disableMobile: true,
+                          minDate: "today",
+                          formatDate: (date: Date) => format(date, "d MMMM yyyy", { locale: currentLocale })
+                        }}
+                        placeholder={t('dialog.select_date', T)}
+                        className={cn("flex-1 bg-transparent border-none outline-none font-bold h-full text-base md:text-sm", isAr ? "text-right" : "text-left")}
+                      />
+                      <FaCalendarAlt className="text-muted-foreground pointer-events-none group-focus-within:text-primary transition-colors size-[18px]" />
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{isAr ? "الوقت" : "Time"} <span className="text-destructive">*</span></label>
+                    <div className="relative group">
+                      <TimePicker
+                        value={selectedTime}
+                        onChange={setSelectedTime}
+                        className={cn("w-full h-12 bg-input-background justify-center xs:justify-end border border-border rounded-xl transition-all outline-none focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10", isAr ? "text-right" : "text-left")}
+                      />
+                    </div>
+                  </div>
+                </div>
+
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">{t('dialog.status', T)}</label>
-                  <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                    <SelectTrigger className={cn("rounded-xl h-12 bg-input-background transition-all focus:ring-4 focus:ring-primary/10", (selectedStatus) && "text-foreground font-bold")}>
-                      <SelectValue placeholder={t('dialog.status', T)} />
-                    </SelectTrigger>
-                    <SelectContent className={cn("rounded-xl z-600", isAr ? "text-right" : "text-left")}>
-                      <SelectItem value="pending">
-                        <div className="flex items-center gap-2">
-                          <div className="size-2 rounded-full bg-amber-500" />
-                          <span>{t('dialog.status_pending', T)}</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="completed">
-                        <div className="flex items-center gap-2">
-                          <div className="size-2 rounded-full bg-emerald-500" />
-                          <span>{t('dialog.status_completed', T)}</span>
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="canceled">
-                        <div className="flex items-center gap-2">
-                          <div className="size-2 rounded-full bg-rose-500" />
-                          <span>{t('dialog.status_canceled', T)}</span>
-                        </div>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <label className="text-sm font-medium">{t('dialog.doctor_notes', T)} <span className="text-destructive">*</span></label>
+                  <textarea
+                    required
+                    value={doctorNotes}
+                    onChange={(e) => setDoctorNotes(e.target.value)}
+                    placeholder={t('dialog.doctor_notes', T)}
+                    className={cn(
+                      "w-full min-h-[100px] p-4 rounded-xl border border-border bg-input-background focus:ring-4 focus:ring-primary/10 transition-all outline-none font-medium text-sm resize-none",
+                      isAr ? "text-right" : "text-left"
+                    )}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">{t('dialog.patient_notes', T)} <span className="text-destructive">*</span></label>
+                  <textarea
+                    required
+                    value={patientNotes}
+                    onChange={(e) => setPatientNotes(e.target.value)}
+                    placeholder={t('dialog.patient_notes', T)}
+                    className={cn(
+                      "w-full min-h-[100px] p-4 rounded-xl border border-border bg-input-background focus:ring-4 focus:ring-primary/10 transition-all outline-none font-medium text-sm resize-none",
+                      isAr ? "text-right" : "text-left"
+                    )}
+                  />
                 </div>
               </div>
             ) : (
@@ -363,6 +404,34 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: A
                         </SelectItem>
                       </SelectContent>
                     </Select>
+                  </div>
+
+                  <div className="flex flex-col gap-2 col-span-2">
+                    <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.doctor_notes', T)} <span className="text-destructive">*</span></label>
+                    <textarea
+                      required
+                      value={doctorNotes}
+                      onChange={(e) => setDoctorNotes(e.target.value)}
+                      placeholder={t('dialog.doctor_notes', T)}
+                      className={cn(
+                        "w-full min-h-[100px] p-4 rounded-xl border border-border bg-input-background focus:ring-4 focus:ring-primary/10 transition-all outline-none font-medium text-sm resize-none",
+                        isAr ? "text-right" : "text-left"
+                      )}
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-2 col-span-2">
+                    <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.patient_notes', T)} <span className="text-destructive">*</span></label>
+                    <textarea
+                      required
+                      value={patientNotes}
+                      onChange={(e) => setPatientNotes(e.target.value)}
+                      placeholder={t('dialog.patient_notes', T)}
+                      className={cn(
+                        "w-full min-h-[100px] p-4 rounded-xl border border-border bg-input-background focus:ring-4 focus:ring-primary/10 transition-all outline-none font-medium text-sm resize-none",
+                        isAr ? "text-right" : "text-left"
+                      )}
+                    />
                   </div>
                 </div>
               </div>

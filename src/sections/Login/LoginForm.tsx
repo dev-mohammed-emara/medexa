@@ -1,20 +1,20 @@
 import { useState } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
-import { TransitionLink } from '../../../components/transition/TransitionLink'
-import { useAuth } from '../../../contexts/AuthContext'
-import { FiMail, FiLock, FiEye, FiEyeOff, FiLogIn } from 'react-icons/fi'
-import BtnPrimary from '../../../components/ui/BtnPrimary'
-import Input from '../../../components/ui/Input'
+import { FiEye, FiEyeOff, FiLock, FiLogIn, FiMail } from 'react-icons/fi'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { TransitionLink } from '../../components/transition/TransitionLink'
+import BtnPrimary from '../../components/ui/BtnPrimary'
+import Input from '../../components/ui/Input'
+import { useAuth } from '../../contexts/AuthContext'
 
-import { usePreloader } from '../../../contexts/PreloaderContext'
-import { cn } from '../../../utils/cn'
-import { useLanguage } from '../../../contexts/LanguageContext'
-import { loginTranslations } from '../../../constants/translations/login'
+import { loginTranslations } from '../../constants/translations/login'
+import { useLanguage } from '../../contexts/LanguageContext'
+import { usePreloader } from '../../contexts/PreloaderContext'
+import { cn } from '../../utils/cn'
 
 const LoginForm = () => {
   const { isAr, t } = useLanguage()
   const T = loginTranslations
-  const { isLoaded, isExiting } = usePreloader()
+  const { isLoaded, isExiting }  = usePreloader()
   const canAnimate = isLoaded && !isExiting
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')

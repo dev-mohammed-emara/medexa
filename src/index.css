@@ -128,6 +128,20 @@ html[dir='rtl']{
   --dir:right;
 }
 
+html[dir='rtl']{
+
+  input,select{
+    direction: rtl;
+  }
+}
+
+html[dir='ltr']{
+  .flatpickr-input{
+    text-align: right !important;
+  }
+
+}
+
 @layer base {
   html, body {
     direction: rtl;
@@ -504,19 +518,6 @@ span.flatpickr-weekday{
 
 input[type='checkbox']{
   accent-color: var(--primary);
-}
-
-html[dir='rtl']{
-
-  input,select{
-    direction: rtl;
-  }
-}
-
-html[dir='ltr']{
-  .flatpickr-input{
-    text-align: right;
-  }
 }
 
  ::-webkit-scrollbar{

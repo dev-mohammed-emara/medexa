@@ -107,6 +107,8 @@ const AppointmentsList = () => {
   // Delete Modal State
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [appointmentToDelete, setAppointmentToDelete] = useState<Appointment | null>(null);
+  const [canceledBy, setCanceledBy] = useState('');
+  const [cancellationReason, setCancellationReason] = useState('');
 
   // Height and Scroll tracking for the detail sidebar
   const calendarRef = useRef<HTMLElement>(null);
@@ -362,6 +364,8 @@ const AppointmentsList = () => {
     const app = appointments.find(a => a.id === appId);
     if (app) {
       setAppointmentToDelete(app);
+      setCanceledBy('');
+      setCancellationReason('');
       setIsDeleteModalOpen(true);
     }
   };
@@ -741,7 +745,42 @@ const AppointmentsList = () => {
         confirmText={t('delete', T)}
         cancelText={t('cancel', T)}
         variant="danger"
-      />
+        isConfirmDisabled={!canceledBy || !cancellationReason.trim()}
+      >
+        <div className="space-y-4 mt-6">
+          <div className="space-y-2">
+            <label className="text-sm font-bold text-foreground/80 px-1 block text-start">
+              {t('canceled_by', T)} <span className="text-destructive">*</span>
+            </label>
+            <Select value={canceledBy} onValueChange={setCanceledBy}>
+              <SelectTrigger className="h-12 rounded-xl bg-muted/20 border-border">
+                <SelectValue placeholder={t('select_canceler', T)} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="doctor">{isAr ? "الطبيب" : "Doctor"}</SelectItem>
+                <SelectItem value="patient">{isAr ? "المريض" : "Patient"}</SelectItem>
+                <SelectItem value="secretary">{isAr ? "السكرتارية" : "Secretary"}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-bold text-foreground/80 px-1 block text-start">
+              {t('reason', T)} <span className="text-destructive">*</span>
+            </label>
+            <textarea
+              value={cancellationReason}
+              onChange={(e) => setCancellationReason(e.target.value)}
+              placeholder={t('enter_reason', T)}
+              className={cn(
+                "w-full h-[300px] p-4 rounded-xl border border-border bg-muted/20 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all resize-none disabled:opacity-50 placeholder:text-muted-foreground font-bold",
+                isAr ? "text-right" : "text-left"
+              )}
+              dir={isAr ? 'rtl' : 'ltr'}
+            />
+          </div>
+        </div>
+      </Modal>
 
       {/* Drag Preview Portal */}
       {draggedApp && (

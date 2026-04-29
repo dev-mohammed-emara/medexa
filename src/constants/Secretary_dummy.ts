@@ -1,6 +1,12 @@
 export const initialSecretaries = [
   {
     id: 1,
+    first_name_ar: 'فاطمة',
+    surname_ar: 'محمد',
+    last_name_ar: 'محمد',
+    first_name_en: 'Fatima',
+    surname_en: 'Mohammed',
+    last_name_en: 'Mohammed',
     name_ar: 'فاطمة محمد',
     name_en: 'Fatima Mohammed',
     role_ar: 'سكرتيرة رئيسية',
@@ -17,6 +23,12 @@ export const initialSecretaries = [
   },
   {
     id: 2,
+    first_name_ar: 'عمر',
+    surname_ar: 'حسن',
+    last_name_ar: 'حسن',
+    first_name_en: 'Omar',
+    surname_en: 'Hassan',
+    last_name_en: 'Hassan',
     name_ar: 'عمر حسن',
     name_en: 'Omar Hassan',
     role_ar: 'استقبال',

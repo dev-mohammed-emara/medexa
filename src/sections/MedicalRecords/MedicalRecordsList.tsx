@@ -1,16 +1,17 @@
-import { useState } from 'react';
 import {
-  FileText,
-  Stethoscope,
-  ChevronDown,
-  FileImage,
-  Pill,
-  FlaskConical
+    ChevronDown,
+    FileImage,
+    FileText,
+    FlaskConical,
+    Pill,
+    Stethoscope
 } from 'lucide-react';
+import { useState } from 'react';
 import { FaCalendarAlt } from 'react-icons/fa';
-import { usePreloader } from '../../contexts/PreloaderContext';
-import { useLanguage } from '../../contexts/LanguageContext';
+import TableFooter from '../../components/ui/TableFooter';
 import { recordsTranslations } from '../../constants/translations/records';
+import { useLanguage } from '../../contexts/LanguageContext';
+import { usePreloader } from '../../contexts/PreloaderContext';
 import { cn } from '../../utils/cn';
 
 interface MedicalRecord {
@@ -37,7 +38,7 @@ const INITIAL_RECORDS: MedicalRecord[] = [
     patientName_ar: 'أحمد عبدالله',
     patientName_en: 'Ahmed Abdullah',
     doctorName_ar: 'د. عمر الزعبي',
-    doctorName_en: 'Dr. Omar Al-Zoubi',
+    doctorName_en: 'Dr. Omar Al-Zoughbi',
     date: '2026-02-25',
     status: 'completed',
     details: {
@@ -92,10 +93,17 @@ const MedicalRecordsList = () => {
   const canAnimate = isLoaded && !isExiting;
 
   const [openId, setOpenId] = useState<number | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 12;
 
   const toggleRecord = (id: number) => {
     setOpenId(openId === id ? null : id);
   };
+
+  const paginatedRecords = INITIAL_RECORDS.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   return (
     <section className="flex-1 overflow-auto" dir={dir}>
@@ -129,7 +137,7 @@ const MedicalRecordsList = () => {
 
         {/* Records List */}
         <section className="space-y-4">
-          {INITIAL_RECORDS.map((record, index) => {
+          {paginatedRecords.map((record, index) => {
             const isOpen = openId === record.id;
 
             return (
@@ -271,6 +279,16 @@ const MedicalRecordsList = () => {
             );
           })}
         </section>
+
+        {INITIAL_RECORDS.length > 0 && (
+          <TableFooter
+            variant="list"
+            totalItems={INITIAL_RECORDS.length}
+            itemsPerPage={itemsPerPage}
+            currentPage={currentPage}
+            onPageChange={setCurrentPage}
+          />
+        )}
 
         {/* Stats Card */}
         <section

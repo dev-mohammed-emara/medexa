@@ -40,7 +40,9 @@ const RegisterForm = () => {
     city: '',
     address: '',
     phone: '',
-    fullName: '',
+    firstName: '',
+    surname: '',
+    lastName: '',
     email: '',
     ownerPhone: '',
     password: '',
@@ -237,15 +239,38 @@ const RegisterForm = () => {
               <h3 className="text-xl" style={{ fontWeight: 600 }}>معلومات مالك العيادة</h3>
             </header>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="md:col-span-2">
-                <label className="text-sm font-semibold text-[#1a2b3c] pr-1 block mb-2">الاسم الكامل</label>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="text-sm font-semibold text-[#1a2b3c] pr-1 block mb-2">الاسم الأول</label>
                 <Input
-                  name="fullName"
+                  name="firstName"
                   required
-                  placeholder="أدخل اسم الطبيب أو المسؤول"
-                  value={formData.fullName}
+                  placeholder="أدخل الاسم الأول"
+                  value={formData.firstName}
                   onChange={handleChange}
+                  icon={<LuUser size={18} />}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-[#1a2b3c] pr-1 block mb-2">اسم الأب (الشهرة)</label>
+                <Input
+                  name="surname"
+                  required
+                  placeholder="أدخل اسم الأب"
+                  value={formData.surname}
+                  onChange={handleChange}
+                  icon={<LuUser size={18} />}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-semibold text-[#1a2b3c] pr-1 block mb-2">الاسم الأخير</label>
+                <Input
+                  name="lastName"
+                  required
+                  placeholder="أدخل الاسم الأخير"
+                  value={formData.lastName}
+                  onChange={handleChange}
+                  icon={<LuUser size={18} />}
                 />
               </div>
 

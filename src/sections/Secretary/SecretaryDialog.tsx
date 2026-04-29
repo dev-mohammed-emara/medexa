@@ -19,6 +19,12 @@ import { useBroadcast } from '../../hooks/useBroadcast';
 
 interface Secretary {
   id: number;
+  first_name_ar: string;
+  surname_ar: string;
+  last_name_ar: string;
+  first_name_en: string;
+  surname_en: string;
+  last_name_en: string;
   name_ar: string;
   name_en: string;
   role_ar: string;
@@ -82,10 +88,20 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
     const formData = new FormData(e.target as HTMLFormElement);
     const formDataObj = Object.fromEntries(formData.entries());
 
+    const fName = (formDataObj['first_name_ar'] || formDataObj['first_name_en'] || '') as string;
+    const sName = (formDataObj['surname_ar'] || formDataObj['surname_en'] || '') as string;
+    const lName = (formDataObj['last_name_ar'] || formDataObj['last_name_en'] || '') as string;
+
     const data: Partial<Secretary> = {
       ...initialData,
-      name_ar: isAr ? formDataObj['secretary-name'] as string : initialData?.name_ar || '',
-      name_en: !isAr ? formDataObj['secretary-name'] as string : initialData?.name_en || '',
+      first_name_ar: isAr ? formDataObj['first_name_ar'] as string : initialData?.first_name_ar || '',
+      surname_ar: isAr ? formDataObj['surname_ar'] as string : initialData?.surname_ar || '',
+      last_name_ar: isAr ? formDataObj['last_name_ar'] as string : initialData?.last_name_ar || '',
+      first_name_en: !isAr ? formDataObj['first_name_en'] as string : initialData?.first_name_en || '',
+      surname_en: !isAr ? formDataObj['surname_en'] as string : initialData?.surname_en || '',
+      last_name_en: !isAr ? formDataObj['last_name_en'] as string : initialData?.last_name_en || '',
+      name_ar: isAr ? `${fName} ${sName} ${lName}` : initialData?.name_ar || '',
+      name_en: !isAr ? `${fName} ${sName} ${lName}` : initialData?.name_en || '',
       email: formDataObj['secretary-email'] as string,
       phone: formDataObj['secretary-phone'] as string,
       role_ar: isAr ? selectedRole : initialData?.role_ar || '',
@@ -127,7 +143,7 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
         <figure
           role="dialog"
           className={cn(
-            "bg-background relative w-full rounded-2xl border p-8 shadow-2xl max-w-xl max-h-[90vh] flex flex-col outline-none",
+            "bg-background relative w-full rounded-2xl border p-8 shadow-2xl max-w-2xl max-h-[90vh] flex flex-col outline-none",
             isClosing ? "animate-scaleDownOut" : "animate-scaleUp"
           )}
         >
@@ -150,22 +166,50 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
 
           <ScrollLockWrapper className="flex-1 overflow-y-auto pr-1 no-scrollbar">
             <form id="secretaryForm" onSubmit={handleSubmit} className="space-y-6 py-2" autoComplete="off">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Name */}
+              {/* Name Fields - Three Columns */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="flex flex-col gap-2 text-start">
-                  <label htmlFor={inputId('name')} className="text-sm font-semibold text-foreground/80 pr-1">{t('full_name', T)}</label>
+                  <label htmlFor={inputId('first_name')} className="text-sm font-semibold text-foreground/80 pr-1">{t('first_name', T)}</label>
                   <Input
-                    id={inputId('name')}
-                    name="secretary-name"
-                    defaultValue={isAr ? initialData?.name_ar : initialData?.name_en}
+                    id={inputId('first_name')}
+                    name={isAr ? "first_name_ar" : "first_name_en"}
+                    defaultValue={isAr ? initialData?.first_name_ar : initialData?.first_name_en}
                     required
                     disabled={mode === 'view'}
-                    placeholder={t('name_placeholder', T)}
+                    placeholder={t('first_name_placeholder', T)}
                     icon={<User size={18} />}
                     className={inputClass}
                   />
                 </div>
+                <div className="flex flex-col gap-2 text-start">
+                  <label htmlFor={inputId('surname')} className="text-sm font-semibold text-foreground/80 pr-1">{t('surname', T)}</label>
+                  <Input
+                    id={inputId('surname')}
+                    name={isAr ? "surname_ar" : "surname_en"}
+                    defaultValue={isAr ? initialData?.surname_ar : initialData?.surname_en}
+                    required
+                    disabled={mode === 'view'}
+                    placeholder={t('surname_placeholder', T)}
+                    icon={<User size={18} />}
+                    className={inputClass}
+                  />
+                </div>
+                <div className="flex flex-col gap-2 text-start">
+                  <label htmlFor={inputId('last_name')} className="text-sm font-semibold text-foreground/80 pr-1">{t('last_name', T)}</label>
+                  <Input
+                    id={inputId('last_name')}
+                    name={isAr ? "last_name_ar" : "last_name_en"}
+                    defaultValue={isAr ? initialData?.last_name_ar : initialData?.last_name_en}
+                    required
+                    disabled={mode === 'view'}
+                    placeholder={t('last_name_placeholder', T)}
+                    icon={<User size={18} />}
+                    className={inputClass}
+                  />
+                </div>
+              </div>
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Email */}
                 <div className="flex flex-col gap-2 text-start">
                   <label htmlFor={inputId('email')} className="text-sm font-semibold text-foreground/80 pr-1">{t('email', T)}</label>
@@ -182,22 +226,6 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
                   />
                 </div>
 
-                {/* Role */}
-                <div className="flex flex-col gap-2 text-start">
-                  <label className="text-sm font-semibold text-foreground/80 pr-1">{t('job_role', T)}</label>
-                  <Select value={selectedRole} onValueChange={setSelectedRole} disabled={mode === 'view'}>
-                    <SelectTrigger className={cn("rounded-xl h-12 bg-input-background transition-all focus:ring-4 focus:ring-primary/10", ((isAr ? initialData?.role_ar : initialData?.role_en) || selectedRole) && "text-foreground font-bold")}>
-                      <SelectValue placeholder={t('choose_role', T)} />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-xl z-[600]" dir={isAr ? "rtl" : "ltr"}>
-                      <SelectItem value="سكرتيرة رئيسية">{t('role_main', T)}</SelectItem>
-                      <SelectItem value="استقبال">{t('role_reception', T)}</SelectItem>
-                      <SelectItem value="محاسبة">{t('role_accounting', T)}</SelectItem>
-                      <SelectItem value="إدارة عمليات">{t('role_operations', T)}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
                 {/* Phone */}
                 <div className="flex flex-col gap-2 text-start">
                   <label htmlFor={inputId('phone')} className="text-sm font-semibold text-foreground/80 pr-1">{t('phone', T)}</label>
@@ -212,6 +240,24 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
                     className={inputClass}
                     dir="ltr"
                   />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Role */}
+                <div className="flex flex-col gap-2 text-start">
+                  <label className="text-sm font-semibold text-foreground/80 pr-1">{t('job_role', T)}</label>
+                  <Select value={selectedRole} onValueChange={setSelectedRole} disabled={mode === 'view'}>
+                    <SelectTrigger className={cn("rounded-xl h-12 bg-input-background transition-all focus:ring-4 focus:ring-primary/10", ((isAr ? initialData?.role_ar : initialData?.role_en) || selectedRole) && "text-foreground font-bold")}>
+                      <SelectValue placeholder={t('choose_role', T)} />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl z-[600]" dir={isAr ? "rtl" : "ltr"}>
+                      <SelectItem value="سكرتيرة رئيسية">{t('role_main', T)}</SelectItem>
+                      <SelectItem value="استقبال">{t('role_reception', T)}</SelectItem>
+                      <SelectItem value="محاسبة">{t('role_accounting', T)}</SelectItem>
+                      <SelectItem value="إدارة عمليات">{t('role_operations', T)}</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 {/* Gender */}

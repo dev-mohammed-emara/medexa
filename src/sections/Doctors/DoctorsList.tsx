@@ -19,9 +19,16 @@ import { Button } from '../../components/ui/Button'
 import { useLanguage } from '../../contexts/LanguageContext'
 import { doctorsTranslations } from '../../constants/translations/doctors'
 import { useBroadcast } from '../../hooks/useBroadcast'
+import TableFooter from '../../components/ui/TableFooter'
 
 interface Doctor {
   id: number;
+  first_name_ar: string;
+  surname_ar: string;
+  last_name_ar: string;
+  first_name_en: string;
+  surname_en: string;
+  last_name_en: string;
   name_ar: string;
   name_en: string;
   specialty_ar: string;
@@ -54,12 +61,14 @@ const DoctorsList = () => {
   });
 
   // State management
-  const [doctorsList, setDoctorsList] = useState<Doctor[]>(initialDoctors);
+  const [doctorsList, setDoctorsList] = useState<Doctor[]>(initialDoctors as Doctor[]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogMode, setDialogMode] = useState<'add' | 'edit' | 'view'>('add');
   const [currentDoctor, setCurrentDoctor] = useState<Doctor | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [doctorToDelete, setDoctorToDelete] = useState<Doctor | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 12;
 
   const handleOpenDialog = (mode: 'add' | 'edit' | 'view', doctor?: Doctor) => {
     setDialogMode(mode);
@@ -71,8 +80,14 @@ const DoctorsList = () => {
     if (dialogMode === 'add') {
       const newDoctor: Doctor = {
         id: Date.now(),
-        name_ar: data.name_ar || (isAr ? data.name_en || '' : ''),
-        name_en: data.name_en || (!isAr ? data.name_ar || '' : ''),
+        first_name_ar: data.first_name_ar || '',
+        surname_ar: data.surname_ar || '',
+        last_name_ar: data.last_name_ar || '',
+        first_name_en: data.first_name_en || '',
+        surname_en: data.surname_en || '',
+        last_name_en: data.last_name_en || '',
+        name_ar: data.name_ar || '',
+        name_en: data.name_en || '',
         specialty_ar: data.specialty_ar || (isAr ? data.specialty_en || '' : ''),
         specialty_en: data.specialty_en || (!isAr ? data.specialty_ar || '' : ''),
         status: 'active',
@@ -80,8 +95,8 @@ const DoctorsList = () => {
         email: data.email || '',
         patients: Number(data.patients) || 0,
         revenue: data.revenue || '0',
-        initial_ar: data.initial_ar || (isAr ? (data.name_ar as string)?.[0] || 'د' : 'د'),
-        initial_en: data.initial_en || (!isAr ? (data.name_en as string)?.[0] || 'D' : 'D'),
+        initial_ar: data.initial_ar || (isAr ? (data.first_name_ar as string)?.[0] || 'د' : 'د'),
+        initial_en: data.initial_en || (!isAr ? (data.first_name_en as string)?.[0] || 'D' : 'D'),
         gender_ar: data.gender_ar || 'ذكر',
         gender_en: data.gender_en || 'Male',
         dob: data.dob || '1990-01-01',
@@ -105,15 +120,26 @@ const DoctorsList = () => {
 
   const confirmDelete = () => {
     if (doctorToDelete) {
-      setDoctorsList(prev => prev.filter(doc => doc.id !== doctorToDelete.id));
+      setDoctorsList(prev => {
+        const newList = prev.filter(doc => doc.id !== doctorToDelete.id);
+        // Adjust current page if necessary
+        const maxPage = Math.ceil(newList.length / itemsPerPage);
+        if (currentPage > maxPage && maxPage > 0) setCurrentPage(maxPage);
+        return newList;
+      });
       broadcast({ type: 'DATA_UPDATE', module: 'doctors' });
     }
     setIsDeleteModalOpen(false);
     window.showToast?.(t('toast_delete_success', T));
   };
 
+  const paginatedDoctors = doctorsList.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   return (
-    <div className="space-y-6" dir={isAr ? "rtl" : "ltr"}>
+    <div className="space-y-6 pb-10" dir={isAr ? "rtl" : "ltr"}>
       {/* Page Header */}
       <section className={cn(
         "flex items-center justify-between opacity-0",
@@ -134,11 +160,11 @@ const DoctorsList = () => {
 
       {/* Cards Grid / Empty State */}
       <div className={cn(
-        "grid gap-4 pb-20",
-        doctorsList.length > 0 ? "grid-cols-1 sm:grid-cols-2 xl:grid-cols-3" : "grid-cols-1"
+        "grid gap-4",
+        paginatedDoctors.length > 0 ? "grid-cols-1 sm:grid-cols-2 xl:grid-cols-3" : "grid-cols-1"
       )}>
-        {doctorsList.length > 0 ? (
-          doctorsList.map((doctor, index) => (
+        {paginatedDoctors.length > 0 ? (
+          paginatedDoctors.map((doctor, index) => (
             <div
               key={doctor.id}
               style={{
@@ -168,7 +194,7 @@ const DoctorsList = () => {
                         data-slot="avatar-fallback"
                         className="flex size-full items-center justify-center rounded-full bg-primary text-white text-xl font-bold"
                       >
-                        {(isAr ? doctor.name_ar : doctor.name_en).replace(/^د\.\s*/, '').replace(/^Dr\.\s*/, '')[0]}
+                        {(isAr ? doctor.first_name_ar : doctor.first_name_en)[0] || (isAr ? 'د' : 'D')}
                       </span>
                     </div>
                     <div className="flex-1">
@@ -273,6 +299,16 @@ const DoctorsList = () => {
           </div>
         )}
       </div>
+
+      {doctorsList.length > 0 && (
+        <TableFooter
+          variant="list"
+          totalItems={doctorsList.length}
+          itemsPerPage={itemsPerPage}
+          currentPage={currentPage}
+          onPageChange={setCurrentPage}
+        />
+      )}
 
       {/* Popups */}
       <DoctorDialog

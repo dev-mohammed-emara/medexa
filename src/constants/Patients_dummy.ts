@@ -1,5 +1,11 @@
 export interface Patient {
   id: number;
+  first_name_ar: string;
+  surname_ar: string;
+  last_name_ar: string;
+  first_name_en: string;
+  surname_en: string;
+  last_name_en: string;
   name_ar: string;
   name_en: string;
   phone: string;
@@ -17,6 +23,12 @@ export interface Patient {
 export const initialPatients: Patient[] = [
   {
     id: 1,
+    first_name_ar: 'أحمد',
+    surname_ar: 'محمد',
+    last_name_ar: 'محمد',
+    first_name_en: 'Ahmed',
+    surname_en: 'Mohammed',
+    last_name_en: 'Mohammed',
     name_ar: 'أحمد محمد',
     name_en: 'Ahmed Mohammed',
     phone: '0791234567',
@@ -32,6 +44,12 @@ export const initialPatients: Patient[] = [
   },
   {
     id: 2,
+    first_name_ar: 'سارة',
+    surname_ar: 'أحمد',
+    last_name_ar: 'أحمد',
+    first_name_en: 'Sara',
+    surname_en: 'Ahmed',
+    last_name_en: 'Ahmed',
     name_ar: 'سارة أحمد',
     name_en: 'Sara Ahmed',
     phone: '0787654321',
@@ -47,6 +65,12 @@ export const initialPatients: Patient[] = [
   },
   {
     id: 3,
+    first_name_ar: 'محمود',
+    surname_ar: 'علي',
+    last_name_ar: 'علي',
+    first_name_en: 'Mahmoud',
+    surname_en: 'Ali',
+    last_name_en: 'Ali',
     name_ar: 'محمود علي',
     name_en: 'Mahmoud Ali',
     phone: '0771122334',
@@ -62,6 +86,12 @@ export const initialPatients: Patient[] = [
   },
   {
     id: 4,
+    first_name_ar: 'ليلى',
+    surname_ar: 'يوسف',
+    last_name_ar: 'يوسف',
+    first_name_en: 'Layla',
+    surname_en: 'Yousef',
+    last_name_en: 'Yousef',
     name_ar: 'ليلى يوسف',
     name_en: 'Layla Yousef',
     phone: '0790099887',
@@ -77,6 +107,12 @@ export const initialPatients: Patient[] = [
   },
   {
     id: 5,
+    first_name_ar: 'خالد',
+    surname_ar: 'عمر',
+    last_name_ar: 'عمر',
+    first_name_en: 'Khaled',
+    surname_en: 'Omar',
+    last_name_en: 'Omar',
     name_ar: 'خالد عمر',
     name_en: 'Khaled Omar',
     phone: '0785566778',
@@ -92,6 +128,12 @@ export const initialPatients: Patient[] = [
   },
   {
     id: 6,
+    first_name_ar: 'منى',
+    surname_ar: 'عبدالله',
+    last_name_ar: 'عبدالله',
+    first_name_en: 'Muna',
+    surname_en: 'Abdullah',
+    last_name_en: 'Abdullah',
     name_ar: 'منى عبدالله',
     name_en: 'Muna Abdullah',
     phone: '0774433221',

@@ -2,7 +2,7 @@ import { format } from 'date-fns'
 import { ar } from 'date-fns/locale'
 import "flatpickr/dist/flatpickr.css"
 import { Arabic } from "flatpickr/dist/l10n/ar.js"
-import { Check, Eye, EyeOff, Mail, Phone, Plus, Printer, Save, User, X } from 'lucide-react'
+import { Check, Mail, Phone, Plus, Printer, Save, User, X } from 'lucide-react'
 import { FaCalendarAlt } from 'react-icons/fa'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Flatpickr from "react-flatpickr"
@@ -24,6 +24,12 @@ import { enUS } from 'date-fns/locale'
 
 interface Doctor {
   id: number;
+  first_name_ar: string;
+  surname_ar: string;
+  last_name_ar: string;
+  first_name_en: string;
+  surname_en: string;
+  last_name_en: string;
   name_ar: string;
   name_en: string;
   specialty_ar: string;
@@ -57,8 +63,6 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
   const currentLocale = isAr ? ar : enUS;
   const overlayRef = useRef<HTMLDivElement>(null)
   const modalRef = useRef<HTMLDivElement>(null)
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [selectedSpecialty, setSelectedSpecialty] = useState(isAr ? initialData?.specialty_ar : initialData?.specialty_en || "")
   const [selectedGender, setSelectedGender] = useState(isAr ? initialData?.gender_ar : initialData?.gender_en || "")
   const [selectedDob, setSelectedDob] = useState<string>(initialData?.dob || "")
@@ -100,6 +104,15 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
     data.gender_ar = isAr ? selectedGender : ''
     data.gender_en = !isAr ? selectedGender : ''
     data.dob = selectedDob
+    
+    // Auto-generate name_ar and name_en for convenience
+    const fName = (data.first_name_ar || data.first_name_en || '') as string;
+    const sName = (data.surname_ar || data.surname_en || '') as string;
+    const lName = (data.last_name_ar || data.last_name_en || '') as string;
+    
+    data.name_ar = isAr ? `د. ${fName} ${sName} ${lName}` : (initialData?.name_ar || '');
+    data.name_en = !isAr ? `Dr. ${fName} ${sName} ${lName}` : (initialData?.name_en || '');
+
     const permissions: string[] = []
     const permissionCheckboxes = ['managePatients', 'manageAppointments', 'medicalRecords', 'financialReports']
     permissionCheckboxes.forEach(p => {
@@ -110,15 +123,15 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
     handleClose()
   }
 
-  const titles = { 
-    add: t('dialog.title_add', T), 
-    edit: t('dialog.title_edit', T), 
-    view: t('dialog.title_view', T) 
+  const titles = {
+    add: t('dialog.title_add', T),
+    edit: t('dialog.title_edit', T),
+    view: t('dialog.title_view', T)
   };
-  const descriptions = { 
-    add: t('dialog.desc_add', T), 
-    edit: t('dialog.desc_edit', T), 
-    view: t('dialog.desc_view', T) 
+  const descriptions = {
+    add: t('dialog.desc_add', T),
+    edit: t('dialog.desc_edit', T),
+    view: t('dialog.desc_view', T)
   };
   const inputId = (name: string) => `doctor-${name}-${mode}`
 
@@ -140,7 +153,7 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
           ref={modalRef}
           role="dialog"
           className={cn(
-            "bg-background relative w-full rounded-2xl border p-8 shadow-2xl max-w-xl max-h-[90vh] flex flex-col",
+            "bg-background relative w-full rounded-2xl border p-8 shadow-2xl max-w-2xl max-h-[90vh] flex flex-col",
             isClosing ? "animate-scaleDownOut" : "animate-scaleUp"
           )}
         >
@@ -155,11 +168,50 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
 
           <ScrollLockWrapper className="flex-1 overflow-y-auto pr-1 no-scrollbar">
             <form id="doctorForm" onSubmit={handleSubmit} className="space-y-6 py-2" autoComplete="off">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Name Fields - Three Columns */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="flex flex-col gap-2">
-                  <label htmlFor={inputId('name')} className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.name', T)}</label>
-                  <Input id={inputId('name')} name={isAr ? "name_ar" : "name_en"} defaultValue={isAr ? initialData?.name_ar : initialData?.name_en} required disabled={mode === 'view'} placeholder={t('dialog.name_placeholder', T)} icon={<User size={18} />} className={inputClass} />
+                  <label htmlFor={inputId('first_name')} className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.first_name', T)}</label>
+                  <Input 
+                    id={inputId('first_name')} 
+                    name={isAr ? "first_name_ar" : "first_name_en"} 
+                    defaultValue={isAr ? initialData?.first_name_ar : initialData?.first_name_en} 
+                    required 
+                    disabled={mode === 'view'} 
+                    placeholder={t('dialog.first_name_placeholder', T)} 
+                    icon={<User size={18} />} 
+                    className={inputClass} 
+                  />
                 </div>
+                <div className="flex flex-col gap-2">
+                  <label htmlFor={inputId('surname')} className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.surname', T)}</label>
+                  <Input 
+                    id={inputId('surname')} 
+                    name={isAr ? "surname_ar" : "surname_en"} 
+                    defaultValue={isAr ? initialData?.surname_ar : initialData?.surname_en} 
+                    required 
+                    disabled={mode === 'view'} 
+                    placeholder={t('dialog.surname_placeholder', T)} 
+                    icon={<User size={18} />}
+                    className={inputClass} 
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label htmlFor={inputId('last_name')} className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.last_name', T)}</label>
+                  <Input 
+                    id={inputId('last_name')} 
+                    name={isAr ? "last_name_ar" : "last_name_en"} 
+                    defaultValue={isAr ? initialData?.last_name_ar : initialData?.last_name_en} 
+                    required 
+                    disabled={mode === 'view'} 
+                    placeholder={t('dialog.last_name_placeholder', T)} 
+                    icon={<User size={18} />}
+                    className={inputClass} 
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="flex flex-col gap-2">
                   <label htmlFor={inputId('email')} className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.email', T)}</label>
                   <Input id={inputId('email')} type="email" name="doctor-email" defaultValue={initialData?.email} required disabled={mode === 'view'} placeholder={t('dialog.email_placeholder', T)} icon={<Mail size={18} />} className={inputClass} />
@@ -168,6 +220,9 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
                   <label htmlFor={inputId('phone')} className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.phone', T)}</label>
                   <Input id={inputId('phone')} name="doctor-phone" defaultValue={initialData?.phone} required disabled={mode === 'view'} placeholder="07XXXXXXXX" icon={<Phone size={18} />} className={inputClass} dir="ltr" />
                 </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="flex flex-col gap-2">
                   <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.specialty', T)}</label>
                   <Select value={selectedSpecialty} onValueChange={setSelectedSpecialty} disabled={mode === 'view'}>
@@ -180,6 +235,18 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
                       <SelectItem value="أسنان">{isAr ? "أسنان" : "Dentistry"}</SelectItem>
                       <SelectItem value="باطني">{isAr ? "باطني" : "Internal Medicine"}</SelectItem>
                       <SelectItem value="جراحة">{isAr ? "جراحة" : "Surgery"}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.gender', T)}</label>
+                  <Select value={selectedGender} onValueChange={setSelectedGender} disabled={mode === 'view'}>
+                    <SelectTrigger className={cn("rounded-xl h-12 bg-input-background transition-all focus:ring-4 focus:ring-primary/10", ((isAr ? initialData?.gender_ar : initialData?.gender_en) || selectedGender) && "text-foreground font-bold")}>
+                      <SelectValue placeholder={t('dialog.select_gender', T)} />
+                    </SelectTrigger>
+                    <SelectContent className={cn("rounded-xl z-600", isAr ? "text-right" : "text-left")}>
+                      <SelectItem value="ذكر">{isAr ? "ذكر" : "Male"}</SelectItem>
+                      <SelectItem value="أنثى">{isAr ? "أنثى" : "Female"}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -199,18 +266,6 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="flex flex-col gap-2">
-                  <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.gender', T)}</label>
-                  <Select value={selectedGender} onValueChange={setSelectedGender} disabled={mode === 'view'}>
-                    <SelectTrigger className={cn("rounded-xl h-12 bg-input-background transition-all focus:ring-4 focus:ring-primary/10", ((isAr ? initialData?.gender_ar : initialData?.gender_en) || selectedGender) && "text-foreground font-bold")}>
-                      <SelectValue placeholder={t('dialog.select_gender', T)} />
-                    </SelectTrigger>
-                    <SelectContent className={cn("rounded-xl z-600", isAr ? "text-right" : "text-left")}>
-                      <SelectItem value="ذكر">{isAr ? "ذكر" : "Male"}</SelectItem>
-                      <SelectItem value="أنثى">{isAr ? "أنثى" : "Female"}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
                 <div className="flex flex-col gap-2">
                   <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.dob', T)}</label>
                   <div className={cn("relative group flex items-center justify-between h-12 bg-input-background border border-border rounded-xl px-4 transition-all focus-within:ring-4 focus-within:ring-primary/10", isAr ? "flex-row" : "flex-row-reverse")}>
@@ -232,29 +287,6 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
                   </div>
                 </div>
               </div>
-
-              {mode !== 'view' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="flex flex-col gap-2">
-                    <label htmlFor={inputId('password')} className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.password', T)}</label>
-                    <div className="relative group">
-                      <Input id={inputId('password')} type={showPassword ? "text" : "password"} name="doctor-password" placeholder="••••••••" autoComplete="new-password" className={cn(inputClass, isAr ? "pl-12" : "pr-12")} />
-                      <button type="button" onClick={() => setShowPassword(!showPassword)} className={cn("absolute top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors outline-none z-10", isAr ? "left-4" : "right-4")}>
-                        {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                      </button>
-                    </div>
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <label htmlFor={inputId('confirm-password')} className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.confirm_password', T)}</label>
-                    <div className="relative group">
-                      <Input id={inputId('confirm-password')} type={showConfirmPassword ? "text" : "password"} name="doctor-confirm-password" placeholder="••••••••" autoComplete="new-password" className={cn(inputClass, isAr ? "pl-12" : "pr-12")} />
-                      <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className={cn("absolute top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors outline-none z-10", isAr ? "left-4" : "right-4")}>
-                        {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
 
               <footer className="space-y-3 p-4 bg-muted/30 rounded-2xl border border-border">
                 <label className="text-lg font-bold block">{t('permissions', T)}</label>

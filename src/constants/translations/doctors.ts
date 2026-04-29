@@ -37,8 +37,6 @@ export const doctorsTranslations = {
       desc_add: "أدخل المعلومات التفصيلية للطبيب الجديد",
       desc_edit: "قم بتحديث المعلومات التفصيلية للطبيب",
       desc_view: "عرض المعلومات التفصيلية للطبيب",
-      name: "اسم الطبيب",
-      name_placeholder: "أدخل اسم الطبيب الرباعي",
       email: "البريد الإلكتروني",
       email_placeholder: "أدخل البريد الإلكتروني",
       phone: "رقم الهاتف",
@@ -59,7 +57,13 @@ export const doctorsTranslations = {
       save_edit: "حفظ التعديلات",
       close: "إغلاق",
       cancel: "إلغاء",
-      print: "طباعة التقرير"
+      print: "طباعة التقرير",
+      first_name: "الاسم الأول",
+      surname: "اسم العائلة/اللقب",
+      last_name: "الاسم الأخير",
+      first_name_placeholder: "أدخل الاسم الأول",
+      surname_placeholder: "أدخل اللقب",
+      last_name_placeholder: "أدخل الاسم الأخير"
     }
   },
   en: {
@@ -99,8 +103,6 @@ export const doctorsTranslations = {
       desc_add: "Enter detailed information for the new doctor",
       desc_edit: "Update detailed information for the doctor",
       desc_view: "View detailed information for the doctor",
-      name: "Doctor Name",
-      name_placeholder: "Enter full doctor name",
       email: "Email Address",
       email_placeholder: "Enter email address",
       phone: "Phone Number",
@@ -121,7 +123,13 @@ export const doctorsTranslations = {
       save_edit: "Save Changes",
       close: "Close",
       cancel: "Cancel",
-      print: "Print Report"
+      print: "Print Report",
+      first_name: "First Name",
+      surname: "Surname/Nickname",
+      last_name: "Last Name",
+      first_name_placeholder: "Enter first name",
+      surname_placeholder: "Enter surname",
+      last_name_placeholder: "Enter last name"
     }
   }
 };

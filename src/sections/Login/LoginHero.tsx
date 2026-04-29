@@ -1,7 +1,7 @@
-import { usePreloader } from "../../../contexts/PreloaderContext"
-import { cn } from "../../../utils/cn"
-import { useLanguage } from "../../../contexts/LanguageContext"
-import { loginTranslations } from "../../../constants/translations/login"
+import { loginTranslations } from "../../constants/translations/login"
+import { useLanguage } from "../../contexts/LanguageContext"
+import { usePreloader } from "../../contexts/PreloaderContext"
+import { cn } from "../../utils/cn"
 
 const LoginHero = () => {
   const { t } = useLanguage()

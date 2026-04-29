@@ -73,10 +73,20 @@ const PatientsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Patie
     const formData = new FormData(e.target as HTMLFormElement);
     const formDataObj = Object.fromEntries(formData.entries());
 
+    const fName = (formDataObj['first_name_ar'] || formDataObj['first_name_en'] || '') as string;
+    const sName = (formDataObj['surname_ar'] || formDataObj['surname_en'] || '') as string;
+    const lName = (formDataObj['last_name_ar'] || formDataObj['last_name_en'] || '') as string;
+
     onConfirm({
       ...initialData,
-      name_ar: isAr ? formDataObj['name'] as string : initialData?.name_ar || '',
-      name_en: !isAr ? formDataObj['name'] as string : initialData?.name_en || '',
+      first_name_ar: isAr ? formDataObj['first_name_ar'] as string : initialData?.first_name_ar || '',
+      surname_ar: isAr ? formDataObj['surname_ar'] as string : initialData?.surname_ar || '',
+      last_name_ar: isAr ? formDataObj['last_name_ar'] as string : initialData?.last_name_ar || '',
+      first_name_en: !isAr ? formDataObj['first_name_en'] as string : initialData?.first_name_en || '',
+      surname_en: !isAr ? formDataObj['surname_en'] as string : initialData?.surname_en || '',
+      last_name_en: !isAr ? formDataObj['last_name_en'] as string : initialData?.last_name_en || '',
+      name_ar: isAr ? `${fName} ${sName} ${lName}` : initialData?.name_ar || '',
+      name_en: !isAr ? `${fName} ${sName} ${lName}` : initialData?.name_en || '',
       phone: formDataObj['phone'] as string,
       gender_ar: isAr ? selectedGender : initialData?.gender_ar || '',
       gender_en: !isAr ? selectedGender : initialData?.gender_en || '',
@@ -152,21 +162,47 @@ const PatientsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Patie
           <ScrollLockWrapper className="z-500 overflow-visible overflow-y-auto pr-1 no-scrollbar">
             <form id="patientForm" onSubmit={handleSubmit} className="py-2" autoComplete="off">
               <article className="space-y-6">
-                <div className="flex flex-col xs:grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Name */}
-                  <div className="flex flex-col gap-2 col-span-2">
-                    <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.full_name', T)}</label>
+                {/* Name Fields - Three Columns */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="flex flex-col gap-2">
+                    <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.first_name', T)}</label>
                     <Input
-                      name="name"
-                      defaultValue={isAr ? initialData?.name_ar : initialData?.name_en}
+                      name={isAr ? "first_name_ar" : "first_name_en"}
+                      defaultValue={isAr ? initialData?.first_name_ar : initialData?.first_name_en}
                       required
                       disabled={mode === 'view'}
-                      placeholder="أدخل الاسم الرباعي"
+                      placeholder={t('dialog.first_name_placeholder', T)}
                       icon={<User size={18} />}
                       className="font-bold rounded-xl h-12"
                     />
                   </div>
+                  <div className="flex flex-col gap-2">
+                    <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.surname', T)}</label>
+                    <Input
+                      name={isAr ? "surname_ar" : "surname_en"}
+                      defaultValue={isAr ? initialData?.surname_ar : initialData?.surname_en}
+                      required
+                      disabled={mode === 'view'}
+                      placeholder={t('dialog.surname_placeholder', T)}
+                      icon={<User size={18} />}
+                      className="font-bold rounded-xl h-12"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.last_name', T)}</label>
+                    <Input
+                      name={isAr ? "last_name_ar" : "last_name_en"}
+                      defaultValue={isAr ? initialData?.last_name_ar : initialData?.last_name_en}
+                      required
+                      disabled={mode === 'view'}
+                      placeholder={t('dialog.last_name_placeholder', T)}
+                      icon={<User size={18} />}
+                      className="font-bold rounded-xl h-12"
+                    />
+                  </div>
+                </div>
 
+                <div className="flex flex-col xs:grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Phone */}
                   <div className="flex flex-col gap-2">
                     <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.phone', T)}</label>

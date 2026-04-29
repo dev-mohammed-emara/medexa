@@ -4,8 +4,16 @@ import * as React from "react"
 import { Select as SelectPrimitive } from "radix-ui"
 
 import { cn } from "../../utils/cn"
-import { ChevronDownIcon, CheckIcon } from "lucide-react"
+import { ChevronDownIcon, CheckIcon, Search } from "lucide-react"
 import ScrollLockWrapper from "./ScrollLockWrapper"
+
+const getElementText = (node: React.ReactNode): string => {
+  if (node == null) return ""
+  if (typeof node === "string" || typeof node === "number") return String(node)
+  if (Array.isArray(node)) return node.map(getElementText).join("")
+  if (React.isValidElement(node)) return getElementText((node as React.ReactElement<any>).props.children)
+  return ""
+}
 
 function Select({
   ...props
@@ -56,6 +64,8 @@ function SelectTrigger({
   )
 }
 
+import { useLanguage } from "../../contexts/LanguageContext"
+
 function SelectContent({
   smallZ = false,
   className,
@@ -64,6 +74,57 @@ function SelectContent({
   align = "center",
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Content> & { smallZ?: boolean }) {
+  const { isAr } = useLanguage()
+  const [search, setSearch] = React.useState("")
+  const inputRef = React.useRef<HTMLInputElement>(null)
+
+  const itemsCount = React.useMemo(() => {
+    let count = 0
+    const traverse = (node: React.ReactNode) => {
+      React.Children.forEach(node, (child) => {
+        if (React.isValidElement(child)) {
+          if ((child.props as any)["data-slot"] === "select-item") {
+            count++
+          } else if ((child.props as any).children) {
+            traverse((child.props as any).children)
+          }
+        }
+      })
+    }
+    traverse(children)
+    return count
+  }, [children])
+
+  const showSearch = itemsCount > 10
+
+  const filteredChildren = React.useMemo(() => {
+    if (!search || !showSearch) return children
+
+    const filter = (node: React.ReactNode): React.ReactNode => {
+      return React.Children.map(node, (child) => {
+        if (!React.isValidElement(child)) return child
+
+        if ((child.props as any)["data-slot"] === "select-item") {
+          const text = getElementText((child.props as any).children).toLowerCase()
+          return text.includes(search.toLowerCase().trim()) ? child : null
+        }
+
+        if ((child.props as any).children) {
+          const filtered = filter((child.props as any).children)
+          if (React.Children.count(filtered) > 0) {
+            return React.cloneElement(child as React.ReactElement<any>, {
+              children: filtered,
+            })
+          }
+          return null
+        }
+
+        return child
+      })
+    }
+    return filter(children)
+  }, [children, search, showSearch])
+
   return (
     <SelectPrimitive.Portal>
       <SelectPrimitive.Content
@@ -77,8 +138,52 @@ function SelectContent({
         )}
         position={position}
         align={align}
+        // @ts-ignore
+        onOpenAutoFocus={(e: any) => {
+          if (showSearch) {
+            e.preventDefault()
+            inputRef.current?.focus()
+          }
+        }}
+        onKeyDown={(e) => {
+          if (showSearch && e.key === "ArrowUp") {
+            const items = e.currentTarget.querySelectorAll('[data-slot="select-item"]')
+            if (document.activeElement === items[0]) {
+              e.preventDefault()
+              inputRef.current?.focus()
+            }
+          }
+        }}
         {...props}
       >
+        {showSearch && (
+          <div className="p-2 sticky top-0 bg-popover z-20 border-b border-border">
+            <div className="relative flex items-center">
+              <Search className={cn("absolute size-4 text-muted-foreground", isAr ? "right-3" : "left-3")} />
+              <input
+                ref={inputRef}
+                dir={isAr ? "rtl" : "ltr"}
+                className={cn(
+                  "flex h-9 w-full rounded-lg border border-border bg-input-background py-1 text-sm outline-none focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-muted-foreground/50",
+                  isAr ? "pr-9 pl-3" : "pl-9 pr-3"
+                )}
+                placeholder={isAr ? "بحث..." : "Search..."}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "ArrowDown") {
+                    e.preventDefault()
+                    const firstItem = e.currentTarget
+                      .closest('[data-slot="select-content"]')
+                      ?.querySelector('[data-slot="select-item"]') as HTMLElement
+                    firstItem?.focus()
+                  }
+                  e.stopPropagation()
+                }}
+              />
+            </div>
+          </div>
+        )}
         <SelectPrimitive.Viewport
           data-position={position}
           data-lenis-prevent
@@ -88,10 +193,15 @@ function SelectContent({
               "h-(--radix-select-trigger-height) w-full min-w-(--radix-select-trigger-width)"
           )}
         >
-           <ScrollLockWrapper>
-             {children}
-           </ScrollLockWrapper>
-         </SelectPrimitive.Viewport>
+          <ScrollLockWrapper>
+            {filteredChildren}
+            {showSearch && React.Children.count(filteredChildren) === 0 && (
+              <div className="px-2 py-4 text-center text-sm text-muted-foreground font-bold">
+                {isAr ? "لا توجد نتائج" : "No results found"}
+              </div>
+            )}
+          </ScrollLockWrapper>
+        </SelectPrimitive.Viewport>
       </SelectPrimitive.Content>
     </SelectPrimitive.Portal>
   )
