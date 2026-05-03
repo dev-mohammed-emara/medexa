@@ -190,7 +190,7 @@ const PatientsList = () => {
                           variant="ghost"
                           size="icon"
                           onClick={() => handleOpenDialog('view', patient)}
-                          className="hover:bg-primary hover:text-white transition-all duration-300"
+                          className="hover:bg-primary px-2 hover:text-white transition-all duration-300"
                         >
                           <Eye className="size-4" />
                         </Button>
@@ -198,7 +198,7 @@ const PatientsList = () => {
                           variant="ghost"
                           size="icon"
                           onClick={() => handleOpenDialog('edit', patient)}
-                          className="hover:bg-primary hover:text-white transition-all duration-300"
+                          className="hover:bg-primary px-2 hover:text-white transition-all duration-300"
                         >
                           <SquarePen className="size-4" />
                         </Button>
@@ -216,7 +216,7 @@ const PatientsList = () => {
               </tbody>
             </table>
           </div>
-          
+
           <TableFooter
             variant="table"
             totalItems={filteredPatients.length}

@@ -18,13 +18,13 @@ export const appointmentsTranslations = {
     },
     more: "+{n} أخرى",
     no_appointments: "لا توجد مواعيد في هذا اليوم",
-    toast_delete_success: "تم حذف الموعد بنجاح",
+    toast_delete_success: "تم إلغاء الموعد بنجاح",
     toast_save_success: "تم حفظ الموعد بنجاح",
     toast_update_success: "تم تحديث الموعد بنجاح",
-    delete_confirm_title: "حذف الموعد",
-    delete_confirm_msg: "هل أنت متأكد من حذف موعد {name}؟ يرجى إدخال تفاصيل الإلغاء أدناه.",
-    delete: "تأكيد الحذف",
-    cancel: "المحافظة على الموعد",
+    delete_confirm_title: "إلغاء الموعد",
+    delete_confirm_msg: "هل أنت متأكد من إلغاء موعد {name}؟ يرجى إدخال تفاصيل الإلغاء أدناه.",
+    delete: "تأكيد الإلغاء",
+    cancel: "تراجع",
     canceled_by: "تم الإلغاء بواسطة",
     reason: "السبب",
     select_canceler: "اختر الشخص الذي قام بالإلغاء",
@@ -32,7 +32,19 @@ export const appointmentsTranslations = {
     actions: {
       view: "عرض",
       edit: "تعديل",
-      delete: "حذف"
+      delete: "إلغاء الموعد"
+    },
+    cancel_reasons: {
+      emergency: "حالة طارئة للطبيب",
+      travel: "المريض مسافر",
+      unexpected_travel: "سفر مفاجئ للمريض",
+      no_show: "عدم حضور المريض",
+      reschedule: "تغيير موعد من قبل العيادة"
+    },
+    cancelers: {
+      doctor: "الطبيب",
+      patient: "المريض",
+      secretary: "السكرتارية"
     },
     dialog: {
       title_add: "إضافة موعد جديد",
@@ -75,7 +87,15 @@ export const appointmentsTranslations = {
         khaled: "خالد عمر",
         muna: "منى عبدالله"
       }
-    }
+    },
+    complete_confirm_title: "إكمال الموعد وتسجيل السجل الطبي",
+    complete_confirm_msg: "يرجى ملء تفاصيل السجل الطبي لإكمال موعد {name}.",
+    complete: "إكمال وحفظ",
+    by_who: "بواسطة من",
+    diagnosis: "التشخيص",
+    treatment_plan: "خطة العلاج",
+    attachments: "المرفقات (قريباً)",
+    toast_complete_success: "تم إكمال الموعد وحفظ السجل الطبي بنجاح",
   },
   en: {
     page_title: "Appointments Management",
@@ -95,13 +115,13 @@ export const appointmentsTranslations = {
     },
     more: "+{n} more",
     no_appointments: "No appointments on this day",
-    toast_delete_success: "Appointment deleted successfully",
+    toast_delete_success: "Appointment canceled successfully",
     toast_save_success: "Appointment saved successfully",
     toast_update_success: "Appointment updated successfully",
-    delete_confirm_title: "Delete Appointment",
-    delete_confirm_msg: "Are you sure you want to delete the appointment for {name}? Please provide cancellation details below.",
-    delete: "Confirm Deletion",
-    cancel: "Keep Appointment",
+    delete_confirm_title: "Cancel Appointment",
+    delete_confirm_msg: "Are you sure you want to cancel the appointment for {name}? Please provide cancellation details below.",
+    delete: "Confirm Cancellation",
+    cancel: "Go Back",
     canceled_by: "Canceled By",
     reason: "Reason",
     select_canceler: "Select who canceled",
@@ -109,7 +129,19 @@ export const appointmentsTranslations = {
     actions: {
       view: "View",
       edit: "Edit",
-      delete: "Delete"
+      delete: "Cancel Appointment"
+    },
+    cancel_reasons: {
+      emergency: "Doctor emergency",
+      travel: "Patient is traveling",
+      unexpected_travel: "Unexpected travel for work",
+      no_show: "Patient no-show",
+      reschedule: "Clinic rescheduling"
+    },
+    cancelers: {
+      doctor: "Doctor",
+      patient: "Patient",
+      secretary: "Secretary"
     },
     dialog: {
       title_add: "Add New Appointment",
@@ -152,6 +184,14 @@ export const appointmentsTranslations = {
         khaled: "Khaled Omar",
         muna: "Muna Abdullah"
       }
-    }
+    },
+    complete_confirm_title: "Complete Appointment & Medical Record",
+    complete_confirm_msg: "Please fill in the medical record details to complete {name}'s appointment.",
+    complete: "Complete & Save",
+    by_who: "By Who",
+    diagnosis: "Diagnosis",
+    treatment_plan: "Treatment Plan",
+    attachments: "Attachments (Soon)",
+    toast_complete_success: "Appointment completed and medical record saved successfully",
   }
 };

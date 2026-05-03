@@ -3,6 +3,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { gsap } from 'gsap'
 import { Bell, LogOut, Mail, Menu, Phone, Search, Settings, User } from 'lucide-react'
+import { BiSolidMessageAltError, BiSolidMessageCheck } from 'react-icons/bi'
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '../../utils/cn'
@@ -14,18 +15,25 @@ interface NavbarProps {
 }
 
 const Navbar = ({ onMenuClick }: NavbarProps) => {
+  const navigate = useNavigate()
+  const { isAr, t, language, setLanguage } = useLanguage()
+  const { profileImage } = useAuth()
+  const T_PAGE = navTranslations;
+
   const [showNotifications, setShowNotifications] = useState(false)
   const [showProfile, setShowProfile] = useState(false)
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false)
 
-  const navigate = useNavigate()
+  const [notifications, setNotifications] = useState([
+    { id: 1, title: t('nav.notif_1_title', navTranslations), desc: t('nav.notif_1_desc', navTranslations), time: t('nav.minutes_ago', navTranslations).replace('{n}', '5'), isRead: false },
+    { id: 2, title: t('nav.notif_2_title', navTranslations), desc: t('nav.notif_2_desc', navTranslations), time: t('nav.hour_ago', navTranslations), isRead: false },
+    { id: 3, title: t('nav.notif_3_title', navTranslations), desc: t('nav.notif_3_desc', navTranslations), time: t('nav.hours_ago', navTranslations).replace('{n}', '2'), isRead: false },
+  ])
+
   const notifRef = useRef<HTMLDivElement>(null)
   const profileRef = useRef<HTMLDivElement>(null)
   const notifBtnRef = useRef<HTMLButtonElement>(null)
   const profileBtnRef = useRef<HTMLDivElement>(null)
-  const { profileImage } = useAuth()
-  const { isAr, t, language, setLanguage } = useLanguage()
-  const T_PAGE = navTranslations;
 
   const handleLogout = async () => {
     setIsLogoutModalOpen(false)
@@ -125,7 +133,11 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
             className="p-2 rounded-lg group hover:bg-accent transition-all relative"
           >
             <Bell className="size-5 text-muted-foreground group-hover:text-white transition-all" />
-            <span className="absolute top-0 left-0 size-4.5 bg-destructive text-white text-[12px] flex items-center justify-center rounded-full">3</span>
+            {notifications.filter(n => !n.isRead).length > 0 && (
+              <span className="absolute top-0 left-0 size-4.5 bg-destructive text-white text-[12px] flex items-center justify-center rounded-full">
+                {notifications.filter(n => !n.isRead).length}
+              </span>
+            )}
           </button>
 
           {/* Notifications Tooltip/Dropdown */}
@@ -138,19 +150,52 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
               <h3 className={cn("font-bold text-sm", isAr ? "text-right" : "text-left")}>{t('nav.notifications', T_PAGE)}</h3>
             </div>
             <div className="max-h-80 overflow-y-auto">
-              {[
-                { title: t('nav.notif_1_title', T_PAGE), desc: t('nav.notif_1_desc', T_PAGE), time: t('nav.minutes_ago', T_PAGE).replace('{n}', '5') },
-                { title: t('nav.notif_2_title', T_PAGE), desc: t('nav.notif_2_desc', T_PAGE), time: t('nav.hour_ago', T_PAGE) },
-                { title: t('nav.notif_3_title', T_PAGE), desc: t('nav.notif_3_desc', T_PAGE), time: t('nav.hours_ago', T_PAGE).replace('{n}', '2') },
-              ].map((item, i) => (
-                <div key={i} className={cn("p-4 border-b border-border/50 hover:bg-slate-50 transition-colors cursor-pointer", isAr ? "text-right" : "text-left")}>
-                  <p className="text-sm font-bold mb-1">{item.title}</p>
-                  <p className="text-xs text-muted-foreground mb-1">{item.desc}</p>
-                  <p className="text-[10px] text-primary/70">{item.time}</p>
+              {notifications.length > 0 ? (
+                notifications.map((notif) => (
+                  <div 
+                    key={notif.id} 
+                    onClick={() => setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, isRead: true } : n))}
+                    className={cn(
+                      "p-4 border-b border-border/50 hover:bg-slate-50 transition-all cursor-pointer flex items-start gap-3 group/notif",
+                      isAr ? "text-right" : "text-left"
+                    )}
+                  >
+                    <div className={cn(
+                      "size-8 rounded-full flex items-center justify-center shrink-0 transition-colors",
+                      notif.isRead ? "bg-emerald-100 text-emerald-600" : "bg-primary/10 text-primary"
+                    )}>
+                      {notif.isRead ? <BiSolidMessageCheck className="size-5" /> : <BiSolidMessageAltError className="size-5" />}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className={cn("text-sm mb-0.5 transition-colors", notif.isRead ? "text-muted-foreground font-medium" : "text-foreground font-bold")}>
+                        {notif.title}
+                      </p>
+                      <p className="text-xs text-muted-foreground mb-1 line-clamp-1">{notif.desc}</p>
+                      <p className={cn("text-[10px] font-medium", notif.isRead ? "text-emerald-600/70" : "text-primary/70")}>{notif.time}</p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="p-8 text-center flex flex-col items-center gap-3">
+                  <div className="size-12 rounded-2xl bg-slate-50 flex items-center justify-center text-muted-foreground/30">
+                    <Bell className="size-6" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-foreground">{isAr ? "لا يوجد إشعارات" : "No notifications"}</p>
+                    <p className="text-xs text-muted-foreground">{isAr ? "أنت مطلع على كل شيء حالياً" : "You're all caught up for now"}</p>
+                  </div>
                 </div>
-              ))}
+              )}
             </div>
-            <button className="w-full py-3 text-xs text-primary font-bold hover:bg-primary/5 transition-colors">{t('nav.view_all', T_PAGE)}</button>
+            {notifications.length > 0 && (
+              <button 
+                onClick={() => setNotifications(prev => prev.map(n => ({ ...n, isRead: true })))}
+                className="w-full py-3 text-xs text-emerald-600 font-bold hover:bg-emerald-50 transition-colors border-t border-border flex items-center justify-center gap-2"
+              >
+                <BiSolidMessageCheck className="size-4" />
+                {isAr ? "تحديد الكل كمقروء" : "Mark all as read"}
+              </button>
+            )}
           </div>
         </div>
 

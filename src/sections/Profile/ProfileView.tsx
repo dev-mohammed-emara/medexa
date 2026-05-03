@@ -101,6 +101,20 @@ const ProfileView = () => {
 
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
 
+  const [insurances, setInsurances] = useState([
+    { id: '1', name: 'Jordan National Insurance', nameAr: 'التأمين الوطني الأردني', active: true },
+    { id: '2', name: 'Gig Jordan', nameAr: 'الخليج للتأمين - الأردن', active: true },
+    { id: '3', name: 'Arabia Insurance', nameAr: 'العربية للتأمين', active: false },
+    { id: '4', name: 'Newton Insurance', nameAr: 'نيوتن للتأمين', active: false },
+    { id: '5', name: 'MetLife', nameAr: 'ميتلايف', active: false },
+  ]);
+
+  const toggleInsurance = (id: string) => {
+    setInsurances(prev => prev.map(ins => 
+      ins.id === id ? { ...ins, active: !ins.active } : ins
+    ));
+  };
+
 
   const handleTabChange = (tab: 'profile' | 'clinic') => {
     if (tab === activeTab) return;
@@ -197,11 +211,16 @@ const ProfileView = () => {
       </div>
 
       <div className={cn(
-        "profile-content space-y-6 opacity-0",
+        "profile-content relative opacity-0",
         canAnimate && "animate-fadeUp animate-delay-300"
       )}>
-        {activeTab === 'profile' ? (
-          <>
+        <div className={cn(
+          "transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] transform",
+          activeTab === 'profile' 
+            ? "relative opacity-100 translate-x-0 z-10" 
+            : "absolute inset-x-0 top-0 opacity-0 -translate-x-12 -z-10 pointer-events-none"
+        )}>
+          <div className="space-y-6">
             {/* Profile Card */}
             <div data-slot="card" className="tab-pane text-card-foreground flex flex-col sm:flex-row items-center justify-between gap-6 rounded-xl border p-8 bg-linear-to-br from-white via-white to-primary/5 border-border shadow-lg hover:shadow-xl transition-all duration-300">
               <div className={cn("flex-1 text-center font-bold", isAr ? "sm:text-right" : "sm:text-left")}>
@@ -491,9 +510,16 @@ const ProfileView = () => {
                 </div>
               )}
             </div>
-          </>
-        ) : (
-          <>
+          </div>
+        </div>
+
+        <div className={cn(
+          "transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] transform",
+          activeTab === 'clinic' 
+            ? "relative opacity-100 translate-x-0 z-10" 
+            : "absolute inset-x-0 top-0 opacity-0 translate-x-12 -z-10 pointer-events-none"
+        )}>
+          <div className="space-y-6">
             {/* Clinic Card */}
             <div data-slot="card" className="tab-pane  text-card-foreground flex flex-col gap-6 rounded-xl border p-8 bg-linear-to-br from-white via-white to-secondary/5 border-border shadow-lg hover:shadow-xl transition-all duration-300">
               <div className="flex items-center gap-6">
@@ -587,8 +613,59 @@ const ProfileView = () => {
                 </div>
               </div>
             </div>
-          </>
-        )}
+
+            {/* Insurance Section */}
+            <div data-slot="card" className="tab-pane bg-white rounded-xl border p-6 border-border shadow-lg hover:shadow-xl transition-all duration-300">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-12 h-12 bg-secondary/10 rounded-xl flex items-center justify-center">
+                  <Shield size={24} className="text-secondary" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold">{t('profile.insurance_section', T_PAGE)}</h3>
+                  <p className="text-sm text-muted-foreground">{t('profile.insurance_section_desc', T_PAGE)}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {insurances.map((ins) => (
+                  <div 
+                    key={ins.id}
+                    className={cn(
+                      "flex items-center justify-between p-4 rounded-xl border transition-all duration-300",
+                      ins.active 
+                        ? "bg-secondary/5 border-secondary/20 shadow-sm" 
+                        : "bg-muted/20 border-border opacity-70"
+                    )}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={cn(
+                        "w-2 h-2 rounded-full",
+                        ins.active ? "bg-secondary animate-pulse" : "bg-muted-foreground/30"
+                      )} />
+                      <span className={cn("font-bold", ins.active ? "text-foreground" : "text-muted-foreground")}>
+                        {isAr ? ins.nameAr : ins.name}
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center gap-3">
+                      <span className={cn(
+                        "text-xs font-bold",
+                        ins.active ? "text-secondary" : "text-muted-foreground"
+                      )}>
+                        {ins.active ? t('profile.active', T_PAGE) : t('profile.inactive', T_PAGE)}
+                      </span>
+                      <Switch 
+                        checked={ins.active}
+                        onCheckedChange={() => toggleInsurance(ins.id)}
+                        className="data-[state=checked]:bg-secondary"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
 
         <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-border">
           <button

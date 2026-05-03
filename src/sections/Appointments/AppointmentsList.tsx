@@ -15,13 +15,13 @@ import {
   subMonths
 } from 'date-fns';
 import { ar } from 'date-fns/locale';
-import { ChevronRight, ChevronLeft, Plus, Clock, Trash2, User, Stethoscope, Eye, SquarePen, X, Smartphone, MoveHorizontal } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Plus, Clock, User, Stethoscope, Eye, SquarePen, X, Smartphone, MoveHorizontal, Check } from 'lucide-react';
 import { FaCalendarAlt } from 'react-icons/fa';
+import { TbCancel } from 'react-icons/tb';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useMediaQuery } from 'react-responsive';
 import { Button } from '../../components/ui/Button';
 import Modal from '../../components/ui/Modal';
-import ScrollLockWrapper from '../../components/ui/ScrollLockWrapper';
 import {
   Select,
   SelectContent,
@@ -44,11 +44,11 @@ const INITIAL_APPOINTMENTS: Appointment[] = [
   { id: 1, date: new Date(2026, 2, 2), time: '10:00', patientName: 'ahmed', doctorName: 'ahmed', status: 'completed' },
   { id: 2, date: new Date(2026, 2, 2), time: '11:30', patientName: 'sara', doctorName: 'layla', status: 'completed' },
   { id: 3, date: new Date(2026, 2, 6), time: '09:00', patientName: 'mahmoud', doctorName: 'ahmed', status: 'completed' },
-  { id: 4, date: new Date(2026, 2, 6), time: '14:00', patientName: 'layla', doctorName: 'layla', status: 'canceled' },
+  { id: 4, date: new Date(2026, 2, 6), time: '14:00', patientName: 'layla', doctorName: 'layla', status: 'canceled', canceledBy: 'doctor', cancellationReason: 'emergency' },
   { id: 5, date: new Date(2026, 2, 10), time: '10:00', patientName: 'khaled', doctorName: 'sami', status: 'completed' },
   { id: 6, date: new Date(2026, 2, 10), time: '11:00', patientName: 'muna', doctorName: 'ahmed', status: 'pending' },
   { id: 7, date: new Date(2026, 2, 15), time: '09:30', patientName: 'ahmed', doctorName: 'layla', status: 'completed' },
-  { id: 8, date: new Date(2026, 2, 15), time: '16:00', patientName: 'sara', doctorName: 'sami', status: 'canceled' },
+  { id: 8, date: new Date(2026, 2, 15), time: '16:00', patientName: 'sara', doctorName: 'sami', status: 'canceled', canceledBy: 'patient', cancellationReason: 'unexpected_travel' },
   { id: 9, date: new Date(2026, 2, 20), time: '13:00', patientName: 'mahmoud', doctorName: 'ahmed', status: 'completed' },
   { id: 10, date: new Date(2026, 2, 20), time: '15:00', patientName: 'layla', doctorName: 'layla', status: 'completed' },
   { id: 11, date: new Date(2026, 2, 21), time: '10:30', patientName: 'khaled', doctorName: 'sami', status: 'completed' },
@@ -57,8 +57,8 @@ const INITIAL_APPOINTMENTS: Appointment[] = [
   { id: 14, date: new Date(2026, 2, 26), time: '11:00', patientName: 'sara', doctorName: 'sami', status: 'completed' },
   { id: 15, date: new Date(2026, 2, 27), patientName: 'mahmoud', doctorName: 'sami', time: '10:30', status: 'completed' },
   { id: 16, date: new Date(2026, 2, 27), patientName: 'layla', doctorName: 'ahmed', time: '12:00', status: 'completed' },
-  { id: 17, date: new Date(2026, 2, 27), patientName: 'khaled', doctorName: 'layla', time: '14:00', status: 'pending' },
-  { id: 18, date: new Date(2026, 2, 28), patientName: 'muna', doctorName: 'sami', time: '09:30', status: 'pending' },
+  { id: 17, date: new Date(2026, 2, 27), patientName: 'khaled', doctorName: 'layla', time: '14:00', status: 'canceled', canceledBy: 'secretary', cancellationReason: 'reschedule' },
+  { id: 18, date: new Date(2026, 2, 28), patientName: 'muna', doctorName: 'sami', time: '09:30', status: 'canceled', canceledBy: 'doctor', cancellationReason: 'emergency' },
 ];
 
 const AppointmentsList = () => {
@@ -69,6 +69,8 @@ const AppointmentsList = () => {
   const canAnimate = isLoaded && !isExiting;
 
   const { isCollapsed, setIsCollapsed, previousCollapsedState, setPreviousCollapsedState } = useSidebar();
+  const handleCloseDialog = useCallback(() => setIsDialogOpen(false), []);
+  const handleCloseDeleteModal = useCallback(() => setIsDeleteModalOpen(false), []);
   const isMediumScreen = useMediaQuery({ query: '(min-width: 1024px) and (max-width: 1279px)' });
 
   const [currentDate, setCurrentDate] = useState(new Date(2026, 2, 27));
@@ -110,10 +112,20 @@ const AppointmentsList = () => {
   const [canceledBy, setCanceledBy] = useState('');
   const [cancellationReason, setCancellationReason] = useState('');
 
+  // Complete Appointment Modal State
+  const [isCompleteModalOpen, setIsCompleteModalOpen] = useState(false);
+  const [appointmentToComplete, setAppointmentToComplete] = useState<Appointment | null>(null);
+  const [completeData, setCompleteData] = useState({
+    byWho: '',
+    diagnosis: '',
+    treatmentPlan: '',
+    doctorNotes: '',
+    attachments: ''
+  });
+
   // Height and Scroll tracking for the detail sidebar
   const calendarRef = useRef<HTMLElement>(null);
   const detailSidebarRef = useRef<HTMLDivElement>(null);
-  const [gridHeight, setGridHeight] = useState<number>(600);
 
   // Drag and Drop States
   const [draggedApp, setDraggedApp] = useState<Appointment | null>(null);
@@ -171,7 +183,7 @@ const AppointmentsList = () => {
     const emptyImg = new Image();
     emptyImg.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
     e.dataTransfer.setDragImage(emptyImg, 0, 0);
-    
+
     setDraggedApp(app);
     e.dataTransfer.setData('appId', app.id.toString());
     e.dataTransfer.effectAllowed = 'move';
@@ -194,7 +206,7 @@ const AppointmentsList = () => {
       if (isSameDay(app.date, newDate)) {
          window.showToast?.(isAr ? 'الموعد موجود بالفعل في هذا اليوم' : 'Appointment is already on this day', 'error');
       } else {
-        updateAndBroadcast(prev => prev.map(a => 
+        updateAndBroadcast(prev => prev.map(a =>
           a.id === app.id ? { ...a, date: newDate } : a
         ));
         window.showToast?.(isAr ? 'تم نقل الموعد بنجاح' : 'Appointment moved successfully', 'success');
@@ -217,7 +229,7 @@ const AppointmentsList = () => {
 
   const handleTouchMove = (e: React.TouchEvent) => {
     if (!draggedApp) return;
-    
+
     // Update preview position
     const touch = e.touches[0];
     setMousePos({ x: touch.clientX, y: touch.clientY });
@@ -243,7 +255,7 @@ const AppointmentsList = () => {
       if (isSameDay(draggedApp.date, dropTargetDate)) {
         window.showToast?.(isAr ? 'الموعد موجود بالفعل في هذا اليوم' : 'Appointment is already on this day', 'error');
       } else {
-        updateAndBroadcast(prev => prev.map(a => 
+        updateAndBroadcast(prev => prev.map(a =>
           a.id === draggedApp.id ? { ...a, date: dropTargetDate } : a
         ));
         window.showToast?.(isAr ? 'تم نقل الموعد بنجاح' : 'Appointment moved successfully', 'success');
@@ -269,23 +281,14 @@ const AppointmentsList = () => {
 
     window.addEventListener('mousemove', handleGlobalMouseMove);
     window.addEventListener('touchmove', handleGlobalTouchMove, { passive: false });
-    
+
     return () => {
       window.removeEventListener('mousemove', handleGlobalMouseMove);
       window.removeEventListener('touchmove', handleGlobalTouchMove);
     };
   }, [draggedApp, handleAutoScroll]);
 
-  useEffect(() => {
-    if (!calendarRef.current) return;
-    const observer = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        setGridHeight(entry.contentRect.height);
-      }
-    });
-    observer.observe(calendarRef.current);
-    return () => observer.disconnect();
-  }, [selectedDate]);
+
 
   // Sync last selected date for exit animation
   if (selectedDate && selectedDate !== lastSelectedDate) {
@@ -337,13 +340,13 @@ const AppointmentsList = () => {
     setCurrentDate(setMonth(currentDate, parseInt(monthIdx)));
   };
 
-  const handleOpenDialog = (mode: 'add' | 'edit' | 'view', app?: Appointment) => {
+  const handleOpenDialog = useCallback((mode: 'add' | 'edit' | 'view', app?: Appointment) => {
     setDialogMode(mode);
     setCurrentAppointment(app || null);
     setIsDialogOpen(true);
-  };
+  }, []);
 
-  const handleConfirmAppointment = (data: Partial<Appointment>) => {
+  const handleConfirmAppointment = useCallback((data: Partial<Appointment>) => {
     if (dialogMode === 'add') {
       const newApp: Appointment = {
         id: Date.now(),
@@ -351,16 +354,16 @@ const AppointmentsList = () => {
         doctorName: data.doctorName || '',
         date: new Date(data.date as string),
         time: data.time || '',
-        status: data.status || 'pending',
+        status: 'pending', // Always start as pending
       };
       updateAndBroadcast(prev => [...prev, newApp]);
     } else if (dialogMode === 'edit' && currentAppointment) {
       updateAndBroadcast(prev => prev.map(a => a.id === currentAppointment.id ? { ...a, ...data } : a));
     }
     setIsDialogOpen(false);
-  };
+  }, [dialogMode, currentAppointment, updateAndBroadcast]);
 
-  const handleDeleteAppointment = (appId: number) => {
+  const handleDeleteAppointment = useCallback((appId: number) => {
     const app = appointments.find(a => a.id === appId);
     if (app) {
       setAppointmentToDelete(app);
@@ -368,14 +371,49 @@ const AppointmentsList = () => {
       setCancellationReason('');
       setIsDeleteModalOpen(true);
     }
-  };
+  }, [appointments]);
 
   const confirmDelete = () => {
     if (appointmentToDelete) {
-      updateAndBroadcast(prev => prev.filter(a => a.id !== appointmentToDelete.id));
+      updateAndBroadcast(prev => prev.map(a =>
+        a.id === appointmentToDelete.id
+          ? { ...a, status: 'canceled', canceledBy: canceledBy as any, cancellationReason }
+          : a
+      ));
       window.showToast?.(t('toast_delete_success', T));
+      // Removed setIsDialogOpen(false) to keep the underlying modal open as requested
     }
     setIsDeleteModalOpen(false);
+  };
+
+  const handleOpenCompleteModal = (app: Appointment) => {
+    setAppointmentToComplete(app);
+    setCompleteData({
+      byWho: app.doctorName,
+      diagnosis: '',
+      treatmentPlan: '',
+      doctorNotes: '',
+      attachments: ''
+    });
+    setIsCompleteModalOpen(true);
+  };
+
+  const confirmComplete = () => {
+    if (appointmentToComplete) {
+      updateAndBroadcast(prev => prev.map(a =>
+        a.id === appointmentToComplete.id
+          ? {
+            ...a,
+            status: 'completed',
+            medicalRecord: completeData, // Assuming we want to store this
+            doctorNotes: completeData.doctorNotes || a.doctorNotes // Update notes if provided
+          }
+          : a
+      ));
+      window.showToast?.(t('toast_complete_success', T), 'success');
+    }
+    setIsCompleteModalOpen(false);
+    setAppointmentToComplete(null);
   };
 
   const years = Array.from({ length: 10 }, (_, i) => (getYear(new Date()) - 5 + i).toString());
@@ -421,13 +459,13 @@ const AppointmentsList = () => {
       </header>
 
       {/* Calendar Grid Container */}
-      <section className={cn("flex justify-between flex-col md:flex-row items-start ", selectedDate ? "gap-6" : "gap-0")}>
+      <section className={cn("flex justify-between flex-col lg:flex-row items-start", selectedDate ? "gap-6" : "gap-0")}>
         <article
           ref={calendarRef}
           data-slot="card"
           className={cn(
             "transition-[width] duration-700 ease-in-out will-change-[width] flex flex-col gap-6 rounded-2xl border shadow-xl p-6 bg-white border-border opacity-0",
-            selectedDate ? "md:w-[67%] w-full" : "w-full",
+            selectedDate ? "lg:w-[67%] w-full" : "w-full",
             canAnimate && "animate-fadeUp animate-delay-200"
           )}
         >
@@ -484,7 +522,7 @@ const AppointmentsList = () => {
             <MoveHorizontal className={cn("size-3.5", isAr ? "rotate-0" : "rotate-180")} />
           </aside>
 
-          <div 
+          <div
             ref={scrollContainerRef}
             className="overflow-x-auto pb-2 scrollbar-none md:scrollbar-auto"
           >
@@ -525,7 +563,7 @@ const AppointmentsList = () => {
                       onDrop={(e) => handleDrop(e, date)}
                       data-date={date.toISOString()}
                       className={cn(
-                        "min-h-[100px] p-2 rounded-xl border-2 transition-all duration-300 cursor-pointer group relative touch-none",
+                        "min-h-[100px] p-2 rounded-xl border-2 transition-all duration-300 cursor-pointer group relative touch-pan-y",
                         isSelected ? "border-primary bg-primary/10 shadow-lg shadow-primary/20" :
                         isToday ? "border-primary/50 bg-primary/5 shadow-md shadow-primary/5" :
                         "border-border bg-muted/20 hover:border-primary/50 hover:bg-muted/40 hover:shadow-md",
@@ -553,7 +591,7 @@ const AppointmentsList = () => {
                                 onTouchMove={handleTouchMove}
                                 onTouchEnd={handleTouchEnd}
                                 className={cn(
-                                  "text-xs p-1.5 rounded-lg border shadow-sm cursor-grab active:cursor-grabbing transition-all duration-200 hover:scale-[1.02] relative z-20 group/app touch-none",
+                                  "text-xs p-1.5 rounded-lg border shadow-sm cursor-grab active:cursor-grabbing transition-all duration-200 hover:scale-[1.02] relative z-20 group/app touch-pan-y",
                                   draggedApp?.id === app.id ? "opacity-30 scale-95" : "opacity-100",
                                   config.bg,
                                   config.border,
@@ -592,16 +630,16 @@ const AppointmentsList = () => {
         <section
           ref={detailSidebarRef}
           className={cn(
-            "transition-all duration-700 ease-in-out flex flex-col items-end",
-            !selectedDate ? "w-0 opacity-0 pointer-events-none" : "w-full lg:w-[33%] opacity-100",
-            "max-md:w-full max-sm:w-full"
+            "lg:sticky lg:top-0 self-start z-20 h-fit",
+            !selectedDate ? "w-0 opacity-0 pointer-events-none invisible" : "w-full lg:w-[33%] opacity-100 visible transition-all duration-700 ease-in-out",
+            "max-lg:w-full"
           )}
         >
           {(selectedDate || lastSelectedDate) && (
             <article
               data-slot="card"
               className={cn(
-                "flex flex-col w-full gap-6 rounded-2xl border shadow-xl p-6 bg-white border-border sticky top-6 lg:top-24 transition-all duration-500 scroll-mt-32",
+                "flex flex-col w-full gap-6 rounded-2xl border shadow-xl p-6 bg-white border-border transition-all duration-500",
                 "lg:w-full lg:min-w-[300px]",
                 selectedDate ? "flex animate-fadeRight" : "hidden animate-fadeOutRight",
               )}
@@ -620,10 +658,10 @@ const AppointmentsList = () => {
                 </Button>
               </header>
 
-              <div data-lenis-prevent>
-                <ScrollLockWrapper
-                  className="py-1 w-full detail-sidebar-scroll custom-scrollbar"
-                  style={{ maxHeight: `${gridHeight - 72}px` }}
+              <div className="overflow-visible">
+                <div
+                  className="py-1 w-full detail-sidebar-scroll custom-scrollbar overflow-y-auto"
+                  style={{ maxHeight: `calc(100vh - 250px)` }}
                 >
                   <div className="space-y-4">
                     {appointments.filter(app => isSameDay(app.date, selectedDate || lastSelectedDate!)).length > 0 ? (
@@ -655,8 +693,8 @@ const AppointmentsList = () => {
                                     config.border
                                   )}>
                                     <div className={cn("size-1 rounded-full", isAr ? "ml-1" : "mr-1", config.dotColor)} />
-                                    {app.status === 'pending' ? t('dialog.status_pending', T) : 
-                                     app.status === 'completed' ? t('dialog.status_completed', T) : 
+                                    {app.status === 'pending' ? t('dialog.status_pending', T) :
+                                     app.status === 'completed' ? t('dialog.status_completed', T) :
                                      app.status === 'canceled' ? t('dialog.status_canceled', T) :
                                      app.status}
                                   </span>
@@ -685,26 +723,51 @@ const AppointmentsList = () => {
                                   </div>
                                 </div>
 
-                                <div className={cn("flex gap-2 pt-2", isAr ? "flex-row" : "flex-row-reverse")}>
+                                <div className={cn("flex flex-wrap gap-2 pt-2", isAr ? "flex-row" : "flex-row-reverse")}>
                                   <button
-                                    onClick={() => handleOpenDialog('view', app)}
+                                    onClick={(e) => { e.stopPropagation(); handleOpenDialog('view', app); }}
                                     className="inline-flex items-center justify-center whitespace-nowrap font-medium transition-all duration-300 border bg-background text-foreground hover:bg-accent hover:text-accent-foreground rounded-md gap-1.5 px-3 flex-1 h-8 text-xs hover:border-primary/30 hover:shadow-lg hover:-translate-y-0.5"
                                   >
                                     <Eye className={cn("size-3.5", isAr ? "ml-1" : "mr-1")} /> {t('actions.view', T)}
                                   </button>
-                                  <button
-                                    onClick={() => handleOpenDialog('edit', app)}
-                                    className="inline-flex items-center justify-center whitespace-nowrap font-medium transition-all duration-300 border bg-background text-foreground hover:bg-accent hover:text-accent-foreground rounded-md gap-1.5 px-3 flex-1 h-8 text-xs hover:border-primary/30 hover:shadow-lg hover:-translate-y-0.5"
-                                  >
-                                    <SquarePen className={cn("size-3.5", isAr ? "ml-1" : "mr-1")} /> {t('actions.edit', T)}
-                                  </button>
-                                  <button
-                                    onClick={() => handleDeleteAppointment(app.id)}
-                                    className="inline-flex items-center justify-center whitespace-nowrap font-medium transition-all duration-300 border bg-background text-destructive hover:bg-destructive/10 rounded-md gap-1.5 px-3 h-8 text-xs hover:border-primary/30 hover:shadow-lg hover:-translate-y-0.5 shrink-0"
-                                  >
-                                    <Trash2 className="size-3.5" />
-                                  </button>
+                                  {app.status === 'pending' && (
+                                    <>
+                                      <button
+                                        onClick={(e) => { e.stopPropagation(); handleOpenDialog('edit', app); }}
+                                        className="inline-flex items-center justify-center whitespace-nowrap font-medium transition-all duration-300 border bg-background text-foreground hover:bg-accent hover:text-accent-foreground rounded-md gap-1.5 px-3 flex-1 h-8 text-xs hover:border-primary/30 hover:shadow-lg hover:-translate-y-0.5"
+                                      >
+                                        <SquarePen className={cn("size-3.5", isAr ? "ml-1" : "mr-1")} /> {t('actions.edit', T)}
+                                      </button>
+                                      <button
+                                        onClick={(e) => { e.stopPropagation(); handleOpenCompleteModal(app); }}
+                                        className="inline-flex items-center justify-center whitespace-nowrap font-medium transition-all duration-300 border bg-emerald-600 text-white hover:bg-emerald-700 rounded-md p-2 size-8 text-xs shadow-sm hover:shadow-emerald-200/50 hover:-translate-y-0.5"
+                                      >
+                                        <Check className="size-4" />
+                                      </button>
+                                      <button
+                                        onClick={(e) => { e.stopPropagation(); handleDeleteAppointment(app.id); }}
+                                        className="inline-flex items-center justify-center whitespace-nowrap font-medium transition-all duration-300 border border-rose-200 bg-rose-600 text-white hover:bg-rose-700 rounded-md p-2 size-8 text-xs shadow-sm hover:shadow-rose-200/50 hover:-translate-y-0.5 shrink-0"
+                                      >
+                                        <TbCancel className="size-4" />
+                                      </button>
+                                    </>
+                                  )}
                                 </div>
+
+                                {app.status === 'canceled' && (
+                                  <div className="mt-2 p-3 rounded-lg bg-rose-50 border-2 border-dashed border-rose-200 space-y-2 animate-in fade-in duration-300 shadow-sm">
+                                    <div className="flex items-center gap-1.5 text-[10px] font-bold text-rose-600">
+                                      <X className="size-3" />
+                                      {t('canceled_by', T)}: {app.canceledBy === 'doctor' ? t('cancelers.doctor', T) :
+                                                              app.canceledBy === 'patient' ? t('cancelers.patient', T) :
+                                                              app.canceledBy === 'secretary' ? t('cancelers.secretary', T) :
+                                                              (app.canceledBy || (isAr ? "غير محدد" : "Not specified"))}
+                                    </div>
+                                    <p className="text-[10px] text-rose-700 leading-relaxed italic bg-white/60 p-2 rounded-md border border-rose-100/50">
+                                      {t(`cancel_reasons.${app.cancellationReason}`, T) || app.cancellationReason || (isAr ? "لا يوجد سبب محدد" : "No specific reason provided")}
+                                    </p>
+                                  </div>
+                                )}
                               </div>
                             </article>
                           );
@@ -716,7 +779,7 @@ const AppointmentsList = () => {
                       </div>
                     )}
                   </div>
-                </ScrollLockWrapper>
+                </div>
               </div>
             </article>
           )}
@@ -726,15 +789,22 @@ const AppointmentsList = () => {
       <AppointmentsDialog
         key={currentAppointment?.id || 'new'}
         isOpen={isDialogOpen}
-        onClose={() => setIsDialogOpen(false)}
+        onClose={handleCloseDialog}
         onConfirm={handleConfirmAppointment}
         mode={dialogMode}
         initialData={currentAppointment}
+        onComplete={handleOpenCompleteModal}
+        onCancel={(app) => {
+          setAppointmentToDelete(app);
+          setCanceledBy('');
+          setCancellationReason('');
+          setIsDeleteModalOpen(true);
+        }}
       />
 
       <Modal
         isOpen={isDeleteModalOpen}
-        onClose={() => setIsDeleteModalOpen(false)}
+        onClose={handleCloseDeleteModal}
         onConfirm={confirmDelete}
         title={t('delete_confirm_title', T)}
         message={t('delete_confirm_msg', T).replace('{name}', (() => {
@@ -757,9 +827,9 @@ const AppointmentsList = () => {
                 <SelectValue placeholder={t('select_canceler', T)} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="doctor">{isAr ? "الطبيب" : "Doctor"}</SelectItem>
-                <SelectItem value="patient">{isAr ? "المريض" : "Patient"}</SelectItem>
-                <SelectItem value="secretary">{isAr ? "السكرتارية" : "Secretary"}</SelectItem>
+                <SelectItem value="doctor">{t('cancelers.doctor', T)}</SelectItem>
+                <SelectItem value="patient">{t('cancelers.patient', T)}</SelectItem>
+                <SelectItem value="secretary">{t('cancelers.secretary', T)}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -773,7 +843,7 @@ const AppointmentsList = () => {
               onChange={(e) => setCancellationReason(e.target.value)}
               placeholder={t('enter_reason', T)}
               className={cn(
-                "w-full h-[300px] p-4 rounded-xl border border-border bg-muted/20 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all resize-none disabled:opacity-50 placeholder:text-muted-foreground font-bold",
+                "w-full h-[100px] p-4 rounded-xl border border-border bg-muted/20 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all resize-none disabled:opacity-50 placeholder:text-muted-foreground font-bold",
                 isAr ? "text-right" : "text-left"
               )}
               dir={isAr ? 'rtl' : 'ltr'}
@@ -782,13 +852,106 @@ const AppointmentsList = () => {
         </div>
       </Modal>
 
+      {/* Complete Appointment Modal */}
+      <Modal
+        isOpen={isCompleteModalOpen}
+        onClose={() => setIsCompleteModalOpen(false)}
+        onConfirm={confirmComplete}
+        title={t('complete_confirm_title', T)}
+        confirmText={t('complete', T)}
+        cancelText={t('cancel', T)}
+        variant="primary"
+        isConfirmDisabled={!completeData.byWho || !completeData.diagnosis.trim() || !completeData.treatmentPlan.trim()}
+      >
+        <div className="space-y-4 mt-6">
+          <p className="text-muted-foreground text-sm mb-4">
+            {t('complete_confirm_msg', T).replace('{name}', (() => {
+              const key = `dialog.patients.${appointmentToComplete?.patientName}`;
+              const translated = t(key, T);
+              return translated === key ? (appointmentToComplete?.patientName || '') : translated;
+            })())}
+          </p>
+
+          <div className="space-y-2">
+            <label className="text-sm font-bold text-foreground/80 px-1 block text-start">
+              {t('by_who', T)} <span className="text-destructive">*</span>
+            </label>
+            <Select value={completeData.byWho} onValueChange={(val) => setCompleteData(prev => ({ ...prev, byWho: val }))}>
+              <SelectTrigger className="h-12 rounded-xl bg-muted/20 border-border shadow-xs">
+                <SelectValue placeholder={t('select_doctor', T)} />
+              </SelectTrigger>
+              <SelectContent className="z-[2000]">
+                <SelectItem value="ahmed">{t('dialog.doctors.ahmed', T)}</SelectItem>
+                <SelectItem value="sami">{t('dialog.doctors.sami', T)}</SelectItem>
+                <SelectItem value="layla">{t('dialog.doctors.layla', T)}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-bold text-foreground/80 px-1 block text-start">
+              {t('diagnosis', T)} <span className="text-destructive">*</span>
+            </label>
+            <textarea
+              value={completeData.diagnosis}
+              onChange={(e) => setCompleteData(prev => ({ ...prev, diagnosis: e.target.value }))}
+              placeholder={t('diagnosis', T)}
+              className={cn(
+                "w-full min-h-[80px] p-4 rounded-xl border border-border bg-muted/20 focus:ring-4 focus:ring-primary/10 transition-all outline-none font-medium text-sm resize-none",
+                isAr ? "text-right" : "text-left"
+              )}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-bold text-foreground/80 px-1 block text-start">
+              {t('treatment_plan', T)} <span className="text-destructive">*</span>
+            </label>
+            <textarea
+              value={completeData.treatmentPlan}
+              onChange={(e) => setCompleteData(prev => ({ ...prev, treatmentPlan: e.target.value }))}
+              placeholder={t('treatment_plan', T)}
+              className={cn(
+                "w-full min-h-[80px] p-4 rounded-xl border border-border bg-muted/20 focus:ring-4 focus:ring-primary/10 transition-all outline-none font-medium text-sm resize-none",
+                isAr ? "text-right" : "text-left"
+              )}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-bold text-foreground/80 px-1 block text-start">
+              {t('dialog.doctor_notes', T)}
+            </label>
+            <textarea
+              value={completeData.doctorNotes}
+              onChange={(e) => setCompleteData(prev => ({ ...prev, doctorNotes: e.target.value }))}
+              placeholder={t('dialog.doctor_notes', T)}
+              className={cn(
+                "w-full min-h-[80px] p-4 rounded-xl border border-border bg-muted/20 focus:ring-4 focus:ring-primary/10 transition-all outline-none font-medium text-sm resize-none",
+                isAr ? "text-right" : "text-left"
+              )}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-bold text-foreground/80 px-1 block text-start">
+              {t('attachments', T)}
+            </label>
+            <div className="h-12 rounded-xl bg-muted/10 border-2 border-dashed border-border flex items-center justify-center text-muted-foreground text-xs italic">
+              {t('attachments', T)}
+            </div>
+          </div>
+        </div>
+      </Modal>
+
+
       {/* Drag Preview Portal */}
       {draggedApp && (
-        <div 
+        <div
           className="fixed pointer-events-none z-150 transition-transform duration-75"
-          style={{ 
-            left: mousePos.x, 
-            top: mousePos.y, 
+          style={{
+            left: mousePos.x,
+            top: mousePos.y,
             transform: 'translate(-50%, -50%) rotate(3deg)',
             width: '160px'
           }}

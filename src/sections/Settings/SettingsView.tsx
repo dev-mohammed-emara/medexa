@@ -1,5 +1,4 @@
-import { useRef, useState } from 'react';
-import Input from '../../components/ui/Input';
+import { useState } from 'react';
 import {
     Select,
     SelectContent,
@@ -9,7 +8,7 @@ import {
 } from '../../components/ui/select';
 import { usePreloader } from '../../contexts/PreloaderContext';
 import { useLanguage } from '../../contexts/LanguageContext';
-import { commonTranslations } from '../../constants/common';
+
 import { settingsTranslations } from '../../constants/settings';
 import { navTranslations } from '../../constants/nav';
 import { Switch } from '../../components/ui/Switch';
@@ -17,7 +16,6 @@ import { cn } from '../../utils/cn';
 import Modal from '../../components/ui/Modal';
 import TimePicker from '../../components/ui/TimePicker';
 import {
-  Building2,
   Settings as SettingsIcon,
   Globe,
   DollarSign,
@@ -57,24 +55,12 @@ const SettingsView = () => {
   const { language, setLanguage, isAr, t, dir } = useLanguage();
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
 
-  const T_COMMON = commonTranslations;
   const T_PAGE = settingsTranslations;
   const T_NAV = navTranslations;
 
   // Form State
-  const [clinicName, setClinicName] = useState('Clinic Al-Noor');
-  const [phone, setPhone] = useState('0789651800');
-  const [email, setEmail] = useState('info@medexa-clinic.jo');
-  const [address, setAddress] = useState('Amman - Khalda');
   const [currency, setCurrency] = useState('JOD');
   const [days, setDays] = useState<WorkingDay[]>(INITIAL_DAYS);
-  const [emailError, setEmailError] = useState(false);
-  const [nameError, setNameError] = useState(false);
-  const [phoneError, setPhoneError] = useState(false);
-
-  const emailRef = useRef<HTMLDivElement>(null);
-  const nameRef = useRef<HTMLDivElement>(null);
-  const phoneRef = useRef<HTMLDivElement>(null);
 
   // Animations are handled via Tailwind classes to match Appointments page style
 
@@ -128,61 +114,71 @@ const SettingsView = () => {
     }));
   };
 
-  const validateEmail = (email: string) => {
-    return /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email);
-  };
 
-  const scrollToError = (ref: React.RefObject<HTMLDivElement | null>) => {
-    if (ref.current) {
-      ref.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-  };
 
-  const handleSave = () => {
-    let hasError = false;
 
-    if (!clinicName.trim()) {
-      setNameError(true);
-      if (!hasError) scrollToError(nameRef);
-      hasError = true;
-    } else {
-      setNameError(false);
-    }
-
-    if (phone.length < 8) {
-      setPhoneError(true);
-      if (!hasError) scrollToError(phoneRef);
-      hasError = true;
-    } else {
-      setPhoneError(false);
-    }
-
-    if (!validateEmail(email)) {
-      setEmailError(true);
-      if (!hasError) scrollToError(emailRef);
-      hasError = true;
-    } else {
-      setEmailError(false);
-    }
-
-    if (hasError) {
-      window.showToast(t('common.fix_errors'), 'error');
-      return;
-    }
-
-    // In a real app, you'd send data to API here
-    window.showToast(t('common.settings_saved'), 'success');
-  };
-
-  const handleCancelConfirm = () => {
-    setIsCancelModalOpen(false);
-    setEmailError(false);
-    // Reset state here if needed
-    window.showToast(t('common.settings_canceled'), 'success');
-  };
 
   const workingDaysCount = days.filter(d => d.isActive).length;
   const offDaysCount = days.length - workingDaysCount;
+
+  // Initial values for canceling
+
+  const [savedCurrency, setSavedCurrency] = useState('JOD');
+  const [savedLanguage, setSavedLanguage] = useState(language);
+  const [savedDays, setSavedDays] = useState<WorkingDay[]>(INITIAL_DAYS);
+
+  const [cancelingSection, setCancelingSection] = useState<'clinic' | 'general' | 'working' | null>(null);
+
+
+
+  const handleSaveGeneralSettings = () => {
+    setSavedCurrency(currency);
+    setSavedLanguage(language);
+    window.showToast(t('common.settings_saved'), 'success');
+  };
+
+  const handleSaveWorkingHours = () => {
+    setSavedDays(JSON.parse(JSON.stringify(days)));
+    window.showToast(t('common.settings_saved'), 'success');
+  };
+
+  const handleCancelClick = (section: 'clinic' | 'general' | 'working') => {
+    setCancelingSection(section);
+    setIsCancelModalOpen(true);
+  };
+
+  const handleCancelConfirm = () => {
+    if (cancelingSection === 'clinic') {
+      // Section is currently disabled
+    } else if (cancelingSection === 'general') {
+      setCurrency(savedCurrency);
+      setLanguage(savedLanguage);
+    } else if (cancelingSection === 'working') {
+      setDays(JSON.parse(JSON.stringify(savedDays)));
+    }
+
+    setIsCancelModalOpen(false);
+    setCancelingSection(null);
+    window.showToast(t('common.settings_canceled'), 'success');
+  };
+
+  const SectionActions = ({ onSave, onCancel }: { onSave: () => void, onCancel: () => void }) => (
+    <div className="flex justify-center xs:justify-end flex-wrap gap-3 mt-8 pt-6 border-t border-border/50">
+      <button
+        onClick={onCancel}
+        className="h-10 px-6 rounded-xl border border-border font-bold text-foreground hover:bg-accent hover:text-white transition-all active:scale-95 text-sm"
+      >
+        {t('settings.cancel_changes', T_PAGE)}
+      </button>
+      <button
+        onClick={onSave}
+        className="h-10 px-6 rounded-xl bg-primary text-white font-bold hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all active:scale-95 flex items-center gap-2 text-sm"
+      >
+        <Check className="size-4" />
+        {t('settings.save_settings', T_PAGE)}
+      </button>
+    </div>
+  );
 
   return (
     <section className="space-y-8 pb-12" dir={dir}>
@@ -196,7 +192,7 @@ const SettingsView = () => {
 
       <div className="grid grid-cols-1 gap-8">
         {/* Clinic Information Card */}
-        <article className={cn(
+        {/* <article className={cn(
           "bg-white rounded-3xl border border-border p-4 sm:p-8 shadow-sm hover:shadow-md transition-all duration-300 opacity-0",
           canAnimate && "animate-fadeUp animate-delay-200"
         )}>
@@ -284,7 +280,12 @@ const SettingsView = () => {
               />
             </div>
           </div>
-        </article>
+
+          <SectionActions
+            onSave={handleSaveClinicInfo}
+            onCancel={() => handleCancelClick('clinic')}
+          />
+        </article> */}
 
         {/* General Settings Card */}
         <article className={cn(
@@ -333,6 +334,11 @@ const SettingsView = () => {
               </Select>
             </div>
           </div>
+
+          <SectionActions
+            onSave={handleSaveGeneralSettings}
+            onCancel={() => handleCancelClick('general')}
+          />
         </article>
 
         {/* Working Hours Card */}
@@ -446,27 +452,13 @@ const SettingsView = () => {
             </div>
             <p className="text-xs text-muted-foreground italic">{t('settings.working_hours_note', T_PAGE)}</p>
           </figure>
+
+          <SectionActions
+            onSave={handleSaveWorkingHours}
+            onCancel={() => handleCancelClick('working')}
+          />
         </article>
 
-        {/* Footer Actions */}
-        <footer className={cn(
-          "flex justify-center xs:justify-end flex-wrap gap-4 mt-4 opacity-0",
-          canAnimate && "animate-fadeUp animate-delay-500"
-        )}>
-          <button
-            onClick={() => setIsCancelModalOpen(true)}
-            className="h-12 px-10 w-full rounded-xl xs:w-auto border border-border font-bold text-foreground hover:bg-accent hover:text-white transition-all active:scale-95"
-          >
-            {t('settings.cancel_changes', T_PAGE)}
-          </button>
-          <button
-            onClick={handleSave}
-            className="h-12 px-10 rounded-xl w-full justify-center xs:w-auto whitespace-nowrap bg-primary text-white font-bold hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all active:scale-95 flex items-center gap-2"
-          >
-            <Check className="size-5" />
-            {t('settings.save_settings', T_PAGE)}
-          </button>
-        </footer>
       </div>
 
       <Modal

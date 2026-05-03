@@ -55,7 +55,12 @@ export const profileTranslations = {
       confirm_change: "تأكيد التغيير",
       close: "إغلاق",
       cancel: "إلغاء",
-      save: "حفظ التعديلات"
+      save: "حفظ التعديلات",
+      insurance_section: "قسم التأمين",
+      insurance_section_desc: "إدارة شركات التأمين المتعاقد معها",
+      select_insurances: "اختر شركات التأمين",
+      active: "نشط",
+      inactive: "غير نشط",
     }
   },
   en: {
@@ -113,7 +118,12 @@ export const profileTranslations = {
       confirm_change: "Confirm Change",
       close: "Close",
       cancel: "Cancel",
-      save: "Save Changes"
+      save: "Save Changes",
+      insurance_section: "Insurance Section",
+      insurance_section_desc: "Manage contracted insurance companies",
+      select_insurances: "Select Insurance Companies",
+      active: "Active",
+      inactive: "Inactive",
     }
   }
 };

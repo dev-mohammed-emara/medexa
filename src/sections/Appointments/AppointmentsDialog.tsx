@@ -2,7 +2,8 @@ import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import "flatpickr/dist/flatpickr.css";
 import { Arabic } from "flatpickr/dist/l10n/ar.js";
-import { Clock, DollarSign, Phone, Plus, Stethoscope, User, X } from 'lucide-react';
+import { Clock, DollarSign, Phone, Plus, Stethoscope, User, X, Check } from 'lucide-react';
+import { TbCancel } from 'react-icons/tb';
 import { FaCalendarAlt } from 'react-icons/fa';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Flatpickr from "react-flatpickr";
@@ -32,6 +33,8 @@ export interface Appointment {
   status: string;
   patientNotes?: string;
   doctorNotes?: string;
+  canceledBy?: 'doctor' | 'patient' | 'secretary' | '';
+  cancellationReason?: string;
   color?: 'amber' | 'emerald' | 'rose' | 'blue';
 }
 
@@ -41,9 +44,11 @@ interface AppointmentsDialogProps {
   onConfirm: (data: Partial<Appointment>) => void;
   mode: 'add' | 'edit' | 'view';
   initialData?: Appointment | null;
+  onCancel?: (app: Appointment) => void;
+  onComplete?: (app: Appointment) => void;
 }
 
-const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: AppointmentsDialogProps) => {
+const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, onCancel, onComplete }: AppointmentsDialogProps) => {
   const { isAr, dir, t } = useLanguage();
   const T = appointmentsTranslations;
   const currentLocale = isAr ? ar : enUS;
@@ -69,10 +74,24 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: A
     }, 400);
   }, [onClose]);
 
+  const historyPushed = useRef(false);
+  const dialogId = useRef(Date.now());
+
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
-      const handlePopState = () => handleClose();
+      
+      if (!historyPushed.current) {
+        window.history.pushState({ dialogOpen: true, dialogId: dialogId.current }, '');
+        historyPushed.current = true;
+      }
+
+      const handlePopState = (e: PopStateEvent) => {
+        if (!e.state || e.state.dialogId !== dialogId.current) {
+          handleClose();
+        }
+      };
+      
       window.addEventListener('popstate', handlePopState);
       return () => {
         document.body.style.overflow = 'unset';
@@ -80,6 +99,16 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: A
       };
     }
   }, [isOpen, handleClose]);
+
+  // Handle history back when manually closed
+  useEffect(() => {
+    if (isClosing && historyPushed.current) {
+      if (window.history.state?.dialogOpen && window.history.state?.dialogId === dialogId.current) {
+        window.history.back();
+      }
+      historyPushed.current = false;
+    }
+  }, [isClosing]);
 
 
   if (!isOpen) return null;
@@ -128,13 +157,13 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: A
         dir={dir}
         onClick={(e) => e.target === overlayRef.current && handleClose()}
       >
-        <div
-          role="dialog"
-          className={cn(
-            "bg-background relative w-full rounded-2xl border p-8 shadow-2xl max-w-2xl max-h-[90vh] flex flex-col",
-            isClosing ? "animate-scaleDownOut" : "animate-scaleUp"
-          )}
-        >
+          <div
+            role="dialog"
+            className={cn(
+              "bg-background relative w-full rounded-2xl border p-8 shadow-2xl max-w-2xl max-h-[90vh] flex flex-col overflow-hidden",
+              isClosing ? "animate-scaleDownOut" : "animate-scaleUp"
+            )}
+          >
           <button
             onClick={handleClose}
             type="button"
@@ -174,10 +203,14 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: A
                   </div>
 
                   <div className="space-y-2">
-                    <label className="flex items-center gap-2 font-medium text-muted-foreground text-xs">{t('dialog.phone', T)}</label>
-                    <div className="flex items-center gap-2" dir="ltr">
-                      <Phone className="size-4 text-primary" />
-                      <span className="font-medium">+962 79 123 4567</span>
+                    <label className="flex items-center gap-2 font-medium text-muted-foreground text-xs">
+                      {t('dialog.phone', T)}
+                    </label>
+                    <div className="flex items-center">
+                      <div className="flex items-center gap-2" dir="ltr">
+                        <Phone className="size-4 text-primary" />
+                        <span className="font-medium">+962 79 123 4567</span>
+                      </div>
                     </div>
                   </div>
 
@@ -248,6 +281,24 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: A
                     <p className="text-sm">{initialData?.doctorNotes || t('dialog.no_notes', T)}</p>
                   </div>
                 </div>
+
+                {initialData?.status === 'canceled' && (
+                  <div className="mt-6 p-4 rounded-xl border-2 border-dashed border-rose-200 bg-rose-50/30 space-y-4 animate-in fade-in slide-in-from-top-4 duration-500 shadow-sm">
+                    <div className="flex items-center gap-2 text-rose-600 font-bold text-sm">
+                      <X className="size-4" />
+                      {t('canceled_by', T)}: {initialData.canceledBy === 'doctor' ? t('cancelers.doctor', T) : 
+                                               initialData.canceledBy === 'patient' ? t('cancelers.patient', T) : 
+                                               initialData.canceledBy === 'secretary' ? t('cancelers.secretary', T) : 
+                                               (initialData.canceledBy || (isAr ? "غير محدد" : "Not specified"))}
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-rose-600/70">{t('reason', T)}</label>
+                      <p className="text-sm text-rose-700 bg-white/50 p-3 rounded-lg border border-rose-100 italic">
+                        {t(`cancel_reasons.${initialData.cancellationReason}`, T) || initialData.cancellationReason || (isAr ? "لا يوجد سبب محدد" : "No specific reason provided")}
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : mode === 'edit' ? (
               <div className="space-y-4 py-4">
@@ -377,34 +428,36 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: A
                     </div>
                   </div>
 
-                  <div className="flex flex-col gap-2 col-span-2">
-                    <label className={cn("text-sm font-semibold text-foreground/80 col-span-2", isAr ? "pr-1" : "pl-1")}>{t('dialog.status', T)}</label>
-                    <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                      <SelectTrigger className={cn("rounded-xl h-12 bg-input-background transition-all focus:ring-4 focus:ring-primary/10", (selectedStatus) && "text-foreground font-bold")}>
-                        <SelectValue placeholder={t('dialog.status', T)} />
-                      </SelectTrigger>
-                      <SelectContent className={cn("rounded-xl z-600", isAr ? "text-right" : "text-left")}>
-                        <SelectItem value="pending">
-                          <div className="flex items-center gap-2">
-                            <div className="size-2 rounded-full bg-amber-500" />
-                            <span>{t('dialog.status_pending', T)}</span>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="completed">
-                          <div className="flex items-center gap-2">
-                            <div className="size-2 rounded-full bg-emerald-500" />
-                            <span>{t('dialog.status_completed', T)}</span>
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="canceled">
-                          <div className="flex items-center gap-2">
-                            <div className="size-2 rounded-full bg-rose-500" />
-                            <span>{t('dialog.status_canceled', T)}</span>
-                          </div>
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  {mode !== 'add' && (
+                    <div className="flex flex-col gap-2 col-span-2">
+                      <label className={cn("text-sm font-semibold text-foreground/80 col-span-2", isAr ? "pr-1" : "pl-1")}>{t('dialog.status', T)}</label>
+                      <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                        <SelectTrigger className={cn("rounded-xl h-12 bg-input-background transition-all focus:ring-4 focus:ring-primary/10", (selectedStatus) && "text-foreground font-bold")}>
+                          <SelectValue placeholder={t('dialog.status', T)} />
+                        </SelectTrigger>
+                        <SelectContent className={cn("rounded-xl z-600", isAr ? "text-right" : "text-left")}>
+                          <SelectItem value="pending">
+                            <div className="flex items-center gap-2">
+                              <div className="size-2 rounded-full bg-amber-500" />
+                              <span>{t('dialog.status_pending', T)}</span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="completed">
+                            <div className="flex items-center gap-2">
+                              <div className="size-2 rounded-full bg-emerald-500" />
+                              <span>{t('dialog.status_completed', T)}</span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="canceled">
+                            <div className="flex items-center gap-2">
+                              <div className="size-2 rounded-full bg-rose-500" />
+                              <span>{t('dialog.status_canceled', T)}</span>
+                            </div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
 
                   <div className="flex flex-col gap-2 col-span-2">
                     <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.doctor_notes', T)} <span className="text-destructive">*</span></label>
@@ -454,23 +507,32 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: A
                 </Button>
               </>
             )}
-            {mode === 'edit' && (
-              <div className="flex gap-3 w-full">
-                <Button onClick={handleSubmit} className="flex-1 shadow-lg shadow-primary/20 bg-primary hover:bg-primary/90 h-10 rounded-lg">
-                  {t('dialog.save_changes', T)}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleClose}
-                  className="flex-1 h-10 rounded-lg"
-                >
-                  {t('dialog.cancel', T)}
-                </Button>
-              </div>
-            )}
             {mode === 'view' && (
               <div className="flex gap-3 w-full">
+                {initialData?.status === 'pending' && onComplete && (
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      if (initialData) onComplete(initialData);
+                    }}
+                    className="flex-1 h-10 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-200/50"
+                  >
+                    <Check className={cn("size-4", isAr ? "ml-2" : "mr-2")} />
+                    {isAr ? "إكمال الموعد" : "Complete Appointment"}
+                  </Button>
+                )}
+                {initialData?.status === 'pending' && onCancel && (
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      if (initialData) onCancel(initialData);
+                    }}
+                    className="flex-1 h-10 rounded-lg bg-rose-600 hover:bg-rose-700 text-white shadow-lg shadow-rose-200/50"
+                  >
+                    <TbCancel className={cn("size-4.5", isAr ? "ml-2" : "mr-2")} />
+                    {t('actions.delete', T)}
+                  </Button>
+                )}
                 <Button
                   type="button"
                   variant="outline"
@@ -478,6 +540,45 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: A
                   className="flex-1 h-10 rounded-lg hover:border-primary/30"
                 >
                   {t('dialog.close', T)}
+                </Button>
+              </div>
+            )}
+            {mode === 'edit' && (
+              <div className="flex gap-3 w-full">
+                <Button onClick={handleSubmit} className="flex-2 shadow-lg shadow-primary/20 bg-primary hover:bg-primary/90 h-10 rounded-lg">
+                  {t('dialog.save_changes', T)}
+                </Button>
+                {initialData?.status === 'pending' && onComplete && (
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      if (initialData) onComplete(initialData);
+                    }}
+                    className="flex-1 h-10 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-200/50"
+                  >
+                    <Check className={cn("size-4", isAr ? "ml-2" : "mr-2")} />
+                    {isAr ? "إكمال الموعد" : "Complete"}
+                  </Button>
+                )}
+                {initialData?.status === 'pending' && onCancel && (
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      if (initialData) onCancel(initialData);
+                    }}
+                    className="flex-1 h-10 rounded-lg bg-rose-600 hover:bg-rose-700 text-white shadow-lg shadow-rose-200/50"
+                  >
+                    <TbCancel className={cn("size-4.5", isAr ? "ml-2" : "mr-2")} />
+                    {t('actions.delete', T)}
+                  </Button>
+                )}
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleClose}
+                  className="flex-1 h-10 rounded-lg"
+                >
+                  {t('dialog.cancel', T)}
                 </Button>
               </div>
             )}
