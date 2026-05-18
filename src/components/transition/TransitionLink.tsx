@@ -25,8 +25,8 @@ export const TransitionLink = forwardRef<HTMLAnchorElement, TransitionLinkProps>
       const targetSearchFormatted = targetSearch ? `?${targetSearch}` : '';
       if (location.pathname === targetPath && location.search === targetSearchFormatted) return;
 
-      // 1. Trigger the "Close" animation from global window object
-      if (window.triggerExitTransition) {
+      // Only trigger exit transition if navigating to a different path
+      if (location.pathname !== targetPath && window.triggerExitTransition) {
         try {
           await window.triggerExitTransition();
         } catch (error) {

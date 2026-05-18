@@ -365,9 +365,8 @@ const SettingsView = ({ hideHeader, className }: SettingsViewProps = {}) => {
 
           <div className="space-y-4">
             {days.map((day) => (
-              <details
+              <div
                 key={day.id}
-                open={day.isActive}
                 className={cn(
                   "rounded-2xl border transition-all duration-300 overflow-hidden",
                   day.isActive
@@ -375,12 +374,12 @@ const SettingsView = ({ hideHeader, className }: SettingsViewProps = {}) => {
                     : "bg-muted/20 border-border opacity-70"
                 )}
               >
-                <summary className="p-6 flex-wrap flex items-center justify-between gap-6 cursor-pointer list-none outline-none">
+                <div className="p-6 flex-wrap flex items-center justify-between gap-6 list-none outline-none">
                   <div className="flex items-center gap-6">
                     <div className="min-w-[100px]">
                       <p className="text-lg font-bold">{t(`nav.days.${day.id}`, T_NAV)}</p>
                     </div>
-                    <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center gap-3">
                       <p
                         className={cn(
                           "text-sm font-bold",
@@ -398,17 +397,14 @@ const SettingsView = ({ hideHeader, className }: SettingsViewProps = {}) => {
 
                   {day.isActive && (
                     <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        addPeriod(day.id);
-                      }}
+                      onClick={() => addPeriod(day.id)}
                       className="inline-flex items-center justify-center gap-2 h-9 px-4 rounded-xl border border-primary/30 bg-background text-primary hover:bg-primary/10 transition-all font-bold text-sm"
                     >
                       <Plus className="size-4" />
                       {t('settings.add_period', T_PAGE)}
                     </button>
                   )}
-                </summary>
+                </div>
 
                 {day.isActive && (
                   <div className="px-6 pb-6 space-y-3">
@@ -444,7 +440,7 @@ const SettingsView = ({ hideHeader, className }: SettingsViewProps = {}) => {
                     ))}
                   </div>
                 )}
-              </details>
+              </div>
             ))}
           </div>
 
