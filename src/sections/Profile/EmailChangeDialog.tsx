@@ -78,7 +78,7 @@ const EmailChangeDialog = ({ isOpen, onClose }: EmailChangeDialogProps) => {
         <div
           ref={modalRef}
           className={cn(
-            "bg-white relative z-50 grid w-full gap-4 rounded-lg border p-6 shadow-lg sm:max-w-lg max-w-md",
+            "bg-white relative z-50 grid w-full gap-4 rounded-xl border p-6 shadow-lg sm:max-w-lg max-w-md",
             isClosing ? "animate-scaleDownOut" : "animate-scaleUp"
           )}
         >
@@ -128,7 +128,7 @@ const EmailChangeDialog = ({ isOpen, onClose }: EmailChangeDialogProps) => {
               <p className="text-xs text-muted-foreground">{t('profile.password_note', T_PAGE)}</p>
             </div>
 
-            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl">
               <div className="flex gap-2">
                 <Shield size={16} className="text-amber-600 shrink-0" />
                 <p className="text-xs text-amber-800">
@@ -140,14 +140,14 @@ const EmailChangeDialog = ({ isOpen, onClose }: EmailChangeDialogProps) => {
             <div className="flex gap-3 pt-4">
               <button
                 onClick={handleSubmit}
-                className="flex-1 inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-300 text-primary-foreground bg-primary hover:bg-primary/90 hover:shadow-lg hover:-translate-y-0.5 h-11 px-8"
+                className="flex-1 inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-300 text-primary-foreground bg-primary hover:bg-primary/90 hover:shadow-lg hover:-translate-y-0.5 h-11 px-8"
               >
                 <Key size={16} className={isAr ? "ml-1" : "mr-1"} />
                 {t('profile.confirm_change', T_PAGE)}
               </button>
               <button
                 onClick={handleClose}
-                className="flex-1 inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-300 border bg-background text-foreground hover:bg-accent hover:text-accent-foreground h-11 px-8"
+                className="flex-1 inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-300 border bg-background text-foreground hover:bg-accent hover:text-accent-foreground h-11 px-8"
               >
                 {t('common.cancel')}
               </button>
@@ -168,3 +168,4 @@ const EmailChangeDialog = ({ isOpen, onClose }: EmailChangeDialogProps) => {
 };
 
 export default EmailChangeDialog;
+

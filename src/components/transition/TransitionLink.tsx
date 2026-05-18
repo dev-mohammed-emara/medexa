@@ -21,7 +21,9 @@ export const TransitionLink = forwardRef<HTMLAnchorElement, TransitionLinkProps>
       e.preventDefault();
 
       // Avoid redundant animations if already on the destination
-      if (location.pathname === href) return;
+      const [targetPath, targetSearch] = href.split('?');
+      const targetSearchFormatted = targetSearch ? `?${targetSearch}` : '';
+      if (location.pathname === targetPath && location.search === targetSearchFormatted) return;
 
       // 1. Trigger the "Close" animation from global window object
       if (window.triggerExitTransition) {

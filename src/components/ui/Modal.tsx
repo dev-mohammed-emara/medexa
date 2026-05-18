@@ -101,7 +101,8 @@ const Modal = ({
         <div
           ref={modalRef}
           className={cn(
-            "bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden",
+            "bg-white rounded-3xl shadow-2xl w-full max-h-[90vh] flex flex-col overflow-hidden",
+            variant === 'danger' ? "max-w-[400px]" : "max-w-2xl",
             isClosing ? "animate-scaleDownOut" : "animate-scaleUp"
           )}
         >

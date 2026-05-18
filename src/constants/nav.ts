@@ -40,7 +40,7 @@ export const navTranslations = {
       },
       clinic_name: "عيادة النور الطبية",
       clinic_owner: "مالك العيادة",
-      doctor_name: "أحمد الحشيكا",
+      doctor_name: "أحمد الحشايكة",
       minutes_ago: "منذ {n} دقائق",
       hour_ago: "منذ ساعة",
       hours_ago: "منذ {n} ساعات",

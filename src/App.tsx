@@ -22,7 +22,6 @@ import Records from './pages/Records'
 import Secretary from './pages/Secretary'
 import ServerError from './pages/ServerError'
 import SessionExpired from './pages/SessionExpired'
-import Settings from './pages/Settings'
 
 const App = () => {
   useLenis()
@@ -48,7 +47,6 @@ const App = () => {
                 <Route path="/appointments" element={<Appointments />} />
                 <Route path="/records" element={<Records />} />
                 <Route path="/finance" element={<Finance />} />
-                <Route path="/settings" element={<Settings />} />
                 <Route path="/profile" element={<Profile />} />
 
                 {/* System/Error Routes */}
@@ -65,7 +63,6 @@ const App = () => {
                   <Route path="/appointments" element={<Appointments />} />
                   <Route path="/records" element={<Records />} />
                   <Route path="/finance" element={<Finance />} />
-                  <Route path="/settings" element={<Settings />} />
                   <Route path="/profile" element={<Profile />} />
                   <Route path="/500" element={<ServerError />} />
                   <Route path="/419" element={<SessionExpired />} />

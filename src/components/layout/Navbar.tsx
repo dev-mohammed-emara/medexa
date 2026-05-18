@@ -2,7 +2,7 @@ import { navTranslations } from '@/constants/nav'
 import { useAuth } from '@/contexts/AuthContext'
 import { useLanguage } from '@/contexts/LanguageContext'
 import { gsap } from 'gsap'
-import { Bell, LogOut, Mail, Menu, Phone, Search, Settings, User } from 'lucide-react'
+import { Bell, LogOut, Mail, Menu, Phone, Settings, User } from 'lucide-react'
 import { BiSolidMessageAltError, BiSolidMessageCheck } from 'react-icons/bi'
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -109,7 +109,7 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
         </button>
 
         {/* Search */}
-        <div className="relative w-64 hidden md:block">
+        {/* <div className="relative w-64 hidden md:block">
           <Search className={cn("absolute top-1/2 -translate-y-1/2 text-muted-foreground size-[18px]", isAr ? "right-3" : "left-3")} />
           <input
             type="text"
@@ -119,7 +119,7 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
               isAr ? "pr-10 pl-4 text-right" : "pl-10 pr-4 text-left"
             )}
           />
-        </div>
+        </div> */}
       </div>
 
       <div className="flex items-center gap-4 ">
@@ -133,7 +133,7 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
             className="p-2 rounded-lg group hover:bg-accent transition-all relative"
           >
             <Bell className="size-5 text-muted-foreground group-hover:text-white transition-all" />
-            {notifications.filter(n => !n.isRead).length > 0 && (
+            {notifications.filter((n: { isRead: any }) => !n.isRead).length > 0 && (
               <span className="absolute top-0 left-0 size-4.5 bg-destructive text-white text-[12px] flex items-center justify-center rounded-full">
                 {notifications.filter(n => !n.isRead).length}
               </span>
@@ -152,8 +152,8 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
             <div className="max-h-80 overflow-y-auto">
               {notifications.length > 0 ? (
                 notifications.map((notif) => (
-                  <div 
-                    key={notif.id} 
+                  <div
+                    key={notif.id}
                     onClick={() => setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, isRead: true } : n))}
                     className={cn(
                       "p-4 border-b border-border/50 hover:bg-slate-50 transition-all cursor-pointer flex items-start gap-3 group/notif",
@@ -188,7 +188,7 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
               )}
             </div>
             {notifications.length > 0 && (
-              <button 
+              <button
                 onClick={() => setNotifications(prev => prev.map(n => ({ ...n, isRead: true })))}
                 className="w-full py-3 text-xs text-emerald-600 font-bold hover:bg-emerald-50 transition-colors border-t border-border flex items-center justify-center gap-2"
               >
@@ -260,7 +260,7 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
                 <span>{t('nav.profile', T_PAGE)}</span>
               </TransitionLink>
               <TransitionLink
-                href="/settings"
+                href="/profile?tab=clinic"
                 onClick={() => setShowProfile(false)}
                 className="w-full flex items-center gap-3 px-4 py-2.5 text-sm rounded-lg hover:bg-slate-50 transition-colors"
               >

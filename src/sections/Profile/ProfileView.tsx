@@ -31,16 +31,30 @@ import {
   User,
   X
 } from 'lucide-react';
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import Flatpickr from "react-flatpickr";
 import { FaCalendarAlt } from 'react-icons/fa';
+import { useSearchParams } from 'react-router-dom';
 import EmailChangeDialog from './EmailChangeDialog';
+import SettingsView from '../Settings/SettingsView';
 
 const ProfileView = () => {
   const { profileImage, updateProfileImage } = useAuth();
   const { isLoaded, isExiting } = usePreloader();
   const { dir, isAr, t } = useLanguage();
-  const [activeTab, setActiveTab] = useState<'profile' | 'clinic'>('profile');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialTab = searchParams.get('tab') === 'clinic' ? 'clinic' : 'profile';
+  const [activeTab, setActiveTab] = useState<'profile' | 'clinic'>(initialTab);
+
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam === 'clinic') {
+      setActiveTab('clinic');
+    } else {
+      setActiveTab('profile');
+    }
+  }, [searchParams]);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const T_PAGE = profileTranslations;
@@ -119,6 +133,7 @@ const ProfileView = () => {
   const handleTabChange = (tab: 'profile' | 'clinic') => {
     if (tab === activeTab) return;
     setActiveTab(tab);
+    setSearchParams({ tab });
   };
 
 
@@ -181,12 +196,12 @@ const ProfileView = () => {
         <button
           onClick={() => handleTabChange('profile')}
           className={cn(
-            "relative px-6 py-2.5 rounded-lg text-sm transition-all duration-300 flex items-center gap-2",
+            "relative px-6 py-2.5 rounded-xl text-sm transition-all duration-300 flex items-center gap-2",
             activeTab === 'profile' ? "text-primary font-semibold" : "text-muted-foreground hover:text-foreground font-normal"
           )}
         >
           {activeTab === 'profile' && (
-            <div className="absolute inset-0 bg-white rounded-lg shadow-md animate-in fade-in zoom-in-95 duration-200" />
+            <div className="absolute inset-0 bg-white rounded-xl shadow-md animate-in fade-in zoom-in-95 duration-200" />
           )}
           <span className="relative z-10 flex items-center gap-2">
             <User size={16} />
@@ -196,12 +211,12 @@ const ProfileView = () => {
         <button
           onClick={() => handleTabChange('clinic')}
           className={cn(
-            "relative px-6 py-2.5 rounded-lg text-sm transition-all duration-300 flex items-center gap-2",
+            "relative px-6 py-2.5 rounded-xl text-sm transition-all duration-300 flex items-center gap-2",
             activeTab === 'clinic' ? "text-primary font-semibold" : "text-muted-foreground hover:text-foreground font-normal"
           )}
         >
           {activeTab === 'clinic' && (
-            <div className="absolute inset-0 bg-white rounded-lg shadow-md animate-in fade-in zoom-in-95 duration-200" />
+            <div className="absolute inset-0 bg-white rounded-xl shadow-md animate-in fade-in zoom-in-95 duration-200" />
           )}
           <span className="relative z-10 flex items-center gap-2">
             <Building2 size={16} />
@@ -227,7 +242,7 @@ const ProfileView = () => {
                 <h2 className="text-3xl mb-2 font-bold text-foreground">{t('profile.doctor_name_val', T_PAGE)}</h2>
                 <div className="flex flex-col gap-2">
                   <div className={cn("flex items-center justify-center", isAr ? "sm:justify-end" : "sm:justify-start")}>
-                    <span className="inline-flex items-center justify-center rounded-md border text-xs font-medium bg-primary/10 text-primary border-primary/20 px-3 py-1 gap-1">
+                    <span className="inline-flex items-center justify-center rounded-xl border text-xs font-medium bg-primary/10 text-primary border-primary/20 px-3 py-1 gap-1">
                       <Shield size={14} className={isAr ? "ml-1" : "mr-1"} />
                       {t('profile.clinic_owner', T_PAGE)}
                     </span>
@@ -274,7 +289,7 @@ const ProfileView = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Personal Information */}
-              <div data-slot="card" className="tab-pane  bg-white rounded-xl border p-6 border-border shadow-lg hover:shadow-xl transition-all duration-300 h-full">
+              <div data-slot="card" className="tab-pane flex flex-col bg-white rounded-xl border p-6 border-border shadow-lg hover:shadow-xl transition-all duration-300 h-full">
                 <h3 className="text-xl mb-6 font-bold">{t('profile.personal_info', T_PAGE)}</h3>
                 <div className="space-y-5">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -297,7 +312,7 @@ const ProfileView = () => {
                       <Input readOnly value="dr.ahmed@medexa.com" className="flex-1 h-11 bg-muted/50 border-border cursor-not-allowed text-muted-foreground" />
                       <button
                         onClick={() => setIsEmailModalOpen(true)}
-                        className="h-11 px-4 border border-primary/30 rounded-md text-primary hover:bg-primary/5 transition-all flex items-center gap-2 text-sm font-medium"
+                        className="h-11 px-4 border border-primary/30 rounded-xl text-primary hover:bg-primary/5 transition-all flex items-center gap-2 text-sm font-medium"
                       >
                         <Key size={16} />
                         {t('common.change')}
@@ -346,44 +361,74 @@ const ProfileView = () => {
                     </div>
                   </div>
                 </div>
+                <div className="flex justify-end gap-3 mt-auto pt-6 border-t border-border">
+                  <button
+                    onClick={handleCancelGeneral}
+                    className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-300 border bg-background text-foreground hover:bg-accent hover:text-white hover:border-accent h-10 px-6"
+                  >
+                    {t('common.cancel')}
+                  </button>
+                  <button
+                    onClick={handleSaveGeneral}
+                    className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-300 text-primary-foreground bg-primary hover:bg-primary/90 h-10 px-6 shadow-lg shadow-primary/20 hover:shadow-primary/30"
+                  >
+                    <Check size={16} className={isAr ? "ml-1" : "mr-1"} />
+                    {t('common.save_changes')}
+                  </button>
+                </div>
               </div>
 
               {/* Account Information */}
-              <div data-slot="card" className="tab-pane  bg-white rounded-xl border p-6 border-border shadow-lg hover:shadow-xl transition-all duration-300 h-full">
+              <div data-slot="card" className="tab-pane flex flex-col bg-white rounded-xl border p-6 border-border shadow-lg hover:shadow-xl transition-all duration-300 h-full">
                 <h3 className="text-xl mb-6 font-bold">{t('profile.account_info', T_PAGE)}</h3>
                 <div className="space-y-5">
-                  <div className="p-4 bg-muted/30 rounded-lg border border-border">
+                  <div className="p-4 bg-muted/30 rounded-xl border border-border">
                     <label className="text-xs text-muted-foreground mb-1 block">{t('common.role')}</label>
                     <div className="flex items-center gap-2">
                       <Shield size={18} className="text-primary" />
                       <span className="text-base font-bold text-foreground">{t('profile.clinic_owner', T_PAGE)}</span>
                     </div>
                   </div>
-                  <div className="p-4 bg-muted/30 rounded-lg border border-border">
+                  <div className="p-4 bg-muted/30 rounded-xl border border-border">
                     <label className="text-xs text-muted-foreground mb-1 block">{t('common.status')}</label>
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 bg-secondary rounded-full animate-pulse" />
                       <span className="text-base text-secondary font-bold">{t('common.active')}</span>
                     </div>
                   </div>
-                  <div className="p-4 bg-muted/30 rounded-lg border border-border">
+                  <div className="p-4 bg-muted/30 rounded-xl border border-border">
                     <label className="text-xs text-muted-foreground mb-1 block">{t('common.last_login')}</label>
                     <div className="flex items-center gap-2">
                       <Clock size={18} className="text-muted-foreground" />
                       <span className="text-base font-bold text-foreground">{t('common.today')}, 10:30 {t('common.am')}</span>
                     </div>
                   </div>
-                  <div className="p-4 bg-muted/30 rounded-lg border border-border">
+                  <div className="p-4 bg-muted/30 rounded-xl border border-border">
                     <label className="text-xs text-muted-foreground mb-1 block">{t('common.join_date')}</label>
                     <div className="flex items-center justify-between">
                       <span className="text-base font-bold text-foreground">15 Jan 2025</span>
                       <FaCalendarAlt size={16} className="text-muted-foreground" />
                     </div>
                   </div>
-                  <div className="p-4 bg-primary/5 rounded-lg border border-primary/20">
+                  <div className="p-4 bg-primary/5 rounded-xl border border-primary/20">
                     <label className="text-xs text-primary mb-1 block">{t('common.user_id')}</label>
                     <span className="text-sm font-mono text-primary font-bold">USR-2026-0001</span>
                   </div>
+                </div>
+                <div className="flex justify-end gap-3 mt-auto pt-6 border-t border-border">
+                  <button
+                    onClick={handleCancelGeneral}
+                    className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-300 border bg-background text-foreground hover:bg-accent hover:text-white hover:border-accent h-10 px-6"
+                  >
+                    {t('common.cancel')}
+                  </button>
+                  <button
+                    onClick={handleSaveGeneral}
+                    className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-300 text-primary-foreground bg-primary hover:bg-primary/90 h-10 px-6 shadow-lg shadow-primary/20 hover:shadow-primary/30"
+                  >
+                    <Check size={16} className={isAr ? "ml-1" : "mr-1"} />
+                    {t('common.save_changes')}
+                  </button>
                 </div>
               </div>
             </div>
@@ -403,7 +448,7 @@ const ProfileView = () => {
                 {!isEditingHours && (
                   <button
                     onClick={() => setIsEditingHours(true)}
-                    className="h-10 px-4 border border-primary/30 rounded-md text-primary hover:bg-primary/5 transition-all flex items-center gap-2 text-sm font-medium"
+                    className="h-10 px-4 border border-primary/30 rounded-xl text-primary hover:bg-primary/5 transition-all flex items-center gap-2 text-sm font-medium"
                   >
                     <Pen size={16} />
                     {t('common.edit_working_hours')}
@@ -416,7 +461,7 @@ const ProfileView = () => {
                   <div
                     key={day.day}
                     className={cn(
-                      "p-4 rounded-lg border transition-all duration-300",
+                      "p-4 rounded-xl border transition-all duration-300",
                       day.active
                         ? "bg-muted/20 border-border hover:border-primary/30"
                         : "bg-destructive/5 border-destructive/20"
@@ -458,7 +503,7 @@ const ProfileView = () => {
                                   />
                                   <button
                                     onClick={() => removePeriod(dIdx, pIdx)}
-                                    className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md transition-all shrink-0"
+                                    className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl transition-all shrink-0"
                                   >
                                     <X size={12} />
                                   </button>
@@ -474,7 +519,7 @@ const ProfileView = () => {
                           {isEditingHours && (
                             <button
                               onClick={() => addPeriod(dIdx)}
-                              className="w-full h-9 mt-2 flex items-center justify-center gap-2 rounded-md border border-dashed border-border bg-transparent text-xs text-muted-foreground hover:bg-muted/50 transition-all"
+                              className="w-full h-9 mt-2 flex items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-transparent text-xs text-muted-foreground hover:bg-muted/50 transition-all"
                             >
                               <Plus size={14} />
                               {t('common.add_period')}
@@ -495,14 +540,14 @@ const ProfileView = () => {
                 <div className="flex gap-3 justify-end mt-8 pt-6 border-t border-border">
                   <button
                     onClick={handleCancelHours}
-                    className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-300 border bg-background text-foreground hover:bg-accent hover:text-white hover:border-accent h-9 px-6 py-2"
+                    className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-300 border bg-background text-foreground hover:bg-accent hover:text-white hover:border-accent h-9 px-6 py-2"
                   >
                     <X size={16} className={isAr ? "ml-1" : "mr-1"} />
                     {t('profile.cancel', T_PAGE)}
                   </button>
                   <button
                     onClick={handleSaveHours}
-                    className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-300 text-primary-foreground bg-primary hover:bg-primary/90 h-9 px-6 py-2 shadow-lg shadow-primary/20 hover:shadow-primary/30"
+                    className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-300 text-primary-foreground bg-primary hover:bg-primary/90 h-9 px-6 py-2 shadow-lg shadow-primary/20 hover:shadow-primary/30"
                   >
                     <Check size={16} className={isAr ? "ml-1" : "mr-1"} />
                     {t('profile.save', T_PAGE)}
@@ -529,7 +574,7 @@ const ProfileView = () => {
                 <div className="flex-1">
                   <h2 className="text-3xl mb-2 font-bold">{clinicInfo.name}</h2>
                   <div className="flex items-center gap-3">
-                    <span className="inline-flex items-center justify-center rounded-md border text-xs font-medium bg-secondary/10 text-secondary border-secondary/20 px-3 py-1">
+                    <span className="inline-flex items-center justify-center rounded-xl border text-xs font-medium bg-secondary/10 text-secondary border-secondary/20 px-3 py-1">
                       {clinicInfo.specialty}
                     </span>
                     <div className="flex items-center gap-2 text-muted-foreground text-sm">
@@ -612,6 +657,22 @@ const ProfileView = () => {
                   />
                 </div>
               </div>
+
+              <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-border">
+                <button
+                  onClick={handleCancelGeneral}
+                  className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-300 border bg-background text-foreground hover:bg-accent hover:text-white hover:border-accent h-10 px-6"
+                >
+                  {t('common.cancel')}
+                </button>
+                <button
+                  onClick={() => window.showToast(t('save_clinic_success'), 'success')}
+                  className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-300 text-primary-foreground bg-primary hover:bg-primary/90 h-10 px-6 shadow-lg shadow-primary/20 hover:shadow-primary/30"
+                >
+                  <Check size={16} className={isAr ? "ml-1" : "mr-1"} />
+                  {t('common.save_changes')}
+                </button>
+              </div>
             </div>
 
             {/* Insurance Section */}
@@ -663,25 +724,29 @@ const ProfileView = () => {
                   </div>
                 ))}
               </div>
+
+              <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-border">
+                <button
+                  onClick={handleCancelGeneral}
+                  className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-300 border bg-background text-foreground hover:bg-accent hover:text-white hover:border-accent h-10 px-6"
+                >
+                  {t('common.cancel')}
+                </button>
+                <button
+                  onClick={() => window.showToast(t('save_clinic_success'), 'success')}
+                  className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-300 text-primary-foreground bg-primary hover:bg-primary/90 h-10 px-6 shadow-lg shadow-primary/20 hover:shadow-primary/30"
+                >
+                  <Check size={16} className={isAr ? "ml-1" : "mr-1"} />
+                  {t('common.save_changes')}
+                </button>
+              </div>
             </div>
+
+            {/* Settings View */}
+            <SettingsView hideHeader={true} className="pb-0" />
           </div>
         </div>
 
-        <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-border">
-          <button
-            onClick={activeTab === 'profile' ? handleCancelGeneral : () => window.showToast(t('cancel_success'), 'info')}
-            className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-300 border bg-background text-foreground hover:bg-accent hover:text-white hover:border-accent h-11 px-8"
-          >
-            {t('common.cancel')}
-          </button>
-          <button
-            onClick={activeTab === 'profile' ? handleSaveGeneral : () => window.showToast(t('save_clinic_success'), 'success')}
-            className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-300 text-primary-foreground bg-primary hover:bg-primary/90 h-11 px-8 shadow-lg shadow-primary/20 hover:shadow-primary/30"
-          >
-            <Check size={18} className={isAr ? "ml-1" : "mr-1"} />
-            {t('common.save_changes')}
-          </button>
-        </div>
 
         <Modal
           isOpen={showConfirmModal.open}
@@ -707,3 +772,4 @@ const ProfileView = () => {
 
 
 export default ProfileView;
+

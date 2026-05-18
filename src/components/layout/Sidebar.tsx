@@ -1,4 +1,3 @@
-
 import { gsap } from 'gsap'
 import {
     ChevronLeft,
@@ -6,7 +5,6 @@ import {
     FileText,
     LayoutDashboard,
     Menu,
-    Settings,
     User,
     UserCog,
     Users,
@@ -31,7 +29,6 @@ const navItems = [
   { icon: FaCalendarAlt, label: 'appointments', href: '/appointments' },
   { icon: FileText, label: 'records', href: '/records' },
   { icon: DollarSign, label: 'finance', href: '/finance' },
-  { icon: Settings, label: 'settings', href: '/settings' },
   { icon: User, label: 'profile', href: '/profile' },
 ]
 
@@ -156,7 +153,7 @@ const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
                         )}>
                           {t(`nav.${item.label}`, T_PAGE)}
                         </span>
-                        {isActive && <ChevronLeft className={cn("size-4 shrink-0 transition-transform duration-300 group-hover:px-1", !isAr && "rotate-180")} />}
+                        {isActive && <ChevronLeft className={cn("size-4 shrink-0 transition-all duration-300 ", !isAr && "rotate-180")} />}
                       </>
                     )}
                   </div>

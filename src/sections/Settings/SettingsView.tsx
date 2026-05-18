@@ -49,7 +49,12 @@ const INITIAL_DAYS: WorkingDay[] = [
   { id: 'sat', name: 'السبت', isActive: false, periods: [] },
 ];
 
-const SettingsView = () => {
+interface SettingsViewProps {
+  hideHeader?: boolean;
+  className?: string;
+}
+
+const SettingsView = ({ hideHeader, className }: SettingsViewProps = {}) => {
   const { isLoaded, isExiting } = usePreloader();
   const canAnimate = isLoaded && !isExiting;
   const { language, setLanguage, isAr, t, dir } = useLanguage();
@@ -181,14 +186,16 @@ const SettingsView = () => {
   );
 
   return (
-    <section className="space-y-8 pb-12" dir={dir}>
-          <header className={cn(
-            "flex flex-col gap-2  mb-6 ",
-            canAnimate && "animate-fadeDown animate-delay-100"
-          )}>
-            <h1 className="text-3xl font-bold mb-1">{t('settings.settings', T_PAGE)}</h1>
-            <p className="text-muted-foreground">{t('settings.manage_settings', T_PAGE)}</p>
-          </header>
+    <section className={cn("space-y-8", className)} dir={dir}>
+      {!hideHeader && (
+        <header className={cn(
+          "flex flex-col gap-2  mb-6 ",
+          canAnimate && "animate-fadeDown animate-delay-100"
+        )}>
+          <h1 className="text-3xl font-bold mb-1">{t('settings.settings', T_PAGE)}</h1>
+          <p className="text-muted-foreground">{t('settings.manage_settings', T_PAGE)}</p>
+        </header>
+      )}
 
       <div className="grid grid-cols-1 gap-8">
         {/* Clinic Information Card */}
@@ -289,7 +296,7 @@ const SettingsView = () => {
 
         {/* General Settings Card */}
         <article className={cn(
-          "bg-white rounded-3xl border border-border p-4 sm:p-8 shadow-sm hover:shadow-md transition-all duration-300 opacity-0",
+          "bg-white rounded-xl border border-border p-4 sm:p-8 shadow-sm hover:shadow-md transition-all duration-300 opacity-0",
           canAnimate && "animate-fadeUp animate-delay-300"
         )}>
           <figure className="flex items-center gap-4 mb-8">
@@ -343,7 +350,7 @@ const SettingsView = () => {
 
         {/* Working Hours Card */}
         <article className={cn(
-          "bg-white rounded-3xl border border-border p-4 sm:p-8 shadow-sm hover:shadow-md transition-all duration-300 opacity-0",
+          "bg-white rounded-xl border border-border p-4 sm:p-8 shadow-sm hover:shadow-md transition-all duration-300 opacity-0",
           canAnimate && "animate-fadeUp animate-delay-400"
         )}>
           <figure className="flex items-center gap-4 mb-8">
@@ -395,7 +402,7 @@ const SettingsView = () => {
                         e.stopPropagation();
                         addPeriod(day.id);
                       }}
-                      className="inline-flex items-center justify-center gap-2 h-9 px-4 rounded-lg border border-primary/30 bg-background text-primary hover:bg-primary/10 transition-all font-bold text-sm"
+                      className="inline-flex items-center justify-center gap-2 h-9 px-4 rounded-xl border border-primary/30 bg-background text-primary hover:bg-primary/10 transition-all font-bold text-sm"
                     >
                       <Plus className="size-4" />
                       {t('settings.add_period', T_PAGE)}
@@ -428,7 +435,7 @@ const SettingsView = () => {
                         {day.periods.length > 1 && (
                           <button
                             onClick={() => removePeriod(day.id, period.id)}
-                            className="p-2 text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
+                            className="p-2 text-destructive hover:bg-destructive/10 rounded-xl transition-colors"
                           >
                             <Trash2 className="size-4" />
                           </button>
@@ -476,3 +483,4 @@ const SettingsView = () => {
 };
 
 export default SettingsView;
+
