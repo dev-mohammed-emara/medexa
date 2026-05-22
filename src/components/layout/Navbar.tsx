@@ -140,16 +140,19 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
             )}
           </button>
 
-          {/* Notifications Tooltip/Dropdown */}
+          {/* Notifications Dropdown */}
           <div
             ref={notifRef}
-            className="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-80 bg-white border border-border shadow-2xl rounded-2xl overflow-hidden invisible opacity-0 will-change-transform z-60"
+            className="absolute top-full left-1/2 -translate-x-1/2 mt-3 w-80 bg-white border border-border shadow-2xl rounded-2xl invisible opacity-0 will-change-transform z-60"
             dir={isAr ? "rtl" : "ltr"}
           >
-            <div className="p-4 border-b border-border bg-slate-50/50">
+            {/* Arrow Pin */}
+            <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 rotate-45 bg-slate-50 border-t border-l border-border z-0"></div>
+
+            <div className="p-4 border-b border-border bg-slate-50/50 rounded-t-2xl relative z-10">
               <h3 className={cn("font-bold text-sm", isAr ? "text-right" : "text-left")}>{t('nav.notifications', T_PAGE)}</h3>
             </div>
-            <div className="max-h-80 overflow-y-auto">
+            <div className="max-h-80 overflow-y-auto relative z-10 bg-white">
               {notifications.length > 0 ? (
                 notifications.map((notif) => (
                   <div
@@ -190,7 +193,7 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
             {notifications.length > 0 && (
               <button
                 onClick={() => setNotifications(prev => prev.map(n => ({ ...n, isRead: true })))}
-                className="w-full py-3 text-xs text-emerald-600 font-bold hover:bg-emerald-50 transition-colors border-t border-border flex items-center justify-center gap-2"
+                className="w-full py-3 text-xs text-emerald-600 font-bold hover:bg-emerald-50 transition-colors border-t border-border flex items-center justify-center gap-2 rounded-b-2xl relative z-10 bg-white"
               >
                 <BiSolidMessageCheck className="size-4" />
                 {isAr ? "تحديد الكل كمقروء" : "Mark all as read"}
@@ -219,13 +222,16 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
             </div>
           </div>
 
-          {/* Profile Tooltip/Dropdown */}
+          {/* Profile Dropdown */}
           <div
             ref={profileRef}
-            className="absolute top-full left-18 xs:left-1/2 -translate-x-1/2 mt-3 w-64 bg-white border border-border shadow-2xl rounded-2xl overflow-hidden invisible opacity-0 will-change-transform z-60"
+            className="absolute top-full left-18 xs:left-1/2 -translate-x-1/2 mt-3 w-64 bg-white border border-border shadow-2xl rounded-2xl invisible opacity-0 will-change-transform z-60"
             dir={isAr ? "rtl" : "ltr"}
           >
-            <div className="p-5 border-b border-border bg-linear-to-r from-primary/5 to-secondary/5">
+            {/* Arrow Pin */}
+            <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 rotate-45 bg-slate-50 border-t border-l border-border z-0"></div>
+
+            <div className="p-5 border-b border-border bg-linear-to-r from-primary/5 to-secondary/5 rounded-t-2xl relative z-10">
               <div className="flex items-center gap-3 mb-1">
                 <div className="size-10 rounded-full border-2 border-primary bg-primary flex items-center justify-center text-white font-bold overflow-hidden shadow-sm">
                   {profileImage ? (
@@ -250,7 +256,7 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
               </div>
             </div>
 
-            <div className="p-2">
+            <div className="p-2 relative z-10 bg-white rounded-b-2xl">
               <TransitionLink
                 href="/profile"
                 onClick={() => setShowProfile(false)}

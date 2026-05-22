@@ -28,6 +28,15 @@ import { cn } from '../../utils/cn';
 import { useBroadcast } from '../../hooks/useBroadcast';
 import AddOperationModal from './AddOperationModal';
 import TableFooter from '../../components/ui/TableFooter';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '../../components/ui/table';
+
 
 const getChartData = (t: (key: string, T: any) => string, T: any) => [
   { name: t('january', T), income: 25000, expenses: 15000 },
@@ -254,44 +263,44 @@ const FinanceOverview = () => {
         </aside>
 
         <section className="overflow-x-auto">
-          <table className="w-full text-sm text-right whitespace-nowrap">
-            <thead className="bg-muted/30 border-b border-border/50 text-muted-foreground font-bold">
-              <tr>
-                <th className={cn("p-4", isAr ? "text-right" : "text-left")}>{t('table_type', T)}</th>
-                <th className={cn("p-4", isAr ? "text-right" : "text-left")}>{t('table_amount', T)}</th>
-                <th className={cn("p-4", isAr ? "text-right" : "text-left")}>{t('table_currency', T)}</th>
-                <th className={cn("p-4", isAr ? "text-right" : "text-left")}>{t('table_date', T)}</th>
-                <th className={cn("p-4", isAr ? "text-right" : "text-left")}>{t('table_related', T)}</th>
-                <th className={cn("p-4", isAr ? "text-right" : "text-left")}>{t('table_notes', T)}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border/30">
+          <Table className="w-full text-sm text-right whitespace-nowrap">
+            <TableHeader className="bg-muted/30 border-b border-border/50 text-muted-foreground font-bold">
+              <TableRow>
+                <TableHead className={cn("p-4", isAr ? "text-right" : "text-left")}>{t('table_type', T)}</TableHead>
+                <TableHead className={cn("p-4", isAr ? "text-right" : "text-left")}>{t('table_amount', T)}</TableHead>
+                <TableHead className={cn("p-4", isAr ? "text-right" : "text-left")}>{t('table_currency', T)}</TableHead>
+                <TableHead className={cn("p-4", isAr ? "text-right" : "text-left")}>{t('table_date', T)}</TableHead>
+                <TableHead className={cn("p-4", isAr ? "text-right" : "text-left")}>{t('table_related', T)}</TableHead>
+                <TableHead className={cn("p-4", isAr ? "text-right" : "text-left")}>{t('table_notes', T)}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody className="divide-y divide-border/30">
               {transactions.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((tx) => (
-                <tr key={tx.id} className="hover:bg-muted/20 transition-colors">
-                    <td className="p-4">
+                <TableRow key={tx.id} className="hover:bg-muted/20 transition-colors">
+                    <TableCell className="p-4">
                       <span className={cn(
                         "inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold",
                         tx.type === 'income' ? "bg-secondary/10 text-secondary" : "bg-destructive/10 text-destructive"
                       )}>
                         {tx.type === 'income' ? t('type_income', T) : t('type_expense', T)}
                       </span>
-                    </td>
-                    <td className="p-4 font-bold">{tx.amount}</td>
-                    <td className="p-4">{t('jod', T)}</td>
-                    <td className="p-4 font-medium text-muted-foreground">{tx.date}</td>
-                    <td className="p-4 text-muted-foreground">{tx.related}</td>
-                    <td className={cn("p-4 text-muted-foreground", isAr ? "text-right" : "text-left")}>{tx.notes}</td>
-                </tr>
+                    </TableCell>
+                    <TableCell className="p-4 font-bold">{tx.amount}</TableCell>
+                    <TableCell className="p-4">{t('jod', T)}</TableCell>
+                    <TableCell className="p-4 font-medium text-muted-foreground">{tx.date}</TableCell>
+                    <TableCell className="p-4 text-muted-foreground">{tx.related}</TableCell>
+                    <TableCell className={cn("p-4 text-muted-foreground", isAr ? "text-right" : "text-left")}>{tx.notes}</TableCell>
+                </TableRow>
               ))}
               {transactions.length === 0 && (
-                <tr>
-                  <td colSpan={6} className="h-40 text-center text-muted-foreground p-4">
+                <TableRow>
+                  <TableCell colSpan={6} className="h-40 text-center text-muted-foreground p-4">
                     {t('no_results', T)}
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               )}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
 
           <TableFooter
             variant="table"

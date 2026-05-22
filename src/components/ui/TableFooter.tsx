@@ -1,4 +1,6 @@
-import { LuChevronRight, LuChevronLeft } from 'react-icons/lu'
+import { cn } from '@/utils/cn'
+import { LuChevronLeft, LuChevronRight } from 'react-icons/lu'
+import { useLanguage } from '../../contexts/LanguageContext'
 import {
   Select,
   SelectContent,
@@ -6,8 +8,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from './select'
-import { cn } from '@/utils/cn'
-import { useLanguage } from '../../contexts/LanguageContext'
 
 interface TableFooterProps {
   totalItems: number
@@ -25,16 +25,15 @@ const TableFooter = ({
   itemsPerPage,
   currentPage,
   onPageChange,
-  onItemsPerPageChange,
   totalPages,
   className,
   variant = 'table'
 }: TableFooterProps) => {
   const { isAr } = useLanguage();
-  const resolvedTotalPages = totalPages ?? Math.max(1, Math.ceil(totalItems / itemsPerPage))
+  const safeItemsPerPage = itemsPerPage > 0 ? itemsPerPage : Math.max(1, totalItems)
+  const resolvedTotalPages = totalPages ?? Math.max(1, Math.ceil(totalItems / safeItemsPerPage))
 
   // Determine current value for items per page
-  const currentValue = itemsPerPage >= totalItems ? "all" : String(itemsPerPage)
 
   const PrevIcon = isAr ? LuChevronRight : LuChevronLeft;
   const NextIcon = isAr ? LuChevronLeft : LuChevronRight;
@@ -42,7 +41,7 @@ const TableFooter = ({
   return (
     <div
       className={cn(
-        "flex flex-col md:flex-row items-center gap-4 py-4 px-6",
+        "flex flex-col md:flex-row items-center gap-4 pt-4 px-6",
         variant === 'table' ? "bg-white border-t border-border rounded-b-xl mt-0" : "bg-transparent mt-6",
         isAr ? "flex-row-reverse" : "flex-row",
         className
@@ -54,35 +53,8 @@ const TableFooter = ({
           <span className="text-sm text-muted-foreground font-bold">
             {isAr ? "إجمالي السجلات:" : "Total Records:"} <span className="font-black text-foreground ml-1">{totalItems}</span>
           </span>
-          
-          {onItemsPerPageChange && (
-            <div className={cn("flex items-center gap-2 border-border", isAr ? "border-r pr-4" : "border-l pl-4")}>
-              <span className="text-sm text-muted-foreground font-bold">{isAr ? "عرض" : "Show"}</span>
-              <div className="w-[82px] shrink-0">
-                <Select
-                  value={currentValue}
-                  onValueChange={(val) => {
-                    if (val === "all") {
-                      onItemsPerPageChange(String(totalItems))
-                    } else {
-                      onItemsPerPageChange(val)
-                    }
-                  }}
-                >
-                  <SelectTrigger className="h-9 border-border rounded-xl text-sm font-bold text-foreground bg-white px-2.5 gap-1 shadow-xs focus:ring-primary/10">
-                    <SelectValue placeholder={currentValue === "all" ? (isAr ? "الكل" : "All") : currentValue} />
-                  </SelectTrigger>
-                  <SelectContent smallZ>
-                    <SelectItem value="10">10</SelectItem>
-                    <SelectItem value="12">12</SelectItem>
-                    <SelectItem value="25">25</SelectItem>
-                    <SelectItem value="50">50</SelectItem>
-                    <SelectItem value="all" className="text-primary font-black">{isAr ? "الكل" : "All"}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          )}
+
+
         </div>
       )}
 

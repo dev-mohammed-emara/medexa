@@ -1,5 +1,5 @@
 import useLenis from '@/hooks/useLenis'
-import { Route, BrowserRouter as Router, Routes, Navigate } from 'react-router-dom'
+import { Navigate, Route, BrowserRouter as Router, Routes } from 'react-router-dom'
 // import ProtectedRoute from './components/auth/ProtectedRoute'
 import { ToastContainer } from './components/ui/Toast'
 import { AuthProvider } from './contexts/AuthContext'
@@ -7,6 +7,7 @@ import { SidebarProvider } from './contexts/SidebarContext'
 import Login from './pages/Login'
 import Register from './pages/Register'
 
+import AdminProtectedRoute from './components/auth/AdminProtectedRoute'
 import ErrorRoute from './components/auth/ErrorRoute'
 import Preloader from './components/transition/Preloader'
 import { LanguageProvider } from './contexts/LanguageContext'
@@ -22,6 +23,20 @@ import Records from './pages/Records'
 import Secretary from './pages/Secretary'
 import ServerError from './pages/ServerError'
 import SessionExpired from './pages/SessionExpired'
+import AdminApprovals from './pages/admin/AdminApprovals'
+import AdminClinicDetails from './pages/admin/AdminClinicDetails'
+import AdminClinics from './pages/admin/AdminClinics'
+import AdminDashboard from './pages/admin/AdminDashboard'
+import AdminLogDetails from './pages/admin/AdminLogDetails'
+import AdminLogin from './pages/admin/AdminLogin'
+import AdminLogs from './pages/admin/AdminLogs'
+import AdminManagers from './pages/admin/AdminManagers'
+import AdminPatients from './pages/admin/AdminPatients'
+import AdminSettings from './pages/admin/AdminSettings'
+import AdminStats from './pages/admin/AdminStats'
+import AdminTicketDetails from './pages/admin/AdminTicketDetails'
+import AdminTickets from './pages/admin/AdminTickets'
+import AdminUsers from './pages/admin/AdminUsers'
 
 const App = () => {
   useLenis()
@@ -37,6 +52,32 @@ const App = () => {
                 {/* Public Routes */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
+                <Route path="/admin/login" element={<AdminLogin />} />
+
+                {/* Guarded Admin Routes */}
+                <Route path="/admin" element={<AdminProtectedRoute />}>
+                  <Route index element={<Navigate to="dashboard" replace />} />
+                  <Route path="dashboard" element={<AdminDashboard />} />
+                  <Route path="users" element={<AdminUsers />} />
+                  <Route path="patients" element={<AdminPatients />} />
+                  <Route path="clinics">
+                    <Route index element={<AdminClinics />} />
+                    <Route path=":id" element={<AdminClinicDetails />} />
+                  </Route>
+                  <Route path="approvals" element={<AdminApprovals />} />
+                  <Route path="tickets">
+                    <Route index element={<AdminTickets />} />
+                    <Route path=":id" element={<AdminTicketDetails />} />
+                  </Route>
+                  <Route path="managers" element={<AdminManagers />} />
+                  <Route path="stats" element={<AdminStats />} />
+                  <Route path="audit-logs">
+                    <Route index element={<AdminLogs />} />
+                    <Route path=":id" element={<AdminLogDetails />} />
+                  </Route>
+                  <Route path="settings" element={<AdminSettings />} />
+                  <Route path="*" element={<ErrorRoute><NotFound /></ErrorRoute>} />
+                </Route>
 
                 {/* All Application Routes (open, no auth required) */}
                 <Route index element={<Dashboard />} />

@@ -17,6 +17,15 @@ import { useBroadcast } from '../../hooks/useBroadcast';
 import { cn } from '../../utils/cn';
 import PatientsDialog from './PatientsDialog';
 import TableFooter from '../../components/ui/TableFooter';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '../../components/ui/table';
+
 
 const PatientsList = () => {
   const { isAr, t } = useLanguage();
@@ -145,77 +154,75 @@ const PatientsList = () => {
         </div>
 
         <section className="overflow-x-auto">
-          <div data-slot="table-container" className="relative w-full overflow-x-auto">
-            <table data-slot="table" className="w-full caption-bottom text-sm">
-              <thead data-slot="table-header" className="bg-muted/30 border-b">
-                <tr data-slot="table-row" className="transition-colors text-start">
-                  <th data-slot="table-head" className={cn("text-foreground h-12 px-4 align-middle font-bold whitespace-nowrap", isAr ? "text-right" : "text-left")}>{t('table.name', T)}</th>
-                  <th data-slot="table-head" className={cn("text-foreground h-12 px-4 align-middle font-bold whitespace-nowrap", isAr ? "text-right" : "text-left")}>{t('table.phone', T)}</th>
-                  <th data-slot="table-head" className={cn("text-foreground h-12 px-4 align-middle font-bold whitespace-nowrap", isAr ? "text-right" : "text-left")}>{t('table.age', T)}</th>
-                  <th data-slot="table-head" className={cn("text-foreground h-12 px-4 align-middle font-bold whitespace-nowrap", isAr ? "text-right" : "text-left")}>{t('table.gender', T)}</th>
-                  <th data-slot="table-head" className={cn("text-foreground h-12 px-4 align-middle font-bold whitespace-nowrap", isAr ? "text-right" : "text-left")}>{t('table.last_visit', T)}</th>
-                  <th data-slot="table-head" className={cn("text-foreground h-12 px-4 align-middle font-bold whitespace-nowrap", isAr ? "text-right" : "text-left")}>{t('table.actions', T)}</th>
-                </tr>
-              </thead>
-              <tbody data-slot="table-body" className="divide-y divide-border/30">
-                {filteredPatients.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((patient) => (
-                  <tr
-                    key={patient.id}
-                    data-slot="table-row"
-                    className="hover:bg-muted/20 transition-colors"
-                  >
-                    <td data-slot="table-cell" className={cn("p-4 align-middle whitespace-nowrap", isAr ? "text-right" : "text-left")} style={{ fontWeight: 600 }}>
-                      {isAr ? patient.name_ar : patient.name_en}
-                    </td>
-                    <td data-slot="table-cell" className={cn("p-4 align-middle whitespace-nowrap text-muted-foreground", isAr ? "text-right" : "text-left")}>
-                      {patient.phone}
-                    </td>
-                    <td data-slot="table-cell" className={cn("p-4 align-middle whitespace-nowrap", isAr ? "text-right" : "text-left")}>
-                      {patient.age}
-                    </td>
-                    <td data-slot="table-cell" className={cn("p-4 align-middle whitespace-nowrap", isAr ? "text-right" : "text-left")}>
-                      {patient.gender_ar === 'ذكر' ? t('dialog.male', T) : patient.gender_ar === 'أنثى' ? t('dialog.female', T) : t('dialog.other', T)}
-                    </td>
-                    <td data-slot="table-cell" className={cn("p-4 align-middle whitespace-nowrap", isAr ? "text-right" : "text-left")}>
-                      <span
-                        data-slot="badge"
-                        className="inline-flex items-center justify-center rounded-md border px-2.5 py-1 text-xs font-bold w-fit whitespace-nowrap shrink-0 bg-secondary/10 text-secondary border-transparent"
+          <Table className="w-full text-sm">
+            <TableHeader className="bg-muted/30 border-b">
+              <TableRow className="text-start">
+                <TableHead className={cn("text-foreground h-12 px-4 align-middle font-bold whitespace-nowrap", isAr ? "text-right" : "text-left")}>{t('table.name', T)}</TableHead>
+                <TableHead className={cn("text-foreground h-12 px-4 align-middle font-bold whitespace-nowrap", isAr ? "text-right" : "text-left")}>{t('table.phone', T)}</TableHead>
+                <TableHead className={cn("text-foreground h-12 px-4 align-middle font-bold whitespace-nowrap", isAr ? "text-right" : "text-left")}>{t('table.age', T)}</TableHead>
+                <TableHead className={cn("text-foreground h-12 px-4 align-middle font-bold whitespace-nowrap", isAr ? "text-right" : "text-left")}>{t('table.gender', T)}</TableHead>
+                <TableHead className={cn("text-foreground h-12 px-4 align-middle font-bold whitespace-nowrap", isAr ? "text-right" : "text-left")}>{t('table.last_visit', T)}</TableHead>
+                <TableHead className={cn("text-foreground h-12 px-4 align-middle font-bold whitespace-nowrap", isAr ? "text-right" : "text-left")}>{t('table.actions', T)}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody className="divide-y divide-border/30">
+              {filteredPatients.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((patient) => (
+                <TableRow
+                  key={patient.id}
+                  className="hover:bg-muted/20 transition-colors"
+                >
+                  <TableCell className={cn("p-4 align-middle whitespace-nowrap", isAr ? "text-right" : "text-left")} style={{ fontWeight: 600 }}>
+                    {isAr ? patient.name_ar : patient.name_en}
+                  </TableCell>
+                  <TableCell className={cn("p-4 align-middle whitespace-nowrap text-muted-foreground", isAr ? "text-right" : "text-left")}>
+                    {patient.phone}
+                  </TableCell>
+                  <TableCell className={cn("p-4 align-middle whitespace-nowrap", isAr ? "text-right" : "text-left")}>
+                    {patient.age}
+                  </TableCell>
+                  <TableCell className={cn("p-4 align-middle whitespace-nowrap", isAr ? "text-right" : "text-left")}>
+                    {patient.gender_ar === 'ذكر' ? t('dialog.male', T) : patient.gender_ar === 'أنثى' ? t('dialog.female', T) : t('dialog.other', T)}
+                  </TableCell>
+                  <TableCell className={cn("p-4 align-middle whitespace-nowrap", isAr ? "text-right" : "text-left")}>
+                    <span
+                      data-slot="badge"
+                      className="inline-flex items-center justify-center rounded-md border px-2.5 py-1 text-xs font-bold w-fit whitespace-nowrap shrink-0 bg-secondary/10 text-secondary border-transparent"
+                    >
+                      {patient.lastVisit}
+                    </span>
+                  </TableCell>
+                  <TableCell className="p-4 align-middle whitespace-nowrap">
+                    <div className="flex gap-3">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleOpenDialog('view', patient)}
+                        className="hover:bg-primary px-2 hover:text-white transition-all duration-300"
                       >
-                        {patient.lastVisit}
-                      </span>
-                    </td>
-                    <td data-slot="table-cell" className="p-4 align-middle whitespace-nowrap">
-                      <div className="flex gap-3">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleOpenDialog('view', patient)}
-                          className="hover:bg-primary px-2 hover:text-white transition-all duration-300"
-                        >
-                          <Eye className="size-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleOpenDialog('edit', patient)}
-                          className="hover:bg-primary px-2 hover:text-white transition-all duration-300"
-                        >
-                          <SquarePen className="size-4" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                {filteredPatients.length === 0 && (
-                  <tr>
-                    <td colSpan={6} className="h-40 text-center text-muted-foreground p-4">
-                      {t('no_results', T)}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+                        <Eye className="size-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleOpenDialog('edit', patient)}
+                        className="hover:bg-primary px-2 hover:text-white transition-all duration-300"
+                      >
+                        <SquarePen className="size-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+              {filteredPatients.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={6} className="h-40 text-center text-muted-foreground p-4">
+                    {t('no_results', T)}
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </section>
 
           <TableFooter
             variant="table"
@@ -228,7 +235,6 @@ const PatientsList = () => {
               setCurrentPage(1);
             }}
           />
-        </section>
       </article>
       </div>
 
