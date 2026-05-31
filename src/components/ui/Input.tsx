@@ -51,11 +51,9 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         value = value.replace(/-/g, '');
         if (value && parseFloat(value) < 0) value = '0';
       } else if (
-        props.name?.toLowerCase().includes('name') ||
         props.name?.toLowerCase().includes('role') ||
         props.name?.toLowerCase().includes('country') ||
-        props.name?.toLowerCase().includes('city') ||
-        props.name?.toLowerCase().includes('surname')
+        props.name?.toLowerCase().includes('city')
       ) {
         // Only allow letters (any language) and spaces
         value = value.replace(/[^\p{L}\s]/gu, '');

@@ -21,10 +21,13 @@ import {
   SelectValue,
 } from "../../components/ui/select"
 
+import { useAuth } from '../../contexts/AuthContext'
+import { RegisterSchema } from '../../utils/schemas'
 import { usePreloader } from '../../contexts/PreloaderContext'
 import { cn } from '../../utils/cn'
 
 const RegisterForm = () => {
+  const { register } = useAuth()
   const { isLoaded, isExiting } = usePreloader()
   const canAnimate = isLoaded && !isExiting
   const navigate = useNavigate()
@@ -100,20 +103,53 @@ const RegisterForm = () => {
       return;
     }
 
+    // Map fields to register schema structure
+    const payload = {
+      role: "ROLE_CLINIC_OWNER" as const,
+      clinicName: formData.clinicName || undefined,
+      specialty: formData.specialty || undefined,
+      country: formData.country || undefined,
+      city: formData.city || undefined,
+      address: formData.address || undefined,
+      clinicPhone: formData.phone || undefined,
+      user: {
+        firstName: formData.firstName,
+        surName: formData.surname,
+        lastName: formData.lastName,
+        email: formData.email,
+        password: formData.password,
+        phoneNumber: formData.ownerPhone,
+        gender: (formData.gender === "male" ? "MALE" : "FEMALE") as any,
+        dateOfBirth: formData.dob,
+        permissions: ["MANAGE_DOCTORS", "MANAGE_SECRETARIES"]
+      }
+    }
+
+    // Zod validation
+    const validation = RegisterSchema.safeParse(payload)
+    if (!validation.success) {
+      const errorMsg = validation.error.issues[0]?.message || 'Validation failed'
+      window.showToast(errorMsg, 'error')
+      return
+    }
+
     startTransition(async () => {
       setOptimisticStatus('جاري إرسال طلبك...')
 
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500))
+      try {
+        await register(payload)
 
-      // Success feedback
-      window.showToast('تم إنشاء الحساب بنجاح! يمكنك الآن تسجيل الدخول')
+        // Success feedback
+        window.showToast('تم إنشاء الحساب بنجاح! يرجى التحقق من بريدك الإلكتروني لتفعيل حسابك', 'success')
 
-      // Trigger seamless transition before navigating
-      if (window.triggerExitTransition) {
-        await window.triggerExitTransition()
+        // Trigger seamless transition before navigating
+        if (window.triggerExitTransition) {
+          await window.triggerExitTransition()
+        }
+        navigate('/verify-email', { state: { email: formData.email } })
+      } catch (err: any) {
+        window.showToast(err.message || 'Registration failed', 'error')
       }
-      navigate('/login')
     })
   }
 

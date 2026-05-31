@@ -8,7 +8,7 @@ import path from 'path'
 export default defineConfig({
   plugins: [
     react(),
-        babel({ presets: [reactCompilerPreset()] }),
+    babel({ presets: [reactCompilerPreset()] }),
     tailwindcss(),
   ],
   base: '/',
@@ -18,16 +18,7 @@ export default defineConfig({
     },
   },
   build: {
-    // Performance: Minification and source maps
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true,
-        drop_debugger: true,
-      },
-    },
-    // Performance: Chunking strategy
- // Performance: Chunking strategy
+    minify: 'esbuild',
     rollupOptions: {
       output: {
         manualChunks(id) {
@@ -38,26 +29,41 @@ export default defineConfig({
             if (id.includes('gsap') || id.includes('lenis') || id.includes('nprogress')) {
               return 'vendor-utils';
             }
-            return 'vendor'; // All other node_modules
+            return 'vendor';
           }
         },
       },
     },
-    // Performance: Asset optimization
-    assetsInlineLimit: 4096, // 4KB
+    assetsInlineLimit: 4096,
     cssCodeSplit: true,
     sourcemap: false,
-    // Performance: Faster builds
     reportCompressedSize: false,
   },
-  // Security: Prevent source leaks and ensure secure deps
   server: {
+    proxy: {
+      '/api': {
+        target: 'http://178.128.198.121:8080/api/v1',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/api/, ''),
+      }
+    },
     headers: {
-      'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' data: https://fonts.gstatic.com;",
-      'X-Content-Type-Options': 'nosniff',
-      'X-Frame-Options': 'DENY',
-      'X-XSS-Protection': '1; mode=block',
-      'Referrer-Policy': 'strict-origin-when-cross-origin',
-    }
+    'Content-Security-Policy': `
+      default-src 'self';
+      connect-src 'self' http://178.128.198.121:8080/api/v1 ws: wss:;
+      script-src 'self' 'unsafe-inline' 'unsafe-eval';
+      worker-src 'self' blob:;
+      style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+      img-src 'self' data: https:;
+      font-src 'self' data: https://fonts.gstatic.com;
+      frame-src 'self' https://www.google.com https://maps.google.com;
+    `.replace(/\n/g, ''),
+
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'SAMEORIGIN',
+    'X-XSS-Protection': '1; mode=block',
+    'Referrer-Policy': 'strict-origin-when-cross-origin',
   }
+}
 })

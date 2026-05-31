@@ -39,7 +39,7 @@ import EmailChangeDialog from './EmailChangeDialog';
 import SettingsView from '../Settings/SettingsView';
 
 const ProfileView = () => {
-  const { profileImage, updateProfileImage } = useAuth();
+  const { profileImage, updateProfileImage, user } = useAuth();
   const { isLoaded, isExiting } = usePreloader();
   const { dir, isAr, t } = useLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -111,7 +111,13 @@ const ProfileView = () => {
     address: t('profile.address_val', T_PAGE)
   });
 
-  const [personalPhone, setPersonalPhone] = useState('0789651800');
+  const [personalPhone, setPersonalPhone] = useState(user?.phoneNumber || '0789651800');
+
+  useEffect(() => {
+    if (user?.phoneNumber) {
+      setPersonalPhone(user.phoneNumber);
+    }
+  }, [user]);
 
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
 
@@ -239,7 +245,7 @@ const ProfileView = () => {
             {/* Profile Card */}
             <div data-slot="card" className="tab-pane text-card-foreground flex flex-col sm:flex-row items-center justify-between gap-6 rounded-xl border p-8 bg-linear-to-br from-white via-white to-primary/5 border-border shadow-lg hover:shadow-xl transition-all duration-300">
               <div className={cn("flex-1 text-center font-bold", isAr ? "sm:text-right" : "sm:text-left")}>
-                <h2 className="text-3xl mb-2 font-bold text-foreground">{t('profile.doctor_name_val', T_PAGE)}</h2>
+                <h2 className="text-3xl mb-2 font-bold text-foreground">{user ? `د. ${user.firstName} ${user.lastName}` : t('profile.doctor_name_val', T_PAGE)}</h2>
                 <div className="flex flex-col gap-2">
                   <div className={cn("flex items-center justify-center", isAr ? "sm:justify-end" : "sm:justify-start")}>
                     <span className="inline-flex items-center justify-center rounded-xl border text-xs font-medium bg-primary/10 text-primary border-primary/20 px-3 py-1 gap-1">
@@ -249,11 +255,11 @@ const ProfileView = () => {
                   </div>
                   <div className={cn("flex items-center justify-center text-muted-foreground", isAr ? "sm:justify-end" : "sm:justify-start")}>
                     <Mail size={16} className={isAr ? "ml-2" : "mr-2"} />
-                    <span>dr.ahmed@medexa.com</span>
+                    <span>{user ? user.email : "dr.ahmed@medexa.com"}</span>
                   </div>
                   <div className={cn("flex items-center justify-center text-muted-foreground", isAr ? "sm:justify-end" : "sm:justify-start")}>
                     <Phone size={16} className={isAr ? "ml-2" : "mr-2"} />
-                    <span dir="ltr">0789651800</span>
+                    <span dir="ltr">{user ? user.phoneNumber : "0789651800"}</span>
                   </div>
                 </div>
               </div>
@@ -295,21 +301,21 @@ const ProfileView = () => {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="flex flex-col gap-2">
                       <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('common.first_name')}</label>
-                      <Input defaultValue={t('profile.first_name_val', T_PAGE)} icon={<User size={18} />} className="h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold" />
+                      <Input key={user?.firstName} defaultValue={user ? user.firstName : t('profile.first_name_val', T_PAGE)} icon={<User size={18} />} className="h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold" />
                     </div>
                     <div className="flex flex-col gap-2">
                       <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('common.surname')}</label>
-                      <Input defaultValue={t('profile.surname_val', T_PAGE)} icon={<User size={18} />} className="h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold" />
+                      <Input key={user?.surName} defaultValue={user ? user.surName : t('profile.surname_val', T_PAGE)} icon={<User size={18} />} className="h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold" />
                     </div>
                     <div className="flex flex-col gap-2">
                       <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('common.last_name')}</label>
-                      <Input defaultValue={t('profile.last_name_val', T_PAGE)} icon={<User size={18} />} className="h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold" />
+                      <Input key={user?.lastName} defaultValue={user ? user.lastName : t('profile.last_name_val', T_PAGE)} icon={<User size={18} />} className="h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold" />
                     </div>
                   </div>
                   <div className="flex flex-col gap-2">
                     <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('common.email')}</label>
                     <div className="flex gap-2">
-                      <Input readOnly value="dr.ahmed@medexa.com" className="flex-1 h-11 bg-muted/50 border-border cursor-not-allowed text-muted-foreground" />
+                      <Input readOnly value={user ? user.email : "dr.ahmed@medexa.com"} className="flex-1 h-11 bg-muted/50 border-border cursor-not-allowed text-muted-foreground" />
                       <button
                         onClick={() => setIsEmailModalOpen(true)}
                         className="h-11 px-4 border border-primary/30 rounded-xl text-primary hover:bg-primary/5 transition-all flex items-center gap-2 text-sm font-medium"
@@ -331,7 +337,7 @@ const ProfileView = () => {
                   <div className="flex flex-col gap-6">
                     <div className="flex flex-col gap-2">
                       <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('common.gender')}</label>
-                      <Select defaultValue="ذكر">
+                      <Select key={user?.gender} defaultValue={user?.gender === "FEMALE" ? "أنثى" : "ذكر"}>
                         <SelectTrigger className="h-11 bg-muted/30 border-border font-bold">
                           <SelectValue placeholder={t('common.gender')} />
                         </SelectTrigger>
@@ -349,7 +355,7 @@ const ProfileView = () => {
                           className={cn("absolute top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none z-10", isAr ? "left-5" : "right-5")}
                         />
                         <Flatpickr
-                          value="1985-05-15"
+                          value={user ? user.dateOfBirth : "1985-05-15"}
                           className={cn("flex h-11 w-full rounded-xl border border-border bg-muted/30 px-3 py-2 text-sm font-bold focus:border-primary focus:bg-white transition-all outline-none", isAr ? "pl-10" : "pr-10 text-left!")}
                           options={{
                             locale: isAr ? Arabic : undefined,

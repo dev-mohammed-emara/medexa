@@ -5,11 +5,11 @@ import { TransitionLink } from '../../components/transition/TransitionLink'
 import BtnPrimary from '../../components/ui/BtnPrimary'
 import Input from '../../components/ui/Input'
 import { useAuth } from '../../contexts/AuthContext'
-
 import { loginTranslations } from '../../constants/translations/login'
 import { useLanguage } from '../../contexts/LanguageContext'
 import { usePreloader } from '../../contexts/PreloaderContext'
 import { cn } from '../../utils/cn'
+import { LoginSchema } from '../../utils/schemas'
 
 const LoginForm = () => {
   const { isAr, t } = useLanguage()
@@ -20,6 +20,7 @@ const LoginForm = () => {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [isForgot, setIsForgot] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
   const { login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
@@ -32,26 +33,48 @@ const LoginForm = () => {
 
     if (isForgot) {
       if (email) {
-        // Trigger seamless transition before navigating
-        if (window.triggerExitTransition) {
-          await window.triggerExitTransition()
+        setIsLoading(true)
+        try {
+          // Simulate forgot password API call
+          await new Promise(resolve => setTimeout(resolve, 1000))
+          if (window.triggerExitTransition) {
+            await window.triggerExitTransition()
+          }
+          window.showToast?.(t('reset_success', T), 'success')
+          navigate(from, { replace: true })
+        } catch (err: any) {
+          window.showToast?.(err.message || 'An error occurred', 'error')
+        } finally {
+          setIsLoading(false)
         }
-        login()
-        window.showToast?.(t('reset_success', T), 'success')
-        navigate(from, { replace: true })
       }
       return
     }
 
     if (email && password) {
-      // Trigger seamless transition before navigating
-      if (window.triggerExitTransition) {
-        await window.triggerExitTransition()
+      const validation = LoginSchema.safeParse({ email, password })
+      if (!validation.success) {
+        const errorMsg = validation.error.issues[0]?.message || 'Validation failed'
+        window.showToast?.(errorMsg, 'error')
+        return
       }
 
-      login()
-      window.showToast?.(t('toast_success', T))
-      navigate(from, { replace: true })
+      setIsLoading(true)
+      try {
+        await login(email, password)
+        
+        // Trigger seamless transition before navigating
+        if (window.triggerExitTransition) {
+          await window.triggerExitTransition()
+        }
+
+        window.showToast?.(t('toast_success', T))
+        navigate(from, { replace: true })
+      } catch (err: any) {
+        window.showToast?.(err.message || 'Invalid email or password', 'error')
+      } finally {
+        setIsLoading(false)
+      }
     }
   }
 
@@ -94,6 +117,7 @@ const LoginForm = () => {
               autoComplete="email"
               onChange={(e) => setEmail(e.target.value)}
               icon={<FiMail className="size-5" />}
+              disabled={isLoading}
             />
             {isForgot && (
               <div className={cn(
@@ -128,6 +152,7 @@ const LoginForm = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   icon={<FiLock className="size-5" />}
                   className="pl-12"
+                  disabled={isLoading}
                 />
                 <button
                   type="button"
@@ -152,6 +177,8 @@ const LoginForm = () => {
           <BtnPrimary
             className="w-full h-12 rounded-xl"
             type="submit"
+            isPending={isLoading}
+            disabled={isLoading}
           >
             <FiLogIn className={cn("size-5", isAr ? "ml-2" : "mr-2")} />
             {isForgot ? t('send_reset_link', T) : t('login_btn', T)}

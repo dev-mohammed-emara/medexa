@@ -17,7 +17,7 @@ interface NavbarProps {
 const Navbar = ({ onMenuClick }: NavbarProps) => {
   const navigate = useNavigate()
   const { isAr, t, language, setLanguage } = useLanguage()
-  const { profileImage } = useAuth()
+  const { profileImage, logout, user } = useAuth()
   const T_PAGE = navTranslations;
 
   const [showNotifications, setShowNotifications] = useState(false)
@@ -43,6 +43,7 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
       await window.triggerExitTransition()
     }
 
+    await logout()
     window.showToast(t('nav.logout_success'))
     navigate('/login')
   }
@@ -210,14 +211,14 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
             className={cn("flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity", isAr ? "border-r border-border pr-4" : "border-l border-border pl-4 flex-row-reverse")}
           >
             <div className={cn("hidden md:block", isAr ? "text-right" : "text-left")}>
-              <p className="text-sm font-bold">{t('nav.doctor_name', T_PAGE)}</p>
+              <p className="text-sm font-bold">{user ? `د. ${user.firstName} ${user.lastName}` : t('nav.doctor_name', T_PAGE)}</p>
               <p className="text-[10px] text-muted-foreground">{t('nav.clinic_owner', T_PAGE)}</p>
             </div>
             <div className="size-10 rounded-full border-2 border-primary bg-primary flex items-center justify-center text-white font-bold overflow-hidden shadow-md">
               {profileImage ? (
                 <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
               ) : (
-                isAr ? "أ" : "A"
+                user ? user.firstName.charAt(0).toUpperCase() : (isAr ? "أ" : "A")
               )}
             </div>
           </div>
@@ -237,19 +238,19 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
                   {profileImage ? (
                     <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
                   ) : (
-                    isAr ? "أ" : "A"
+                    user ? user.firstName.charAt(0).toUpperCase() : (isAr ? "أ" : "A")
                   )}
                 </div>
                 <div className={cn(isAr ? "text-right" : "text-left")}>
-                  <p className="text-sm font-bold mb-1">{t('nav.doctor_name', T_PAGE)}</p>
+                  <p className="text-sm font-bold mb-1">{user ? `د. ${user.firstName} ${user.lastName}` : t('nav.doctor_name', T_PAGE)}</p>
                   <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-1.5 text-muted-foreground">
                       <Mail className="size-3 shrink-0" />
-                      <p className="text-[10px]">dr.ahmed@medexa.com</p>
+                      <p className="text-[10px]">{user ? user.email : "dr.ahmed@medexa.com"}</p>
                     </div>
                     <div className="flex items-center gap-1.5 text-muted-foreground">
                       <Phone className="size-3 shrink-0" />
-                      <p className="text-[10px]" dir="ltr">0789651800</p>
+                      <p className="text-[10px]" dir="ltr">{user ? user.phoneNumber : "0789651800"}</p>
                     </div>
                   </div>
                 </div>
