@@ -1,5 +1,11 @@
+import { format } from 'date-fns'
+import { ar } from 'date-fns/locale'
+import "flatpickr/dist/flatpickr.css"
+import { Arabic } from "flatpickr/dist/l10n/ar.js"
 import { Check, Mail, Phone, Plus, Save, User, X } from 'lucide-react'
+import { FaCalendarAlt } from 'react-icons/fa'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import Flatpickr from "react-flatpickr"
 import { cn } from '../../utils/cn'
 import { Button } from '../../components/ui/Button'
 import Input from '../../components/ui/Input'
@@ -14,48 +20,42 @@ import {
 import Portal from '../../components/ui/Portal'
 import { useLanguage } from '../../contexts/LanguageContext'
 import { secretaryTranslations } from '../../constants/translations/secretary'
-
-import { useBroadcast } from '../../hooks/useBroadcast';
-
-interface Secretary {
-  id: number;
-  first_name_ar: string;
-  surname_ar: string;
-  last_name_ar: string;
-  first_name_en: string;
-  surname_en: string;
-  last_name_en: string;
-  name_ar: string;
-  name_en: string;
-  role_ar: string;
-  role_en: string;
-  status: string;
-  phone: string;
-  email: string;
-  gender_ar: string;
-  gender_en: string;
-  dob: string;
-  description_ar: string;
-  description_en: string;
-  permissions?: string[];
-}
+import { useBroadcast } from '../../hooks/useBroadcast'
+import { enUS } from 'date-fns/locale'
+import { createSecretary, updateSecretary } from '../../api/secretaryApi'
+import type { ApiSecretary } from '../../api/secretaryApi'
 
 interface SecretaryDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (data: Partial<Secretary>) => void;
+  onConfirm: (data: ApiSecretary) => void;
   mode: 'add' | 'edit' | 'view';
-  initialData?: Secretary | null;
+  initialData?: ApiSecretary | null;
 }
 
 const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: SecretaryDialogProps) => {
   const { isAr, t } = useLanguage();
   const { broadcast } = useBroadcast();
   const T = secretaryTranslations;
+  const currentLocale = isAr ? ar : enUS;
   const overlayRef = useRef<HTMLDivElement>(null);
-  const [selectedRole, setSelectedRole] = useState((isAr ? initialData?.role_ar : initialData?.role_en) || "");
-  const [selectedGender, setSelectedGender] = useState((isAr ? initialData?.gender_ar : initialData?.gender_en) || "");
+  const modalRef = useRef<HTMLDivElement>(null);
+  
+  const [selectedGender, setSelectedGender] = useState(initialData?.user?.gender || "");
+  const [selectedDob, setSelectedDob] = useState<string>(initialData?.user?.dateOfBirth || "");
   const [isClosing, setIsClosing] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  // Sync initialData values when dialog opens or changes
+  useEffect(() => {
+    if (initialData) {
+      setSelectedGender(initialData.user?.gender || "");
+      setSelectedDob(initialData.user?.dateOfBirth || "");
+    } else {
+      setSelectedGender("");
+      setSelectedDob("");
+    }
+  }, [initialData, isOpen]);
 
   const handleClose = useCallback(() => {
     setIsClosing(true);
@@ -79,41 +79,68 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (mode === 'view') {
       handleClose();
       return;
     }
-    const formData = new FormData(e.target as HTMLFormElement);
-    const formDataObj = Object.fromEntries(formData.entries());
 
-    const fName = (formDataObj['first_name_ar'] || formDataObj['first_name_en'] || '') as string;
-    const sName = (formDataObj['surname_ar'] || formDataObj['surname_en'] || '') as string;
-    const lName = (formDataObj['last_name_ar'] || formDataObj['last_name_en'] || '') as string;
+    setLoading(true);
+    try {
+      const formData = new FormData(e.target as HTMLFormElement);
+      const formDataObj = Object.fromEntries(formData.entries());
 
-    const data: Partial<Secretary> = {
-      ...initialData,
-      first_name_ar: isAr ? formDataObj['first_name_ar'] as string : initialData?.first_name_ar || '',
-      surname_ar: isAr ? formDataObj['surname_ar'] as string : initialData?.surname_ar || '',
-      last_name_ar: isAr ? formDataObj['last_name_ar'] as string : initialData?.last_name_ar || '',
-      first_name_en: !isAr ? formDataObj['first_name_en'] as string : initialData?.first_name_en || '',
-      surname_en: !isAr ? formDataObj['surname_en'] as string : initialData?.surname_en || '',
-      last_name_en: !isAr ? formDataObj['last_name_en'] as string : initialData?.last_name_en || '',
-      name_ar: isAr ? `${fName} ${sName} ${lName}` : initialData?.name_ar || '',
-      name_en: !isAr ? `${fName} ${sName} ${lName}` : initialData?.name_en || '',
-      email: formDataObj['secretary-email'] as string,
-      phone: formDataObj['secretary-phone'] as string,
-      role_ar: isAr ? selectedRole : initialData?.role_ar || '',
-      role_en: !isAr ? selectedRole : initialData?.role_en || '',
-      gender_ar: isAr ? selectedGender : initialData?.gender_ar || '',
-      gender_en: !isAr ? selectedGender : initialData?.gender_en || '',
-      status: 'active',
-    };
+      const permissions: string[] = []
+      const permissionCheckboxes = ['MANAGE_DOCTORS', 'MANAGE_SECRETARIES', 'MANAGE_CLINIC', 'MANAGE_PATIENTS', 'MANAGE_APPOINTMENTS']
+      permissionCheckboxes.forEach(p => {
+        const checkbox = (e.target as HTMLFormElement).querySelector(`#${p}`) as HTMLButtonElement
+        if (checkbox?.dataset.state === 'checked') permissions.push(p)
+      })
 
-    onConfirm(data);
-    broadcast({ type: 'DATA_UPDATE', module: 'secretaries' });
-    handleClose();
+      // Construct API payload
+      const userPayload: any = {
+        firstName: String(formDataObj.firstName),
+        surName: String(formDataObj.surName),
+        lastName: String(formDataObj.lastName),
+        email: String(formDataObj.email),
+        phoneNumber: String(formDataObj.phoneNumber),
+        gender: selectedGender || 'MALE',
+        dateOfBirth: selectedDob || '1990-01-01',
+        permissions: permissions.length > 0 ? permissions : ['MANAGE_DOCTORS', 'MANAGE_SECRETARIES']
+      }
+
+      // Password is required for adding new secretary
+      if (mode === 'add') {
+        userPayload.password = String(formDataObj.password)
+      }
+
+      const bodyPayload = {
+        user: userPayload
+      }
+
+      let responseData: ApiSecretary
+      if (mode === 'add') {
+        responseData = await createSecretary(bodyPayload)
+        window.showToast?.(t('toast_add_success', T), 'success')
+      } else {
+        // Edit mode (PUT)
+        if (!initialData?.uuid) {
+          throw new Error('Missing secretary UUID for update')
+        }
+        responseData = await updateSecretary(initialData.uuid, bodyPayload)
+        window.showToast?.(t('toast_update_success', T), 'success')
+      }
+
+      onConfirm(responseData);
+      broadcast({ type: 'DATA_UPDATE', module: 'secretaries' });
+      handleClose();
+    } catch (error: any) {
+      console.error(error)
+      window.showToast?.(error.message || t('error_save', T), 'error')
+    } finally {
+      setLoading(false);
+    }
   };
 
   const titles = { 
@@ -138,9 +165,10 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
           isClosing ? "animate-fadeOut" : "animate-fade"
         )}
         dir={isAr ? "rtl" : "ltr"}
-        onClick={(e) => e.target === overlayRef.current && handleClose()}
+        onClick={(e) => e.target === overlayRef.current && !loading && handleClose()}
       >
         <figure
+          ref={modalRef}
           role="dialog"
           className={cn(
             "bg-background relative w-full rounded-2xl border p-8 shadow-2xl max-w-2xl max-h-[90vh] flex flex-col outline-none",
@@ -149,6 +177,7 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
         >
           <button
             onClick={handleClose}
+            disabled={loading}
             type="button"
             className={cn(
                "absolute top-6 p-2 rounded-full hover:bg-muted transition-colors opacity-70 hover:opacity-100 outline-none z-20",
@@ -172,39 +201,42 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
                   <label htmlFor={inputId('first_name')} className="text-sm font-semibold text-foreground/80 pr-1">{t('first_name', T)}</label>
                   <Input
                     id={inputId('first_name')}
-                    name={isAr ? "first_name_ar" : "first_name_en"}
-                    defaultValue={isAr ? initialData?.first_name_ar : initialData?.first_name_en}
+                    name="firstName"
+                    defaultValue={initialData?.user?.firstName}
                     required
                     disabled={mode === 'view'}
                     placeholder={t('first_name_placeholder', T)}
                     icon={<User size={18} />}
                     className={inputClass}
+                    dir={isAr ? "rtl" : "ltr"}
                   />
                 </div>
                 <div className="flex flex-col gap-2 text-start">
                   <label htmlFor={inputId('surname')} className="text-sm font-semibold text-foreground/80 pr-1">{t('surname', T)}</label>
                   <Input
                     id={inputId('surname')}
-                    name={isAr ? "surname_ar" : "surname_en"}
-                    defaultValue={isAr ? initialData?.surname_ar : initialData?.surname_en}
+                    name="surName"
+                    defaultValue={initialData?.user?.surName}
                     required
                     disabled={mode === 'view'}
                     placeholder={t('surname_placeholder', T)}
                     icon={<User size={18} />}
                     className={inputClass}
+                    dir={isAr ? "rtl" : "ltr"}
                   />
                 </div>
                 <div className="flex flex-col gap-2 text-start">
                   <label htmlFor={inputId('last_name')} className="text-sm font-semibold text-foreground/80 pr-1">{t('last_name', T)}</label>
                   <Input
                     id={inputId('last_name')}
-                    name={isAr ? "last_name_ar" : "last_name_en"}
-                    defaultValue={isAr ? initialData?.last_name_ar : initialData?.last_name_en}
+                    name="lastName"
+                    defaultValue={initialData?.user?.lastName}
                     required
                     disabled={mode === 'view'}
                     placeholder={t('last_name_placeholder', T)}
                     icon={<User size={18} />}
                     className={inputClass}
+                    dir={isAr ? "rtl" : "ltr"}
                   />
                 </div>
               </div>
@@ -216,13 +248,14 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
                   <Input
                     id={inputId('email')}
                     type="email"
-                    name="secretary-email"
-                    defaultValue={initialData?.email}
+                    name="email"
+                    defaultValue={initialData?.user?.email}
                     required
                     disabled={mode === 'view'}
                     placeholder={t('email_placeholder', T)}
                     icon={<Mail size={18} />}
                     className={inputClass}
+                    dir="ltr"
                   />
                 </div>
 
@@ -231,8 +264,8 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
                   <label htmlFor={inputId('phone')} className="text-sm font-semibold text-foreground/80 pr-1">{t('phone', T)}</label>
                   <Input
                     id={inputId('phone')}
-                    name="secretary-phone"
-                    defaultValue={initialData?.phone}
+                    name="phoneNumber"
+                    defaultValue={initialData?.user?.phoneNumber}
                     required
                     disabled={mode === 'view'}
                     placeholder="07XXXXXXXX"
@@ -243,35 +276,51 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Role */}
-                <div className="flex flex-col gap-2 text-start">
-                  <label className="text-sm font-semibold text-foreground/80 pr-1">{t('job_role', T)}</label>
-                  <Select value={selectedRole} onValueChange={setSelectedRole} disabled={mode === 'view'}>
-                    <SelectTrigger className={cn("rounded-xl h-12 bg-input-background transition-all focus:ring-4 focus:ring-primary/10", ((isAr ? initialData?.role_ar : initialData?.role_en) || selectedRole) && "text-foreground font-bold")}>
-                      <SelectValue placeholder={t('choose_role', T)} />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-xl z-[600]" dir={isAr ? "rtl" : "ltr"}>
-                      <SelectItem value="سكرتيرة رئيسية">{t('role_main', T)}</SelectItem>
-                      <SelectItem value="استقبال">{t('role_reception', T)}</SelectItem>
-                      <SelectItem value="محاسبة">{t('role_accounting', T)}</SelectItem>
-                      <SelectItem value="إدارة عمليات">{t('role_operations', T)}</SelectItem>
-                    </SelectContent>
-                  </Select>
+              {/* Password field only on add mode */}
+              {mode === 'add' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="flex flex-col gap-2 text-start">
+                    <label htmlFor={inputId('password')} className="text-sm font-semibold text-foreground/80 pr-1">{t('password', T)}</label>
+                    <Input id={inputId('password')} type="password" name="password" required placeholder="••••••••" className={inputClass} dir="ltr" />
+                  </div>
                 </div>
+              )}
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Gender */}
                 <div className="flex flex-col gap-2 text-start">
                   <label className="text-sm font-semibold text-foreground/80 pr-1">{t('gender', T)}</label>
                   <Select value={selectedGender} onValueChange={setSelectedGender} disabled={mode === 'view'}>
-                    <SelectTrigger className={cn("rounded-xl h-12 bg-input-background transition-all focus:ring-4 focus:ring-primary/10", ((isAr ? initialData?.gender_ar : initialData?.gender_en) || selectedGender) && "text-foreground font-bold")}>
+                    <SelectTrigger className={cn("rounded-xl h-12 bg-input-background transition-all focus:ring-4 focus:ring-primary/10", (selectedGender) && "text-foreground font-bold")}>
                       <SelectValue placeholder={t('choose_gender', T)} />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl z-[600]" dir={isAr ? "rtl" : "ltr"}>
-                      <SelectItem value={isAr ? "ذكر" : "Male"}>{t('male', T)}</SelectItem>
-                      <SelectItem value={isAr ? "أنثى" : "Female"}>{t('female', T)}</SelectItem>
+                      <SelectItem value="MALE">{isAr ? "ذكر" : "Male"}</SelectItem>
+                      <SelectItem value="FEMALE">{isAr ? "أنثى" : "Female"}</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+
+                {/* DOB Pickr */}
+                <div className="flex flex-col gap-2 text-start">
+                  <label className="text-sm font-semibold text-foreground/80 pr-1">{t('dob', T)}</label>
+                  <div className={cn("relative group flex items-center justify-between h-12 bg-input-background border border-border rounded-xl px-4 transition-all focus-within:ring-4 focus-within:ring-primary/10", isAr ? "flex-row" : "flex-row-reverse")}>
+                    <Flatpickr
+                      value={selectedDob}
+                      onChange={([date]) => setSelectedDob(date ? date.toISOString().split('T')[0] : '')}
+                      disabled={mode === 'view'}
+                      options={{
+                        locale: isAr ? Arabic : undefined,
+                        dateFormat: "d F Y",
+                        disableMobile: true,
+                        maxDate: "today",
+                        formatDate: (date: Date) => format(date, "d MMMM yyyy", { locale: currentLocale })
+                      }}
+                      placeholder={t('select_date', T)}
+                      className={cn("flex-1 bg-transparent border-none outline-none font-bold text-base md:text-sm h-full", isAr ? "text-right" : "text-left", mode === "view" && "opacity-50 pointer-events-none")}
+                    />
+                    <FaCalendarAlt className="text-muted-foreground pointer-events-none group-focus-within:text-primary transition-colors size-4" />
+                  </div>
                 </div>
               </div>
 
@@ -280,10 +329,11 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
                 <label className="text-lg font-bold block">{t('permissions', T)}</label>
                 <p className="text-xs text-muted-foreground mb-3">{t('permissions_desc', T)}</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 px-1">
-                  <PermissionCheckbox id="manageAppointments" label={t('perm_appointments', T)} defaultChecked={initialData?.permissions?.includes('manageAppointments') ?? true} disabled={mode === 'view'} />
-                  <PermissionCheckbox id="managePatients" label={t('perm_patients', T)} defaultChecked={initialData?.permissions?.includes('managePatients') ?? true} disabled={mode === 'view'} />
-                  <PermissionCheckbox id="medicalRecords" label={t('perm_records', T)} defaultChecked={initialData?.permissions?.includes('medicalRecords') ?? false} disabled={mode === 'view'} />
-                  <PermissionCheckbox id="financialReports" label={t('perm_financial', T)} defaultChecked={initialData?.permissions?.includes('financialReports')} disabled={mode === 'view'} />
+                  <PermissionCheckbox id="MANAGE_DOCTORS" label={isAr ? "إدارة الأطباء" : "Manage Doctors"} defaultChecked={initialData?.user?.permissions?.includes('MANAGE_DOCTORS') ?? true} disabled={mode === 'view'} />
+                  <PermissionCheckbox id="MANAGE_SECRETARIES" label={isAr ? "إدارة السكرتاريا" : "Manage Secretaries"} defaultChecked={initialData?.user?.permissions?.includes('MANAGE_SECRETARIES') ?? true} disabled={mode === 'view'} />
+                  <PermissionCheckbox id="MANAGE_CLINIC" label={isAr ? "إدارة العيادة" : "Manage Clinic"} defaultChecked={initialData?.user?.permissions?.includes('MANAGE_CLINIC') ?? true} disabled={mode === 'view'} />
+                  <PermissionCheckbox id="MANAGE_PATIENTS" label={isAr ? "إدارة المرضى" : "Manage Patients"} defaultChecked={initialData?.user?.permissions?.includes('MANAGE_PATIENTS') ?? false} disabled={mode === 'view'} />
+                  <PermissionCheckbox id="MANAGE_APPOINTMENTS" label={isAr ? "إدارة المواعيد" : "Manage Appointments"} defaultChecked={initialData?.user?.permissions?.includes('MANAGE_APPOINTMENTS')} disabled={mode === 'view'} />
                 </div>
               </footer>
             </form>
@@ -295,14 +345,16 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
                 <Button
                   type="submit"
                   form="secretaryForm"
+                  disabled={loading}
                   className="flex-1 h-12 rounded-xl text-base shadow-lg shadow-primary/20"
                 >
                   {mode === 'add' ? <Plus size={20} className={cn(isAr ? "ml-2" : "mr-2")} /> : <Save size={20} className={cn(isAr ? "ml-2" : "mr-2")} />}
-                  {mode === 'add' ? t('add_employee', T) : t('save_changes', T)}
+                  {loading ? t('loading', T) : (mode === 'add' ? t('add_employee', T) : t('save_changes', T))}
                 </Button>
                 <Button
                   type="button"
                   variant="outline"
+                  disabled={loading}
                   onClick={handleClose}
                   className="flex-1 h-12 rounded-xl text-base"
                 >
@@ -347,6 +399,5 @@ const PermissionCheckbox = ({ id, label, defaultChecked = false, disabled = fals
     </div>
   )
 }
-
 
 export default SecretaryDialog

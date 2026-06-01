@@ -1,6 +1,5 @@
 import useLenis from '@/hooks/useLenis'
 import { Navigate, Route, BrowserRouter as Router, Routes } from 'react-router-dom'
-import ProtectedRoute from './components/auth/ProtectedRoute'
 import { ToastContainer } from './components/ui/Toast'
 import { AuthProvider } from './contexts/AuthContext'
 import { SidebarProvider } from './contexts/SidebarContext'
@@ -82,7 +81,7 @@ const App = () => {
                 </Route>
 
                 {/* Guarded Application Routes */}
-                <Route element={<ProtectedRoute />}>
+                {/* <Route element={<ProtectedRoute />}> */}
                   <Route index element={<Dashboard />} />
                   <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/doctors" element={<Doctors />} />
@@ -94,7 +93,7 @@ const App = () => {
                   <Route path="/profile" element={<Profile />} />
                   <Route path="/500" element={<ServerError />} />
                   <Route path="/419" element={<SessionExpired />} />
-                </Route>
+                {/* </Route> */}
 
                 {/* Aliases for misspelled routes reported in production - preserved as redirects */}
                 <Route path="/dcotros" element={<Navigate to="/doctors" replace />} />

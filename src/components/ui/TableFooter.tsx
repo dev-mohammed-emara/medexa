@@ -25,6 +25,7 @@ const TableFooter = ({
   itemsPerPage,
   currentPage,
   onPageChange,
+  onItemsPerPageChange,
   totalPages,
   className,
   variant = 'table'
@@ -53,8 +54,29 @@ const TableFooter = ({
           <span className="text-sm text-muted-foreground font-bold">
             {isAr ? "إجمالي السجلات:" : "Total Records:"} <span className="font-black text-foreground ml-1">{totalItems}</span>
           </span>
-
-
+          {onItemsPerPageChange && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground font-bold">
+                {isAr ? "حجم الصفحة:" : "Page Size:"}
+              </span>
+              <div className="min-w-[70px]">
+                <Select
+                  value={String(itemsPerPage)}
+                  onValueChange={onItemsPerPageChange}
+                >
+                  <SelectTrigger className="h-9 rounded-xl border border-border bg-white text-foreground px-3 flex items-center justify-center gap-2 font-bold">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent smallZ>
+                    <SelectItem value="5" className="font-bold">5</SelectItem>
+                    <SelectItem value="10" className="font-bold">10</SelectItem>
+                    <SelectItem value="20" className="font-bold">20</SelectItem>
+                    <SelectItem value="50" className="font-bold">50</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

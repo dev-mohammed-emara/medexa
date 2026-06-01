@@ -1,11 +1,13 @@
 import Input from '@/components/ui/Input';
 import Portal from '@/components/ui/Portal';
 import { cn } from '@/utils/cn';
-import { Key, Mail, Shield, X } from 'lucide-react';
+import { Key, Mail, Shield, X, Loader2 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { FaLock } from 'react-icons/fa';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { profileTranslations } from '@/constants/profile';
+import { useAuth } from '@/contexts/AuthContext';
+import { getCookie } from '@/utils/cookie';
 
 interface EmailChangeDialogProps {
   isOpen: boolean;
@@ -18,6 +20,11 @@ const EmailChangeDialog = ({ isOpen, onClose }: EmailChangeDialogProps) => {
   const [isClosing, setIsClosing] = useState(false);
   const { isAr, t, dir } = useLanguage();
   const T_PAGE = profileTranslations;
+  const { user } = useAuth();
+
+  const [newEmail, setNewEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleClose = useCallback(() => {
     setIsClosing(true);
@@ -59,9 +66,44 @@ const EmailChangeDialog = ({ isOpen, onClose }: EmailChangeDialogProps) => {
 
   if (!isOpen) return null;
 
-  const handleSubmit = () => {
-    window.showToast?.(t('profile.email_confirm_sent', T_PAGE), 'success');
-    handleClose();
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newEmail || !password) return;
+
+    setLoading(true);
+    try {
+      const token = getCookie('token');
+      const response = await fetch('/api/auth/email/verify', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          email: newEmail,
+          newEmail: newEmail,
+          password: password
+        })
+      });
+
+      if (!response.ok) {
+        let errorMsg = 'Failed to verify email';
+        try {
+          const errData = await response.json();
+          errorMsg = errData.message || errData.error || errorMsg;
+        } catch (e) {}
+        throw new Error(errorMsg);
+      }
+
+      const data = await response.json();
+      window.showToast?.(data.message || t('profile.email_confirm_sent', T_PAGE), 'success');
+      handleClose();
+    } catch (err: any) {
+      console.error(err);
+      window.showToast?.(err.message || 'Error updating email', 'error');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -73,7 +115,7 @@ const EmailChangeDialog = ({ isOpen, onClose }: EmailChangeDialogProps) => {
           isClosing ? "animate-fadeOut" : "animate-fade"
         )}
         dir={dir}
-        onClick={(e) => e.target === overlayRef.current && handleClose()}
+        onClick={(e) => e.target === overlayRef.current && !loading && handleClose()}
       >
         <div
           ref={modalRef}
@@ -92,43 +134,51 @@ const EmailChangeDialog = ({ isOpen, onClose }: EmailChangeDialogProps) => {
             </p>
           </div>
 
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <label className="flex items-center gap-2 font-medium text-sm" style={{ fontWeight: 600 }}>
+          <form onSubmit={handleSubmit} className="space-y-4 py-4">
+            <div className="space-y-2 text-start">
+              <label className="flex items-center gap-2 font-medium text-sm text-foreground" style={{ fontWeight: 600 }}>
                 {t('profile.current_email', T_PAGE)}
               </label>
               <Input
                 readOnly
-                value="ahmed.alsaeed@medexa.jo"
-                className="h-11 bg-muted/50 border-border cursor-not-allowed text-muted-foreground"
+                value={user?.email || "user@test.com"}
+                className="h-11 bg-muted/50 border-border cursor-not-allowed text-muted-foreground font-bold"
               />
             </div>
 
-            <div className="space-y-2">
-              <label className="flex items-center gap-2 font-medium text-sm" style={{ fontWeight: 600 }}>
+            <div className="space-y-2 text-start">
+              <label className="flex items-center gap-2 font-medium text-sm text-foreground" style={{ fontWeight: 600 }}>
                 {t('profile.new_email', T_PAGE)}
               </label>
               <Input
                 type="email"
+                required
+                disabled={loading}
                 placeholder="example@medexa.jo"
-                className="h-11 bg-background border-border focus:border-primary focus:bg-white transition-all duration-300"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                className="h-11 bg-background border-border focus:border-primary focus:bg-white transition-all duration-300 font-bold"
               />
             </div>
 
-            <div className="space-y-2">
-              <label className="flex items-center gap-2 font-medium text-sm" style={{ fontWeight: 600 }}>
+            <div className="space-y-2 text-start">
+              <label className="flex items-center gap-2 font-medium text-sm text-foreground" style={{ fontWeight: 600 }}>
                 {t('profile.password', T_PAGE)}
               </label>
               <Input
                 type="password"
+                required
+                disabled={loading}
                 icon={<FaLock size={16} />}
                 placeholder="••••••••"
-                className="h-11 bg-background border-border focus:border-primary focus:bg-white transition-all duration-300"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="h-11 bg-background border-border focus:border-primary focus:bg-white transition-all duration-300 font-bold"
               />
-              <p className="text-xs text-muted-foreground">{t('profile.password_note', T_PAGE)}</p>
+              <p className="text-xs text-muted-foreground text-start">{t('profile.password_note', T_PAGE)}</p>
             </div>
 
-            <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl">
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-start">
               <div className="flex gap-2">
                 <Shield size={16} className="text-amber-600 shrink-0" />
                 <p className="text-xs text-amber-800">
@@ -139,23 +189,31 @@ const EmailChangeDialog = ({ isOpen, onClose }: EmailChangeDialogProps) => {
 
             <div className="flex gap-3 pt-4">
               <button
-                onClick={handleSubmit}
-                className="flex-1 inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-300 text-primary-foreground bg-primary hover:bg-primary/90 hover:shadow-lg hover:-translate-y-0.5 h-11 px-8"
+                type="submit"
+                disabled={loading}
+                className="flex-1 inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-300 text-primary-foreground bg-primary hover:bg-primary/90 hover:shadow-lg hover:-translate-y-0.5 h-11 px-8 disabled:opacity-50"
               >
-                <Key size={16} className={isAr ? "ml-1" : "mr-1"} />
+                {loading ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <Key size={16} className={isAr ? "ml-1" : "mr-1"} />
+                )}
                 {t('profile.confirm_change', T_PAGE)}
               </button>
               <button
+                type="button"
+                disabled={loading}
                 onClick={handleClose}
-                className="flex-1 inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-300 border bg-background text-foreground hover:bg-accent hover:text-accent-foreground h-11 px-8"
+                className="flex-1 inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-300 border bg-background text-foreground hover:bg-accent hover:text-accent-foreground h-11 px-8 disabled:opacity-50"
               >
                 {t('common.cancel')}
               </button>
             </div>
-          </div>
+          </form>
 
           <button
             onClick={handleClose}
+            disabled={loading}
             className={`absolute top-4 ${isAr ? 'left-4' : 'right-4'} rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2`}
           >
             <X size={24} />
@@ -168,4 +226,3 @@ const EmailChangeDialog = ({ isOpen, onClose }: EmailChangeDialogProps) => {
 };
 
 export default EmailChangeDialog;
-
