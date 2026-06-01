@@ -142,11 +142,11 @@ const SecretaryList = () => {
   };
 
   const confirmDelete = async () => {
-    if (!secretaryToDelete?.uuid) return;
+    if (!secretaryToDelete?.user?.uuid) return;
 
     setDeleting(true);
     try {
-      await deleteSecretary(secretaryToDelete.uuid);
+      await deleteSecretary(secretaryToDelete.user.uuid);
       window.showToast?.(t('toast_delete_success', T), 'success');
       loadSecretaries();
       broadcast({ type: 'DATA_UPDATE', module: 'secretaries' });

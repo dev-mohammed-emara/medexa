@@ -1,11 +1,11 @@
+import { fetchClinicMe, fetchInsurances, updateClinicMe } from '@/api/clinicApi';
 import Input from '@/components/ui/Input';
-import Modal from '@/components/ui/Modal';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/Switch';
 import TimePicker from '@/components/ui/TimePicker';
@@ -17,29 +17,41 @@ import { cn } from '@/utils/cn';
 import { Arabic } from "flatpickr/dist/l10n/ar.js";
 import "flatpickr/dist/themes/material_blue.css";
 import {
-  Building2,
-  Camera,
-  Check,
-  Clock,
-  Key,
-  Mail,
-  MapPin,
-  Pen,
-  Phone,
-  Plus,
-  Shield,
-  User,
-  X
+    Building2,
+    Camera,
+    Check,
+    Clock,
+    Key,
+    Mail,
+    MapPin,
+    Pen,
+    Phone,
+    Plus,
+    Shield,
+    User,
+    X
 } from 'lucide-react';
-import { useRef, useState, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Flatpickr from "react-flatpickr";
 import { FaCalendarAlt } from 'react-icons/fa';
 import { useSearchParams } from 'react-router-dom';
-import EmailChangeDialog from './EmailChangeDialog';
 import SettingsView from '../Settings/SettingsView';
+import EmailChangeDialog from './EmailChangeDialog';
+import { getCookie } from '@/utils/cookie';
+import { format } from 'date-fns';
+
+const DAY_MAPPING: { [key: string]: { labelKey: string, index: number } } = {
+  SUNDAY: { labelKey: 'profile.sunday', index: 0 },
+  MONDAY: { labelKey: 'profile.monday', index: 1 },
+  TUESDAY: { labelKey: 'profile.tuesday', index: 2 },
+  WEDNESDAY: { labelKey: 'profile.wednesday', index: 3 },
+  THURSDAY: { labelKey: 'profile.thursday', index: 4 },
+  FRIDAY: { labelKey: 'profile.friday', index: 5 },
+  SATURDAY: { labelKey: 'profile.saturday', index: 6 }
+};
 
 const ProfileView = () => {
-  const { profileImage, updateProfileImage, user } = useAuth();
+  const { profileImage, updateProfileImage, user, updateUser } = useAuth();
   const { isLoaded, isExiting } = usePreloader();
   const { dir, isAr, t } = useLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -61,80 +73,304 @@ const ProfileView = () => {
 
   const canAnimate = isLoaded && !isExiting;
 
-  // Removed tab animation on switch as per user request
-  const [isEditingHours, setIsEditingHours] = useState(false);
-  const [showConfirmModal, setShowConfirmModal] = useState<{ open: boolean; type: 'hours' | 'general' }>({ open: false, type: 'hours' });
-
-  const handleSaveHours = () => {
-    setIsEditingHours(false);
-    window.showToast(t('profile.hours_saved', T_PAGE), 'success');
-  };
-
-  const handleCancelHours = () => {
-    setShowConfirmModal({ open: true, type: 'hours' });
-  };
-
-  const handleConfirmCancel = () => {
-    if (showConfirmModal.type === 'hours') {
-      setIsEditingHours(false);
+  const getHeaders = () => {
+    const token = getCookie('token')
+    return {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {})
     }
-    setShowConfirmModal({ open: false, type: 'hours' });
-    window.showToast(t('profile.changes_canceled', T_PAGE), 'info');
-  };
+  }
 
-  const handleSaveGeneral = () => {
-    window.showToast(t('profile.general_saved', T_PAGE), 'success');
-  };
-
-  const handleCancelGeneral = () => {
-    setShowConfirmModal({ open: true, type: 'general' });
-  };
-
-  const [workingHours, setWorkingHours] = useState([
-    { day: t('profile.sunday', T_PAGE), active: true, periods: [{ from: '08:00', to: '12:00' }, { from: '16:00', to: '20:00' }] },
-    { day: t('profile.monday', T_PAGE), active: true, periods: [{ from: '08:00', to: '18:00' }] },
-    { day: t('profile.tuesday', T_PAGE), active: true, periods: [{ from: '08:00', to: '18:00' }] },
-    { day: t('profile.wednesday', T_PAGE), active: true, periods: [{ from: '08:00', to: '18:00' }] },
-    { day: t('profile.thursday', T_PAGE), active: true, periods: [{ from: '08:00', to: '14:00' }] },
-    { day: t('profile.friday', T_PAGE), active: false, periods: [] },
-    { day: t('profile.saturday', T_PAGE), active: false, periods: [] },
-  ]);
-
-  const [clinicInfo, setClinicInfo] = useState({
-    name: t('profile.clinic_name_val', T_PAGE),
-    specialty: t('profile.specialty_val', T_PAGE),
-    insurance: t('profile.insurance_val', T_PAGE),
-    phone: '+962 6 555 1234',
-    email: 'info@alnoor-clinic.jo',
-    city: t('profile.city_val', T_PAGE),
-    area: t('profile.area_val', T_PAGE),
-    address: t('profile.address_val', T_PAGE)
+  // Personal Info States
+  const [personalInfo, setPersonalInfo] = useState({
+    firstName: user?.firstName || '',
+    surName: user?.surName || '',
+    lastName: user?.lastName || '',
+    email: user?.email || '',
+    gender: user?.gender || 'MALE',
+    dateOfBirth: user?.dateOfBirth || ''
   });
-
   const [personalPhone, setPersonalPhone] = useState(user?.phoneNumber || '0789651800');
 
+  // Sync personal info when user changes
   useEffect(() => {
-    if (user?.phoneNumber) {
-      setPersonalPhone(user.phoneNumber);
+    if (user) {
+      setPersonalInfo({
+        firstName: user.firstName || '',
+        surName: user.surName || '',
+        lastName: user.lastName || '',
+        email: user.email || '',
+        gender: user.gender || 'MALE',
+        dateOfBirth: user.dateOfBirth || ''
+      });
+      setPersonalPhone(user.phoneNumber || '');
     }
   }, [user]);
 
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
 
-  const [insurances, setInsurances] = useState([
-    { id: '1', name: 'Jordan National Insurance', nameAr: 'التأمين الوطني الأردني', active: true },
-    { id: '2', name: 'Gig Jordan', nameAr: 'الخليج للتأمين - الأردن', active: true },
-    { id: '3', name: 'Arabia Insurance', nameAr: 'العربية للتأمين', active: false },
-    { id: '4', name: 'Newton Insurance', nameAr: 'نيوتن للتأمين', active: false },
-    { id: '5', name: 'MetLife', nameAr: 'ميتلايف', active: false },
-  ]);
-
-  const toggleInsurance = (id: string) => {
-    setInsurances(prev => prev.map(ins => 
-      ins.id === id ? { ...ins, active: !ins.active } : ins
-    ));
+  const handleSaveGeneral = () => {
+    updateUser({
+      firstName: personalInfo.firstName,
+      surName: personalInfo.surName,
+      lastName: personalInfo.lastName,
+      phoneNumber: personalPhone,
+      gender: personalInfo.gender,
+      dateOfBirth: personalInfo.dateOfBirth
+    });
+    window.showToast(t('profile.general_saved', T_PAGE), 'success');
   };
 
+  const handleCancelGeneral = () => {
+    if (user) {
+      setPersonalInfo({
+        firstName: user.firstName || '',
+        surName: user.surName || '',
+        lastName: user.lastName || '',
+        email: user.email || '',
+        gender: user.gender || 'MALE',
+        dateOfBirth: user.dateOfBirth || ''
+      });
+      setPersonalPhone(user.phoneNumber || '');
+    }
+    window.showToast(t('profile.changes_canceled', T_PAGE), 'info');
+  };
+
+  // Schedule / Working Hours State
+  const [workingHours, setWorkingHours] = useState<Array<{
+    dayOfWeek: string;
+    active: boolean;
+    periods: Array<{ from: string; to: string }>;
+    isEditing: boolean;
+    originalPeriods: Array<{ from: string; to: string }>;
+    originalActive: boolean;
+  }>>([
+    { dayOfWeek: 'SUNDAY', active: false, periods: [], isEditing: false, originalPeriods: [], originalActive: false },
+    { dayOfWeek: 'MONDAY', active: false, periods: [], isEditing: false, originalPeriods: [], originalActive: false },
+    { dayOfWeek: 'TUESDAY', active: false, periods: [], isEditing: false, originalPeriods: [], originalActive: false },
+    { dayOfWeek: 'WEDNESDAY', active: false, periods: [], isEditing: false, originalPeriods: [], originalActive: false },
+    { dayOfWeek: 'THURSDAY', active: false, periods: [], isEditing: false, originalPeriods: [], originalActive: false },
+    { dayOfWeek: 'FRIDAY', active: false, periods: [], isEditing: false, originalPeriods: [], originalActive: false },
+    { dayOfWeek: 'SATURDAY', active: false, periods: [], isEditing: false, originalPeriods: [], originalActive: false },
+  ]);
+
+  // Clinic Info State
+  const [clinicInfo, setClinicInfo] = useState({
+    uuid: '',
+    name: '',
+    medicalCategory: '',
+    country: '',
+    city: '',
+    address: '',
+    phoneNumber: '',
+    email: ''
+  });
+
+  const [insurances, setInsurances] = useState<Array<{uuid: string; name: string; provider: string}>>([]);
+  const [clinicInsuranceUuids, setClinicInsuranceUuids] = useState<Set<string>>(new Set());
+  const [togglingInsurances, setTogglingInsurances] = useState<Set<string>>(new Set());
+
+  const loadSchedule = async () => {
+    try {
+      const response = await fetch('/api/clinicschedule/me', {
+        method: 'GET',
+        headers: getHeaders()
+      });
+      if (response.ok) {
+        const data = await response.json();
+        const schedules = data.schedules || [];
+        
+        setWorkingHours(prev => prev.map(day => {
+          const serverDay = schedules.find((s: any) => s.dayOfWeek === day.dayOfWeek);
+          if (serverDay && serverDay.timeSlots && serverDay.timeSlots.length > 0) {
+            const periods = serverDay.timeSlots.map((slot: any) => ({
+              from: slot.startTime.substring(0, 5), // "09:00:00" -> "09:00"
+              to: slot.endTime.substring(0, 5)
+            }));
+            return {
+              ...day,
+              active: true,
+              periods,
+              originalPeriods: [...periods],
+              originalActive: true,
+              isEditing: false
+            };
+          }
+          return {
+            ...day,
+            active: false,
+            periods: [],
+            originalPeriods: [],
+            originalActive: false,
+            isEditing: false
+          };
+        }));
+      }
+    } catch (err) {
+      console.error('Error fetching schedule:', err);
+    }
+  };
+
+  const loadClinicData = async () => {
+    try {
+      const clinicData = await fetchClinicMe();
+      setClinicInfo({
+        uuid: clinicData.uuid || '',
+        name: clinicData.name || '',
+        medicalCategory: clinicData.medicalCategory || '',
+        country: clinicData.country || '',
+        city: clinicData.city || '',
+        address: clinicData.address || '',
+        phoneNumber: clinicData.phoneNumber || '',
+        email: clinicData.email || ''
+      });
+    } catch (error) {
+      console.error('Failed to load clinic data:', error);
+      window.showToast('Failed to load clinic data', 'error');
+    }
+  };
+
+  const loadInsurances = async () => {
+    try {
+      const insuranceData = await fetchInsurances();
+      setInsurances(insuranceData);
+    } catch (error) {
+      console.error('Failed to load insurances:', error);
+      window.showToast('Failed to load insurances', 'error');
+    }
+  };
+
+  const loadClinicInsurances = async () => {
+    try {
+      const response = await fetch('/api/clinic/insurance', {
+        method: 'GET',
+        headers: getHeaders()
+      });
+      if (response.ok) {
+        const data = await response.json();
+        const uuids = new Set<string>(data.map((ins: any) => ins.uuid));
+        setClinicInsuranceUuids(uuids);
+      } else {
+        console.error('Failed to load clinic insurances');
+      }
+    } catch (error) {
+      console.error('Error loading clinic insurances:', error);
+    }
+  };
+
+  // Fetch clinic data, insurances, active clinic insurances, and schedules when component mounts
+  useEffect(() => {
+    loadClinicData();
+    loadInsurances();
+    loadClinicInsurances();
+  }, []);
+
+  // Refetch schedule whenever activeTab changes to keep both tabs fully in sync
+  useEffect(() => {
+    loadSchedule();
+  }, [activeTab]);
+
+  const handleToggleInsurance = async (uuid: string) => {
+    const isActive = clinicInsuranceUuids.has(uuid);
+    
+    // Add to toggling set to show loading/disabled state
+    setTogglingInsurances(prev => {
+      const next = new Set(prev);
+      next.add(uuid);
+      return next;
+    });
+
+    try {
+      const endpoint = '/api/insurance/clinic';
+      const method = isActive ? 'DELETE' : 'POST';
+      const response = await fetch(endpoint, {
+        method,
+        headers: getHeaders(),
+        body: JSON.stringify({ insuranceUuids: [uuid] })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Update the clinicInsuranceUuids state upon successful response ONLY
+        setClinicInsuranceUuids(prev => {
+          const next = new Set(prev);
+          if (isActive) {
+            next.delete(uuid);
+          } else {
+            next.add(uuid);
+          }
+          return next;
+        });
+        window.showToast(data.message || (isActive ? 'Insurance unassigned successfully' : 'Insurance assigned successfully'), 'success');
+      } else {
+        let errMsg = isActive ? 'Failed to remove insurance' : 'Failed to assign insurance';
+        try {
+          const errData = await response.json();
+          errMsg = errData.message || errData.error || errMsg;
+        } catch (e) {}
+        window.showToast(errMsg, 'error');
+      }
+    } catch (error: any) {
+      console.error('Error toggling insurance:', error);
+      window.showToast(error.message || 'Error communicating with server', 'error');
+    } finally {
+      // Remove from toggling set
+      setTogglingInsurances(prev => {
+        const next = new Set(prev);
+        next.delete(uuid);
+        return next;
+      });
+    }
+  };
+
+  const handleSaveClinic = async () => {
+    try {
+      const payload = {
+        name: clinicInfo.name,
+        medicalCategory: clinicInfo.medicalCategory,
+        country: clinicInfo.country,
+        city: clinicInfo.city,
+        address: clinicInfo.address,
+        phoneNumber: clinicInfo.phoneNumber,
+        email: clinicInfo.email
+      };
+
+      const updatedClinic = await updateClinicMe(payload);
+      setClinicInfo({
+        uuid: updatedClinic.uuid || '',
+        name: updatedClinic.name || '',
+        medicalCategory: updatedClinic.medicalCategory || '',
+        country: updatedClinic.country || '',
+        city: updatedClinic.city || '',
+        address: updatedClinic.address || '',
+        phoneNumber: updatedClinic.phoneNumber || '',
+        email: updatedClinic.email || ''
+      });
+      window.showToast(t('profile.clinic_saved', T_PAGE), 'success');
+    } catch (error: any) {
+      console.error(error);
+      window.showToast(error.message || 'Failed to save clinic details', 'error');
+    }
+  };
+
+  const handleCancelClinic = async () => {
+    try {
+      const clinicData = await fetchClinicMe();
+      setClinicInfo({
+        uuid: clinicData.uuid || '',
+        name: clinicData.name || '',
+        medicalCategory: clinicData.medicalCategory || '',
+        country: clinicData.country || '',
+        city: clinicData.city || '',
+        address: clinicData.address || '',
+        phoneNumber: clinicData.phoneNumber || '',
+        email: clinicData.email || ''
+      });
+      window.showToast(t('profile.changes_canceled', T_PAGE), 'info');
+    } catch (error) {
+      console.error('Failed to reload clinic data on cancel:', error);
+    }
+  };
 
   const handleTabChange = (tab: 'profile' | 'clinic') => {
     if (tab === activeTab) return;
@@ -142,20 +378,30 @@ const ProfileView = () => {
     setSearchParams({ tab });
   };
 
-
   const toggleDay = (index: number) => {
-    const newHours = [...workingHours];
-    newHours[index].active = !newHours[index].active;
-    if (newHours[index].active && newHours[index].periods.length === 0) {
-      newHours[index].periods = [{ from: '08:00', to: '18:00' }];
-    }
-    setWorkingHours(newHours);
+    setWorkingHours(prev => prev.map((day, idx) => {
+      if (idx === index) {
+        const nextActive = !day.active;
+        return {
+          ...day,
+          active: nextActive,
+          periods: nextActive && day.periods.length === 0 ? [{ from: '08:00', to: '18:00' }] : day.periods
+        };
+      }
+      return day;
+    }));
   };
 
   const addPeriod = (dayIndex: number) => {
-    const newHours = [...workingHours];
-    newHours[dayIndex].periods.push({ from: '08:00', to: '18:00' });
-    setWorkingHours(newHours);
+    setWorkingHours(prev => prev.map((day, idx) => {
+      if (idx === dayIndex) {
+        return {
+          ...day,
+          periods: [...day.periods, { from: '08:00', to: '18:00' }]
+        };
+      }
+      return day;
+    }));
   };
 
   const removePeriod = (dayIndex: number, periodIndex: number) => {
@@ -180,6 +426,75 @@ const ProfileView = () => {
     const newHours = [...workingHours];
     newHours[dayIndex].periods[periodIndex][field] = value;
     setWorkingHours(newHours);
+  };
+
+  const handleSaveDaySchedule = async (dayIndex: number) => {
+    const day = workingHours[dayIndex];
+    
+    // Construct the entire schedules list to send to the backend
+    const schedulesPayload = workingHours.map((d, idx) => {
+      const currentDay = idx === dayIndex ? day : d;
+      
+      if (!currentDay.active || currentDay.periods.length === 0) {
+        return null;
+      }
+      
+      return {
+        dayOfWeek: currentDay.dayOfWeek,
+        timeSlots: currentDay.periods.map(p => ({
+          startTime: `${p.from}:00`,
+          endTime: `${p.to}:00`
+        }))
+      };
+    }).filter(Boolean);
+
+    try {
+      const response = await fetch('/api/clinicschedule/assignschedule', {
+        method: 'PUT',
+        headers: getHeaders(),
+        body: JSON.stringify({ schedules: schedulesPayload })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setWorkingHours(prev => prev.map((d, idx) => {
+          if (idx === dayIndex) {
+            return {
+              ...d,
+              isEditing: false,
+              originalPeriods: [...d.periods],
+              originalActive: d.active
+            };
+          }
+          return d;
+        }));
+        window.showToast(data.message || 'Clinic Schedule Assigned Successfully', 'success');
+      } else {
+        let errMsg = 'Failed to assign clinic schedule';
+        try {
+          const errData = await response.json();
+          errMsg = errData.message || errData.error || errMsg;
+        } catch (e) {}
+        window.showToast(errMsg, 'error');
+      }
+    } catch (err: any) {
+      console.error(err);
+      window.showToast(err.message || 'Error saving clinic schedule', 'error');
+    }
+  };
+
+  const handleCancelDaySchedule = (dayIndex: number) => {
+    setWorkingHours(prev => prev.map((d, idx) => {
+      if (idx === dayIndex) {
+        return {
+          ...d,
+          isEditing: false,
+          periods: [...d.originalPeriods],
+          active: d.originalActive
+        };
+      }
+      return d;
+    }));
   };
 
   return (
@@ -237,8 +552,8 @@ const ProfileView = () => {
       )}>
         <div className={cn(
           "transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] transform",
-          activeTab === 'profile' 
-            ? "relative opacity-100 translate-x-0 z-10" 
+          activeTab === 'profile'
+            ? "relative opacity-100 translate-x-0 z-10"
             : "absolute inset-x-0 top-0 opacity-0 -translate-x-12 -z-10 pointer-events-none"
         )}>
           <div className="space-y-6">
@@ -301,21 +616,36 @@ const ProfileView = () => {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="flex flex-col gap-2">
                       <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('common.first_name')}</label>
-                      <Input key={user?.firstName} defaultValue={user ? user.firstName : t('profile.first_name_val', T_PAGE)} icon={<User size={18} />} className="h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold" />
+                      <Input
+                        value={personalInfo.firstName}
+                        onChange={(e) => setPersonalInfo(p => ({ ...p, firstName: e.target.value }))}
+                        icon={<User size={18} />}
+                        className="h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold"
+                      />
                     </div>
                     <div className="flex flex-col gap-2">
                       <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('common.surname')}</label>
-                      <Input key={user?.surName} defaultValue={user ? user.surName : t('profile.surname_val', T_PAGE)} icon={<User size={18} />} className="h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold" />
+                      <Input
+                        value={personalInfo.surName}
+                        onChange={(e) => setPersonalInfo(p => ({ ...p, surName: e.target.value }))}
+                        icon={<User size={18} />}
+                        className="h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold"
+                      />
                     </div>
                     <div className="flex flex-col gap-2">
                       <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('common.last_name')}</label>
-                      <Input key={user?.lastName} defaultValue={user ? user.lastName : t('profile.last_name_val', T_PAGE)} icon={<User size={18} />} className="h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold" />
+                      <Input
+                        value={personalInfo.lastName}
+                        onChange={(e) => setPersonalInfo(p => ({ ...p, lastName: e.target.value }))}
+                        icon={<User size={18} />}
+                        className="h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold"
+                      />
                     </div>
                   </div>
                   <div className="flex flex-col gap-2">
                     <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('common.email')}</label>
                     <div className="flex gap-2">
-                      <Input readOnly value={user ? user.email : "dr.ahmed@medexa.com"} className="flex-1 h-11 bg-muted/50 border-border cursor-not-allowed text-muted-foreground" />
+                      <Input readOnly value={personalInfo.email} className="flex-1 h-11 bg-muted/50 border-border cursor-not-allowed text-muted-foreground" />
                       <button
                         onClick={() => setIsEmailModalOpen(true)}
                         className="h-11 px-4 border border-primary/30 rounded-xl text-primary hover:bg-primary/5 transition-all flex items-center gap-2 text-sm font-medium"
@@ -337,13 +667,13 @@ const ProfileView = () => {
                   <div className="flex flex-col gap-6">
                     <div className="flex flex-col gap-2">
                       <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('common.gender')}</label>
-                      <Select key={user?.gender} defaultValue={user?.gender === "FEMALE" ? "أنثى" : "ذكر"}>
+                      <Select value={personalInfo.gender} onValueChange={(val) => setPersonalInfo(p => ({ ...p, gender: val }))}>
                         <SelectTrigger className="h-11 bg-muted/30 border-border font-bold">
                           <SelectValue placeholder={t('common.gender')} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="ذكر">{t('common.male')}</SelectItem>
-                          <SelectItem value="أنثى">{t('common.female')}</SelectItem>
+                          <SelectItem value="MALE">{t('common.male')}</SelectItem>
+                          <SelectItem value="FEMALE">{t('common.female')}</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -355,7 +685,12 @@ const ProfileView = () => {
                           className={cn("absolute top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none z-10", isAr ? "left-5" : "right-5")}
                         />
                         <Flatpickr
-                          value={user ? user.dateOfBirth : "1985-05-15"}
+                          value={personalInfo.dateOfBirth}
+                          onChange={([date]) => {
+                            if (date) {
+                              setPersonalInfo(p => ({ ...p, dateOfBirth: format(date, 'yyyy-MM-dd') }));
+                            }
+                          }}
                           className={cn("flex h-11 w-full rounded-xl border border-border bg-muted/30 px-3 py-2 text-sm font-bold focus:border-primary focus:bg-white transition-all outline-none", isAr ? "pl-10" : "pr-10 text-left!")}
                           options={{
                             locale: isAr ? Arabic : undefined,
@@ -451,123 +786,139 @@ const ProfileView = () => {
                     <p className="text-sm text-muted-foreground">{t('common.working_days')}</p>
                   </div>
                 </div>
-                {!isEditingHours && (
-                  <button
-                    onClick={() => setIsEditingHours(true)}
-                    className="h-10 px-4 border border-primary/30 rounded-xl text-primary hover:bg-primary/5 transition-all flex items-center gap-2 text-sm font-medium"
-                  >
-                    <Pen size={16} />
-                    {t('common.edit_working_hours')}
-                  </button>
-                )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {workingHours.map((day, dIdx) => (
                   <div
-                    key={day.day}
+                    key={day.dayOfWeek}
                     className={cn(
-                      "p-4 rounded-xl border transition-all duration-300",
+                      "p-4 rounded-xl border transition-all duration-300 flex flex-col justify-between min-h-[180px]",
                       day.active
                         ? "bg-muted/20 border-border hover:border-primary/30"
                         : "bg-destructive/5 border-destructive/20"
                     )}
                   >
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        <div className={cn("w-2 h-2 rounded-full", day.active ? "bg-secondary" : "bg-destructive/50")} />
-                        <span className={cn("font-bold text-sm", !day.active && "text-destructive")}>{day.day}</span>
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <div className={cn("w-2 h-2 rounded-full", day.active ? "bg-secondary" : "bg-destructive/50")} />
+                          <span className={cn("font-bold text-sm", !day.active && "text-destructive")}>
+                            {t(DAY_MAPPING[day.dayOfWeek].labelKey, T_PAGE)}
+                          </span>
+                        </div>
+                        
+                        {!day.isEditing ? (
+                          <button
+                            onClick={() => {
+                              setWorkingHours(prev => prev.map((d, idx) => {
+                                if (idx === dIdx) {
+                                  return {
+                                    ...d,
+                                    isEditing: true,
+                                    originalPeriods: [...d.periods],
+                                    originalActive: d.active
+                                  };
+                                }
+                                return d;
+                              }));
+                            }}
+                            className="p-1.5 text-primary hover:bg-primary/5 rounded-lg transition-all"
+                            aria-label="Edit day schedule"
+                          >
+                            <Pen size={14} />
+                          </button>
+                        ) : (
+                          <Switch
+                            checked={day.active}
+                            onCheckedChange={() => toggleDay(dIdx)}
+                            className="scale-90"
+                          />
+                        )}
                       </div>
-                      {isEditingHours && (
-                        <Switch
-                          checked={day.active}
-                          onCheckedChange={() => toggleDay(dIdx)}
-                          className="scale-90"
-                        />
-                      )}
+
+                      <div className="flex flex-col gap-2">
+                        {day.active ? (
+                          <>
+                            {day.periods.map((period, pIdx) => (
+                              <div key={pIdx} className="flex items-center gap-2">
+                                {day.isEditing ? (
+                                  <div className="flex items-center gap-1.5 w-full">
+                                    <TimePicker
+                                      noClock
+                                      value={period.from}
+                                      onChange={(val) => updatePeriod(dIdx, pIdx, 'from', val)}
+                                      className="h-8 py-0 px-2 min-w-0 flex-1 border-muted bg-white shadow-none focus-within:ring-0"
+                                    />
+                                    <span className="text-muted-foreground text-xs">→</span>
+                                    <TimePicker
+                                      noClock
+                                      value={period.to}
+                                      onChange={(val) => updatePeriod(dIdx, pIdx, 'to', val)}
+                                      className="h-8 py-0 px-2 min-w-0 flex-1 border-muted bg-white shadow-none focus-within:ring-0"
+                                    />
+                                    <button
+                                      onClick={() => removePeriod(dIdx, pIdx)}
+                                      className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl transition-all shrink-0"
+                                    >
+                                      <X size={12} />
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <Clock size={14} />
+                                    <span>{period.from} → {period.to}</span>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                            {day.isEditing && (
+                              <button
+                                onClick={() => addPeriod(dIdx)}
+                                className="w-full h-8 mt-2 flex items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-transparent text-xs text-muted-foreground hover:bg-muted/50 transition-all"
+                              >
+                                <Plus size={12} />
+                                {t('common.add_period')}
+                              </button>
+                            )}
+                          </>
+                        ) : (
+                          <div className="flex items-center gap-2 text-sm">
+                            <span className="text-destructive/70 font-medium italic">{t('common.holiday')}</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
 
-                    <div className="flex flex-col gap-2">
-                      {day.active ? (
-                        <>
-                          {day.periods.map((period, pIdx) => (
-                            <div key={pIdx} className="flex items-center gap-2">
-                              {isEditingHours ? (
-                                <div className="flex items-center gap-1.5 w-full">
-                                  <TimePicker
-                                    noClock
-                                    value={period.from}
-                                    onChange={(val) => updatePeriod(dIdx, pIdx, 'from', val)}
-                                    className="h-8 py-0 px-2 min-w-0 flex-1 border-muted bg-white shadow-none focus-within:ring-0"
-                                  />
-                                  <span className="text-muted-foreground text-xs">→</span>
-                                  <TimePicker
-                                    noClock
-                                    value={period.to}
-                                    onChange={(val) => updatePeriod(dIdx, pIdx, 'to', val)}
-                                    className="h-8 py-0 px-2 min-w-0 flex-1 border-muted bg-white shadow-none focus-within:ring-0"
-                                  />
-                                  <button
-                                    onClick={() => removePeriod(dIdx, pIdx)}
-                                    className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl transition-all shrink-0"
-                                  >
-                                    <X size={12} />
-                                  </button>
-                                </div>
-                              ) : (
-                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                  <Clock size={14} />
-                                  <span>{period.from} → {period.to}</span>
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                          {isEditingHours && (
-                            <button
-                              onClick={() => addPeriod(dIdx)}
-                              className="w-full h-9 mt-2 flex items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-transparent text-xs text-muted-foreground hover:bg-muted/50 transition-all"
-                            >
-                              <Plus size={14} />
-                              {t('common.add_period')}
-                            </button>
-                          )}
-                        </>
-                      ) : (
-                        <div className="flex items-center gap-2 text-sm">
-                          <span className="text-destructive/70 font-medium italic">{t('common.holiday')}</span>
-                        </div>
-                      )}
-                    </div>
+                    {day.isEditing && (
+                      <div className="flex gap-2 justify-end mt-4 pt-3 border-t border-border/50">
+                        <button
+                          onClick={() => handleCancelDaySchedule(dIdx)}
+                          className="h-8 px-3 rounded-lg border border-border text-xs text-foreground bg-white hover:bg-muted transition-all font-semibold flex items-center gap-1"
+                        >
+                          <X size={12} />
+                          {t('common.cancel')}
+                        </button>
+                        <button
+                          onClick={() => handleSaveDaySchedule(dIdx)}
+                          className="h-8 px-3 rounded-lg bg-primary text-white text-xs hover:bg-primary/90 transition-all font-semibold flex items-center gap-1"
+                        >
+                          <Check size={12} />
+                          {t('common.save')}
+                        </button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
-
-              {isEditingHours && (
-                <div className="flex gap-3 justify-end mt-8 pt-6 border-t border-border">
-                  <button
-                    onClick={handleCancelHours}
-                    className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-300 border bg-background text-foreground hover:bg-accent hover:text-white hover:border-accent h-9 px-6 py-2"
-                  >
-                    <X size={16} className={isAr ? "ml-1" : "mr-1"} />
-                    {t('profile.cancel', T_PAGE)}
-                  </button>
-                  <button
-                    onClick={handleSaveHours}
-                    className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-300 text-primary-foreground bg-primary hover:bg-primary/90 h-9 px-6 py-2 shadow-lg shadow-primary/20 hover:shadow-primary/30"
-                  >
-                    <Check size={16} className={isAr ? "ml-1" : "mr-1"} />
-                    {t('profile.save', T_PAGE)}
-                  </button>
-                </div>
-              )}
             </div>
           </div>
         </div>
 
         <div className={cn(
           "transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] transform",
-          activeTab === 'clinic' 
-            ? "relative opacity-100 translate-x-0 z-10" 
+          activeTab === 'clinic'
+            ? "relative opacity-100 translate-x-0 z-10"
             : "absolute inset-x-0 top-0 opacity-0 translate-x-12 -z-10 pointer-events-none"
         )}>
           <div className="space-y-6">
@@ -578,14 +929,14 @@ const ProfileView = () => {
                   <Building2 size={40} className="text-white" />
                 </div>
                 <div className="flex-1">
-                  <h2 className="text-3xl mb-2 font-bold">{clinicInfo.name}</h2>
+                  <h2 className="text-3xl mb-2 font-bold">{clinicInfo.name || 'Clinic Name'}</h2>
                   <div className="flex items-center gap-3">
                     <span className="inline-flex items-center justify-center rounded-xl border text-xs font-medium bg-secondary/10 text-secondary border-secondary/20 px-3 py-1">
-                      {clinicInfo.specialty}
+                      {clinicInfo.medicalCategory || 'Medical Category'}
                     </span>
                     <div className="flex items-center gap-2 text-muted-foreground text-sm">
                       <MapPin size={16} />
-                      <span>{clinicInfo.city}، {t('profile.jordan', T_PAGE)}</span>
+                      <span>{clinicInfo.city || 'City'}، {clinicInfo.country || 'Country'}</span>
                     </div>
                   </div>
                 </div>
@@ -607,26 +958,17 @@ const ProfileView = () => {
                 <div className="flex flex-col gap-2">
                   <label className="text-sm font-semibold">{t('profile.specialty', T_PAGE)}</label>
                   <Input
-                    value={clinicInfo.specialty}
-                    onChange={(e) => setClinicInfo({ ...clinicInfo, specialty: e.target.value })}
-                    className="h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold"
-                  />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <label className="text-sm font-semibold">{t('profile.insurance', T_PAGE)}</label>
-                  <Input
-                    value={clinicInfo.insurance}
-                    onChange={(e) => setClinicInfo({ ...clinicInfo, insurance: e.target.value })}
-                    placeholder={t('profile.insurance_placeholder', T_PAGE)}
+                    value={clinicInfo.medicalCategory}
+                    onChange={(e) => setClinicInfo({ ...clinicInfo, medicalCategory: e.target.value })}
                     className="h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold"
                   />
                 </div>
                 <div className="flex flex-col gap-2">
                   <label className="text-sm font-semibold">{t('common.phone')}</label>
                   <Input
-                    value={clinicInfo.phone}
+                    value={clinicInfo.phoneNumber}
                     dir="ltr"
-                    onChange={(e) => setClinicInfo({ ...clinicInfo, phone: e.target.value.replace(/\D/g, '') })}
+                    onChange={(e) => setClinicInfo({ ...clinicInfo, phoneNumber: e.target.value })}
                     className={cn("h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold", isAr ? "text-right" : "text-left")}
                   />
                 </div>
@@ -647,10 +989,10 @@ const ProfileView = () => {
                   />
                 </div>
                 <div className="flex flex-col gap-2">
-                  <label className="text-sm font-semibold">{t('profile.area', T_PAGE)}</label>
+                  <label className="text-sm font-semibold">{t('profile.country', T_PAGE)}</label>
                   <Input
-                    value={clinicInfo.area}
-                    onChange={(e) => setClinicInfo({ ...clinicInfo, area: e.target.value })}
+                    value={clinicInfo.country}
+                    onChange={(e) => setClinicInfo({ ...clinicInfo, country: e.target.value })}
                     className="h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold"
                   />
                 </div>
@@ -666,13 +1008,13 @@ const ProfileView = () => {
 
               <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-border">
                 <button
-                  onClick={handleCancelGeneral}
+                  onClick={handleCancelClinic}
                   className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-300 border bg-background text-foreground hover:bg-accent hover:text-white hover:border-accent h-10 px-6"
                 >
                   {t('common.cancel')}
                 </button>
                 <button
-                  onClick={() => window.showToast(t('save_clinic_success'), 'success')}
+                  onClick={handleSaveClinic}
                   className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-300 text-primary-foreground bg-primary hover:bg-primary/90 h-10 px-6 shadow-lg shadow-primary/20 hover:shadow-primary/30"
                 >
                   <Check size={16} className={isAr ? "ml-1" : "mr-1"} />
@@ -694,76 +1036,57 @@ const ProfileView = () => {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {insurances.map((ins) => (
-                  <div 
-                    key={ins.id}
-                    className={cn(
-                      "flex items-center justify-between p-4 rounded-xl border transition-all duration-300",
-                      ins.active 
-                        ? "bg-secondary/5 border-secondary/20 shadow-sm" 
-                        : "bg-muted/20 border-border opacity-70"
-                    )}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={cn(
-                        "w-2 h-2 rounded-full",
-                        ins.active ? "bg-secondary animate-pulse" : "bg-muted-foreground/30"
-                      )} />
-                      <span className={cn("font-bold", ins.active ? "text-foreground" : "text-muted-foreground")}>
-                        {isAr ? ins.nameAr : ins.name}
-                      </span>
-                    </div>
-                    
-                    <div className="flex items-center gap-3">
-                      <span className={cn(
-                        "text-xs font-bold",
-                        ins.active ? "text-secondary" : "text-muted-foreground"
-                      )}>
-                        {ins.active ? t('profile.active', T_PAGE) : t('profile.inactive', T_PAGE)}
-                      </span>
-                      <Switch 
-                        checked={ins.active}
-                        onCheckedChange={() => toggleInsurance(ins.id)}
-                        className="data-[state=checked]:bg-secondary"
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
+                {insurances.map((ins) => {
+                  const isActive = clinicInsuranceUuids.has(ins.uuid);
+                  const isToggling = togglingInsurances.has(ins.uuid);
+                  return (
+                    <div
+                      key={ins.uuid}
+                      className={cn(
+                        "flex items-center justify-between p-4 rounded-xl border transition-all duration-300",
+                        isActive
+                          ? "bg-secondary/5 border-secondary/20 shadow-sm"
+                          : "bg-muted/20 border-border"
+                      )}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={cn(
+                          "w-2 h-2 rounded-full",
+                          isActive ? "bg-secondary animate-pulse" : "bg-muted-foreground/40"
+                        )} />
+                        <div className="flex flex-col">
+                          <span className="font-bold text-foreground">{ins.name}</span>
+                          <span className="text-xs text-muted-foreground">{ins.provider}</span>
+                        </div>
+                      </div>
 
-              <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-border">
-                <button
-                  onClick={handleCancelGeneral}
-                  className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-300 border bg-background text-foreground hover:bg-accent hover:text-white hover:border-accent h-10 px-6"
-                >
-                  {t('common.cancel')}
-                </button>
-                <button
-                  onClick={() => window.showToast(t('save_clinic_success'), 'success')}
-                  className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-300 text-primary-foreground bg-primary hover:bg-primary/90 h-10 px-6 shadow-lg shadow-primary/20 hover:shadow-primary/30"
-                >
-                  <Check size={16} className={isAr ? "ml-1" : "mr-1"} />
-                  {t('common.save_changes')}
-                </button>
+                      <div className="flex items-center gap-3">
+                        <span className={cn(
+                          "text-xs font-bold",
+                          isActive ? "text-secondary" : "text-muted-foreground"
+                        )}>
+                          {isActive ? t('profile.active', T_PAGE) : (isAr ? "غير نشط" : "Inactive")}
+                        </span>
+                        <Switch
+                          checked={isActive}
+                          disabled={isToggling}
+                          onCheckedChange={() => handleToggleInsurance(ins.uuid)}
+                          className="scale-90"
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
             {/* Settings View */}
-            <SettingsView hideHeader={true} className="pb-0" />
+            <SettingsView hideHeader={true} className="pb-0" activeTab={activeTab} />
           </div>
         </div>
 
 
-        <Modal
-          isOpen={showConfirmModal.open}
-          onClose={() => setShowConfirmModal({ ...showConfirmModal, open: false })}
-          onConfirm={handleConfirmCancel}
-          title={t('profile.discard_change_q', T_PAGE)}
-          message={t('profile.discard_confirm_msg', T_PAGE)}
-          confirmText={t('profile.discard_btn', T_PAGE)}
-          cancelText={t('common.cancel')}
-          variant="danger"
-        />
+
 
         {/* Change Email Dialog */}
         <EmailChangeDialog

@@ -72,11 +72,11 @@ const Toast = ({ message, type = 'success', stackIndex, onClose }: ToastProps) =
   return (
     <div
       style={stackStyle}
-      className={`absolute w-full max-w-[340px] min-w-[300px] flex items-center gap-3 px-4 py-3 rounded-xl border shadow-lg backdrop-blur-md ${styles[type]}`}
+      className={`absolute w-full max-w-[450px] min-w-[300px] flex items-center gap-3 px-4 py-3 rounded-xl border shadow-lg backdrop-blur-md ${styles[type]}`}
       dir="rtl"
     >
       {icons[type]}
-      <p className="flex-1 text-sm font-bold truncate leading-relaxed">{message}</p>
+      <p className="flex-1 text-sm font-bold break-words leading-relaxed max-h-[200px] overflow-y-auto no-scrollbar">{message}</p>
       <button 
         onClick={handleClose} 
         className="p-1 hover:bg-black/5 rounded-lg transition-colors cursor-pointer shrink-0"
@@ -103,7 +103,7 @@ export const ToastContainer = () => {
   const activeToasts = toasts;
 
   return (
-    <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[999999] pointer-events-none w-full max-w-[360px] flex justify-center items-start h-24">
+    <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[999999] pointer-events-none w-full max-w-[470px] flex justify-center items-start h-24">
       {activeToasts.map((toast, index) => {
         const stackIndex = activeToasts.length - 1 - index;
         return (

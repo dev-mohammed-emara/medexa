@@ -122,7 +122,7 @@ export const updateSecretary = async (uuid: string, body: any): Promise<ApiSecre
 }
 
 export const deleteSecretary = async (uuid: string): Promise<void> => {
-  const response = await fetch(`/api/secretary/${uuid}`, {
+  const response = await fetch(`/api/clinic/me/${uuid}?userType=SECRETARY`, {
     method: 'DELETE',
     headers: getHeaders()
   })

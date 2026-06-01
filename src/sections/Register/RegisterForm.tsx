@@ -43,6 +43,7 @@ const RegisterForm = () => {
     city: '',
     address: '',
     phone: '',
+    clinicEmail: '',
     firstName: '',
     surname: '',
     lastName: '',
@@ -51,7 +52,11 @@ const RegisterForm = () => {
     password: '',
     confirmPassword: '',
     gender: '',
-    dob: ''
+    dob: '',
+    ownerSpecialty: '',
+    ownerSummary: '',
+    currency: 'JOD',
+    defaultAppointmentPeriod: '30'
   })
 
   // Optimistic state for submission feedback
@@ -103,25 +108,42 @@ const RegisterForm = () => {
       return;
     }
 
+    const formatPhone = (phoneStr: string) => {
+      let cleaned = phoneStr.trim().replace(/[\s\-\(\)]/g, '');
+      if (!cleaned.startsWith('+')) {
+        cleaned = '+' + cleaned;
+      }
+      return cleaned;
+    };
+
     // Map fields to register schema structure
     const payload = {
-      role: "ROLE_CLINIC_OWNER" as const,
-      clinicName: formData.clinicName || undefined,
-      specialty: formData.specialty || undefined,
-      country: formData.country || undefined,
-      city: formData.city || undefined,
-      address: formData.address || undefined,
-      clinicPhone: formData.phone || undefined,
-      user: {
-        firstName: formData.firstName,
-        surName: formData.surname,
-        lastName: formData.lastName,
-        email: formData.email,
-        password: formData.password,
-        phoneNumber: formData.ownerPhone,
-        gender: (formData.gender === "male" ? "MALE" : "FEMALE") as any,
-        dateOfBirth: formData.dob,
-        permissions: ["MANAGE_DOCTORS", "MANAGE_SECRETARIES"]
+      name: formData.clinicName,
+      medicalCategory: formData.specialty,
+      country: formData.country,
+      city: formData.city,
+      address: formData.address,
+      phoneNumber: formatPhone(formData.phone),
+      email: formData.clinicEmail,
+      settings: {
+        currency: formData.currency,
+        language: "ar",
+        defaultAppointmentPeriod: parseInt(formData.defaultAppointmentPeriod) || 30
+      },
+      owner: {
+        user: {
+          firstName: formData.firstName,
+          surName: formData.surname,
+          lastName: formData.lastName,
+          email: formData.email,
+          password: formData.password,
+          phoneNumber: formatPhone(formData.ownerPhone),
+          gender: (formData.gender === "male" ? "MALE" : "FEMALE") as any,
+          dateOfBirth: formData.dob,
+          permissions: []
+        },
+        specialty: formData.ownerSpecialty,
+        summary: formData.ownerSummary
       }
     }
 
@@ -211,10 +233,11 @@ const RegisterForm = () => {
                     <SelectValue placeholder="اختر التخصص" />
                   </SelectTrigger>
                   <SelectContent className="text-right! [direction:rtl]">
-                    <SelectItem value="general">طب عام</SelectItem>
-                    <SelectItem value="pediatrics">أطفال</SelectItem>
-                    <SelectItem value="dentistry">أسنان</SelectItem>
-                    <SelectItem value="dermatology">جلدية</SelectItem>
+                    <SelectItem value="Cardiology">أمراض القلب (Cardiology)</SelectItem>
+                    <SelectItem value="General">طب عام (General)</SelectItem>
+                    <SelectItem value="Pediatrics">أطفال (Pediatrics)</SelectItem>
+                    <SelectItem value="Dentistry">أسنان (Dentistry)</SelectItem>
+                    <SelectItem value="Dermatology">جلدية (Dermatology)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -262,6 +285,57 @@ const RegisterForm = () => {
                   value={formData.phone}
                   onChange={handleChange}
                 />
+                <span className="text-[11px] text-muted-foreground mt-1.5 block pr-1">
+                  * يجب إدخال رمز الدولة بجانب الرقم (مثال: 962+)
+                </span>
+              </div>
+
+              <div>
+                <label className="text-sm font-semibold text-[#1a2b3c] pr-1 block mb-2">البريد الإلكتروني للعيادة</label>
+                <Input
+                  type="email"
+                  name="clinicEmail"
+                  required
+                  placeholder="clinic@example.com"
+                  value={formData.clinicEmail}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-semibold text-[#1a2b3c] pr-1 block mb-2">العملة الافتراضية</label>
+                <Select
+                  onValueChange={(val: string) => setFormData((prev: any) => ({...prev, currency: val}))}
+                  value={formData.currency}
+                  required
+                >
+                  <SelectTrigger className="focus:ring-4 focus:ring-primary/10">
+                    <SelectValue placeholder="اختر العملة الافتراضية" />
+                  </SelectTrigger>
+                  <SelectContent className="text-right">
+                    <SelectItem value="JOD">دينار أردني (JOD)</SelectItem>
+                    <SelectItem value="USD">دولار أمريكي (USD)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-sm font-semibold text-[#1a2b3c] pr-1 block mb-2">مدة الموعد الافتراضية (بالدقائق)</label>
+                <Select
+                  onValueChange={(val: string) => setFormData((prev: any) => ({...prev, defaultAppointmentPeriod: val}))}
+                  value={formData.defaultAppointmentPeriod}
+                  required
+                >
+                  <SelectTrigger className="focus:ring-4 focus:ring-primary/10">
+                    <SelectValue placeholder="اختر المدة الافتراضية" />
+                  </SelectTrigger>
+                  <SelectContent className="text-right">
+                    <SelectItem value="15">15 دقيقة</SelectItem>
+                    <SelectItem value="30">30 دقيقة</SelectItem>
+                    <SelectItem value="45">45 دقيقة</SelectItem>
+                    <SelectItem value="60">60 دقيقة</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </article>
@@ -333,6 +407,9 @@ const RegisterForm = () => {
                   value={formData.ownerPhone}
                   onChange={handleChange}
                 />
+                <span className="text-[11px] text-muted-foreground mt-1.5 block pr-1">
+                  * يجب إدخال رمز الدولة بجانب الرقم (مثال: 962+)
+                </span>
               </div>
 
               <div>
@@ -455,6 +532,37 @@ const RegisterForm = () => {
                   />
                   <FaCalendarAlt className="text-muted-foreground pointer-events-none group-focus-within:text-primary transition-colors size-4" />
                 </div>
+              </div>
+
+              <div>
+                <label className="text-sm font-semibold text-[#1a2b3c] pr-1 block mb-2">التخصص الطبي للمالك</label>
+                <Select
+                  onValueChange={(val: string) => setFormData((prev: any) => ({...prev, ownerSpecialty: val}))}
+                  value={formData.ownerSpecialty}
+                  required
+                >
+                  <SelectTrigger className="focus:ring-4 focus:ring-primary/10">
+                    <SelectValue placeholder="اختر التخصص" />
+                  </SelectTrigger>
+                  <SelectContent className="text-right! [direction:rtl]">
+                    <SelectItem value="Cardiology">أمراض القلب (Cardiology)</SelectItem>
+                    <SelectItem value="General">طب عام (General)</SelectItem>
+                    <SelectItem value="Pediatrics">أطفال (Pediatrics)</SelectItem>
+                    <SelectItem value="Dentistry">أسنان (Dentistry)</SelectItem>
+                    <SelectItem value="Dermatology">جلدية (Dermatology)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="text-sm font-semibold text-[#1a2b3c] pr-1 block mb-2">نبذة تعريفية عن المالك</label>
+                <Input
+                  name="ownerSummary"
+                  required
+                  placeholder="أدخل نبذة تعريفية قصيرة وخبرات المالك..."
+                  value={formData.ownerSummary}
+                  onChange={handleChange}
+                />
               </div>
             </div>
           </article>

@@ -22,23 +22,18 @@ import { cn } from '../../utils/cn';
 import Portal from '../../components/ui/Portal';
 import { useBroadcast } from '../../hooks/useBroadcast';
 import { appointmentsTranslations } from '../../constants/translations/appointments';
-
-interface OperationData {
-  type: string;
-  amount: string;
-  currency: string;
-  date: Date;
-  appointment: string;
-  notes: string;
-}
+import { format } from 'date-fns';
+import { getCookie } from '../../utils/cookie';
 
 interface AddOperationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: (data: OperationData) => void;
+  onSuccess: (data?: any) => void;
+  mode?: 'add' | 'edit' | 'view';
+  transactionUuid?: string | null;
 }
 
-const AddOperationModal = ({ isOpen, onClose, onSuccess }: AddOperationModalProps) => {
+const AddOperationModal = ({ isOpen, onClose, onSuccess, mode = 'add', transactionUuid = null }: AddOperationModalProps) => {
   const { isAr, t, dir } = useLanguage();
   const { broadcast } = useBroadcast();
   const T = financeTranslations;
@@ -77,15 +72,145 @@ const AddOperationModal = ({ isOpen, onClose, onSuccess }: AddOperationModalProp
     }
   }, [isOpen, handleClose]);
 
+  // Fetch transaction details in view or edit mode
+  useEffect(() => {
+    if (isOpen) {
+      if ((mode === 'view' || mode === 'edit') && transactionUuid) {
+        const fetchTransaction = async () => {
+          try {
+            const token = getCookie('token');
+            const headers = {
+              'Content-Type': 'application/json',
+              ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+            };
+            const response = await fetch(`/api/financial/transactions/${transactionUuid}`, {
+              method: 'GET',
+              headers
+            });
+            if (response.ok) {
+              const data = await response.json();
+              setType(data.type === 'INCOME' ? 'دخل' : 'مصروف');
+              setAmount(String(data.amount));
+              setDate(new Date(data.transactionDate));
+              setAppointment(data.appointmentUuid || "None");
+              setNotes(data.note || "");
+            }
+          } catch (error) {
+            console.error('Error fetching transaction details:', error);
+          }
+        };
+        fetchTransaction();
+      } else {
+        // Reset states for add mode
+        setType("");
+        setAmount("");
+        setCurrency("د.أ");
+        setDate(new Date());
+        setAppointment("");
+        setNotes("");
+      }
+    }
+  }, [isOpen, mode, transactionUuid]);
+
   if (!isOpen) return null;
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     // Basic validation
     if (!type || !amount || !date) return;
 
-    onSuccess({ type, amount, currency, date, appointment, notes });
-    broadcast({ type: 'DATA_UPDATE', module: 'finance' });
-    handleClose();
+    // Map fields
+    const mappedType = type === 'دخل' || type === 'INCOME' ? 'INCOME' : 'EXPENSE';
+    const formattedDate = format(date, 'yyyy-MM-dd');
+    const appointmentUuid = appointment && appointment !== 'None' ? appointment : null;
+
+    const payload = {
+      type: mappedType,
+      amount: parseFloat(amount),
+      transactionDate: formattedDate,
+      appointmentUuid,
+      note: notes || ""
+    };
+
+    try {
+      const token = getCookie('token');
+      const headers = {
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+      };
+
+      const response = await fetch('/api/financial/transactions', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload)
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Invoke onSuccess callback
+        onSuccess(data);
+        broadcast({ type: 'DATA_UPDATE', module: 'finance' });
+        window.showToast?.(isAr ? 'تمت إضافة العملية المالية بنجاح' : 'Transaction added successfully', 'success');
+        handleClose();
+      } else {
+        let errMsg = 'Failed to add transaction';
+        try {
+          const errData = await response.json();
+          errMsg = errData.message || errData.error || errMsg;
+        } catch (e) {}
+        window.showToast?.(errMsg, 'error');
+      }
+    } catch (error: any) {
+      console.error('Error adding transaction:', error);
+      window.showToast?.(error.message || 'Error communicating with server', 'error');
+    }
+  };
+
+  const handleEditSubmit = async () => {
+    if (!type || !amount || !date) return;
+
+    const mappedType = type === 'دخل' || type === 'INCOME' ? 'INCOME' : 'EXPENSE';
+    const formattedDate = format(date, 'yyyy-MM-dd');
+    const appointmentUuid = appointment && appointment !== 'None' ? appointment : null;
+
+    const payload = {
+      type: mappedType,
+      amount: parseFloat(amount),
+      transactionDate: formattedDate,
+      appointmentUuid,
+      note: notes || ""
+    };
+
+    try {
+      const token = getCookie('token');
+      const headers = {
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+      };
+
+      const response = await fetch(`/api/financial/transactions/${transactionUuid}`, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify(payload)
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        onSuccess(data);
+        broadcast({ type: 'DATA_UPDATE', module: 'finance' });
+        window.showToast?.(isAr ? 'تم تعديل العملية المالية بنجاح' : 'Transaction updated successfully', 'success');
+        handleClose();
+      } else {
+        let errMsg = 'Failed to edit transaction';
+        try {
+          const errData = await response.json();
+          errMsg = errData.message || errData.error || errMsg;
+        } catch (e) {}
+        window.showToast?.(errMsg, 'error');
+      }
+    } catch (error: any) {
+      console.error('Error editing transaction:', error);
+      window.showToast?.(error.message || 'Error communicating with server', 'error');
+    }
   };
 
   const isFormValid = !!(type && amount && date);
@@ -133,7 +258,9 @@ const AddOperationModal = ({ isOpen, onClose, onSuccess }: AddOperationModalProp
                   <DollarSign className="size-7 text-primary" />
                 </div>
                 <div>
-                  <h2 className="text-2xl font-bold text-[#1a2b3c]">{t('modal_title', T)}</h2>
+                  <h2 className="text-2xl font-bold text-[#1a2b3c]">
+                    {mode === 'view' ? t('modal_title_view', T) : mode === 'edit' ? t('modal_title_edit', T) : t('modal_title', T)}
+                  </h2>
                   <p className="text-muted-foreground">{t('modal_desc', T)}</p>
                 </div>
               </div>
@@ -146,7 +273,7 @@ const AddOperationModal = ({ isOpen, onClose, onSuccess }: AddOperationModalProp
                   <label className={cn("block text-sm font-bold text-[#1a2b3c]", isAr ? "mr-1" : "ml-1")}>
                     {t('type_label', T)} <span className="text-destructive">*</span>
                   </label>
-                  <Select value={type} onValueChange={setType}>
+                  <Select disabled={mode === 'view'} value={type} onValueChange={setType}>
                     <SelectTrigger className="h-12 rounded-xl bg-muted/30 border-border border">
                       <SelectValue placeholder={t('select_type', T)} />
                     </SelectTrigger>
@@ -164,6 +291,7 @@ const AddOperationModal = ({ isOpen, onClose, onSuccess }: AddOperationModalProp
                   </label>
                   <div className="relative group">
                     <Input
+                      disabled={mode === 'view'}
                       type="number"
                       placeholder="0.00"
                       min="0"
@@ -183,7 +311,7 @@ const AddOperationModal = ({ isOpen, onClose, onSuccess }: AddOperationModalProp
                 {/* Currency */}
                 <div className="space-y-2">
                   <label className={cn("block text-sm font-bold text-[#1a2b3c]", isAr ? "mr-1" : "ml-1")}>{t('table_currency', T)}</label>
-                  <Select value={currency} onValueChange={setCurrency}>
+                  <Select disabled={mode === 'view'} value={currency} onValueChange={setCurrency}>
                     <SelectTrigger className="h-12 rounded-xl bg-muted/30 border-border border">
                       <SelectValue placeholder={t('jod', T)} />
                     </SelectTrigger>
@@ -201,6 +329,7 @@ const AddOperationModal = ({ isOpen, onClose, onSuccess }: AddOperationModalProp
                   </label>
                   <div className="relative group flex items-center justify-between h-12 bg-muted/30 border border-border rounded-xl px-4 transition-all focus-within:ring-4 focus-within:ring-primary/10 focus-within:bg-white">
                     <Flatpickr
+                      disabled={mode === 'view'}
                       value={date}
                       onChange={([d]) => setDate(d)}
                       options={{
@@ -218,7 +347,7 @@ const AddOperationModal = ({ isOpen, onClose, onSuccess }: AddOperationModalProp
               {/* Related Appointment */}
               <div className="space-y-2">
                 <label className={cn("block text-sm font-bold text-[#1a2b3c]", isAr ? "mr-1" : "ml-1")}>{t('related_appt_label', T)}</label>
-                <Select value={appointment} onValueChange={setAppointment}>
+                <Select disabled={mode === 'view'} value={appointment} onValueChange={setAppointment}>
                   <SelectTrigger className="h-12 rounded-xl bg-muted/30 border-border border">
                     <SelectValue placeholder={t('select_appt', T)} />
                   </SelectTrigger>
@@ -235,6 +364,7 @@ const AddOperationModal = ({ isOpen, onClose, onSuccess }: AddOperationModalProp
                 <label className={cn("block text-sm font-bold text-[#1a2b3c]", isAr ? "mr-1" : "ml-1")}>{t('table_notes', T)}</label>
                 <div className="relative group">
                   <textarea
+                    disabled={mode === 'view'}
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     placeholder={t('notes_placeholder', T)}
@@ -260,26 +390,61 @@ const AddOperationModal = ({ isOpen, onClose, onSuccess }: AddOperationModalProp
 
           {/* Sticky Footer */}
           <div className="flex gap-4 flex-wrap p-8 border-t border-border bg-white mt-auto shrink-0 z-10">
-            <button
-              disabled={!isFormValid}
-              onClick={handleSubmit}
-              className={cn(
-                "flex-1 h-12 rounded-xl font-bold flex items-center justify-center gap-2 transition-all duration-300",
-                isFormValid
-                  ? "bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/20"
-                  : "bg-muted text-muted-foreground cursor-not-allowed opacity-50"
-              )}
-            >
-              <Check className="size-5" />
-              {t('add_btn', T)}
-            </button>
-            <button
-              onClick={handleClose}
-              className="flex-1 h-12 rounded-xl border border-border font-bold text-foreground hover:text-white transition-all active:scale-95 flex items-center justify-center gap-2 hover:bg-accent"
-            >
-              <X className="size-4" />
-              {t('cancel', T)}
-            </button>
+            {mode === 'view' ? (
+              <button
+                onClick={handleClose}
+                className="flex-1 h-12 rounded-xl border border-border font-bold text-foreground hover:bg-accent hover:text-white transition-all active:scale-95 flex items-center justify-center gap-2"
+              >
+                <X className="size-4" />
+                {isAr ? "إغلاق" : "Close"}
+              </button>
+            ) : mode === 'edit' ? (
+              <>
+                <button
+                  disabled={!isFormValid}
+                  onClick={handleEditSubmit}
+                  className={cn(
+                    "flex-1 h-12 rounded-xl font-bold flex items-center justify-center gap-2 transition-all duration-300",
+                    isFormValid
+                      ? "bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/20"
+                      : "bg-muted text-muted-foreground cursor-not-allowed opacity-50"
+                  )}
+                >
+                  <Check className="size-5" />
+                  {t('confirm_edits', T)}
+                </button>
+                <button
+                  onClick={handleClose}
+                  className="flex-1 h-12 rounded-xl border border-border font-bold text-foreground hover:text-white transition-all active:scale-95 flex items-center justify-center gap-2 hover:bg-accent"
+                >
+                  <X className="size-4" />
+                  {t('cancel', T)}
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  disabled={!isFormValid}
+                  onClick={handleSubmit}
+                  className={cn(
+                    "flex-1 h-12 rounded-xl font-bold flex items-center justify-center gap-2 transition-all duration-300",
+                    isFormValid
+                      ? "bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/20"
+                      : "bg-muted text-muted-foreground cursor-not-allowed opacity-50"
+                  )}
+                >
+                  <Check className="size-5" />
+                  {t('add_btn', T)}
+                </button>
+                <button
+                  onClick={handleClose}
+                  className="flex-1 h-12 rounded-xl border border-border font-bold text-foreground hover:text-white transition-all active:scale-95 flex items-center justify-center gap-2 hover:bg-accent"
+                >
+                  <X className="size-4" />
+                  {t('cancel', T)}
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>

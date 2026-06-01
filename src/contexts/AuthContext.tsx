@@ -23,6 +23,7 @@ interface AuthContextType {
   register: (payload: any) => Promise<void>
   logout: () => Promise<void>
   updateProfileImage: (image: string | null) => void
+  updateUser: (updatedFields: Partial<UserProfile>) => void
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -195,7 +196,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }
 
   const register = async (payload: any) => {
-    const response = await fetch('/api/auth/register', {
+    const response = await fetch('/api/clinic', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -214,12 +215,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw new Error(errorMessage)
     }
 
-    const userData: UserProfile = await response.json()
-    setUser(userData)
-    localStorage.setItem('medexa_user', JSON.stringify(userData))
+    const clinicData = await response.json()
+    console.log('Clinic registered:', clinicData)
+    const ownerUser = payload.owner?.user
+    if (ownerUser) {
+      const userProfile: UserProfile = {
+        firstName: ownerUser.firstName,
+        surName: ownerUser.surName,
+        lastName: ownerUser.lastName,
+        email: ownerUser.email,
+        phoneNumber: ownerUser.phoneNumber,
+        gender: ownerUser.gender,
+        dateOfBirth: ownerUser.dateOfBirth,
+        role: "ROLE_CLINIC_OWNER"
+      }
+      setUser(userProfile)
+      localStorage.setItem('medexa_user', JSON.stringify(userProfile))
 
-    const channel = new BroadcastChannel('medexa_sync');
-    channel.postMessage({ type: 'AUTH_UPDATE', isAuthenticated: isAuthenticated, user: userData });
+      const channel = new BroadcastChannel('medexa_sync');
+      channel.postMessage({ type: 'AUTH_UPDATE', isAuthenticated: isAuthenticated, user: userProfile });
+    }
   }
 
   const logout = async () => {
@@ -259,8 +274,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setProfileImage(image)
   }
 
+  const updateUser = (updatedFields: Partial<UserProfile>) => {
+    setUser((prev) => {
+      if (!prev) return null
+      const nextUser = { ...prev, ...updatedFields }
+      localStorage.setItem('medexa_user', JSON.stringify(nextUser))
+      const channel = new BroadcastChannel('medexa_sync')
+      channel.postMessage({ type: 'AUTH_UPDATE', isAuthenticated: true, user: nextUser })
+      return nextUser
+    })
+  }
+
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, profileImage, login, register, logout, updateProfileImage }}>
+    <AuthContext.Provider value={{ isAuthenticated, user, profileImage, login, register, logout, updateProfileImage, updateUser }}>
       {children}
     </AuthContext.Provider>
   )

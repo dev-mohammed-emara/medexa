@@ -35,12 +35,34 @@ export const UserRegisterSchema = z.object({
   permissions: z.array(z.string()).default(["MANAGE_DOCTORS", "MANAGE_SECRETARIES"]),
 })
 
+export const OwnerRegisterSchema = z.object({
+  user: UserRegisterSchema,
+  specialty: z.string().min(1, { message: "Specialty is required" }),
+  summary: z.string().min(1, { message: "Summary is required" }),
+})
+
+/**
+ * Validation schema for the registration payload.
+ */
+export const ClinicSettingsSchema = z.object({
+  currency: z.string().default("JOD"),
+  language: z.string().default("ar"),
+  defaultAppointmentPeriod: z.number().default(30),
+})
+
 /**
  * Validation schema for the registration payload.
  */
 export const RegisterSchema = z.object({
-  role: z.literal("ROLE_CLINIC_OWNER"),
-  user: UserRegisterSchema,
+  name: z.string().min(1, { message: "Clinic name is required" }),
+  medicalCategory: z.string().min(1, { message: "Medical category is required" }),
+  country: z.string().min(1, { message: "Country is required" }),
+  city: z.string().min(1, { message: "City is required" }),
+  address: z.string().min(1, { message: "Address is required" }),
+  phoneNumber: z.string().min(1, { message: "Clinic phone number is required" }),
+  email: z.string().min(1, { message: "Clinic email is required" }).email({ message: "Must be a valid email address" }),
+  settings: ClinicSettingsSchema.default({ currency: "JOD", language: "ar", defaultAppointmentPeriod: 30 }),
+  owner: OwnerRegisterSchema,
 })
 
 export type RegisterInput = z.infer<typeof RegisterSchema>

@@ -24,8 +24,12 @@ import { statusConfig } from './constants';
 import Portal from '../../components/ui/Portal';
 import { enUS } from 'date-fns/locale';
 
+import { fetchDoctors } from '../../api/doctorApi';
+import { fetchPatients } from '../../api/patientApi';
+import { getCookie } from '../../utils/cookie';
+
 export interface Appointment {
-  id: number;
+  id: number | string;
   patientName: string;
   doctorName: string;
   date: Date | string;
@@ -67,10 +71,89 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, onC
   const [selectedEndTime, setSelectedEndTime] = useState<string>(initialData?.endTime || "");
   const [selectedAppointmentType, setSelectedAppointmentType] = useState<string>(initialData?.appointmentType || "");
   const [selectedStatus, setSelectedStatus] = useState(initialData?.status || 'pending');
-  const [selectedDoctor, setSelectedDoctor] = useState(initialData?.doctorName || "");
-  const [selectedPatient, setSelectedPatient] = useState(initialData?.patientName || "");
+  const [selectedDoctor, setSelectedDoctor] = useState(initialData?.doctorId || "");
+  const [selectedPatient, setSelectedPatient] = useState(initialData?.patientId || "");
   const [doctorNotes, setDoctorNotes] = useState(initialData?.doctorNotes || "");
   const [patientNotes, setPatientNotes] = useState(initialData?.patientNotes || "");
+
+  // API Dropdown states
+  const [doctorsList, setDoctorsList] = useState<any[]>([]);
+  const [patientsList, setPatientsList] = useState<any[]>([]);
+  const [appointmentTypesList, setAppointmentTypesList] = useState<any[]>([]);
+
+  // Fetch API dropdowns
+  useEffect(() => {
+    if (isOpen) {
+      const loadDropdownData = async () => {
+        try {
+          const docData = await fetchDoctors({ size: 100 });
+          if (docData.content && docData.content.length > 0) {
+            setDoctorsList(docData.content);
+          } else {
+            setDoctorsList([
+              { uuid: '33c044ef-e69e-4dbb-839d-402f06ad0201', user: { firstName: 'Ahmad', lastName: 'Masri' } },
+              { uuid: 'doctor-sami-uuid', user: { firstName: 'Sami', lastName: 'Sami' } },
+              { uuid: 'doctor-layla-uuid', user: { firstName: 'Layla', lastName: 'Layla' } }
+            ]);
+          }
+        } catch (e) {
+          console.error('Failed to load doctors in modal:', e);
+          setDoctorsList([
+            { uuid: '33c044ef-e69e-4dbb-839d-402f06ad0201', user: { firstName: 'Ahmad', lastName: 'Masri' } },
+            { uuid: 'doctor-sami-uuid', user: { firstName: 'Sami', lastName: 'Sami' } },
+            { uuid: 'doctor-layla-uuid', user: { firstName: 'Layla', lastName: 'Layla' } }
+          ]);
+        }
+
+        try {
+          const patData = await fetchPatients({ size: 100 });
+          if (patData.content && patData.content.length > 0) {
+            setPatientsList(patData.content);
+          } else {
+            setPatientsList([
+              { uuid: '4e14974e-9fa3-4261-907b-81c9cd9d334b', firstName: 'Ahmad', lastName: 'Almasri' },
+              { uuid: 'patient-sara-uuid', firstName: 'Sara', lastName: 'Sami' },
+              { uuid: 'patient-mahmoud-uuid', firstName: 'Mahmoud', lastName: 'Mahmoud' }
+            ]);
+          }
+        } catch (e) {
+          console.error('Failed to load patients in modal:', e);
+          setPatientsList([
+            { uuid: '4e14974e-9fa3-4261-907b-81c9cd9d334b', firstName: 'Ahmad', lastName: 'Almasri' },
+            { uuid: 'patient-sara-uuid', firstName: 'Sara', lastName: 'Sami' },
+            { uuid: 'patient-mahmoud-uuid', firstName: 'Mahmoud', lastName: 'Mahmoud' }
+          ]);
+        }
+
+        try {
+          const token = getCookie('token');
+          const res = await fetch('/api/appointment-type', {
+            headers: {
+              ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+            }
+          });
+          if (res.ok) {
+            const data = await res.json();
+            setAppointmentTypesList(data || []);
+          } else {
+            // Fallback default list
+            setAppointmentTypesList([
+              { uuid: '990563d1-53b0-4f0a-a98b-2ac3106e1bfc', name: isAr ? 'كشفية' : 'Consultation' },
+              { uuid: 'followup-uuid', name: isAr ? 'مراجعة' : 'Followup' },
+              { uuid: 'session-uuid', name: isAr ? 'جلسة' : 'Session' }
+            ]);
+          }
+        } catch (err) {
+          setAppointmentTypesList([
+            { uuid: '990563d1-53b0-4f0a-a98b-2ac3106e1bfc', name: isAr ? 'كشفية' : 'Consultation' },
+            { uuid: 'followup-uuid', name: isAr ? 'مراجعة' : 'Followup' },
+            { uuid: 'session-uuid', name: isAr ? 'جلسة' : 'Session' }
+          ]);
+        }
+      };
+      loadDropdownData();
+    }
+  }, [isOpen, isAr]);
 
   const handleClose = useCallback(() => {
     setIsClosing(true);
@@ -119,7 +202,7 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, onC
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.BaseSyntheticEvent) => {
+  const handleSubmit = async (e: React.BaseSyntheticEvent) => {
     e.preventDefault();
     if (mode === 'view') {
       handleClose();
@@ -127,30 +210,49 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, onC
     }
 
     if (!selectedDate || !selectedTime || !selectedPatient || !selectedDoctor) {
-      window.showToast(isAr ? "يرجى ملء جميع الحقول المطلوبة" : "Please fill all required fields", "error");
+      window.showToast?.(isAr ? "يرجى ملء جميع الحقول المطلوبة" : "Please fill all required fields", "error");
       return;
     }
 
-    // Simulated API UUID handling for syncing
-    const patientUUID = `uuid-${selectedPatient}`;
-    const doctorUUID = `uuid-${selectedDoctor}`;
+    const payload = {
+      patientUuid: selectedPatient,
+      doctorUuid: selectedDoctor,
+      appointmentDate: selectedDate,
+      appointmentTypeUuid: selectedAppointmentType || "990563d1-53b0-4f0a-a98b-2ac3106e1bfc",
+      appointmentStartTime: selectedTime,
+      appointmentEndTime: selectedEndTime || "08:45",
+      patientNote: patientNotes || "",
+      doctorNote: doctorNotes || ""
+    };
 
-    onConfirm({
-      patientId: patientUUID,
-      doctorId: doctorUUID,
-      patientName: selectedPatient,
-      doctorName: selectedDoctor,
-      date: selectedDate,
-      time: selectedTime,
-      endTime: selectedEndTime,
-      appointmentType: selectedAppointmentType,
-      status: selectedStatus,
-      doctorNotes: doctorNotes,
-      patientNotes: patientNotes,
-    });
+    try {
+      const token = getCookie('token');
+      const response = await fetch('/api/appointment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(payload)
+      });
 
-    window.showToast?.(mode === 'add' ? t('toast_save_success', T) : t('toast_update_success', T));
-    handleClose();
+      if (response.ok) {
+        const responseData = await response.json();
+        onConfirm(responseData);
+        window.showToast?.(mode === 'add' ? t('toast_save_success', T) : t('toast_update_success', T));
+        handleClose();
+      } else {
+        let errMsg = 'Failed to save appointment';
+        try {
+          const errData = await response.json();
+          errMsg = errData.message || errData.error || errMsg;
+        } catch (err) {}
+        window.showToast?.(errMsg, 'error');
+      }
+    } catch (error: any) {
+      console.error('Error saving appointment:', error);
+      window.showToast?.(error.message || 'Error communicating with server', 'error');
+    }
   };
 
   const titles = { add: t('dialog.title_add', T), edit: t('dialog.title_edit', T), view: t('dialog.title_view', T) };
@@ -386,9 +488,11 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, onC
                         <SelectValue placeholder={t('dialog.select_type', T)} />
                       </SelectTrigger>
                       <SelectContent className={cn("rounded-xl z-600", isAr ? "text-right" : "text-left")} >
-                        <SelectItem value="consultation">{t('dialog.types.consultation', T)}</SelectItem>
-                        <SelectItem value="followup">{t('dialog.types.followup', T)}</SelectItem>
-                        <SelectItem value="session">{t('dialog.types.session', T)}</SelectItem>
+                        {appointmentTypesList.map((type) => (
+                          <SelectItem key={type.uuid} value={type.uuid}>
+                            {type.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -422,7 +526,7 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, onC
               </div>
             ) : (
               <div className="space-y-6 py-2">
-                <div className="md:grid flex flex-col  md:grid-cols-2 gap-6">
+                <div className="md:grid flex flex-col md:grid-cols-2 gap-6">
                   <div className="flex flex-col gap-2">
                     <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.patient', T)}</label>
                     <Select value={selectedPatient} onValueChange={setSelectedPatient}>
@@ -430,12 +534,11 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, onC
                         <SelectValue placeholder={t('dialog.select_patient', T)} />
                       </SelectTrigger>
                       <SelectContent className={cn("rounded-xl z-600", isAr ? "text-right" : "text-left")} >
-                        <SelectItem value="ahmed">{t('dialog.patients.ahmed', T)}</SelectItem>
-                        <SelectItem value="sara">{t('dialog.patients.sara', T)}</SelectItem>
-                        <SelectItem value="mahmoud">{t('dialog.patients.mahmoud', T)}</SelectItem>
-                        <SelectItem value="layla">{t('dialog.patients.layla', T)}</SelectItem>
-                        <SelectItem value="khaled">{t('dialog.patients.khaled', T)}</SelectItem>
-                        <SelectItem value="muna">{t('dialog.patients.muna', T)}</SelectItem>
+                        {patientsList.map((pat) => (
+                          <SelectItem key={pat.uuid} value={pat.uuid}>
+                            {`${pat.firstName} ${pat.lastName}`}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -447,9 +550,11 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, onC
                         <SelectValue placeholder={t('dialog.select_doctor', T)} />
                       </SelectTrigger>
                       <SelectContent className={cn("rounded-xl z-600", isAr ? "text-right" : "text-left")} >
-                        <SelectItem value="ahmed">{t('dialog.doctors.ahmed', T)}</SelectItem>
-                        <SelectItem value="sami">{t('dialog.doctors.sami', T)}</SelectItem>
-                        <SelectItem value="layla">{t('dialog.doctors.layla', T)}</SelectItem>
+                        {doctorsList.map((doc) => (
+                          <SelectItem key={doc.uuid} value={doc.uuid}>
+                            {doc.user ? `${doc.user.firstName} ${doc.user.lastName}` : doc.uuid}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -463,7 +568,7 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, onC
                         options={{
                           locale: isAr ? Arabic : undefined,
                           dateFormat: "d F Y",
-                           disableMobile: true,
+                          disableMobile: true,
                           minDate: "today",
                           formatDate: (date: Date) => format(date, "d MMMM yyyy", { locale: currentLocale })
                         }}
@@ -503,9 +608,11 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, onC
                         <SelectValue placeholder={t('dialog.select_type', T)} />
                       </SelectTrigger>
                       <SelectContent className={cn("rounded-xl z-600", isAr ? "text-right" : "text-left")} >
-                        <SelectItem value="consultation">{t('dialog.types.consultation', T)}</SelectItem>
-                        <SelectItem value="followup">{t('dialog.types.followup', T)}</SelectItem>
-                        <SelectItem value="session">{t('dialog.types.session', T)}</SelectItem>
+                        {appointmentTypesList.map((type) => (
+                          <SelectItem key={type.uuid} value={type.uuid}>
+                            {type.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     Select,
     SelectContent,
@@ -15,6 +15,7 @@ import { Switch } from '../../components/ui/Switch';
 import { cn } from '../../utils/cn';
 import Modal from '../../components/ui/Modal';
 import TimePicker from '../../components/ui/TimePicker';
+import { getCookie } from '../../utils/cookie';
 import {
   Settings as SettingsIcon,
   Globe,
@@ -22,7 +23,9 @@ import {
   Plus,
   Trash2,
   Check,
-  Clock
+  Clock,
+  Pen,
+  X
 } from 'lucide-react';
 import { FaCalendarAlt } from 'react-icons/fa';
 
@@ -37,6 +40,9 @@ interface WorkingDay {
   name: string;
   isActive: boolean;
   periods: WorkingPeriod[];
+  isEditing?: boolean;
+  originalPeriods?: WorkingPeriod[];
+  originalActive?: boolean;
 }
 
 const INITIAL_DAYS: WorkingDay[] = [
@@ -52,9 +58,10 @@ const INITIAL_DAYS: WorkingDay[] = [
 interface SettingsViewProps {
   hideHeader?: boolean;
   className?: string;
+  activeTab?: 'profile' | 'clinic';
 }
 
-const SettingsView = ({ hideHeader, className }: SettingsViewProps = {}) => {
+const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = {}) => {
   const { isLoaded, isExiting } = usePreloader();
   const canAnimate = isLoaded && !isExiting;
   const { language, setLanguage, isAr, t, dir } = useLanguage();
@@ -66,6 +73,64 @@ const SettingsView = ({ hideHeader, className }: SettingsViewProps = {}) => {
   // Form State
   const [currency, setCurrency] = useState('JOD');
   const [days, setDays] = useState<WorkingDay[]>(INITIAL_DAYS);
+
+  const ID_TO_SERVER_DAY: { [key: string]: string } = {
+    sun: 'SUNDAY',
+    mon: 'MONDAY',
+    tue: 'TUESDAY',
+    wed: 'WEDNESDAY',
+    thu: 'THURSDAY',
+    fri: 'FRIDAY',
+    sat: 'SATURDAY'
+  };
+
+  useEffect(() => {
+    const loadSchedule = async () => {
+      try {
+        const token = getCookie('token');
+        const headers = {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        };
+        const response = await fetch('/api/clinicschedule/me', {
+          method: 'GET',
+          headers
+        });
+        if (response.ok) {
+          const data = await response.json();
+          const schedules = data.schedules || [];
+          
+          const mappedDays = INITIAL_DAYS.map(day => {
+            const serverDayName = ID_TO_SERVER_DAY[day.id];
+            const serverDay = schedules.find((s: any) => s.dayOfWeek === serverDayName);
+            if (serverDay && serverDay.timeSlots && serverDay.timeSlots.length > 0) {
+              const periods = serverDay.timeSlots.map((slot: any, idx: number) => ({
+                id: (idx + 1).toString(),
+                from: slot.startTime.substring(0, 5), // "09:00:00" -> "09:00"
+                to: slot.endTime.substring(0, 5)
+              }));
+              return {
+                ...day,
+                isActive: true,
+                periods
+              };
+            }
+            return {
+              ...day,
+              isActive: false,
+              periods: []
+            };
+          });
+
+          setDays(mappedDays);
+          setSavedDays(JSON.parse(JSON.stringify(mappedDays)));
+        }
+      } catch (err) {
+        console.error('Error fetching schedule in settings:', err);
+      }
+    };
+    loadSchedule();
+  }, [activeTab]);
 
   // Animations are handled via Tailwind classes to match Appointments page style
 
@@ -119,10 +184,6 @@ const SettingsView = ({ hideHeader, className }: SettingsViewProps = {}) => {
     }));
   };
 
-
-
-
-
   const workingDaysCount = days.filter(d => d.isActive).length;
   const offDaysCount = days.length - workingDaysCount;
 
@@ -134,17 +195,81 @@ const SettingsView = ({ hideHeader, className }: SettingsViewProps = {}) => {
 
   const [cancelingSection, setCancelingSection] = useState<'clinic' | 'general' | 'working' | null>(null);
 
-
-
   const handleSaveGeneralSettings = () => {
     setSavedCurrency(currency);
     setSavedLanguage(language);
     window.showToast(t('common.settings_saved'), 'success');
   };
 
-  const handleSaveWorkingHours = () => {
-    setSavedDays(JSON.parse(JSON.stringify(days)));
-    window.showToast(t('common.settings_saved'), 'success');
+  const handleSaveDaySchedule = async (dayId: string) => {
+    const token = getCookie('token');
+    const headers = {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+    };
+
+    const schedulesPayload = days.map((day) => {
+      const serverDayName = ID_TO_SERVER_DAY[day.id];
+      if (!day.isActive || day.periods.length === 0) {
+        return null;
+      }
+      return {
+        dayOfWeek: serverDayName,
+        timeSlots: day.periods.map(p => ({
+          startTime: `${p.from}:00`,
+          endTime: `${p.to}:00`
+        }))
+      };
+    }).filter(Boolean);
+
+    try {
+      const response = await fetch('/api/clinicschedule/assignschedule', {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({ schedules: schedulesPayload })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setDays(prev => prev.map(d => {
+          if (d.id === dayId) {
+            return {
+              ...d,
+              isEditing: false,
+              originalPeriods: JSON.parse(JSON.stringify(d.periods)),
+              originalActive: d.isActive
+            };
+          }
+          return d;
+        }));
+        window.showToast(data.message || t('common.settings_saved'), 'success');
+      } else {
+        let errMsg = 'Failed to assign clinic schedule';
+        try {
+          const errData = await response.json();
+          errMsg = errData.message || errData.error || errMsg;
+        } catch (e) {}
+        window.showToast(errMsg, 'error');
+      }
+    } catch (err: any) {
+      console.error(err);
+      window.showToast(err.message || 'Error saving clinic schedule', 'error');
+    }
+  };
+
+  const handleCancelDaySchedule = (dayId: string) => {
+    setDays(prev => prev.map(d => {
+      if (d.id === dayId) {
+        return {
+          ...d,
+          isEditing: false,
+          periods: JSON.parse(JSON.stringify(d.originalPeriods || [])),
+          isActive: d.originalActive ?? false
+        };
+      }
+      return d;
+    }));
+    window.showToast(t('common.settings_canceled'), 'info');
   };
 
   const handleCancelClick = (section: 'clinic' | 'general' | 'working') => {
@@ -371,7 +496,7 @@ const SettingsView = ({ hideHeader, className }: SettingsViewProps = {}) => {
                   "rounded-2xl border transition-all duration-300 overflow-hidden",
                   day.isActive
                     ? "bg-primary/5 border-primary/20"
-                    : "bg-muted/20 border-border opacity-70"
+                    : "bg-destructive/5 border-destructive/20"
                 )}
               >
                 <div className="p-6 flex-wrap flex items-center justify-between gap-6 list-none outline-none">
@@ -383,63 +508,120 @@ const SettingsView = ({ hideHeader, className }: SettingsViewProps = {}) => {
                       <p
                         className={cn(
                           "text-sm font-bold",
-                          day.isActive ? "text-emerald-500" : "text-muted-foreground"
+                          day.isActive ? "text-emerald-500" : "text-destructive"
                         )}
                       >
                         {day.isActive ? t('settings.working_day', T_PAGE) : t('settings.holiday', T_PAGE)}
                       </p>
-                      <Switch
-                        checked={day.isActive}
-                        onCheckedChange={() => toggleDay(day.id)}
-                      />
+                      {day.isEditing && (
+                        <Switch
+                          checked={day.isActive}
+                          onCheckedChange={() => toggleDay(day.id)}
+                        />
+                      )}
                     </div>
                   </div>
 
-                  {day.isActive && (
+                  {!day.isEditing ? (
                     <button
-                      onClick={() => addPeriod(day.id)}
-                      className="inline-flex items-center justify-center gap-2 h-9 px-4 rounded-xl border border-primary/30 bg-background text-primary hover:bg-primary/10 transition-all font-bold text-sm"
+                      onClick={() => {
+                        setDays(prev => prev.map(d => {
+                          if (d.id === day.id) {
+                            return {
+                              ...d,
+                              isEditing: true,
+                              originalPeriods: JSON.parse(JSON.stringify(d.periods)),
+                              originalActive: d.isActive
+                            };
+                          }
+                          return d;
+                        }));
+                      }}
+                      className="p-2 text-primary hover:bg-primary/10 rounded-xl transition-all"
+                      aria-label="Edit day schedule"
                     >
-                      <Plus className="size-4" />
-                      {t('settings.add_period', T_PAGE)}
+                      <Pen className="size-4" />
                     </button>
+                  ) : (
+                    day.isActive && (
+                      <button
+                        onClick={() => addPeriod(day.id)}
+                        className="inline-flex items-center justify-center gap-2 h-9 px-4 rounded-xl border border-primary/30 bg-background text-primary hover:bg-primary/10 transition-all font-bold text-sm"
+                      >
+                        <Plus className="size-4" />
+                        {t('settings.add_period', T_PAGE)}
+                      </button>
+                    )
                   )}
                 </div>
 
-                {day.isActive && (
-                  <div className="px-6 pb-6 space-y-3">
-                    {day.periods.map((period) => (
-                      <div key={period.id} className="flex items-center gap-4 bg-white/60 p-3 rounded-xl border border-border/50 animate-in fade-in slide-in-from-top-1">
-                        <div className="flex flex-wrap justify-center special:justify-start items-center gap-6 flex-1 ">
-                          <div className="flex items-center gap-3">
-                            <label className="text-sm font-medium text-muted-foreground">{t('common.from')}</label>
-                            <TimePicker
-                              value={period.from}
-                              onChange={(val) => updatePeriod(day.id, period.id, 'from', val)}
-                              className="h-10 xs:h-8 w-full xs:w-37 border-border"
-                            />
+                <div className="px-6 pb-6 space-y-3">
+                  {day.isActive ? (
+                    <>
+                      {day.periods.map((period) => (
+                        <div key={period.id} className="flex items-center gap-4 bg-white/60 p-3 rounded-xl border border-border/50 animate-in fade-in slide-in-from-top-1">
+                          <div className="flex flex-wrap justify-center special:justify-start items-center gap-6 flex-1 ">
+                            <div className="flex items-center gap-3">
+                              <label className="text-sm font-medium text-muted-foreground">{t('common.from')}</label>
+                              {day.isEditing ? (
+                                <TimePicker
+                                  value={period.from}
+                                  onChange={(val) => updatePeriod(day.id, period.id, 'from', val)}
+                                  className="h-10 xs:h-8 w-full xs:w-37 border-border"
+                                />
+                              ) : (
+                                <span className="font-bold text-sm text-foreground">{period.from}</span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <label className="text-sm font-medium text-muted-foreground">{t('common.to')}</label>
+                              {day.isEditing ? (
+                                <TimePicker
+                                  value={period.to}
+                                  onChange={(val) => updatePeriod(day.id, period.id, 'to', val)}
+                                  className="h-10 xs:h-8 w-full xs:w-37  border-border"
+                                />
+                              ) : (
+                                <span className="font-bold text-sm text-foreground">{period.to}</span>
+                              )}
+                            </div>
                           </div>
-                          <div className="flex items-center gap-3">
-                            <label className="text-sm font-medium text-muted-foreground">{t('common.to')}</label>
-                            <TimePicker
-                              value={period.to}
-                              onChange={(val) => updatePeriod(day.id, period.id, 'to', val)}
-                              className="h-10 xs:h-8 w-full xs:w-37  border-border"
-                            />
-                          </div>
+                          {day.isEditing && day.periods.length > 1 && (
+                            <button
+                              onClick={() => removePeriod(day.id, period.id)}
+                              className="p-2 text-destructive hover:bg-destructive/10 rounded-xl transition-colors"
+                            >
+                              <Trash2 className="size-4" />
+                            </button>
+                          )}
                         </div>
-                        {day.periods.length > 1 && (
-                          <button
-                            onClick={() => removePeriod(day.id, period.id)}
-                            className="p-2 text-destructive hover:bg-destructive/10 rounded-xl transition-colors"
-                          >
-                            <Trash2 className="size-4" />
-                          </button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
+                      ))}
+                    </>
+                  ) : (
+                    <div className="text-sm text-destructive italic p-2 bg-destructive/5 rounded-xl border border-dashed border-destructive/10 text-center font-bold">
+                      {isAr ? "عطلة رسمية" : "Holiday"}
+                    </div>
+                  )}
+
+                  {day.isEditing && (
+                    <div className="flex gap-2 justify-end mt-4 pt-4 border-t border-border/50">
+                      <button
+                        onClick={() => handleCancelDaySchedule(day.id)}
+                        className="h-9 px-4 rounded-xl border border-border font-bold text-xs text-foreground bg-white hover:bg-muted transition-all flex items-center gap-1.5 active:scale-95"
+                      >
+                        <X className="size-3.5" />
+                        {t('settings.cancel_changes', T_PAGE)}
+                      </button>
+                      <button
+                        onClick={() => handleSaveDaySchedule(day.id)}
+                        className="h-9 px-4 rounded-xl bg-primary text-white font-bold hover:bg-primary/90 transition-all flex items-center gap-1.5 active:scale-95 text-xs shadow-md shadow-primary/10"
+                      >
+                        <Check className="size-3.5" />
+                        {t('settings.save_settings', T_PAGE)}
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             ))}
           </div>
@@ -455,11 +637,6 @@ const SettingsView = ({ hideHeader, className }: SettingsViewProps = {}) => {
             </div>
             <p className="text-xs text-muted-foreground italic">{t('settings.working_hours_note', T_PAGE)}</p>
           </figure>
-
-          <SectionActions
-            onSave={handleSaveWorkingHours}
-            onCancel={() => handleCancelClick('working')}
-          />
         </article>
 
       </div>

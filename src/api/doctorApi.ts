@@ -125,7 +125,7 @@ export const updateDoctor = async (uuid: string, body: any): Promise<ApiDoctor> 
 }
 
 export const deleteDoctor = async (uuid: string): Promise<void> => {
-  const response = await fetch(`/api/doctor/${uuid}`, {
+  const response = await fetch(`/api/clinic/me/${uuid}?userType=DOCTOR`, {
     method: 'DELETE',
     headers: getHeaders()
   })

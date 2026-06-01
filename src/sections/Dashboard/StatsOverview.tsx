@@ -1,4 +1,4 @@
-import { ArrowUp } from 'lucide-react'
+import { ArrowUp, TrendingDown, DollarSign, TrendingUp, Users, Calendar } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { gsap } from 'gsap'
 import Counter from '../../components/ui/Counter'
@@ -8,12 +8,17 @@ import ShineHover from '../../components/ui/ShineHover'
 import { useLanguage } from '../../contexts/LanguageContext'
 import { dashboardTranslations } from '../../constants/translations/dashboard'
 
-import { statsData as stats } from '../../constants/Dashboard_dummy'
+interface StatsOverviewProps {
+  financialData?: {
+    totalIncome: number
+    totalExpenses: number
+    netProfit: number
+  } | null
+}
 
-const StatsOverview = () => {
+const StatsOverview = ({ financialData }: StatsOverviewProps) => {
   const { isAr, t } = useLanguage()
   const T = dashboardTranslations
-  const statKeys = ['total_patients', 'appointments', 'revenue', 'growth_rate']
   const { isLoaded, isExiting } = usePreloader()
   const canAnimate = isLoaded && !isExiting
   const [isInView, setIsInView] = useState(false)
@@ -21,6 +26,81 @@ const StatsOverview = () => {
   const barsRef = useRef<(HTMLDivElement | null)[]>([])
   const topBarsRef = useRef<(HTMLDivElement | null)[]>([])
   const cardsRef = useRef<(HTMLElement | null)[]>([])
+
+  interface StatItem {
+    label: string
+    value: number
+    change: string
+    sub: string
+    icon: any
+    color: string
+    iconBg: string
+    iconColor: string
+    progress: string
+    isCurrency?: boolean
+    isPercent?: boolean
+  }
+
+  const dynamicStats: StatItem[] = [
+    {
+      label: t('stats.total_patients', T),
+      value: 1234,
+      change: '12%',
+      sub: t('stats.total_patients_sub', T),
+      icon: Users,
+      color: 'linear-gradient(90deg, #0B5A8E, #3FB8AF)',
+      iconBg: 'from-[#0B5A8E]/10 to-[#3FB8AF]/10',
+      iconColor: '#0B5A8E',
+      progress: '60%'
+    },
+    {
+      label: t('stats.appointments', T),
+      value: 456,
+      change: '8%',
+      sub: t('stats.appointments_sub', T),
+      icon: Calendar,
+      color: 'linear-gradient(90deg, #3FB8AF, #5DD9D1)',
+      iconBg: 'from-[#3FB8AF]/10 to-[#5DD9D1]/10',
+      iconColor: '#3FB8AF',
+      progress: '60%'
+    },
+    {
+      label: t('stats.total_income', T),
+      value: financialData ? financialData.totalIncome : 1250,
+      change: '15%',
+      sub: isAr ? 'دينار أردني' : 'JOD',
+      icon: TrendingUp,
+      color: 'linear-gradient(90deg, #10B981, #14B8A6)',
+      iconBg: 'from-emerald-500/10 to-teal-500/10',
+      iconColor: '#10B981',
+      progress: '60%',
+      isCurrency: true
+    },
+    {
+      label: t('stats.total_expenses', T),
+      value: financialData ? financialData.totalExpenses : 1200,
+      change: '5%',
+      sub: isAr ? 'دينار أردني' : 'JOD',
+      icon: TrendingDown,
+      color: 'linear-gradient(90deg, #EF4444, #F87171)',
+      iconBg: 'from-red-500/10 to-rose-500/10',
+      iconColor: '#EF4444',
+      progress: '60%',
+      isCurrency: true
+    },
+    {
+      label: t('stats.net_profit', T),
+      value: financialData ? financialData.netProfit : 50,
+      change: '18%',
+      sub: isAr ? 'دينار أردني' : 'JOD',
+      icon: DollarSign,
+      color: 'linear-gradient(90deg, #0B5A8E, #3FB8AF)',
+      iconBg: 'from-[#0B5A8E]/10 to-[#3FB8AF]/10',
+      iconColor: '#0B5A8E',
+      progress: '60%',
+      isCurrency: true
+    }
+  ]
 
   useEffect(() => {
     if (!canAnimate || !sectionRef.current) return
@@ -35,7 +115,7 @@ const StatsOverview = () => {
           setIsInView(true)
 
           // Animate bars width using GSAP for precise stat value
-           stats.forEach((stat, i) => {
+          dynamicStats.forEach((stat, i) => {
             const card = cardsRef.current[i]
             const bar = barsRef.current[i]
             const topBar = topBarsRef.current[i]
@@ -52,21 +132,21 @@ const StatsOverview = () => {
             }
 
             if (topBar) {
-              gsap.to(topBar, {
-                scaleX: 1,
-                duration: 0.75,
-                delay: 0.05 + (i * 0.05),
-                ease: 'power2.out'
-              })
+               gsap.to(topBar, {
+                 scaleX: 1,
+                 duration: 0.75,
+                 delay: 0.05 + (i * 0.05),
+                 ease: 'power2.out'
+               })
             }
 
             if (bar) {
-              gsap.to(bar, {
-                width: stat.progress,
-                duration: 1.2,
-                delay: 0.1 + (i * 0.05),
-                ease: 'power2.out'
-              })
+               gsap.to(bar, {
+                 width: stat.progress,
+                 duration: 1.2,
+                 delay: 0.1 + (i * 0.05),
+                 ease: 'power2.out'
+               })
             }
           })
 
@@ -81,7 +161,7 @@ const StatsOverview = () => {
     }
 
     return () => observer.disconnect()
-  }, [canAnimate])
+  }, [canAnimate, dynamicStats.length])
 
   // Exit animation logic
   useEffect(() => {
@@ -100,9 +180,9 @@ const StatsOverview = () => {
   return (
     <section
       ref={sectionRef}
-      className="grid grid-cols-1 md:grid-cols-2 overflow-visible lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-10"
+      className="grid grid-cols-1 md:grid-cols-2 overflow-visible lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-10"
     >
-      {stats.map((stat, index) => (
+      {dynamicStats.map((stat, index) => (
         <article
           key={index}
           ref={(el) => { cardsRef.current[index] = el; }}
@@ -128,8 +208,8 @@ const StatsOverview = () => {
           <div className="relative z-10">
             <div className="flex items-start justify-between mb-6">
               <div className={cn("flex-1", isAr ? "text-right" : "text-left")}>
-                <h4 className="text-sm font-medium text-muted-foreground mb-1">{t(`stats.${statKeys[index]}`, T)}</h4>
-                <p className="text-xs text-muted-foreground/70">{t(`stats.${statKeys[index]}_sub`, T)}</p>
+                <h4 className="text-sm font-medium text-muted-foreground mb-1">{stat.label}</h4>
+                <p className="text-xs text-muted-foreground/70">{stat.sub}</p>
               </div>
               <div className={cn(
                 "size-16 rounded-2xl animate-hovering flex items-center justify-center shadow-lg transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 will-change-transform group-hover:shadow-2xl",
@@ -147,7 +227,7 @@ const StatsOverview = () => {
 
             <div className={cn("mb-4", isAr ? "text-right" : "text-left")}>
               <div className={cn("flex items-baseline gap-1 mb-2 h-10", isAr ? "justify-start" : "justify-end flex-row-reverse")}>
-                {statKeys[index] === 'growth_rate' && <span className="text-4xl font-bold">%</span>}
+                {stat.isPercent && <span className="text-4xl font-bold">%</span>}
                 <Counter
                   value={stat.value}
                   fontSize={36}

@@ -1,11 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   TrendingUp,
   TrendingDown,
   DollarSign,
   Plus,
   Smartphone,
-  MoveHorizontal
+  MoveHorizontal,
+  Eye,
+  SquarePen
 } from 'lucide-react';
 import { FaCalendarAlt } from 'react-icons/fa';
 import { Arabic } from 'flatpickr/dist/l10n/ar.js';
@@ -36,24 +38,10 @@ import {
   TableHead,
   TableCell,
 } from '../../components/ui/table';
+import { format } from 'date-fns';
+import { ar } from 'date-fns/locale';
+import { getCookie } from '../../utils/cookie';
 
-
-const getChartData = (t: (key: string, T: any) => string, T: any) => [
-  { name: t('january', T), income: 25000, expenses: 15000 },
-  { name: t('february', T), income: 32000, expenses: 21000 },
-  { name: t('march', T), income: 28000, expenses: 18000 },
-  { name: t('april', T), income: 35000, expenses: 25000 },
-  { name: t('may', T), income: 40000, expenses: 28000 },
-  { name: t('june', T), income: 38000, expenses: 22000 },
-];
-
-const getTransactions = (t: (key: string, T: any) => string, T: any, isAr: boolean) => [
-  { id: 1, type: 'income', amount: '500', currency: 'jod', date: '28/02/2026', related: isAr ? 'موعد #123' : 'Appointment #123', notes: t('general_exam', T) },
-  { id: 2, type: 'expense', amount: '1,200', currency: 'jod', date: '27/02/2026', related: '-', notes: t('buy_equip', T) },
-  { id: 3, type: 'income', amount: '750', currency: 'jod', date: '26/02/2026', related: isAr ? 'موعد #122' : 'Appointment #122', notes: t('kids_exam', T) },
-  { id: 4, type: 'income', amount: '300', currency: 'jod', date: '25/02/2026', related: isAr ? 'موعد #121' : 'Appointment #121', notes: t('follow_up', T) },
-  { id: 5, type: 'expense', amount: '150', currency: 'jod', date: '24/02/2026', related: '-', notes: t('utilities', T) },
-];
 
 const FinanceOverview = () => {
   const { isAr, t, dir } = useLanguage();
@@ -67,25 +55,100 @@ const FinanceOverview = () => {
     }
   });
 
-  const [fromDate, setFromDate] = useState<Date | string>("2026-02-01");
-  const [toDate, setToDate] = useState<Date | string>("2026-02-28");
+  const [fromDate, setFromDate] = useState<string>("2026-01-01");
+  const [toDate, setToDate] = useState<string>("2026-12-31");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<'add' | 'edit' | 'view'>('add');
+  const [selectedTransactionUuid, setSelectedTransactionUuid] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(12);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
-  const chartData = getChartData(t, T);
-  const transactions = getTransactions(t, T, isAr);
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [totalElements, setTotalElements] = useState<number>(0);
 
-  const commonOptions = {
-    dateFormat: 'd F Y',
-    locale: isAr ? Arabic : undefined,
-    disableMobile: true
+  const [stats, setStats] = useState<{
+    totalIncome: number;
+    totalExpense: number;
+    netProfit: number;
+    monthlyData: Array<{ month: string; income: number; expense: number }>;
+  }>({
+    totalIncome: 0,
+    totalExpense: 0,
+    netProfit: 0,
+    monthlyData: []
+  });
+
+  const getHeaders = () => {
+    const token = getCookie('token');
+    return {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+    };
   };
+
+  const loadTransactions = useCallback(async () => {
+    try {
+      const queryParams = new URLSearchParams();
+      queryParams.append('fromDate', fromDate);
+      queryParams.append('toDate', toDate);
+      queryParams.append('page', String(currentPage - 1));
+      queryParams.append('size', String(itemsPerPage));
+      queryParams.append('sort', 'createdAt,desc');
+
+      const response = await fetch(`/api/financial/transactions?${queryParams.toString()}`, {
+        method: 'GET',
+        headers: getHeaders()
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setTransactions(data.content || []);
+        setTotalElements(data.totalElements || 0);
+      }
+    } catch (err) {
+      console.error('Error fetching transactions:', err);
+    }
+  }, [fromDate, toDate, currentPage, itemsPerPage]);
+
+  const loadStatistics = useCallback(async () => {
+    try {
+      const queryParams = new URLSearchParams();
+      queryParams.append('fromDate', fromDate);
+      queryParams.append('toDate', toDate);
+
+      const response = await fetch(`/api/statistics/financial?${queryParams.toString()}`, {
+        method: 'GET',
+        headers: getHeaders()
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setStats(data);
+      }
+    } catch (err) {
+      console.error('Error fetching statistics:', err);
+    }
+  }, [fromDate, toDate]);
+
+  useEffect(() => {
+    loadTransactions();
+  }, [loadTransactions]);
+
+  useEffect(() => {
+    loadStatistics();
+  }, [loadStatistics]);
 
   const handleApply = () => {
-    // Logic for filtering
-    console.log(`Filtering from ${fromDate} to ${toDate}`);
+    setCurrentPage(1);
+    loadTransactions();
+    loadStatistics();
   };
+
+  const chartData = stats.monthlyData.map(item => ({
+    name: item.month,
+    income: item.income,
+    expenses: item.expense
+  }));
 
   return (
     <section className="flex-1 space-y-6 overflow-auto" dir={dir}>
@@ -99,7 +162,11 @@ const FinanceOverview = () => {
           <p className="text-muted-foreground">{t('page_desc', T)}</p>
         </div>
         <button
-          onClick={() => setIsModalOpen(true)}
+          onClick={() => {
+            setModalMode('add');
+            setSelectedTransactionUuid(null);
+            setIsModalOpen(true);
+          }}
           className="inline-flex items-center justify-center gap-2 rounded-md text-sm font-bold transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md text-primary-foreground bg-primary hover:bg-primary/90 h-10 px-6 shadow-sm shadow-primary/20"
         >
           <Plus className={cn("size-5", isAr ? "ml-1" : "mr-1")} />
@@ -110,9 +177,9 @@ const FinanceOverview = () => {
       {/* Stats Cards */}
       <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {[
-          { label: t('total_income', T), value: `1,250 ${t('jod', T)}`, icon: TrendingUp, color: 'text-secondary', bgColor: 'bg-secondary/10', delay: 100 },
-          { label: t('total_expenses', T), value: `1,200 ${t('jod', T)}`, icon: TrendingDown, color: 'text-destructive', bgColor: 'bg-destructive/10', delay: 200 },
-          { label: t('net_profit', T), value: `50 ${t('jod', T)}`, icon: DollarSign, color: 'text-primary', bgColor: 'bg-primary/10', delay: 300 }
+          { label: t('total_income', T), value: `${stats.totalIncome.toLocaleString()} ${t('jod', T)}`, icon: TrendingUp, color: 'text-secondary', bgColor: 'bg-secondary/10', delay: 100 },
+          { label: t('total_expenses', T), value: `${stats.totalExpense.toLocaleString()} ${t('jod', T)}`, icon: TrendingDown, color: 'text-destructive', bgColor: 'bg-destructive/10', delay: 200 },
+          { label: t('net_profit', T), value: `${stats.netProfit.toLocaleString()} ${t('jod', T)}`, icon: DollarSign, color: 'text-primary', bgColor: 'bg-primary/10', delay: 300 }
         ].map((stat, idx) => (
           <article
             key={idx}
@@ -217,7 +284,7 @@ const FinanceOverview = () => {
         style={{ transitionDelay: '500ms' }}
       >
         <header className={cn("flex flex-col xl:flex-row xl:items-end justify-between gap-6 mb-8 p-6 pb-0", isAr ? "xl:flex-row" : "xl:flex-row-reverse")}>
-          <h3 className="text-lg font-bold">{t('financial_operations', T)}</h3>
+          <h3 className="text-xl font-bold">{t('financial_operations', T)}</h3>
 
           <div className={cn("flex flex-wrap items-end gap-3 transition-all duration-700", canAnimate ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4")} style={{ transitionDelay: '550ms' }}>
             <div className="space-y-1.5 flex-1 min-w-[170px]">
@@ -225,9 +292,21 @@ const FinanceOverview = () => {
               <div className="relative group flex items-center justify-between h-11 bg-white border border-border rounded-xl px-4 transition-all focus-within:ring-4 focus-within:ring-primary/10">
                 <Flatpickr
                   value={fromDate}
-                  onChange={([date]) => setFromDate(date)}
-                  options={commonOptions}
-                  className="flex-1 bg-transparent border-none outline-none text-left! text-sm font-bold h-full"
+                  onChange={([date]) => {
+                    if (date) {
+                      setFromDate(format(date, 'yyyy-MM-dd'));
+                    }
+                  }}
+                  options={{
+                    locale: isAr ? Arabic : undefined,
+                    dateFormat: "d F Y",
+                    disableMobile: true,
+                    maxDate: toDate,
+                    formatDate: (date: Date) => {
+                      return format(date, "d MMMM yyyy", { locale: isAr ? ar : undefined });
+                    }
+                  }}
+                  className="flex-1 bg-transparent rtl:text-start! border-none outline-none text-left! text-sm font-bold h-full"
                 />
                 <FaCalendarAlt className="text-muted-foreground pointer-events-none group-focus-within:text-primary transition-colors size-4" />
               </div>
@@ -238,9 +317,22 @@ const FinanceOverview = () => {
               <div className="relative group flex items-center justify-between h-11 bg-white border border-border rounded-xl px-4 transition-all focus-within:ring-4 focus-within:ring-primary/10">
                 <Flatpickr
                   value={toDate}
-                  onChange={([date]) => setToDate(date)}
-                  options={commonOptions}
-                  className="flex-1 bg-transparent border-none outline-none text-left! text-sm font-bold h-full"
+                  onChange={([date]) => {
+                    if (date) {
+                      setToDate(format(date, 'yyyy-MM-dd'));
+                    }
+                  }}
+                  options={{
+                    locale: isAr ? Arabic : undefined,
+                    dateFormat: "d F Y",
+                    disableMobile: true,
+                    minDate: fromDate,
+                    maxDate: "today",
+                    formatDate: (date: Date) => {
+                      return format(date, "d MMMM yyyy", { locale: isAr ? ar : undefined });
+                    }
+                  }}
+                  className="flex-1 bg-transparent rtl:text-start! border-none outline-none text-left! text-sm font-bold h-full"
                 />
                 <FaCalendarAlt className="text-muted-foreground pointer-events-none group-focus-within:text-primary transition-colors size-4" />
               </div>
@@ -272,29 +364,56 @@ const FinanceOverview = () => {
                 <TableHead className={cn("p-4", isAr ? "text-right" : "text-left")}>{t('table_date', T)}</TableHead>
                 <TableHead className={cn("p-4", isAr ? "text-right" : "text-left")}>{t('table_related', T)}</TableHead>
                 <TableHead className={cn("p-4", isAr ? "text-right" : "text-left")}>{t('table_notes', T)}</TableHead>
+                <TableHead className={cn("p-4", isAr ? "text-right" : "text-left")}>{t('table_operations', T)}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody className="divide-y divide-border/30">
-              {transactions.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((tx) => (
-                <TableRow key={tx.id} className="hover:bg-muted/20 transition-colors">
+              {transactions.map((tx) => (
+                <TableRow key={tx.uuid} className="hover:bg-muted/20 transition-colors">
                     <TableCell className="p-4">
                       <span className={cn(
                         "inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold",
-                        tx.type === 'income' ? "bg-secondary/10 text-secondary" : "bg-destructive/10 text-destructive"
+                        (tx.type === 'income' || tx.type === 'INCOME') ? "bg-secondary/10 text-secondary" : "bg-destructive/10 text-destructive"
                       )}>
-                        {tx.type === 'income' ? t('type_income', T) : t('type_expense', T)}
+                        {(tx.type === 'income' || tx.type === 'INCOME') ? t('type_income', T) : t('type_expense', T)}
                       </span>
                     </TableCell>
                     <TableCell className="p-4 font-bold">{tx.amount}</TableCell>
                     <TableCell className="p-4">{t('jod', T)}</TableCell>
-                    <TableCell className="p-4 font-medium text-muted-foreground">{tx.date}</TableCell>
-                    <TableCell className="p-4 text-muted-foreground">{tx.related}</TableCell>
-                    <TableCell className={cn("p-4 text-muted-foreground", isAr ? "text-right" : "text-left")}>{tx.notes}</TableCell>
+                    <TableCell className="p-4 font-medium text-muted-foreground">{tx.transactionDate}</TableCell>
+                    <TableCell className="p-4 text-muted-foreground">
+                      {tx.appointmentUuid ? `${isAr ? 'موعد' : 'Appointment'} #${tx.appointmentUuid.substring(0, 8)}` : '-'}
+                    </TableCell>
+                    <TableCell className={cn("p-4 text-muted-foreground", isAr ? "text-right" : "text-left")}>{tx.note || '-'}</TableCell>
+                    <TableCell className="p-4">
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            setSelectedTransactionUuid(tx.uuid);
+                            setModalMode('view');
+                            setIsModalOpen(true);
+                          }}
+                          className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-primary"
+                        >
+                          <Eye className="size-4" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            setSelectedTransactionUuid(tx.uuid);
+                            setModalMode('edit');
+                            setIsModalOpen(true);
+                          }}
+                          className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-secondary"
+                        >
+                          <SquarePen className="size-4" />
+                        </button>
+                      </div>
+                    </TableCell>
                 </TableRow>
               ))}
               {transactions.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6} className="h-40 text-center text-muted-foreground p-4">
+                  <TableCell colSpan={7} className="h-40 text-center text-muted-foreground p-4">
                     {t('no_results', T)}
                   </TableCell>
                 </TableRow>
@@ -304,12 +423,13 @@ const FinanceOverview = () => {
 
           <TableFooter
             variant="table"
-            totalItems={transactions.length}
+            totalItems={totalElements}
             itemsPerPage={itemsPerPage}
             currentPage={currentPage}
             onPageChange={setCurrentPage}
+            className='pb-4'
             onItemsPerPageChange={(val) => {
-              setItemsPerPage(val === 'all' ? transactions.length : Number(val));
+              setItemsPerPage(val === 'all' ? totalElements : Number(val));
               setCurrentPage(1);
             }}
           />
@@ -318,10 +438,17 @@ const FinanceOverview = () => {
 
       <AddOperationModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSuccess={(data) => {
-          console.log("Success:", data);
+        mode={modalMode}
+        transactionUuid={selectedTransactionUuid}
+        onClose={() => {
           setIsModalOpen(false);
+          setSelectedTransactionUuid(null);
+        }}
+        onSuccess={() => {
+          setIsModalOpen(false);
+          setSelectedTransactionUuid(null);
+          loadTransactions();
+          loadStatistics();
         }}
       />
     </section>
@@ -329,3 +456,4 @@ const FinanceOverview = () => {
 };
 
 export default FinanceOverview;
+ 

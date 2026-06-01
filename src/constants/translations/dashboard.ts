@@ -17,7 +17,10 @@ export const dashboardTranslations = {
       new_patients_sub: "هذا الأسبوع",
       growth_rate: "معدل النمو",
       growth_rate_sub: "الزيادة السنوية",
-      from_last_month: "من الشهر السابق"
+      from_last_month: "من الشهر السابق",
+      total_income: "إجمالي الدخل",
+      total_expenses: "إجمالي المصروفات",
+      net_profit: "صافي الربح"
     },
     charts: {
       revenue_overview: "نظرة عامة على الإيرادات",
@@ -28,7 +31,10 @@ export const dashboardTranslations = {
       daily_appointments: "المواعيد اليومية",
       appointment_count: "عدد المواعيد",
       male: "ذكر",
-      female: "أنثى"
+      female: "أنثى",
+      income_vs_expenses: "الدخل مقابل المصروفات",
+      income: "الدخل",
+      expenses: "المصروفات"
     }
   },
   en: {
@@ -48,7 +54,10 @@ export const dashboardTranslations = {
       new_patients_sub: "This week",
       growth_rate: "Growth Rate",
       growth_rate_sub: "Annual increase",
-      from_last_month: "from last month"
+      from_last_month: "from last month",
+      total_income: "Total Income",
+      total_expenses: "Total Expenses",
+      net_profit: "Net Profit"
     },
     charts: {
       revenue_overview: "Revenue Overview",
@@ -59,7 +68,10 @@ export const dashboardTranslations = {
       daily_appointments: "Daily Appointments",
       appointment_count: "Appointment Count",
       male: "Male",
-      female: "Female"
+      female: "Female",
+      income_vs_expenses: "Income vs Expenses",
+      income: "Income",
+      expenses: "Expenses"
     }
   }
 };

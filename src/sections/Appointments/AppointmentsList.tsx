@@ -38,7 +38,8 @@ import { enUS } from 'date-fns/locale';
 import AppointmentsDialog, { type Appointment } from './AppointmentsDialog';
 import { statusConfig } from './constants';
 import { useBroadcast } from '../../hooks/useBroadcast';
-
+import { fetchDoctors } from '../../api/doctorApi';
+import { getCookie } from '../../utils/cookie';
 // Mock data for appointments
 const INITIAL_APPOINTMENTS: Appointment[] = [
   { id: 1, date: new Date(2026, 2, 2), time: '10:00', patientName: 'ahmed', doctorName: 'ahmed', status: 'completed' },
@@ -80,6 +81,84 @@ const AppointmentsList = () => {
 
   // Data State
   const [appointments, setAppointments] = useState<Appointment[]>(INITIAL_APPOINTMENTS);
+  const [doctorsList, setDoctorsList] = useState<any[]>([]);
+
+  // Load doctors for filter select
+  useEffect(() => {
+    const loadDoctors = async () => {
+      try {
+        const res = await fetchDoctors({ size: 100 });
+        if (res.content && res.content.length > 0) {
+          setDoctorsList(res.content);
+        } else {
+          setDoctorsList([
+            { uuid: '33c044ef-e69e-4dbb-839d-402f06ad0201', user: { firstName: 'Ahmad', lastName: 'Masri' } },
+            { uuid: 'doctor-sami-uuid', user: { firstName: 'Sami', lastName: 'Sami' } },
+            { uuid: 'doctor-layla-uuid', user: { firstName: 'Layla', lastName: 'Layla' } }
+          ]);
+        }
+      } catch (err) {
+        console.error('Failed to load doctors in list:', err);
+        setDoctorsList([
+          { uuid: '33c044ef-e69e-4dbb-839d-402f06ad0201', user: { firstName: 'Ahmad', lastName: 'Masri' } },
+          { uuid: 'doctor-sami-uuid', user: { firstName: 'Sami', lastName: 'Sami' } },
+          { uuid: 'doctor-layla-uuid', user: { firstName: 'Layla', lastName: 'Layla' } }
+        ]);
+      }
+    };
+    loadDoctors();
+  }, []);
+
+  // Fetch calendar appointments
+  const loadCalendarAppointments = useCallback(async () => {
+    try {
+      const month = getMonth(currentDate) + 1;
+      const year = getYear(currentDate);
+      const queryParams = new URLSearchParams();
+      queryParams.append('month', String(month));
+      queryParams.append('year', String(year));
+      if (selectedDoctor && selectedDoctor !== 'all') {
+        queryParams.append('doctorId', selectedDoctor);
+      }
+
+      const token = getCookie('token');
+      const response = await fetch(`/api/appointment/calendar?${queryParams.toString()}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const mapped = data.flatMap((dayData: any) => {
+          return dayData.appointments.map((app: any) => ({
+            id: app.uuid,
+            uuid: app.uuid,
+            date: new Date(dayData.date),
+            time: app.appointmentStartTime,
+            endTime: app.appointmentEndTime,
+            patientName: app.patientName,
+            doctorName: app.doctorName,
+            status: app.status.toLowerCase(),
+            patientId: app.patientUuid || '',
+            doctorId: app.doctorUuid || '',
+          }));
+        });
+        setAppointments([...mapped, ...INITIAL_APPOINTMENTS]);
+      } else {
+        setAppointments(INITIAL_APPOINTMENTS);
+      }
+    } catch (error) {
+      console.error('Error fetching calendar appointments:', error);
+      setAppointments(INITIAL_APPOINTMENTS);
+    }
+  }, [currentDate, selectedDoctor]);
+
+  useEffect(() => {
+    loadCalendarAppointments();
+  }, [loadCalendarAppointments]);
 
   // Cross-tab broadcast: serialize appointments for broadcasting
   const serializeAppointments = (apps: Appointment[]) =>
@@ -346,24 +425,12 @@ const AppointmentsList = () => {
     setIsDialogOpen(true);
   }, []);
 
-  const handleConfirmAppointment = useCallback((data: Partial<Appointment>) => {
-    if (dialogMode === 'add') {
-      const newApp: Appointment = {
-        id: Date.now(),
-        patientName: data.patientName || '',
-        doctorName: data.doctorName || '',
-        date: new Date(data.date as string),
-        time: data.time || '',
-        status: 'pending', // Always start as pending
-      };
-      updateAndBroadcast(prev => [...prev, newApp]);
-    } else if (dialogMode === 'edit' && currentAppointment) {
-      updateAndBroadcast(prev => prev.map(a => a.id === currentAppointment.id ? { ...a, ...data } : a));
-    }
+  const handleConfirmAppointment = useCallback((_data: Partial<Appointment>) => {
+    loadCalendarAppointments();
     setIsDialogOpen(false);
-  }, [dialogMode, currentAppointment, updateAndBroadcast]);
+  }, [loadCalendarAppointments]);
 
-  const handleDeleteAppointment = useCallback((appId: number) => {
+  const handleDeleteAppointment = useCallback((appId: string | number) => {
     const app = appointments.find(a => a.id === appId);
     if (app) {
       setAppointmentToDelete(app);
@@ -442,9 +509,11 @@ const AppointmentsList = () => {
             </SelectTrigger>
             <SelectContent smallZ={true}>
               <SelectItem value="all">{t('all_doctors', T)}</SelectItem>
-              <SelectItem value="ahmed">{t('dialog.doctors.ahmed', T)}</SelectItem>
-              <SelectItem value="sami">{t('dialog.doctors.sami', T)}</SelectItem>
-              <SelectItem value="layla">{t('dialog.doctors.layla', T)}</SelectItem>
+              {doctorsList.map((doc) => (
+                <SelectItem key={doc.uuid} value={doc.uuid}>
+                  {doc.user ? `${doc.user.firstName} ${doc.user.lastName}` : doc.uuid}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
 

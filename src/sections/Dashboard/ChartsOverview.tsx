@@ -21,7 +21,15 @@ import { navTranslations } from '../../constants/nav'
 
 import { genderData, ageData, appointmentData } from '../../constants/Dashboard_dummy'
 
-const ChartsOverview = () => {
+interface ChartsOverviewProps {
+  financialChartData?: {
+    label: string
+    income: number
+    expenses: number
+  }[] | null
+}
+
+const ChartsOverview = ({ financialChartData }: ChartsOverviewProps) => {
   const { isAr, t } = useLanguage()
   const T = dashboardTranslations
   const T_NAV = navTranslations
@@ -49,6 +57,28 @@ const ChartsOverview = () => {
     name: item.name === 'ذكر' ? t('charts.male', T) : t('charts.female', T)
   }))
 
+  const translatedFinancialChartData = (financialChartData || []).map(item => {
+    const lowerLabel = item.label.toLowerCase()
+    let displayLabel = item.label
+    if (lowerLabel === 'january') displayLabel = isAr ? 'يناير' : 'January'
+    else if (lowerLabel === 'february') displayLabel = isAr ? 'فبراير' : 'February'
+    else if (lowerLabel === 'march') displayLabel = isAr ? 'مارس' : 'March'
+    else if (lowerLabel === 'april') displayLabel = isAr ? 'أبريل' : 'April'
+    else if (lowerLabel === 'may') displayLabel = isAr ? 'مايو' : 'May'
+    else if (lowerLabel === 'june') displayLabel = isAr ? 'يونيو' : 'June'
+    else if (lowerLabel === 'july') displayLabel = isAr ? 'يوليو' : 'July'
+    else if (lowerLabel === 'august') displayLabel = isAr ? 'أغسطس' : 'August'
+    else if (lowerLabel === 'september') displayLabel = isAr ? 'سبتمبر' : 'September'
+    else if (lowerLabel === 'october') displayLabel = isAr ? 'أكتوبر' : 'October'
+    else if (lowerLabel === 'november') displayLabel = isAr ? 'نوفمبر' : 'November'
+    else if (lowerLabel === 'december') displayLabel = isAr ? 'ديسمبر' : 'December'
+
+    return {
+      ...item,
+      label: displayLabel
+    }
+  })
+
   return (
     <div
       className={cn(
@@ -69,9 +99,9 @@ const ChartsOverview = () => {
                     data={translatedGenderData}
                     cx="50%"
                     cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
-                    paddingAngle={5}
+                    innerRadius={70}
+                    outerRadius={120}
+                    paddingAngle={6}
                     dataKey="value"
                     isAnimationActive={true}
                     label={({ name, percent }: { name?: string; percent?: number }) => {
@@ -81,7 +111,7 @@ const ChartsOverview = () => {
                     }}
                   >
                     {genderData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
+                      <Cell  key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
                   <Tooltip
@@ -139,6 +169,46 @@ const ChartsOverview = () => {
           )}
         </figure>
       </section>
+
+      {/* Income vs Expenses Chart */}
+      {translatedFinancialChartData.length > 0 && (
+        <section className="bg-white p-6 border border-border shadow-lg rounded-2xl hover:shadow-xl transition-all duration-300">
+          <h3 className={cn("text-lg font-bold mb-6", isAr ? "text-right" : "text-left")}>{t('charts.income_vs_expenses', T)}</h3>
+          <figure className="h-[300px] w-full">
+            {isLoaded && (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={translatedFinancialChartData}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E8EEF2" />
+                  <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#666' }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#666' }} orientation="right" />
+                  <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} />
+                  <Legend verticalAlign="bottom" height={36} />
+                  <Line
+                    name={t('charts.income', T)}
+                    type="monotone"
+                    dataKey="income"
+                    stroke="#3FB8AF"
+                    strokeWidth={4}
+                    dot={{ r: 6, fill: '#3FB8AF', strokeWidth: 2, stroke: '#fff' }}
+                    activeDot={{ r: 8, strokeWidth: 0 }}
+                    isAnimationActive={true}
+                  />
+                  <Line
+                    name={t('charts.expenses', T)}
+                    type="monotone"
+                    dataKey="expenses"
+                    stroke="#d4183d"
+                    strokeWidth={4}
+                    dot={{ r: 6, fill: '#d4183d', strokeWidth: 2, stroke: '#fff' }}
+                    activeDot={{ r: 8, strokeWidth: 0 }}
+                    isAnimationActive={true}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
+          </figure>
+        </section>
+      )}
     </div>
   )
 }

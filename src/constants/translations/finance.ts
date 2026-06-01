@@ -51,7 +51,13 @@ export const financeTranslations = {
     buy_equip: "شراء معدات طبية",
     kids_exam: "كشف أطفال",
     follow_up: "متابعة",
-    utilities: "كهرباء ومياه"
+    utilities: "كهرباء ومياه",
+    table_operations: "العمليات",
+    action_view: "عرض",
+    action_edit: "تعديل",
+    confirm_edits: "تأكيد التعديلات",
+    modal_title_view: "عرض العملية المالية",
+    modal_title_edit: "تعديل العملية المالية"
   },
   en: {
     page_title: "Finance",
@@ -104,6 +110,12 @@ export const financeTranslations = {
     buy_equip: "Buy Medical Equipment",
     kids_exam: "Kids Exam",
     follow_up: "Follow-up",
-    utilities: "Electricity and Water"
+    utilities: "Electricity and Water",
+    table_operations: "Operations",
+    action_view: "View",
+    action_edit: "Edit",
+    confirm_edits: "Confirm Edits",
+    modal_title_view: "View Financial Operation",
+    modal_title_edit: "Edit Financial Operation"
   }
 };

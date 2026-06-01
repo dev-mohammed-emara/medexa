@@ -142,11 +142,11 @@ const DoctorsList = () => {
   };
 
   const confirmDelete = async () => {
-    if (!doctorToDelete?.uuid) return;
+    if (!doctorToDelete?.user?.uuid) return;
 
     setDeleting(true);
     try {
-      await deleteDoctor(doctorToDelete.uuid);
+      await deleteDoctor(doctorToDelete.user.uuid);
       window.showToast?.(t('toast_delete_success', T), 'success');
       loadDoctors();
       broadcast({ type: 'DATA_UPDATE', module: 'doctors' });
