@@ -245,7 +245,7 @@ const PatientsList = () => {
           </div>
 
           <section className="overflow-x-auto">
-            {loading ? (
+            {loading && patients.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
                 <Loader2 className="size-10 animate-spin text-primary mb-3" />
                 <p className="font-semibold text-lg">{isAr ? "جاري التحميل..." : "Loading..."}</p>
@@ -255,82 +255,89 @@ const PatientsList = () => {
                 {error}
               </div>
             ) : patients.length > 0 ? (
-              <Table className="w-full text-sm">
-                <TableHeader className="bg-muted/30 border-b">
-                  <TableRow className="text-start">
-                    <TableHead className={cn("text-foreground h-12 px-4 align-middle font-bold whitespace-nowrap", isAr ? "text-right" : "text-left")}>{t('table.name', T)}</TableHead>
-                    <TableHead className={cn("text-foreground h-12 px-4 align-middle font-bold whitespace-nowrap", isAr ? "text-right" : "text-left")}>{t('table.phone', T)}</TableHead>
-                    <TableHead className={cn("text-foreground h-12 px-4 align-middle font-bold whitespace-nowrap", isAr ? "text-right" : "text-left")}>{t('table.age', T)}</TableHead>
-                    <TableHead className={cn("text-foreground h-12 px-4 align-middle font-bold whitespace-nowrap", isAr ? "text-right" : "text-left")}>{t('table.gender', T)}</TableHead>
-                    <TableHead className={cn("text-foreground h-12 px-4 align-middle font-bold whitespace-nowrap", isAr ? "text-right" : "text-left")}>{t('table.last_visit', T)}</TableHead>
-                    <TableHead className={cn("text-foreground h-12 px-4 align-middle font-bold whitespace-nowrap", isAr ? "text-right" : "text-left")}>{t('table.actions', T)}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody className="divide-y divide-border/30">
-                  {patients.map((patient) => {
-                    const fullName = `${patient.firstName || ''} ${patient.surName || ''} ${patient.lastName || ''}`.trim() || '---';
+              <div className={cn("relative transition-opacity duration-300", loading && "opacity-60 pointer-events-none")}>
+                {loading && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-white/30 z-10 rounded-xl">
+                    <Loader2 className="size-10 animate-spin text-primary" />
+                  </div>
+                )}
+                <Table className="w-full text-sm">
+                  <TableHeader className="bg-muted/30 border-b">
+                    <TableRow className="text-start">
+                      <TableHead className={cn("text-foreground h-12 px-4 align-middle font-bold whitespace-nowrap", isAr ? "text-right" : "text-left")}>{t('table.name', T)}</TableHead>
+                      <TableHead className={cn("text-foreground h-12 px-4 align-middle font-bold whitespace-nowrap", isAr ? "text-right" : "text-left")}>{t('table.phone', T)}</TableHead>
+                      <TableHead className={cn("text-foreground h-12 px-4 align-middle font-bold whitespace-nowrap", isAr ? "text-right" : "text-left")}>{t('table.age', T)}</TableHead>
+                      <TableHead className={cn("text-foreground h-12 px-4 align-middle font-bold whitespace-nowrap", isAr ? "text-right" : "text-left")}>{t('table.gender', T)}</TableHead>
+                      <TableHead className={cn("text-foreground h-12 px-4 align-middle font-bold whitespace-nowrap", isAr ? "text-right" : "text-left")}>{t('table.last_visit', T)}</TableHead>
+                      <TableHead className={cn("text-foreground h-12 px-4 align-middle font-bold whitespace-nowrap", isAr ? "text-right" : "text-left")}>{t('table.actions', T)}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody className="divide-y divide-border/30">
+                    {patients.map((patient) => {
+                      const fullName = `${patient.firstName || ''} ${patient.surName || ''} ${patient.lastName || ''}`.trim() || '---';
 
-                    return (
-                      <TableRow
-                        key={patient.uuid}
-                        className="hover:bg-muted/20 transition-colors"
-                      >
-                        <TableCell className={cn("p-4 align-middle whitespace-nowrap", isAr ? "text-right" : "text-left")} style={{ fontWeight: 600 }}>
-                          {fullName}
-                        </TableCell>
-                        <TableCell className={cn("p-4 align-middle whitespace-nowrap text-muted-foreground", isAr ? "text-right" : "text-left")}>
-                          {patient.phoneNumber}
-                        </TableCell>
-                        <TableCell className={cn("p-4 align-middle whitespace-nowrap", isAr ? "text-right" : "text-left")}>
-                          {calculateAge(patient.dateOfBirth)}
-                        </TableCell>
-                        <TableCell className={cn("p-4 align-middle whitespace-nowrap", isAr ? "text-right" : "text-left")}>
-                          {patient.gender === 'MALE' ? t('dialog.male', T) : t('dialog.female', T)}
-                        </TableCell>
-                        <TableCell className={cn("p-4 align-middle whitespace-nowrap", isAr ? "text-right" : "text-left")}>
-                          <span
-                            data-slot="badge"
-                            className="inline-flex items-center justify-center rounded-md border px-2.5 py-1 text-xs font-bold w-fit whitespace-nowrap shrink-0 bg-secondary/10 text-secondary border-transparent"
-                          >
-                            {patient.lastVisitDate || '---'}
-                          </span>
-                        </TableCell>
-                        <TableCell className="p-4 align-middle whitespace-nowrap">
-                          <div className="flex gap-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleOpenDialog('view', patient.uuid)}
-                              className="hover:bg-primary px-2 hover:text-white transition-all duration-300"
-                              disabled={fetchingPatientDetail || deleting}
+                      return (
+                        <TableRow
+                          key={patient.uuid}
+                          className="hover:bg-muted/20 transition-colors"
+                        >
+                          <TableCell className={cn("p-4 align-middle whitespace-nowrap", isAr ? "text-right" : "text-left")} style={{ fontWeight: 600 }}>
+                            {fullName}
+                          </TableCell>
+                          <TableCell className={cn("p-4 align-middle whitespace-nowrap text-muted-foreground", isAr ? "text-right" : "text-left")}>
+                            {patient.phoneNumber}
+                          </TableCell>
+                          <TableCell className={cn("p-4 align-middle whitespace-nowrap", isAr ? "text-right" : "text-left")}>
+                            {calculateAge(patient.dateOfBirth)}
+                          </TableCell>
+                          <TableCell className={cn("p-4 align-middle whitespace-nowrap", isAr ? "text-right" : "text-left")}>
+                            {patient.gender === 'MALE' ? t('dialog.male', T) : t('dialog.female', T)}
+                          </TableCell>
+                          <TableCell className={cn("p-4 align-middle whitespace-nowrap", isAr ? "text-right" : "text-left")}>
+                            <span
+                              data-slot="badge"
+                              className="inline-flex items-center justify-center rounded-md border px-2.5 py-1 text-xs font-bold w-fit whitespace-nowrap shrink-0 bg-secondary/10 text-secondary border-transparent"
                             >
-                              <Eye className="size-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleOpenDialog('edit', patient.uuid)}
-                              className="hover:bg-primary px-2 hover:text-white transition-all duration-300"
-                              disabled={fetchingPatientDetail || deleting}
-                            >
-                              <SquarePen className="size-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleDeleteClick(patient)}
-                              className="hover:bg-destructive/10 px-2 text-destructive transition-all duration-300"
-                              disabled={fetchingPatientDetail || deleting}
-                            >
-                              <Trash2 className="size-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+                              {patient.lastVisitDate || '---'}
+                            </span>
+                          </TableCell>
+                          <TableCell className="p-4 align-middle whitespace-nowrap">
+                            <div className="flex gap-2">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleOpenDialog('view', patient.uuid)}
+                                className="hover:bg-primary px-2 hover:text-white transition-all duration-300"
+                                disabled={fetchingPatientDetail || deleting}
+                              >
+                                <Eye className="size-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleOpenDialog('edit', patient.uuid)}
+                                className="hover:bg-primary px-2 hover:text-white transition-all duration-300"
+                                disabled={fetchingPatientDetail || deleting}
+                              >
+                                <SquarePen className="size-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleDeleteClick(patient)}
+                                className="hover:bg-destructive/10 px-2 text-destructive transition-all duration-300"
+                                disabled={fetchingPatientDetail || deleting}
+                              >
+                                <Trash2 className="size-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
             ) : (
               <div className="flex flex-col items-center justify-center py-20 text-center">
                 <div className="size-20 rounded-full bg-primary/10 flex items-center justify-center mb-6">

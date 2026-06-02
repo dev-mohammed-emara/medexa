@@ -110,6 +110,9 @@ const RegisterForm = () => {
 
     const formatPhone = (phoneStr: string) => {
       let cleaned = phoneStr.trim().replace(/[\s\-\(\)]/g, '');
+      if (cleaned.startsWith('00')) {
+        cleaned = '+' + cleaned.substring(2);
+      }
       if (!cleaned.startsWith('+')) {
         cleaned = '+' + cleaned;
       }
@@ -126,8 +129,7 @@ const RegisterForm = () => {
       phoneNumber: formatPhone(formData.phone),
       email: formData.clinicEmail,
       settings: {
-        currency: formData.currency,
-        language: "ar",
+        defaultCurrency: formData.currency,
         defaultAppointmentPeriod: parseInt(formData.defaultAppointmentPeriod) || 30
       },
       owner: {
@@ -168,7 +170,7 @@ const RegisterForm = () => {
         if (window.triggerExitTransition) {
           await window.triggerExitTransition()
         }
-        navigate('/verify-email', { state: { email: formData.email } })
+        navigate('/login')
       } catch (err: any) {
         window.showToast(err.message || 'Registration failed', 'error')
       }
@@ -281,13 +283,13 @@ const RegisterForm = () => {
                   type="tel"
                   name="phone"
                   required
-                  placeholder="0XXXXXXXXX"
+                  placeholder="9627XXXXXXXX"
                   value={formData.phone}
                   onChange={handleChange}
                 />
-                <span className="text-[11px] text-muted-foreground mt-1.5 block pr-1">
-                  * يجب إدخال رمز الدولة بجانب الرقم (مثال: 962+)
-                </span>
+                <p className="text-[11px] text-[#0B5A8E] mt-1.5 block pr-1 leading-relaxed font-semibold">
+                  * يرجى إدخال رقم هاتف أردني صحيح (مثال: 962791234567)
+                </p>
               </div>
 
               <div>
@@ -403,13 +405,13 @@ const RegisterForm = () => {
                   name="ownerPhone"
                   required
                   autoComplete="tel"
-                  placeholder="07XXXXXXXX"
+                  placeholder="9627XXXXXXXX"
                   value={formData.ownerPhone}
                   onChange={handleChange}
                 />
-                <span className="text-[11px] text-muted-foreground mt-1.5 block pr-1">
-                  * يجب إدخال رمز الدولة بجانب الرقم (مثال: 962+)
-                </span>
+                <p className="text-[11px] text-[#0B5A8E] mt-1.5 block pr-1 leading-relaxed font-semibold">
+                  * يرجى إدخال رقم هاتف أردني صحيح (مثال: 962791234567)
+                </p>
               </div>
 
               <div>

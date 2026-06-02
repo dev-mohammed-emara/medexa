@@ -281,7 +281,7 @@ const SecretaryList = () => {
 
         {/* Table View */}
         <div className="overflow-x-auto overflow-hidden">
-          {loading ? (
+          {loading && secretaries.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
               <Loader2 className="size-10 animate-spin text-primary mb-3" />
               <p className="font-semibold text-lg">{t('loading', T)}</p>
@@ -291,99 +291,106 @@ const SecretaryList = () => {
               {error}
             </div>
           ) : secretaries.length > 0 ? (
-            <Table className="min-w-[900px]">
-              <TableHeader className="bg-gray-50 border-b border-border">
-                <TableRow>
-                  <TableHead className={isAr ? "text-right" : "text-left"}>
-                    {isAr ? "الاسم" : "Name"}
-                  </TableHead>
-                  <TableHead className={isAr ? "text-right" : "text-left"}>
-                    {t('email', T)}
-                  </TableHead>
-                  <TableHead className={isAr ? "text-right" : "text-left"}>
-                    {t('phone', T)}
-                  </TableHead>
-                  <TableHead className={isAr ? "text-right" : "text-left"}>
-                    {t('status_label', T)}
-                  </TableHead>
-                  <TableHead className={isAr ? "text-right" : "text-left"}>
-                    {isAr ? "الإجراءات" : "Actions"}
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {secretaries.map((secretary) => {
-                  const firstName = secretary.user?.firstName || '';
-                  const surName = secretary.user?.surName || '';
-                  const lastName = secretary.user?.lastName || '';
-                  const fullName = `${firstName} ${surName} ${lastName}`.trim() || '---';
-                  const initial = firstName[0] || 'S';
+            <div className={cn("relative transition-opacity duration-300", loading && "opacity-60 pointer-events-none")}>
+              {loading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-white/30 z-10 rounded-xl">
+                  <Loader2 className="size-10 animate-spin text-primary" />
+                </div>
+              )}
+              <Table className="min-w-[900px]">
+                <TableHeader className="bg-gray-50 border-b border-border">
+                  <TableRow>
+                    <TableHead className={isAr ? "text-right" : "text-left"}>
+                      {isAr ? "الاسم" : "Name"}
+                    </TableHead>
+                    <TableHead className={isAr ? "text-right" : "text-left"}>
+                      {t('email', T)}
+                    </TableHead>
+                    <TableHead className={isAr ? "text-right" : "text-left"}>
+                      {t('phone', T)}
+                    </TableHead>
+                    <TableHead className={isAr ? "text-right" : "text-left"}>
+                      {t('status_label', T)}
+                    </TableHead>
+                    <TableHead className={isAr ? "text-right" : "text-left"}>
+                      {isAr ? "الإجراءات" : "Actions"}
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {secretaries.map((secretary) => {
+                    const firstName = secretary.user?.firstName || '';
+                    const surName = secretary.user?.surName || '';
+                    const lastName = secretary.user?.lastName || '';
+                    const fullName = `${firstName} ${surName} ${lastName}`.trim() || '---';
+                    const initial = firstName[0] || 'S';
 
-                  return (
-                    <TableRow key={secretary.uuid}>
-                      {/* Name / Avatar */}
-                      <TableCell className="align-middle">
-                        <div className="flex items-center gap-3">
-                          <div className="size-10 rounded-full bg-primary flex items-center justify-center text-white font-bold shrink-0">
-                            {initial}
+                    return (
+                      <TableRow key={secretary.uuid}>
+                        {/* Name / Avatar */}
+                        <TableCell className="align-middle">
+                          <div className="flex items-center gap-3">
+                            <div className="size-10 rounded-full bg-primary flex items-center justify-center text-white font-bold shrink-0">
+                              {initial}
+                            </div>
+                            <div>
+                              <p className="font-semibold text-foreground text-sm line-clamp-1">{fullName}</p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="font-semibold text-foreground text-sm line-clamp-1">{fullName}</p>
+                        </TableCell>
+
+                        {/* Email */}
+                        <TableCell className="align-middle text-sm text-muted-foreground font-mono">
+                          {secretary.user?.email || '---'}
+                        </TableCell>
+
+                        {/* Phone */}
+                        <TableCell className="align-middle text-sm text-muted-foreground font-mono" dir="ltr">
+                          {secretary.user?.phoneNumber || '---'}
+                        </TableCell>
+
+                        {/* Status */}
+                        <TableCell className="align-middle">
+                          <Badge variant={getStatusVariant(secretary.user?.status)}>
+                            {getStatusText(secretary.user?.status)}
+                          </Badge>
+                        </TableCell>
+
+                        {/* Actions */}
+                        <TableCell className="align-middle">
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleOpenDialog('view', secretary.uuid)}
+                              disabled={fetchingSecretaryDetail || deleting}
+                              title={t('view', T)}
+                              className="inline-flex items-center justify-center p-2 rounded-lg text-primary hover:bg-primary/10 transition-colors"
+                            >
+                              <Eye className="size-4" />
+                            </button>
+                            <button
+                              onClick={() => handleOpenDialog('edit', secretary.uuid)}
+                              disabled={fetchingSecretaryDetail || deleting}
+                              title={t('edit', T)}
+                              className="inline-flex items-center justify-center p-2 rounded-lg text-amber-500 hover:bg-amber-50 transition-colors"
+                            >
+                              <SquarePen className="size-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteClick(secretary)}
+                              disabled={fetchingSecretaryDetail || deleting}
+                              title={t('delete', T)}
+                              className="inline-flex items-center justify-center p-2 rounded-lg text-destructive hover:bg-destructive/10 transition-colors"
+                            >
+                              <Trash2 className="size-4" />
+                            </button>
                           </div>
-                        </div>
-                      </TableCell>
-
-                      {/* Email */}
-                      <TableCell className="align-middle text-sm text-muted-foreground font-mono">
-                        {secretary.user?.email || '---'}
-                      </TableCell>
-
-                      {/* Phone */}
-                      <TableCell className="align-middle text-sm text-muted-foreground font-mono" dir="ltr">
-                        {secretary.user?.phoneNumber || '---'}
-                      </TableCell>
-
-                      {/* Status */}
-                      <TableCell className="align-middle">
-                        <Badge variant={getStatusVariant(secretary.user?.status)}>
-                          {getStatusText(secretary.user?.status)}
-                        </Badge>
-                      </TableCell>
-
-                      {/* Actions */}
-                      <TableCell className="align-middle">
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleOpenDialog('view', secretary.uuid)}
-                            disabled={fetchingSecretaryDetail || deleting}
-                            title={t('view', T)}
-                            className="inline-flex items-center justify-center p-2 rounded-lg text-primary hover:bg-primary/10 transition-colors"
-                          >
-                            <Eye className="size-4" />
-                          </button>
-                          <button
-                            onClick={() => handleOpenDialog('edit', secretary.uuid)}
-                            disabled={fetchingSecretaryDetail || deleting}
-                            title={t('edit', T)}
-                            className="inline-flex items-center justify-center p-2 rounded-lg text-amber-500 hover:bg-amber-50 transition-colors"
-                          >
-                            <SquarePen className="size-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteClick(secretary)}
-                            disabled={fetchingSecretaryDetail || deleting}
-                            title={t('delete', T)}
-                            className="inline-flex items-center justify-center p-2 rounded-lg text-destructive hover:bg-destructive/10 transition-colors"
-                          >
-                            <Trash2 className="size-4" />
-                          </button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-20 text-center">
               <div className="size-20 rounded-full bg-primary/10 flex items-center justify-center mb-6">

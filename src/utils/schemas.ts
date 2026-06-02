@@ -29,7 +29,9 @@ export const UserRegisterSchema = z.object({
   password: z
     .string()
     .min(8, { message: "Password must be at least 8 characters long" }),
-  phoneNumber: z.string().min(1, { message: "Phone number is required" }),
+  phoneNumber: z.string()
+    .min(1, { message: "Phone number is required" })
+    .regex(/^\+\d{1,3}\d{6,14}$/, { message: "Owner phone must match format: +[country code][number] (e.g. +962791234567)" }),
   gender: z.enum(["MALE", "FEMALE"], { message: "Gender must be MALE or FEMALE" }),
   dateOfBirth: z.string().min(1, { message: "Date of birth is required" }), // format: YYYY-MM-DD
   permissions: z.array(z.string()).default(["MANAGE_DOCTORS", "MANAGE_SECRETARIES"]),
@@ -45,8 +47,7 @@ export const OwnerRegisterSchema = z.object({
  * Validation schema for the registration payload.
  */
 export const ClinicSettingsSchema = z.object({
-  currency: z.string().default("JOD"),
-  language: z.string().default("ar"),
+  defaultCurrency: z.string().default("JOD"),
   defaultAppointmentPeriod: z.number().default(30),
 })
 
@@ -59,9 +60,11 @@ export const RegisterSchema = z.object({
   country: z.string().min(1, { message: "Country is required" }),
   city: z.string().min(1, { message: "City is required" }),
   address: z.string().min(1, { message: "Address is required" }),
-  phoneNumber: z.string().min(1, { message: "Clinic phone number is required" }),
+  phoneNumber: z.string()
+    .min(1, { message: "Clinic phone number is required" })
+    .regex(/^\+\d{1,3}\d{6,14}$/, { message: "Clinic phone must match format: +[country code][number] (e.g. +962791234567)" }),
   email: z.string().min(1, { message: "Clinic email is required" }).email({ message: "Must be a valid email address" }),
-  settings: ClinicSettingsSchema.default({ currency: "JOD", language: "ar", defaultAppointmentPeriod: 30 }),
+  settings: ClinicSettingsSchema.default({ defaultCurrency: "JOD", defaultAppointmentPeriod: 30 }),
   owner: OwnerRegisterSchema,
 })
 

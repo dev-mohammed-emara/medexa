@@ -45,6 +45,8 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
   const [isClosing, setIsClosing] = useState(false)
   const [loading, setLoading] = useState(false)
 
+  const [password, setPassword] = useState("")
+
   // Sync initialData values when dialog opens or changes
   useEffect(() => {
     if (initialData) {
@@ -55,6 +57,7 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
       setSelectedSpecialty("")
       setSelectedGender("")
       setSelectedDob("")
+      setPassword("")
     }
   }, [initialData, isOpen])
 
@@ -100,13 +103,24 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
         if (checkbox?.dataset.state === 'checked') permissions.push(p)
       })
 
+      const formatPhone = (phoneStr: string) => {
+        let cleaned = phoneStr.trim().replace(/[\s\-\(\)]/g, '');
+        if (cleaned.startsWith('00')) {
+          cleaned = '+' + cleaned.substring(2);
+        }
+        if (!cleaned.startsWith('+')) {
+          cleaned = '+' + cleaned;
+        }
+        return cleaned;
+      };
+
       // Construct API payload
       const userPayload: any = {
         firstName: String(rawData.firstName),
         surName: String(rawData.surName),
         lastName: String(rawData.lastName),
         email: String(rawData.email),
-        phoneNumber: String(rawData.phoneNumber),
+        phoneNumber: formatPhone(String(rawData.phoneNumber)),
         gender: selectedGender || 'MALE',
         dateOfBirth: selectedDob || '1990-01-01',
         permissions: permissions.length > 0 ? permissions : ['MANAGE_DOCTORS', 'MANAGE_SECRETARIES']
@@ -243,19 +257,80 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
                 </div>
                 <div className="flex flex-col gap-2">
                   <label htmlFor={inputId('phone')} className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.phone', T)}</label>
-                  <Input id={inputId('phone')} name="phoneNumber" defaultValue={initialData?.user?.phoneNumber} required disabled={mode === 'view'} placeholder="07XXXXXXXX" icon={<Phone size={18} />} className={inputClass} dir="ltr" />
+                  <Input id={inputId('phone')} name="phoneNumber" defaultValue={initialData?.user?.phoneNumber} required disabled={mode === 'view'} placeholder="9627XXXXXXXX" icon={<Phone size={18} />} className={inputClass} dir="ltr" />
+                  {mode !== 'view' && (
+                    <p className="text-[11px] text-[#0B5A8E] mt-0.5 leading-relaxed font-semibold">
+                      {isAr 
+                        ? "* يرجى إدخال رقم هاتف أردني صحيح (مثال: 962791234567)"
+                        : "* Please enter a valid Jordanian phone number (e.g. 962791234567)"
+                      }
+                    </p>
+                  )}
                 </div>
               </div>
 
               {/* Password field only on add mode */}
-              {mode === 'add' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="flex flex-col gap-2">
-                    <label htmlFor={inputId('password')} className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.password', T)}</label>
-                    <Input id={inputId('password')} type="password" name="password" required placeholder="••••••••" className={inputClass} dir="ltr" />
+              {mode === 'add' && (() => {
+                const passwordCriteria = [
+                  { label: isAr ? '8 أحرف على الأقل' : 'Min 8 chars', met: password.length >= 8 },
+                  { label: isAr ? 'حرف كبير (A-Z)' : 'Uppercase (A-Z)', met: /[A-Z]/.test(password) },
+                  { label: isAr ? 'رقم واحد (0-9)' : 'Number (0-9)', met: /[0-9]/.test(password) },
+                  { label: isAr ? 'رمز خاص (!@#)' : 'Special char (!@#)', met: /[!@#$%^&*(),.?":{}|<>]/.test(password) },
+                ];
+                const strengthPoints = passwordCriteria.filter(c => c.met).length;
+                const getStrengthColor = () => {
+                  if (strengthPoints <= 1) return 'bg-destructive';
+                  if (strengthPoints <= 3) return 'bg-amber-500';
+                  return 'bg-emerald-500';
+                };
+                return (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="flex flex-col gap-2">
+                      <label htmlFor={inputId('password')} className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.password', T)}</label>
+                      <Input
+                        id={inputId('password')}
+                        type="password"
+                        name="password"
+                        required
+                        placeholder="••••••••"
+                        className={inputClass}
+                        dir="ltr"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                      />
+                      {password.length > 0 && (
+                        <div className="mt-2 animate-fade">
+                          <div className="flex gap-2">
+                            {passwordCriteria.map((criterion, i) => (
+                              <div key={i} className="flex-1 flex flex-col gap-1.5">
+                                <div
+                                  className={cn(
+                                    "h-1 rounded-full transition-all duration-500",
+                                    criterion.met ? getStrengthColor() : "bg-slate-100"
+                                  )}
+                                />
+                                <div className="flex items-center justify-center gap-0.5 px-0.5">
+                                  {criterion.met ? (
+                                    <Check className="size-2.5 text-emerald-500 stroke-[4px] shrink-0" />
+                                  ) : (
+                                    <X className="size-2.5 text-slate-300 stroke-[4px] shrink-0" />
+                                  )}
+                                  <span className={cn(
+                                    "text-[8px] transition-colors leading-tight text-center font-semibold",
+                                    criterion.met ? "text-emerald-700 font-bold" : "text-muted-foreground/70"
+                                  )}>
+                                    {criterion.label}
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="flex flex-col gap-2">
@@ -268,7 +343,9 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
                       <SelectItem value="Cardiology">{isAr ? "قلب وأوعية دموية" : "Cardiology"}</SelectItem>
                       <SelectItem value="Pediatrics">{isAr ? "أطفال" : "Pediatrics"}</SelectItem>
                       <SelectItem value="Dentistry">{isAr ? "أسنان" : "Dentistry"}</SelectItem>
+                      <SelectItem value="General">{isAr ? "طب عام" : "General"}</SelectItem>
                       <SelectItem value="General Medicine">{isAr ? "طب عام" : "General Medicine"}</SelectItem>
+                      <SelectItem value="Dermatology">{isAr ? "جلدية" : "Dermatology"}</SelectItem>
                       <SelectItem value="Internal Medicine">{isAr ? "باطني" : "Internal Medicine"}</SelectItem>
                       <SelectItem value="Surgery">{isAr ? "جراحة" : "Surgery"}</SelectItem>
                     </SelectContent>

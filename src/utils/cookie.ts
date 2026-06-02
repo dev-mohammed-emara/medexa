@@ -14,7 +14,8 @@ export const getCookie = (name: string): string | null => {
       return decodeURIComponent(c.substring(nameEQ.length, c.length));
     }
   }
-  return null;
+  // Fallback to localStorage if cookie is not available
+  return localStorage.getItem(name);
 };
 
 export const setCookie = (name: string, value: string, days?: number): void => {
@@ -26,8 +27,12 @@ export const setCookie = (name: string, value: string, days?: number): void => {
   }
   // Use SameSite=Strict and path=/ for security
   document.cookie = name + "=" + encodeURIComponent(value) + expires + "; path=/; SameSite=Strict";
+  // Also sync to localStorage
+  localStorage.setItem(name, value);
 };
 
 export const deleteCookie = (name: string): void => {
   document.cookie = name + "=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=Strict";
+  // Also remove from localStorage
+  localStorage.removeItem(name);
 };

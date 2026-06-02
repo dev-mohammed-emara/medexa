@@ -91,12 +91,23 @@ const PatientsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Patie
       const formData = new FormData(e.target as HTMLFormElement);
       const formDataObj = Object.fromEntries(formData.entries());
 
+      const formatPhone = (phoneStr: string) => {
+        let cleaned = phoneStr.trim().replace(/[\s\-\(\)]/g, '');
+        if (cleaned.startsWith('00')) {
+          cleaned = '+' + cleaned.substring(2);
+        }
+        if (!cleaned.startsWith('+')) {
+          cleaned = '+' + cleaned;
+        }
+        return cleaned;
+      };
+
       // Construct API payload
       const bodyPayload = {
         firstName: String(formDataObj.firstName),
         surName: String(formDataObj.surName),
         lastName: String(formDataObj.lastName),
-        phoneNumber: String(formDataObj.phoneNumber),
+        phoneNumber: formatPhone(String(formDataObj.phoneNumber)),
         gender: selectedGender || 'MALE',
         dateOfBirth: selectedDob || '1990-01-01',
         address: String(formDataObj.address || ''),
@@ -232,11 +243,19 @@ const PatientsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Patie
                       defaultValue={initialData?.phoneNumber || ""}
                       required
                       disabled={mode === 'view'}
-                      placeholder="07XXXXXXXX"
+                      placeholder="9627XXXXXXXX"
                       dir="ltr"
                       icon={<Phone size={18} />}
                       className="font-bold rounded-xl h-12"
                     />
+                    {mode !== 'view' && (
+                      <p className="text-[11px] text-[#0B5A8E] mt-0.5 leading-relaxed font-semibold">
+                        {isAr 
+                          ? "* يرجى إدخال رقم هاتف أردني صحيح (مثال: 962791234567)"
+                          : "* Please enter a valid Jordanian phone number (e.g. 962791234567)"
+                        }
+                      </p>
+                    )}
                   </div>
 
                   {/* Gender */}

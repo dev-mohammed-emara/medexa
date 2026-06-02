@@ -37,6 +37,7 @@ import AdminStats from './pages/admin/AdminStats'
 import AdminTicketDetails from './pages/admin/AdminTicketDetails'
 import AdminTickets from './pages/admin/AdminTickets'
 import AdminUsers from './pages/admin/AdminUsers'
+import ProtectedRoute from './components/auth/ProtectedRoute'
 
 const App = () => {
   useLenis()
@@ -81,7 +82,7 @@ const App = () => {
                 </Route>
 
                 {/* Guarded Application Routes */}
-                {/* <Route element={<ProtectedRoute />}> */}
+                <Route element={<ProtectedRoute />}>
                   <Route index element={<Dashboard />} />
                   <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/doctors" element={<Doctors />} />
@@ -93,7 +94,7 @@ const App = () => {
                   <Route path="/profile" element={<Profile />} />
                   <Route path="/500" element={<ServerError />} />
                   <Route path="/419" element={<SessionExpired />} />
-                {/* </Route> */}
+                </Route>
 
                 {/* Aliases for misspelled routes reported in production - preserved as redirects */}
                 <Route path="/dcotros" element={<Navigate to="/doctors" replace />} />

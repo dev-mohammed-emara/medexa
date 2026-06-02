@@ -36,12 +36,14 @@ import {
 } from '../../components/ui/table'
 import { fetchDoctors, fetchDoctorByUuid, deleteDoctor } from '../../api/doctorApi'
 import type { ApiDoctor } from '../../api/doctorApi'
+import { useAuth } from '../../contexts/AuthContext'
 
 const DoctorsList = () => {
   const { isAr, t } = useLanguage();
   const T = doctorsTranslations;
   const { isLoaded, isExiting } = usePreloader()
   const canAnimate = isLoaded && !isExiting
+  const { user: currentUser } = useAuth()
 
   const { broadcast } = useBroadcast((event) => {
     if (event.type === 'DATA_UPDATE' && event.module === 'doctors') {
@@ -197,7 +199,9 @@ const DoctorsList = () => {
         case 'Cardiology': return 'قلب وأوعية دموية';
         case 'Pediatrics': return 'أطفال';
         case 'Dentistry': return 'أسنان';
+        case 'General': return 'طب عام';
         case 'General Medicine': return 'طب عام';
+        case 'Dermatology': return 'جلدية';
         case 'Internal Medicine': return 'باطني';
         case 'Surgery': return 'جراحة';
         default: return spec;
@@ -299,7 +303,7 @@ const DoctorsList = () => {
 
         {/* Table View */}
         <div className="overflow-x-auto overflow-hidden">
-          {loading ? (
+          {loading && doctors.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
               <Loader2 className="size-10 animate-spin text-primary mb-3" />
               <p className="font-semibold text-lg">{t('loading', T)}</p>
@@ -309,107 +313,123 @@ const DoctorsList = () => {
               {error}
             </div>
           ) : doctors.length > 0 ? (
-            <Table className="min-w-[900px]">
-              <TableHeader className="bg-gray-50 border-b border-border">
-                <TableRow>
-                  <TableHead className={isAr ? "text-right" : "text-left"}>
-                    {isAr ? "الاسم" : "Name"}
-                  </TableHead>
-                  <TableHead className={isAr ? "text-right" : "text-left"}>
-                    {t('dialog.specialty', T)}
-                  </TableHead>
-                  <TableHead className={isAr ? "text-right" : "text-left"}>
-                    {t('dialog.email', T)}
-                  </TableHead>
-                  <TableHead className={isAr ? "text-right" : "text-left"}>
-                    {t('dialog.phone', T)}
-                  </TableHead>
-                  <TableHead className={isAr ? "text-right" : "text-left"}>
-                    {t('status_label', T)}
-                  </TableHead>
-                  <TableHead className={isAr ? "text-right" : "text-left"}>
-                    {isAr ? "الإجراءات" : "Actions"}
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {doctors.map((doctor) => {
-                  const firstName = doctor.user?.firstName || '';
-                  const surName = doctor.user?.surName || '';
-                  const lastName = doctor.user?.lastName || '';
-                  const fullName = `${firstName} ${surName} ${lastName}`.trim() || '---';
-                  const initial = firstName[0] || 'D';
+            <div className={cn("relative transition-opacity duration-300", loading && "opacity-60 pointer-events-none")}>
+              {loading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-white/30 z-10 rounded-xl">
+                  <Loader2 className="size-10 animate-spin text-primary" />
+                </div>
+              )}
+              <Table className="min-w-[900px]">
+                <TableHeader className="bg-gray-50 border-b border-border">
+                  <TableRow>
+                    <TableHead className={isAr ? "text-right" : "text-left"}>
+                      {isAr ? "الاسم" : "Name"}
+                    </TableHead>
+                    <TableHead className={isAr ? "text-right" : "text-left"}>
+                      {t('dialog.specialty', T)}
+                    </TableHead>
+                    <TableHead className={isAr ? "text-right" : "text-left"}>
+                      {t('dialog.email', T)}
+                    </TableHead>
+                    <TableHead className={isAr ? "text-right" : "text-left"}>
+                      {t('dialog.phone', T)}
+                    </TableHead>
+                    <TableHead className={isAr ? "text-right" : "text-left"}>
+                      {t('status_label', T)}
+                    </TableHead>
+                    <TableHead className={isAr ? "text-right" : "text-left"}>
+                      {isAr ? "الإجراءات" : "Actions"}
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {doctors.map((doctor) => {
+                    const firstName = doctor.user?.firstName || '';
+                    const surName = doctor.user?.surName || '';
+                    const lastName = doctor.user?.lastName || '';
+                    const fullName = `${firstName} ${surName} ${lastName}`.trim() || '---';
+                    const initial = firstName[0] || 'D';
 
-                  return (
-                    <TableRow key={doctor.uuid}>
-                      {/* Name / Avatar */}
-                      <TableCell className="align-middle">
-                        <div className="flex items-center gap-3">
-                          <div className="size-10 rounded-full bg-primary flex items-center justify-center text-white font-bold shrink-0">
-                            {initial}
+                    return (
+                      <TableRow key={doctor.uuid}>
+                        {/* Name / Avatar */}
+                        <TableCell className="align-middle">
+                          <div className="flex items-center gap-3">
+                            <div className="size-10 rounded-full bg-primary flex items-center justify-center text-white font-bold shrink-0">
+                              {initial}
+                            </div>
+                            <div>
+                              <p className="font-semibold text-foreground text-sm line-clamp-1">{fullName}</p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="font-semibold text-foreground text-sm line-clamp-1">{fullName}</p>
+                        </TableCell>
+
+                        {/* Specialty */}
+                        <TableCell className="align-middle text-sm text-muted-foreground">
+                          {getSpecialtyText(doctor.specialty)}
+                        </TableCell>
+
+                        {/* Email */}
+                        <TableCell className="align-middle text-sm text-muted-foreground font-mono">
+                          {doctor.user?.email || '---'}
+                        </TableCell>
+
+                        {/* Phone */}
+                        <TableCell className="align-middle text-sm text-muted-foreground font-mono" dir="ltr">
+                          {doctor.user?.phoneNumber || '---'}
+                        </TableCell>
+
+                        {/* Status */}
+                        <TableCell className="align-middle">
+                          <Badge variant={getStatusVariant(doctor.user?.status)}>
+                            {getStatusText(doctor.user?.status)}
+                          </Badge>
+                        </TableCell>
+
+                        {/* Actions */}
+                        <TableCell className="align-middle">
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleOpenDialog('view', doctor.uuid)}
+                              disabled={fetchingDoctorDetail || deleting}
+                              title={t('view', T)}
+                              className="inline-flex items-center justify-center p-2 rounded-lg text-primary hover:bg-primary/10 transition-colors"
+                            >
+                              <Eye className="size-4" />
+                            </button>
+                            <button
+                              onClick={() => handleOpenDialog('edit', doctor.uuid)}
+                              disabled={fetchingDoctorDetail || deleting}
+                              title={t('edit', T)}
+                              className="inline-flex items-center justify-center p-2 rounded-lg text-amber-500 hover:bg-amber-50 transition-colors"
+                            >
+                              <SquarePen className="size-4" />
+                            </button>
+                            {doctor.user?.email === currentUser?.email ? (
+                              <button
+                                onClick={() => window.showToast?.(isAr ? "هذا أنت. لا يمكنك إلغاء تعيين نفسك." : "That's you. You can't unassign yourself.", 'info')}
+                                className="inline-flex items-center justify-center px-3 py-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 text-xs font-bold whitespace-nowrap self-center transition-colors cursor-pointer"
+                              >
+                                {isAr ? "أنت" : "You"}
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => handleDeleteClick(doctor)}
+                                disabled={fetchingDoctorDetail || deleting}
+                                title={t('delete', T)}
+                                className="inline-flex items-center justify-center p-2 rounded-lg text-destructive hover:bg-destructive/10 transition-colors"
+                              >
+                                <Trash2 className="size-4" />
+                              </button>
+                            )}
                           </div>
-                        </div>
-                      </TableCell>
-
-                      {/* Specialty */}
-                      <TableCell className="align-middle text-sm text-muted-foreground">
-                        {getSpecialtyText(doctor.specialty)}
-                      </TableCell>
-
-                      {/* Email */}
-                      <TableCell className="align-middle text-sm text-muted-foreground font-mono">
-                        {doctor.user?.email || '---'}
-                      </TableCell>
-
-                      {/* Phone */}
-                      <TableCell className="align-middle text-sm text-muted-foreground font-mono" dir="ltr">
-                        {doctor.user?.phoneNumber || '---'}
-                      </TableCell>
-
-                      {/* Status */}
-                      <TableCell className="align-middle">
-                        <Badge variant={getStatusVariant(doctor.user?.status)}>
-                          {getStatusText(doctor.user?.status)}
-                        </Badge>
-                      </TableCell>
-
-                      {/* Actions */}
-                      <TableCell className="align-middle">
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => handleOpenDialog('view', doctor.uuid)}
-                            disabled={fetchingDoctorDetail || deleting}
-                            title={t('view', T)}
-                            className="inline-flex items-center justify-center p-2 rounded-lg text-primary hover:bg-primary/10 transition-colors"
-                          >
-                            <Eye className="size-4" />
-                          </button>
-                          <button
-                            onClick={() => handleOpenDialog('edit', doctor.uuid)}
-                            disabled={fetchingDoctorDetail || deleting}
-                            title={t('edit', T)}
-                            className="inline-flex items-center justify-center p-2 rounded-lg text-amber-500 hover:bg-amber-50 transition-colors"
-                          >
-                            <SquarePen className="size-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteClick(doctor)}
-                            disabled={fetchingDoctorDetail || deleting}
-                            title={t('delete', T)}
-                            className="inline-flex items-center justify-center p-2 rounded-lg text-destructive hover:bg-destructive/10 transition-colors"
-                          >
-                            <Trash2 className="size-4" />
-                          </button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-20 text-center">
               <div className="size-20 rounded-full bg-primary/10 flex items-center justify-center mb-6">

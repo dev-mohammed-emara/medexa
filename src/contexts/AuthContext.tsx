@@ -17,6 +17,7 @@ export interface UserProfile {
 
 interface AuthContextType {
   isAuthenticated: boolean
+  loading: boolean
   user: UserProfile | null
   profileImage: string | null
   login: (email: string, password: string) => Promise<void>
@@ -36,6 +37,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   })
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
     return !!getCookie('token')
+  })
+  const [loading, setLoading] = useState<boolean>(() => {
+    return !!getCookie('token') && !!getCookie('refreshToken')
   })
 
   const refreshTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -112,17 +116,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Initial load silent refresh and cleanup
   useEffect(() => {
-    if (isAuthenticated && getCookie('refreshToken')) {
-      const performInitialRefresh = async () => {
+    const performInitialRefresh = async () => {
+      if (isAuthenticated && getCookie('refreshToken')) {
         try {
           await refresh()
         } catch (err) {
           console.error("Initial load token refresh failed, logging out:", err)
           await logout()
+        } finally {
+          setLoading(false)
         }
+      } else {
+        setLoading(false)
       }
-      performInitialRefresh()
     }
+    performInitialRefresh()
 
     return () => {
       if (refreshTimeoutRef.current) {
@@ -286,7 +294,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, profileImage, login, register, logout, updateProfileImage, updateUser }}>
+    <AuthContext.Provider value={{ isAuthenticated, loading, user, profileImage, login, register, logout, updateProfileImage, updateUser }}>
       {children}
     </AuthContext.Provider>
   )
