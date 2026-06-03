@@ -3,10 +3,10 @@ import Portal from '@/components/ui/Portal';
 import { cn } from '@/utils/cn';
 import { Key, Mail, Shield, X, Loader2 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { FaLock } from 'react-icons/fa';
+
 import { useLanguage } from '@/contexts/LanguageContext';
 import { profileTranslations } from '@/constants/profile';
-import { useAuth } from '@/contexts/AuthContext';
+
 import { getCookie } from '@/utils/cookie';
 
 interface EmailChangeDialogProps {
@@ -20,10 +20,8 @@ const EmailChangeDialog = ({ isOpen, onClose }: EmailChangeDialogProps) => {
   const [isClosing, setIsClosing] = useState(false);
   const { isAr, t, dir } = useLanguage();
   const T_PAGE = profileTranslations;
-  const { user } = useAuth();
 
   const [newEmail, setNewEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleClose = useCallback(() => {
@@ -68,21 +66,19 @@ const EmailChangeDialog = ({ isOpen, onClose }: EmailChangeDialogProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newEmail || !password) return;
+    if (!newEmail) return;
 
     setLoading(true);
     try {
       const token = getCookie('token');
-      const response = await fetch('/api/auth/email/verify', {
+      const response = await fetch('/api/auth/email/change', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           ...(token ? { 'Authorization': `Bearer ${token}` } : {})
         },
         body: JSON.stringify({
-          email: newEmail,
-          newEmail: newEmail,
-          password: password
+          newEmail: newEmail
         })
       });
 
@@ -134,19 +130,7 @@ const EmailChangeDialog = ({ isOpen, onClose }: EmailChangeDialogProps) => {
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4 py-4">
-            <div className="space-y-2 text-start">
-              <label className="flex items-center gap-2 font-medium text-sm text-foreground" style={{ fontWeight: 600 }}>
-                {t('profile.current_email', T_PAGE)}
-              </label>
-              <Input
-                readOnly
-                value={user?.email || "user@test.com"}
-                className="h-11 bg-muted/50 border-border cursor-not-allowed text-muted-foreground font-bold"
-              />
-            </div>
-
-            <div className="space-y-2 text-start">
+          <form onSubmit={handleSubmit} className="space-y-4 py-4">            <div className="space-y-2 text-start">
               <label className="flex items-center gap-2 font-medium text-sm text-foreground" style={{ fontWeight: 600 }}>
                 {t('profile.new_email', T_PAGE)}
               </label>
@@ -160,24 +144,6 @@ const EmailChangeDialog = ({ isOpen, onClose }: EmailChangeDialogProps) => {
                 className="h-11 bg-background border-border focus:border-primary focus:bg-white transition-all duration-300 font-bold"
               />
             </div>
-
-            <div className="space-y-2 text-start">
-              <label className="flex items-center gap-2 font-medium text-sm text-foreground" style={{ fontWeight: 600 }}>
-                {t('profile.password', T_PAGE)}
-              </label>
-              <Input
-                type="password"
-                required
-                disabled={loading}
-                icon={<FaLock size={16} />}
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="h-11 bg-background border-border focus:border-primary focus:bg-white transition-all duration-300 font-bold"
-              />
-              <p className="text-xs text-muted-foreground text-start">{t('profile.password_note', T_PAGE)}</p>
-            </div>
-
             <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-start">
               <div className="flex gap-2">
                 <Shield size={16} className="text-amber-600 shrink-0" />

@@ -135,3 +135,58 @@ export const deleteDoctor = async (uuid: string): Promise<void> => {
   }
 }
 
+export const fetchDoctorMe = async (): Promise<ApiDoctor> => {
+  const response = await fetch(`/api/doctor/me`, {
+    method: 'GET',
+    headers: getHeaders()
+  })
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch my doctor profile. Status: ${response.status}`)
+  }
+
+  return response.json()
+}
+
+export const updateDoctorMe = async (body: any): Promise<ApiDoctor> => {
+  const response = await fetch(`/api/doctor/me`, {
+    method: 'PUT',
+    headers: getHeaders(),
+    body: JSON.stringify(body)
+  })
+
+  if (!response.ok) {
+    let errorMessage = 'Failed to update my doctor profile'
+    try {
+      const errorData = await response.json()
+      errorMessage = errorData.message || errorData.error || errorMessage
+    } catch (e) {
+      // ignore
+    }
+    throw new Error(errorMessage)
+  }
+
+  return response.json()
+}
+
+export const updateDoctorAppointmentPeriod = async (period: number): Promise<{message: string}> => {
+  const response = await fetch(`/api/doctor/me/appointment-period`, {
+    method: 'PATCH',
+    headers: getHeaders(),
+    body: JSON.stringify({ period })
+  })
+
+  if (!response.ok) {
+    let errorMessage = 'Failed to update appointment period'
+    try {
+      const errorData = await response.json()
+      errorMessage = errorData.message || errorData.error || errorMessage
+    } catch (e) {
+      // ignore
+    }
+    throw new Error(errorMessage)
+  }
+
+  return response.json()
+}
+

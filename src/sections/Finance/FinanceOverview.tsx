@@ -9,8 +9,7 @@ import {
   Eye,
   SquarePen
 } from 'lucide-react';
-import { FaCalendarAlt } from 'react-icons/fa';
-import { Arabic } from 'flatpickr/dist/l10n/ar.js';
+
 import {
   LineChart,
   Line,
@@ -21,7 +20,6 @@ import {
   ResponsiveContainer,
   Legend
 } from 'recharts';
-import Flatpickr from 'react-flatpickr';
 import 'flatpickr/dist/themes/material_green.css';
 import { usePreloader } from '../../contexts/PreloaderContext';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -39,8 +37,7 @@ import {
   TableHead,
   TableCell,
 } from '../../components/ui/table';
-import { format } from 'date-fns';
-import { ar } from 'date-fns/locale';
+
 import { getCookie } from '../../utils/cookie';
 
 

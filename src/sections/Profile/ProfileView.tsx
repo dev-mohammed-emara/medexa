@@ -1,4 +1,5 @@
 import { fetchClinicMe, fetchInsurances, updateClinicMe } from '@/api/clinicApi';
+import { fetchDoctorMe, updateDoctorMe, updateDoctorAppointmentPeriod } from '@/api/doctorApi';
 import Input from '@/components/ui/Input';
 import {
     Select,
@@ -37,6 +38,7 @@ import { FaCalendarAlt } from 'react-icons/fa';
 import { useSearchParams } from 'react-router-dom';
 import SettingsView from '../Settings/SettingsView';
 import EmailChangeDialog from './EmailChangeDialog';
+import PasswordChangeDialog from './PasswordChangeDialog';
 import { getCookie } from '@/utils/cookie';
 import { format } from 'date-fns';
 
@@ -83,56 +85,121 @@ const ProfileView = () => {
 
   // Personal Info States
   const [personalInfo, setPersonalInfo] = useState({
+    uuid: '',
     firstName: user?.firstName || '',
     surName: user?.surName || '',
     lastName: user?.lastName || '',
     email: user?.email || '',
     gender: user?.gender || 'MALE',
-    dateOfBirth: user?.dateOfBirth || ''
+    dateOfBirth: user?.dateOfBirth || '',
+    specialty: '',
+    summary: '',
+    defaultAppointmentPeriod: '30'
   });
-  const [personalPhone, setPersonalPhone] = useState(user?.phoneNumber || '0789651800');
+  const [personalPhone, setPersonalPhone] = useState(user?.phoneNumber || '');
 
-  // Sync personal info when user changes
+  const loadDoctorData = async () => {
+    try {
+      const data = await fetchDoctorMe();
+      if (data && data.user) {
+        setPersonalInfo({
+          uuid: data.uuid || '',
+          firstName: data.user.firstName || '',
+          surName: data.user.surName || '',
+          lastName: data.user.lastName || '',
+          email: data.user.email || '',
+          gender: data.user.gender || 'MALE',
+          dateOfBirth: data.user.dateOfBirth || '',
+          specialty: data.specialty || '',
+          summary: data.summary || '',
+          defaultAppointmentPeriod: (data.defaultAppointmentPeriod || 30).toString()
+        });
+        setPersonalPhone(data.user.phoneNumber || '');
+
+        updateUser({
+          uuid: data.uuid || '', // Doctor UUID
+          firstName: data.user.firstName || '',
+          surName: data.user.surName || '',
+          lastName: data.user.lastName || '',
+          email: data.user.email || '',
+          phoneNumber: data.user.phoneNumber || '',
+          gender: data.user.gender || 'MALE',
+          dateOfBirth: data.user.dateOfBirth || '',
+          status: data.user.status || 'WAITING_VERIFICATION',
+          role: data.user.role || 'ROLE_CLINIC_OWNER',
+          permissions: data.user.permissions || ['MANAGE_CLINIC']
+        });
+      }
+    } catch (e) {
+      console.error('Failed to load doctor data:', e);
+    }
+  };
+
+  // Sync personal info when user changes (fallback)
   useEffect(() => {
-    if (user) {
-      setPersonalInfo({
+    if (user && !personalInfo.firstName) {
+      setPersonalInfo(p => ({
+        ...p,
         firstName: user.firstName || '',
         surName: user.surName || '',
         lastName: user.lastName || '',
         email: user.email || '',
         gender: user.gender || 'MALE',
         dateOfBirth: user.dateOfBirth || ''
-      });
-      setPersonalPhone(user.phoneNumber || '');
+      }));
+      if (!personalPhone) setPersonalPhone(user.phoneNumber || '');
     }
   }, [user]);
 
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
 
-  const handleSaveGeneral = () => {
-    updateUser({
-      firstName: personalInfo.firstName,
-      surName: personalInfo.surName,
-      lastName: personalInfo.lastName,
-      phoneNumber: personalPhone,
-      gender: personalInfo.gender,
-      dateOfBirth: personalInfo.dateOfBirth
-    });
-    window.showToast(t('profile.general_saved', T_PAGE), 'success');
+  const handleSaveGeneral = async () => {
+    try {
+      await updateDoctorMe({
+        user: {
+          firstName: personalInfo.firstName,
+          surName: personalInfo.surName,
+          lastName: personalInfo.lastName,
+          phoneNumber: personalPhone,
+          gender: personalInfo.gender,
+          dateOfBirth: personalInfo.dateOfBirth,
+          permissions: user?.permissions || []
+        },
+        specialty: personalInfo.specialty,
+        summary: personalInfo.summary
+      });
+      updateUser({
+        firstName: personalInfo.firstName,
+        surName: personalInfo.surName,
+        lastName: personalInfo.lastName,
+        phoneNumber: personalPhone,
+        gender: personalInfo.gender as any,
+        dateOfBirth: personalInfo.dateOfBirth
+      });
+      window.showToast(t('profile.general_saved', T_PAGE), 'success');
+    } catch (e: any) {
+      window.showToast(e.message || 'Failed to update profile', 'error');
+    }
   };
 
   const handleCancelGeneral = () => {
-    if (user) {
-      setPersonalInfo({
-        firstName: user.firstName || '',
-        surName: user.surName || '',
-        lastName: user.lastName || '',
-        email: user.email || '',
-        gender: user.gender || 'MALE',
-        dateOfBirth: user.dateOfBirth || ''
-      });
-      setPersonalPhone(user.phoneNumber || '');
+    loadDoctorData();
+    window.showToast(t('profile.changes_canceled', T_PAGE), 'info');
+  };
+
+  const handleSaveAppointmentPeriod = async () => {
+    try {
+      const res = await updateDoctorAppointmentPeriod(parseInt(personalInfo.defaultAppointmentPeriod) || 30);
+      window.showToast(res.message || 'Appointment period updated successfully', 'success');
+      loadDoctorData();
+    } catch (e: any) {
+      window.showToast(e.message || 'Failed to update appointment period', 'error');
     }
+  };
+
+  const handleCancelAppointmentPeriod = () => {
+    loadDoctorData();
     window.showToast(t('profile.changes_canceled', T_PAGE), 'info');
   };
 
@@ -269,11 +336,12 @@ const ProfileView = () => {
     }
   };
 
-  // Fetch clinic data, insurances, active clinic insurances, and schedules when component mounts
+  // Fetch clinic data, insurances, active clinic insurances, schedules, and doctor data when component mounts
   useEffect(() => {
     loadClinicData();
     loadInsurances();
     loadClinicInsurances();
+    loadDoctorData();
   }, []);
 
   // Refetch schedule whenever activeTab changes to keep both tabs fully in sync
@@ -678,6 +746,19 @@ const ProfileView = () => {
                     </div>
                   </div>
                   <div className="flex flex-col gap-2">
+                    <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('profile.password', T_PAGE) || 'Password'}</label>
+                    <div className="flex gap-2">
+                      <Input readOnly type="password" value="********" className="flex-1 h-11 bg-muted/50 border-border cursor-not-allowed text-muted-foreground" />
+                      <button
+                        onClick={() => setIsPasswordModalOpen(true)}
+                        className="h-11 px-4 border border-primary/30 rounded-xl text-primary hover:bg-primary/5 transition-all flex items-center gap-2 text-sm font-medium"
+                      >
+                        <Key size={16} />
+                        {t('common.change')}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex flex-col gap-2">
                     <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('common.phone')}</label>
                     <Input
                       value={personalPhone}
@@ -723,8 +804,28 @@ const ProfileView = () => {
                       </div>
                     </div>
                   </div>
+
+                  {/* Doctor Info Fields (Specialty, Summary, Appt Period) */}
+                  <div className="flex flex-col gap-6 pt-4 border-t border-border mt-2">
+                    <div className="flex flex-col gap-2">
+                      <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{isAr ? 'التخصص الطبي' : 'Specialty'}</label>
+                      <Input
+                        value={personalInfo.specialty}
+                        onChange={(e) => setPersonalInfo(p => ({ ...p, specialty: e.target.value }))}
+                        className="h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{isAr ? 'نبذة تعريفية' : 'Summary'}</label>
+                      <Input
+                        value={personalInfo.summary}
+                        onChange={(e) => setPersonalInfo(p => ({ ...p, summary: e.target.value }))}
+                        className="h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold"
+                      />
+                    </div>
+                  </div>
                 </div>
-                <div className="flex justify-end gap-3 mt-auto pt-6 border-t border-border">
+                <div className="flex justify-end gap-3 mt-auto pt-6 ">
                   <button
                     onClick={handleCancelGeneral}
                     className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-300 border bg-background text-foreground hover:bg-accent hover:text-white hover:border-accent h-10 px-6"
@@ -741,8 +842,9 @@ const ProfileView = () => {
                 </div>
               </div>
 
-              {/* Account Information */}
-              <div data-slot="card" className="tab-pane flex flex-col bg-white rounded-xl border p-6 border-border shadow-lg hover:shadow-xl transition-all duration-300 h-full">
+              <div className="flex flex-col gap-6">
+                {/* Account Information */}
+                <div data-slot="card" className="tab-pane flex flex-col bg-white rounded-xl border p-6 border-border shadow-lg hover:shadow-xl transition-all duration-300 h-fit">
                 <h3 className="text-xl mb-6 font-bold">{t('profile.account_info', T_PAGE)}</h3>
                 <div className="space-y-5">
                   <div className="p-4 bg-muted/30 rounded-xl border border-border">
@@ -775,24 +877,42 @@ const ProfileView = () => {
                   </div>
                   <div className="p-4 bg-primary/5 rounded-xl border border-primary/20">
                     <label className="text-xs text-primary mb-1 block">{t('common.user_id')}</label>
-                    <span className="text-sm font-mono text-primary font-bold">USR-2026-0001</span>
+                    <span className="text-sm font-mono text-primary font-bold">{personalInfo.uuid || 'USR-2026-0001'}</span>
                   </div>
                 </div>
-                <div className="flex justify-end gap-3 mt-auto pt-6 border-t border-border">
+              </div>
+
+              {/* Appointment Period Settings */}
+              <div data-slot="card" className="tab-pane flex flex-col bg-white rounded-xl border p-6 border-border shadow-lg hover:shadow-xl transition-all duration-300 h-fit">
+                <h3 className="text-xl mb-6 font-bold">{isAr ? 'إعدادات المواعيد' : 'Appointment Settings'}</h3>
+                <div className="space-y-5">
+                  <div className="flex flex-col gap-2">
+                    <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{isAr ? 'مدة الموعد الافتراضية (بالدقائق)' : 'Default Appointment Period (mins)'}</label>
+                    <Input
+                      type="tel"
+                      value={personalInfo.defaultAppointmentPeriod}
+                      onChange={(e) => setPersonalInfo(p => ({ ...p, defaultAppointmentPeriod: e.target.value.replace(/\D/g, '') }))}
+                      dir="ltr"
+                      className={cn("h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold", isAr ? "text-right" : "text-left")}
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end gap-3 mt-auto pt-6 ">
                   <button
-                    onClick={handleCancelGeneral}
+                    onClick={handleCancelAppointmentPeriod}
                     className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-300 border bg-background text-foreground hover:bg-accent hover:text-white hover:border-accent h-10 px-6"
                   >
                     {t('common.cancel')}
                   </button>
                   <button
-                    onClick={handleSaveGeneral}
+                    onClick={handleSaveAppointmentPeriod}
                     className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-300 text-primary-foreground bg-primary hover:bg-primary/90 h-10 px-6 shadow-lg shadow-primary/20 hover:shadow-primary/30"
                   >
                     <Check size={16} className={isAr ? "ml-1" : "mr-1"} />
                     {t('common.save_changes')}
                   </button>
                 </div>
+              </div>
               </div>
             </div>
 
@@ -1071,49 +1191,61 @@ const ProfileView = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {insurances.map((ins) => {
-                  const isActive = clinicInsuranceUuids.has(ins.uuid);
-                  const isToggling = togglingInsurances.has(ins.uuid);
-                  return (
-                    <div
-                      key={ins.uuid}
-                      className={cn(
-                        "flex items-center justify-between p-4 rounded-xl border transition-all duration-300",
-                        isActive
-                          ? "bg-secondary/5 border-secondary/20 shadow-sm"
-                          : "bg-muted/20 border-border"
-                      )}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className={cn(
-                          "w-2 h-2 rounded-full",
-                          isActive ? "bg-secondary animate-pulse" : "bg-muted-foreground/40"
-                        )} />
-                        <div className="flex flex-col">
-                          <span className="font-bold text-foreground">{ins.name}</span>
-                          <span className="text-xs text-muted-foreground">{ins.provider}</span>
+              {insurances.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {insurances.map((ins) => {
+                    const isActive = clinicInsuranceUuids.has(ins.uuid);
+                    const isToggling = togglingInsurances.has(ins.uuid);
+                    return (
+                      <div
+                        key={ins.uuid}
+                        className={cn(
+                          "flex items-center justify-between p-4 rounded-xl border transition-all duration-300",
+                          isActive
+                            ? "bg-secondary/5 border-secondary/20 shadow-sm"
+                            : "bg-muted/20 border-border"
+                        )}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={cn(
+                            "w-2 h-2 rounded-full",
+                            isActive ? "bg-secondary animate-pulse" : "bg-muted-foreground/40"
+                          )} />
+                          <div className="flex flex-col">
+                            <span className="font-bold text-foreground">{ins.name}</span>
+                            <span className="text-xs text-muted-foreground">{ins.provider}</span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          <span className={cn(
+                            "text-xs font-bold",
+                            isActive ? "text-secondary" : "text-muted-foreground"
+                          )}>
+                            {isActive ? t('profile.active', T_PAGE) : (isAr ? "غير نشط" : "Inactive")}
+                          </span>
+                          <Switch
+                            checked={isActive}
+                            disabled={isToggling}
+                            onCheckedChange={() => handleToggleInsurance(ins.uuid)}
+                            className="scale-90"
+                          />
                         </div>
                       </div>
-
-                      <div className="flex items-center gap-3">
-                        <span className={cn(
-                          "text-xs font-bold",
-                          isActive ? "text-secondary" : "text-muted-foreground"
-                        )}>
-                          {isActive ? t('profile.active', T_PAGE) : (isAr ? "غير نشط" : "Inactive")}
-                        </span>
-                        <Switch
-                          checked={isActive}
-                          disabled={isToggling}
-                          onCheckedChange={() => handleToggleInsurance(ins.uuid)}
-                          className="scale-90"
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="p-8 text-center flex flex-col items-center gap-3 bg-muted/10 rounded-xl border border-dashed border-border mt-4">
+                  <div className="size-12 rounded-2xl bg-secondary/10 flex items-center justify-center text-secondary/50">
+                    <Shield className="size-6" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-foreground">{isAr ? "لا توجد شركات تأمين" : "No insurance companies"}</p>
+                    <p className="text-xs text-muted-foreground">{isAr ? "لم يتم إضافة أي شركات تأمين للنظام بعد" : "No insurance companies have been added to the system yet"}</p>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Settings View */}
@@ -1128,6 +1260,11 @@ const ProfileView = () => {
         <EmailChangeDialog
            isOpen={isEmailModalOpen}
            onClose={() => setIsEmailModalOpen(false)}
+        />
+        {/* Change Password Dialog */}
+        <PasswordChangeDialog
+           isOpen={isPasswordModalOpen}
+           onClose={() => setIsPasswordModalOpen(false)}
         />
       </div>
     </div>

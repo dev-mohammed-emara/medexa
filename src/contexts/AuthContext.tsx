@@ -26,7 +26,7 @@ interface AuthContextType {
   profileImage: string | null
   login: (email: string, password: string) => Promise<void>
   register: (payload: any) => Promise<void>
-  logout: () => Promise<void>
+  logout: () => Promise<string | void>
   updateProfileImage: (image: string | null) => void
   updateUser: (updatedFields: Partial<UserProfile>) => void
 }
@@ -335,23 +335,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }
 
-  const logout = async () => {
+  const logout = async (): Promise<string | void> => {
     // Clear scheduled timer
     if (refreshTimeoutRef.current) {
       clearTimeout(refreshTimeoutRef.current as any)
       refreshTimeoutRef.current = null
     }
 
+    let successMessage: string | void = undefined;
+
     const token = getCookie('token')
     if (token) {
       try {
-        await fetch('/api/auth/logout', {
+        const res = await fetch('/api/auth/logout', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
           }
         })
+        const data = await res.json().catch(() => ({}));
+        if (data.message) {
+          successMessage = data.message;
+        }
       } catch (e) {
         console.error("API logout failed, performing client-side logout cleanup", e)
       }
@@ -366,6 +372,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const channel = new BroadcastChannel('medexa_sync');
     channel.postMessage({ type: 'AUTH_UPDATE', isAuthenticated: false, user: null });
+
+    return successMessage;
   }
 
   const updateProfileImage = (image: string | null) => {

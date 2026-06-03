@@ -28,14 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../../components/ui/select"
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-} from '../../components/ui/table'
+
 import { fetchSecretaries, fetchSecretaryByUuid, deleteSecretary } from '../../api/secretaryApi'
 import type { ApiSecretary } from '../../api/secretaryApi'
 import { initialSecretaries } from '../../constants/Secretary_dummy'

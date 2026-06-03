@@ -140,12 +140,15 @@ const Modal = ({
             )}
 
             {title && (
-              <div className="flex flex-col gap-2 items-right text-right mb-6">
+              <div className={cn(
+                "flex flex-col gap-2 mb-6",
+                variant === 'danger' ? "items-center text-center" : "items-start text-start"
+              )}>
                 <h3 id={titleId.current} className="text-2xl font-semibold text-[#1A2B3C]">
                   {title}
                 </h3>
                 {message && (
-                  <p id={descriptionId.current} className="text-sm text-gray-500">
+                  <p id={descriptionId.current} className="text-sm text-gray-500 text-balance">
                     {message}
                   </p>
                 )}

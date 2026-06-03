@@ -1,4 +1,4 @@
-import { ArrowUp, TrendingDown, DollarSign, TrendingUp, Users, Calendar } from 'lucide-react'
+import { ArrowUp, DollarSign, TrendingUp, Users, Calendar } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { gsap } from 'gsap'
 import Counter from '../../components/ui/Counter'

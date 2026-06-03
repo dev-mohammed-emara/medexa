@@ -16,6 +16,7 @@ import { cn } from '../../utils/cn';
 import Modal from '../../components/ui/Modal';
 import TimePicker from '../../components/ui/TimePicker';
 import { getCookie } from '../../utils/cookie';
+import Input from '../../components/ui/Input';
 import {
   Settings as SettingsIcon,
   Globe,
@@ -529,17 +530,17 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
                 <Clock className="size-4 text-accent" />
                 {isAr ? 'مدة الموعد الافتراضية' : 'Default Appointment Period'}
               </label>
-              <Select value={String(appointmentPeriod)} onValueChange={(val) => setAppointmentPeriod(Number(val))}>
-                <SelectTrigger className="h-12 rounded-xl bg-muted/30 border-border focus:bg-white transition-all font-bold">
-                  <SelectValue placeholder={isAr ? 'اختر المدة' : 'Select period'} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="15">15 {isAr ? 'دقيقة' : 'minutes'}</SelectItem>
-                  <SelectItem value="30">30 {isAr ? 'دقيقة' : 'minutes'}</SelectItem>
-                  <SelectItem value="45">45 {isAr ? 'دقيقة' : 'minutes'}</SelectItem>
-                  <SelectItem value="60">60 {isAr ? 'دقيقة' : 'minutes'}</SelectItem>
-                </SelectContent>
-              </Select>
+              <Input
+                type="tel"
+                value={appointmentPeriod}
+                onChange={(e) => setAppointmentPeriod(Number(e.target.value.replace(/\D/g, '')))}
+                dir="ltr"
+                className={cn(
+                  "h-12 bg-muted/30 border-border focus:bg-white focus:border-primary transition-all duration-300 font-bold",
+                  isAr ? "text-right" : "text-left"
+                )}
+                placeholder={isAr ? "بالدقائق" : "in minutes"}
+              />
             </div>
           </div>
 

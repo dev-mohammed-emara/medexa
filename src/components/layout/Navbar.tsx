@@ -43,8 +43,8 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
       await window.triggerExitTransition()
     }
 
-    await logout()
-    window.showToast(t('nav.logout_success'))
+    const msg = await logout()
+    window.showToast(msg || t('nav.logout_success', T_PAGE))
     navigate('/login')
   }
 

@@ -143,7 +143,7 @@ const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
                   )}
                   <div className="relative z-10 w-full flex items-center gap-3">
                     <div className="flex items-center justify-center w-5">
-                      <item.icon className={cn("size-5 shrink-0 transition-transform duration-300 group-hover:scale-110", isActive ? "text-primary" : "text-black")} />
+                      <item.icon className={cn("size-5 shrink-0 transition-transform duration-300 group-hover:scale-110", isActive ? "text-primary" : "text-black",item.icon ===  FaCalendarAlt  && "scale-95" )} />
                     </div>
                     {(!isCollapsed || (isCollapsed && !isWideScreen)) && (
                       <>

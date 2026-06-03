@@ -17,9 +17,6 @@ const Dashboard = () => {
     try {
       const stats = await fetchClinicStatistics(fromDate, toDate)
       setClinicStats(stats)
-      
-      const varMsg = JSON.stringify(stats)
-      window.showToast?.(varMsg, 'success')
     } catch (error: any) {
       console.error(error)
       window.showToast?.(error.message || 'Failed to fetch statistics', 'error')

@@ -30,14 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../../components/ui/select"
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-} from '../../components/ui/table'
+
 import { fetchDoctors, fetchDoctorByUuid, deleteDoctor } from '../../api/doctorApi'
 import type { ApiDoctor } from '../../api/doctorApi'
 import { useAuth } from '../../contexts/AuthContext'

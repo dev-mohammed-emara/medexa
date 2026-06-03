@@ -20,23 +20,18 @@ const LoginForm = () => {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [isForgot, setIsForgot] = useState(false)
-  const [forgotStep, setForgotStep] = useState<number>(1)
   const [serverMessage, setServerMessage] = useState<string | null>(null)
-  const [resetToken, setResetToken] = useState<string | null>(null)
-  const [tokenInput, setTokenInput] = useState<string>('')
-  const [newPassword, setNewPassword] = useState<string>('')
-  const [confirmNewPassword, setConfirmNewPassword] = useState<string>('')
   const [isLoading, setIsLoading] = useState(false)
   const { login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
 
-  // Helper to push a history entry reflecting current auth mode and step
-  const pushState = (mode: 'login' | 'forgot', step: number = 1) => {
+  // Helper to push a history entry reflecting current auth mode
+  const pushState = (mode: 'login' | 'forgot') => {
     if (mode === 'login') {
       navigate(location.pathname, { replace: false })
     } else {
-      const search = `?auth=forgot&step=${step}`
+      const search = `?auth=forgot`
       navigate(`${location.pathname}${search}`, { replace: false })
     }
   }
@@ -45,14 +40,11 @@ const LoginForm = () => {
   useEffect(() => {
     const params = new URLSearchParams(location.search)
     const auth = params.get('auth')
-    const stepParam = parseInt(params.get('step') || '1', 10)
 
     if (auth === 'forgot') {
       setIsForgot(true)
-      setForgotStep(Number.isNaN(stepParam) ? 1 : Math.max(1, Math.min(2, stepParam)))
     } else {
       setIsForgot(false)
-      setForgotStep(1)
     }
 
   }, [location.search])
@@ -64,75 +56,31 @@ const LoginForm = () => {
     e.preventDefault()
 
     if (isForgot) {
-      // Step 1: request reset
-      if (forgotStep === 1) {
-        if (!email) {
-          window.showToast?.('Please enter your email', 'error')
-          return
-        }
-        setIsLoading(true)
-        try {
-          const resp = await fetch('/api/auth/password/request-reset', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email })
-          })
+      if (!email) {
+        window.showToast?.('Please enter your email', 'error')
+        return
+      }
+      setIsLoading(true)
+      try {
+        const resp = await fetch('/api/auth/password/request-reset', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        })
 
-          const data = await resp.json().catch(() => ({}))
-          const message = data.message || 'If an account with this email exists, a password reset link has been sent'
-          setServerMessage(message)
-          window.showToast?.(message, resp.ok ? 'success' : 'error')
+        const data = await resp.json().catch(() => ({}))
+        const message = data.message || 'If an account with this email exists, a password reset link has been sent'
+        setServerMessage(message)
+        window.showToast?.(message, resp.ok ? 'success' : 'error')
 
-          if (resp.ok) {
-            // Move to step 2. If token provided by API, save it; otherwise allow user to enter it.
-            setForgotStep(2)
-            pushState('forgot', 2)
-            setResetToken(data.token || null)
-          }
-        } catch (err: any) {
-          window.showToast?.(err.message || 'Request failed', 'error')
-        } finally {
-          setIsLoading(false)
+        if (resp.ok) {
+          setIsForgot(false)
+          pushState('login')
         }
-      } else if (forgotStep === 2) {
-        // Step 2: perform reset
-        const tokenToUse = resetToken || tokenInput
-        if (!tokenToUse) {
-          window.showToast?.('Reset token required', 'error')
-          return
-        }
-        if (!newPassword || !confirmNewPassword) {
-          window.showToast?.('Please enter and confirm your new password', 'error')
-          return
-        }
-        if (newPassword !== confirmNewPassword) {
-          window.showToast?.('Passwords do not match', 'error')
-          return
-        }
-
-        setIsLoading(true)
-        try {
-          const resp = await fetch('/api/auth/password/reset', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token: tokenToUse, newPassword, confirmPassword: confirmNewPassword })
-          })
-
-          const data = await resp.json().catch(() => ({}))
-          const message = data.message || 'Password has been reset successfully'
-          window.showToast?.(message, resp.ok ? 'success' : 'error')
-
-          if (resp.ok) {
-            if (window.triggerExitTransition) {
-              await window.triggerExitTransition()
-            }
-            navigate('/login')
-          }
-        } catch (err: any) {
-          window.showToast?.(err.message || 'Reset failed', 'error')
-        } finally {
-          setIsLoading(false)
-        }
+      } catch (err: any) {
+        window.showToast?.(err.message || 'Request failed', 'error')
+      } finally {
+        setIsLoading(false)
       }
       return
     }
@@ -179,10 +127,10 @@ const LoginForm = () => {
              <img src="/images/logo.png" alt="Medexa Cloud" className="h-20 w-auto" />
           </div>
           <h1 className="text-3xl font-bold mb-2 text-primary">
-            {isForgot ? (forgotStep === 1 ? t('reset_title', T) : t('reset_title_step2', T)) : t('platform_name', T)}
+            {isForgot ? t('reset_title', T) : t('platform_name', T)}
           </h1>
           <p className={cn("text-muted-foreground", isAr ? "text-right" : "text-left")}>
-            {isForgot ? (forgotStep === 1 ? t('reset_desc', T) : t('reset_desc_step2', T)) : t('platform_name', T)}
+            {isForgot ? t('reset_desc', T) : t('platform_name', T)}
           </p>
         </div>
         <form className="space-y-6" onSubmit={handleSubmit}>
@@ -194,25 +142,6 @@ const LoginForm = () => {
               >
                 {t('email_label', T)}
               </label>
-              {isForgot && forgotStep === 2 && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    // Go back to step 1 keeping the email value
-                    setForgotStep(1)
-                    setServerMessage(null)
-                    // Clear temporary reset inputs but keep email
-                    setResetToken(null)
-                    setTokenInput('')
-                    setNewPassword('')
-                    setConfirmNewPassword('')
-                    pushState('forgot', 1)
-                  }}
-                  className="text-sm text-primary hover:underline outline-none"
-                >
-                  {t('change_email', T)}
-                </button>
-              )}
             </div>
             <Input
               type="email"
@@ -224,7 +153,7 @@ const LoginForm = () => {
               autoComplete="email"
               onChange={(e) => setEmail(e.target.value)}
               icon={<FiMail className="size-5" />}
-              disabled={isLoading || (isForgot && forgotStep === 2)}
+              disabled={isLoading}
             />
             {isForgot && (
               <div className={cn(
@@ -236,24 +165,9 @@ const LoginForm = () => {
                     ? "هذا الخيار مخصص للوصول السريع للعيادات المسجلة مسبقاً. يرجى إدخال البريد الإلكتروني المسجل للدخول مباشرة."
                     : "Please enter a valid email so the reset request can be sent to you")}
                 </p>
-                {forgotStep === 2 && !resetToken && (
-                  <div className="mt-2">
-                    <label className="text-xs font-semibold block mb-1">Reset Token</label>
-                    <Input value={tokenInput} onChange={(e) => setTokenInput(e.target.value)} placeholder="Paste token from email" />
-                  </div>
-                )}
               </div>
             )}
           </div>
-         
-          {isForgot && forgotStep === 2 && (
-            <div className="space-y-2">
-              <label className={cn("text-sm font-semibold text-[#1a2b3c] block mb-2", isAr ? "pr-1 text-right" : "pl-1 text-left")}>{t('new_password_label', T) || 'New Password'}</label>
-              <Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="••••••••" />
-              <label className={cn("text-sm font-semibold text-[#1a2b3c] block mb-2 mt-2", isAr ? "pr-1 text-right" : "pl-1 text-left")}>{t('confirm_new_password_label', T) || 'Confirm Password'}</label>
-              <Input type="password" value={confirmNewPassword} onChange={(e) => setConfirmNewPassword(e.target.value)} placeholder="••••••••" />
-            </div>
-          )}
           {!isForgot && (
             <div className="space-y-2">
                 <label
@@ -294,12 +208,10 @@ const LoginForm = () => {
                 // Toggle to forgot mode and push history so back/forward works
                 if (!isForgot) {
                   setIsForgot(true)
-                  setForgotStep(1)
-                  pushState('forgot', 1)
+                  pushState('forgot')
                 } else {
                   setIsForgot(false)
-                  setForgotStep(1)
-                  pushState('login', 1)
+                  pushState('login')
                 }
               }}
               className="text-sm text-primary hover:underline outline-none"
@@ -316,7 +228,7 @@ const LoginForm = () => {
             disabled={isLoading}
           >
             <FiLogIn className={cn("size-5", isAr ? "ml-2" : "mr-2")} />
-            {isForgot ? (forgotStep === 1 ? t('confirm_email', T) : t('confirm_new_password', T)) : t('login_btn', T)}
+            {isForgot ? t('confirm_email', T) : t('login_btn', T)}
           </BtnPrimary>
           {!isForgot && (
             <div className="text-center text-sm text-muted-foreground">

@@ -19,7 +19,7 @@ import { useLanguage } from '../../contexts/LanguageContext'
 import { dashboardTranslations } from '../../constants/translations/dashboard'
 import { navTranslations } from '../../constants/nav'
 
-import { genderData, ageData, appointmentData } from '../../constants/Dashboard_dummy'
+
 
 interface ChartsOverviewProps {
   financialChartData?: {

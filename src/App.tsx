@@ -1,7 +1,7 @@
 import useLenis from '@/hooks/useLenis'
 import { Navigate, Route, BrowserRouter as Router, Routes } from 'react-router-dom'
 import { ToastContainer } from './components/ui/Toast'
-import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { AuthProvider } from './contexts/AuthContext'
 import { SidebarProvider } from './contexts/SidebarContext'
 import Login from './pages/Login'
 import Register from './pages/Register'
@@ -38,24 +38,7 @@ import AdminTicketDetails from './pages/admin/AdminTicketDetails'
 import AdminTickets from './pages/admin/AdminTickets'
 import AdminUsers from './pages/admin/AdminUsers'
 
-// Component to handle redirecting authenticated users away from auth pages
-const PublicAuthRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isAuthenticated, loading } = useAuth()
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    )
-  }
-
-  if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />
-  }
-
-  return <>{children}</>
-}
 
 const AppRoutes = () => {
   return (
