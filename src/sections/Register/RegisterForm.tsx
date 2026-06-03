@@ -142,7 +142,7 @@ const RegisterForm = () => {
           phoneNumber: formatPhone(formData.ownerPhone),
           gender: (formData.gender === "male" ? "MALE" : "FEMALE") as any,
           dateOfBirth: formData.dob,
-          permissions: []
+          permissions: ['MANAGE_DOCTORS', 'MANAGE_SECRETARIES', 'MANAGE_TRANSACTIONS']
         },
         specialty: formData.ownerSpecialty,
         summary: formData.ownerSummary
@@ -161,10 +161,10 @@ const RegisterForm = () => {
       setOptimisticStatus('جاري إرسال طلبك...')
 
       try {
-        await register(payload)
+        await register(validation.data)
 
         // Success feedback
-        window.showToast('تم إنشاء الحساب بنجاح! يرجى التحقق من بريدك الإلكتروني لتفعيل حسابك', 'success')
+        window.showToast('تم إنشاء الحساب بنجاح! يمكنك الآن تسجيل الدخول', 'success')
 
         // Trigger seamless transition before navigating
         if (window.triggerExitTransition) {

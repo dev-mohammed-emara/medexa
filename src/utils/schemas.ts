@@ -34,7 +34,7 @@ export const UserRegisterSchema = z.object({
     .regex(/^\+\d{1,3}\d{6,14}$/, { message: "Owner phone must match format: +[country code][number] (e.g. +962791234567)" }),
   gender: z.enum(["MALE", "FEMALE"], { message: "Gender must be MALE or FEMALE" }),
   dateOfBirth: z.string().min(1, { message: "Date of birth is required" }), // format: YYYY-MM-DD
-  permissions: z.array(z.string()).default(["MANAGE_DOCTORS", "MANAGE_SECRETARIES"]),
+  permissions: z.array(z.string()).default(["MANAGE_DOCTORS", "MANAGE_SECRETARIES", "MANAGE_TRANSACTIONS"]),
 })
 
 export const OwnerRegisterSchema = z.object({

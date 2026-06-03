@@ -1,5 +1,10 @@
 import { getCookie } from '../utils/cookie'
 
+export interface ClinicSettings {
+  defaultCurrency: string
+  defaultAppointmentPeriod: number
+}
+
 export interface ApiClinic {
   uuid: string
   name: string
@@ -10,6 +15,7 @@ export interface ApiClinic {
   phoneNumber: string
   email: string
   status: 'PENDING' | 'ACTIVE' | 'INACTIVE'
+  settings: ClinicSettings
   createdAt: string
   updatedAt: string
 }
@@ -80,6 +86,27 @@ export const fetchInsurances = async (): Promise<ApiInsurance[]> => {
 
   if (!response.ok) {
     throw new Error(`Failed to fetch insurances. Status: ${response.status}`)
+  }
+
+  return response.json()
+}
+
+export const updateClinicSettings = async (body: ClinicSettings): Promise<ApiClinic> => {
+  const response = await fetch('/api/clinic/settings', {
+    method: 'PATCH',
+    headers: getHeaders(),
+    body: JSON.stringify(body)
+  })
+
+  if (!response.ok) {
+    let errorMessage = 'Failed to update clinic settings'
+    try {
+      const errorData = await response.json()
+      errorMessage = errorData.message || errorData.error || errorMessage
+    } catch (e) {
+      // ignore
+    }
+    throw new Error(errorMessage)
   }
 
   return response.json()

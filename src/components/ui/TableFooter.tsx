@@ -34,7 +34,16 @@ const TableFooter = ({
   const safeItemsPerPage = itemsPerPage > 0 ? itemsPerPage : Math.max(1, totalItems)
   const resolvedTotalPages = totalPages ?? Math.max(1, Math.ceil(totalItems / safeItemsPerPage))
 
-  // Determine current value for items per page
+  // Generate page size options based on totalItems
+  const getPageSizeOptions = (): number[] => {
+    const defaultOptions = [5, 10, 20, 50];
+    if (totalItems < 5) {
+      return [totalItems];
+    }
+    return defaultOptions.filter(option => option <= totalItems);
+  };
+
+  const pageSizeOptions = getPageSizeOptions();
 
   const PrevIcon = isAr ? LuChevronRight : LuChevronLeft;
   const NextIcon = isAr ? LuChevronLeft : LuChevronRight;
@@ -43,7 +52,7 @@ const TableFooter = ({
     <div
       className={cn(
         "flex flex-col md:flex-row items-center gap-4 pt-4 px-6",
-        variant === 'table' ? "bg-white border-t border-border rounded-b-xl mt-0" : "bg-transparent mt-6",
+        variant === 'table' ? "bg-white rounded-b-xl mt-0" : "bg-transparent mt-6",
         isAr ? "flex-row-reverse" : "flex-row",
         className
       )}
@@ -68,10 +77,9 @@ const TableFooter = ({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent smallZ>
-                    <SelectItem value="5" className="font-bold">5</SelectItem>
-                    <SelectItem value="10" className="font-bold">10</SelectItem>
-                    <SelectItem value="20" className="font-bold">20</SelectItem>
-                    <SelectItem value="50" className="font-bold">50</SelectItem>
+                    {pageSizeOptions.map((option) => (
+                      <SelectItem key={option} value={String(option)} className="font-bold">{option}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>

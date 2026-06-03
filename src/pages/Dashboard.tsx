@@ -3,27 +3,26 @@ import MainLayout from '../components/layout/MainLayout'
 import ChartsOverview from '../sections/Dashboard/ChartsOverview'
 import DashboardHeader from '../sections/Dashboard/DashboardHeader'
 import StatsOverview from '../sections/Dashboard/StatsOverview'
-import { fetchFinancialStatistics } from '../api/statisticsApi'
-import type { FinancialStatisticsResponse } from '../api/statisticsApi'
+import { fetchClinicStatistics } from '../api/statisticsApi'
+import type { ClinicStatisticsResponse } from '../api/statisticsApi'
 
 const Dashboard = () => {
   const [fromDate, setFromDate] = useState<string>("2025-01-01")
   const [toDate, setToDate] = useState<string>("2025-06-30")
-  const [financialData, setFinancialData] = useState<FinancialStatisticsResponse | null>(null)
+  const [clinicStats, setClinicStats] = useState<ClinicStatisticsResponse | null>(null)
   const [isLoading, setIsLoading] = useState<boolean>(false)
 
-  const loadFinancialStats = useCallback(async () => {
+  const loadData = useCallback(async () => {
     setIsLoading(true)
     try {
-      const data = await fetchFinancialStatistics(fromDate, toDate)
-      setFinancialData(data)
+      const stats = await fetchClinicStatistics(fromDate, toDate)
+      setClinicStats(stats)
       
-      // Store the response itself in a variable and toast it on success
-      const varMsg = JSON.stringify(data)
+      const varMsg = JSON.stringify(stats)
       window.showToast?.(varMsg, 'success')
     } catch (error: any) {
       console.error(error)
-      window.showToast?.(error.message || 'Failed to fetch financial statistics', 'error')
+      window.showToast?.(error.message || 'Failed to fetch statistics', 'error')
     } finally {
       setIsLoading(false)
     }
@@ -31,11 +30,11 @@ const Dashboard = () => {
 
   // Initial load
   useEffect(() => {
-    loadFinancialStats()
+    loadData()
   }, [])
 
   const handleApply = () => {
-    loadFinancialStats()
+    loadData()
   }
 
   return (
@@ -47,10 +46,15 @@ const Dashboard = () => {
           onFromDateChange={(dateStr) => setFromDate(dateStr)}
           onToDateChange={(dateStr) => setToDate(dateStr)}
           onApply={handleApply}
+          hideFilters={false}
           isLoading={isLoading}
         />
-        <StatsOverview financialData={financialData} />
-        <ChartsOverview financialChartData={financialData?.chartData || null} />
+        <StatsOverview clinicStats={clinicStats} />
+        <ChartsOverview
+          genderDistribution={clinicStats?.genderDistribution}
+          ageDistribution={clinicStats?.ageDistribution}
+          dailyAppointments={clinicStats?.dailyAppointments}
+        />
       </div>
     </MainLayout>
   )

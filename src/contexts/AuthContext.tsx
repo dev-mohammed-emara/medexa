@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react'
-import { getCookie, setCookie, deleteCookie } from '../utils/cookie'
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react'
+import { deleteCookie, getCookie, setCookie } from '../utils/cookie'
 
 export interface UserProfile {
   uuid?: string
@@ -13,6 +14,9 @@ export interface UserProfile {
   status?: string
   role?: string
   permissions?: string[]
+  clinicId?: number
+  username?: string
+  sub?: string
 }
 
 interface AuthContextType {
@@ -28,6 +32,38 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
+
+// Helper function to parse JWT token
+const parseJWT = (token: string): any => {
+  try {
+    const base64Url = token.split('.')[1]
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    )
+    return JSON.parse(jsonPayload)
+  } catch (error) {
+    console.error('Failed to parse JWT:', error)
+    return null
+  }
+}
+
+// Helper function to extract permissions from JWT
+const extractPermissionsFromJWT = (token: string): string[] => {
+  const decoded = parseJWT(token)
+  if (!decoded || !decoded.authorities) {
+    return ['MANAGE_CLINIC']
+  }
+  const permissions = decoded.authorities.split(',').map((p: string) => p.trim())
+  // Add MANAGE_CLINIC as default if not already present
+  if (!permissions.includes('MANAGE_CLINIC')) {
+    permissions.push('MANAGE_CLINIC')
+  }
+  return permissions
+}
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [profileImage, setProfileImage] = useState<string | null>(null)
@@ -46,7 +82,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const scheduleTokenRefresh = (expiresInSeconds: number) => {
     if (refreshTimeoutRef.current) {
-      clearTimeout(refreshTimeoutRef.current as any)
+      clearTimeout(refreshTimeoutRef.current)
     }
 
     // Refresh 1 minute before expiry. If expiresIn is very small, refresh at 50% duration.
@@ -87,17 +123,51 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw new Error(errorMessage)
     }
 
-    const data = await response.json()
-    const newAccessToken = data.accessToken
-    const newRefreshToken = data.refreshToken
-    const expiresIn = data.expiresIn || 900
-
-    if (!newAccessToken || !newRefreshToken) {
-      throw new Error('Refresh response missing tokens')
+    const data = await response.json() as Record<string, any>
+    const newAccessToken = data.accessToken || data.token || data.data?.accessToken || data.data?.token
+    const newRefreshToken = data.refreshToken || data.data?.refreshToken
+    let expiresIn: number = data.expiresIn || data.data?.expiresIn || 900
+    if (expiresIn > 100000) {
+      expiresIn = expiresIn / 1000
     }
 
+    if (!newAccessToken) {
+      throw new Error('Refresh response missing access token')
+    }
+
+    // Parse JWT to extract user data
+    const decodedToken = parseJWT(newAccessToken)
+    const permissions = extractPermissionsFromJWT(newAccessToken)
+
+    // Update access token (always)
     setCookie('token', newAccessToken, 7)
-    setCookie('refreshToken', newRefreshToken, 7)
+
+    // Update refresh token if provided (fallback to current if not)
+    if (newRefreshToken) {
+      setCookie('refreshToken', newRefreshToken, 7)
+    }
+
+    // Sync user profile with JWT data
+    const currentUser = user || {} as Partial<UserProfile>
+    const updatedUser: UserProfile = {
+      uuid: currentUser.uuid,
+      email: decodedToken?.username || currentUser.email || '',
+      username: decodedToken?.username,
+      sub: decodedToken?.sub,
+      clinicId: decodedToken?.clinicId,
+      permissions: permissions,
+      firstName: currentUser.firstName || decodedToken?.sub || 'User',
+      surName: currentUser.surName || '',
+      lastName: currentUser.lastName || '',
+      phoneNumber: currentUser.phoneNumber || '',
+      gender: currentUser.gender || '',
+      dateOfBirth: currentUser.dateOfBirth || '',
+      role: currentUser.role,
+      status: currentUser.status,
+    }
+
+    setUser(updatedUser)
+    localStorage.setItem('medexa_user', JSON.stringify(updatedUser))
 
     scheduleTokenRefresh(expiresIn)
   }
@@ -115,6 +185,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   // Initial load silent refresh and cleanup
+
   useEffect(() => {
     const performInitialRefresh = async () => {
       if (isAuthenticated && getCookie('refreshToken')) {
@@ -134,7 +205,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     return () => {
       if (refreshTimeoutRef.current) {
-        clearTimeout(refreshTimeoutRef.current as any)
+        clearTimeout(refreshTimeoutRef.current)
       }
     }
   }, [])
@@ -159,10 +230,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw new Error(errorMessage)
     }
 
-    const data = await response.json()
+    const data = await response.json() as Record<string, any>
     const token = data.accessToken || data.token || data.data?.accessToken || data.data?.token
     const refreshToken = data.refreshToken || data.data?.refreshToken
-    const expiresIn = data.expiresIn || 900
+    let expiresIn: number = data.expiresIn || 900
+    if (expiresIn > 100000) {
+      expiresIn = expiresIn / 1000
+    }
 
     if (!token) {
       throw new Error('No token returned from server.')
@@ -175,10 +249,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     setIsAuthenticated(true)
 
-    // Save user data (persist from registration or default)
+    // Parse JWT to extract user data
+    const decodedToken = parseJWT(token)
+    const permissions = extractPermissionsFromJWT(token)
+
+    // Save user data (prefer JWT data, fallback to response data, then defaults)
     let userProfile: UserProfile;
     if (data.user) {
-      userProfile = data.user;
+      userProfile = {
+        ...data.user,
+        email: decodedToken?.username || data.user.email || email,
+        username: decodedToken?.username,
+        sub: decodedToken?.sub,
+        clinicId: decodedToken?.clinicId,
+        permissions: permissions,
+      };
     } else {
       const savedUserStr = localStorage.getItem('medexa_user');
       const savedUser = savedUserStr ? JSON.parse(savedUserStr) : null;
@@ -186,11 +271,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         firstName: savedUser?.firstName || "Ahmad",
         surName: savedUser?.surName || "Mohammed",
         lastName: savedUser?.lastName || "Almasri",
-        email: email,
+        email: decodedToken?.username || email,
         phoneNumber: savedUser?.phoneNumber || "0791234567",
         gender: savedUser?.gender || "MALE",
         dateOfBirth: savedUser?.dateOfBirth || "1985-06-09",
-        role: "ROLE_CLINIC_OWNER"
+        role: "ROLE_CLINIC_OWNER",
+        username: decodedToken?.username,
+        sub: decodedToken?.sub,
+        clinicId: decodedToken?.clinicId,
+        permissions: permissions,
       };
     }
     setUser(userProfile)
@@ -203,7 +292,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     channel.postMessage({ type: 'AUTH_UPDATE', isAuthenticated: true, user: userProfile });
   }
 
-  const register = async (payload: any) => {
+  const register = async (payload: Record<string, any>) => {
     const response = await fetch('/api/clinic', {
       method: 'POST',
       headers: {
@@ -223,7 +312,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw new Error(errorMessage)
     }
 
-    const clinicData = await response.json()
+    const clinicData = await response.json() as Record<string, any>
     console.log('Clinic registered:', clinicData)
     const ownerUser = payload.owner?.user
     if (ownerUser) {
@@ -235,7 +324,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         phoneNumber: ownerUser.phoneNumber,
         gender: ownerUser.gender,
         dateOfBirth: ownerUser.dateOfBirth,
-        role: "ROLE_CLINIC_OWNER"
+        role: "ROLE_CLINIC_OWNER",
+        permissions: ['MANAGE_CLINIC']
       }
       setUser(userProfile)
       localStorage.setItem('medexa_user', JSON.stringify(userProfile))

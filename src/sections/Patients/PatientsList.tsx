@@ -157,7 +157,11 @@ const PatientsList = () => {
   };
 
   const handleConfirmAction = () => {
-    loadPatients();
+    if (dialogMode === 'add' && currentPage !== 1) {
+      setCurrentPage(1);
+    } else {
+      loadPatients();
+    }
     broadcast({ type: 'DATA_UPDATE', module: 'patients' });
   };
 
@@ -368,6 +372,7 @@ const PatientsList = () => {
                 currentPage={currentPage}
                 onPageChange={setCurrentPage}
                 totalPages={totalPages}
+                className='pb-4'
                 onItemsPerPageChange={(val) => {
                   setPageSize(Number(val));
                   setCurrentPage(1);

@@ -72,7 +72,13 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
 
   // Form State
   const [currency, setCurrency] = useState('JOD');
+  const [appointmentPeriod, setAppointmentPeriod] = useState(30);
   const [days, setDays] = useState<WorkingDay[]>(INITIAL_DAYS);
+
+  const [savedCurrency, setSavedCurrency] = useState('JOD');
+  const [savedLanguage, setSavedLanguage] = useState(language);
+  const [savedAppointmentPeriod, setSavedAppointmentPeriod] = useState(30);
+  const [savedDays, setSavedDays] = useState<WorkingDay[]>(INITIAL_DAYS);
 
   const ID_TO_SERVER_DAY: { [key: string]: string } = {
     sun: 'SUNDAY',
@@ -83,6 +89,34 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
     fri: 'FRIDAY',
     sat: 'SATURDAY'
   };
+
+  useEffect(() => {
+    const loadClinicMe = async () => {
+      try {
+        const token = getCookie('token');
+        const headers = {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        };
+        const response = await fetch('/api/clinic/me', {
+          method: 'GET',
+          headers
+        });
+        if (response.ok) {
+          const data = await response.json();
+          if (data.settings) {
+            setCurrency(data.settings.defaultCurrency || 'JOD');
+            setSavedCurrency(data.settings.defaultCurrency || 'JOD');
+            setAppointmentPeriod(data.settings.defaultAppointmentPeriod || 30);
+            setSavedAppointmentPeriod(data.settings.defaultAppointmentPeriod || 30);
+          }
+        }
+      } catch (err) {
+        console.error('Error loading clinic settings:', err);
+      }
+    };
+    loadClinicMe();
+  }, [activeTab]);
 
   useEffect(() => {
     const loadSchedule = async () => {
@@ -187,18 +221,42 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
   const workingDaysCount = days.filter(d => d.isActive).length;
   const offDaysCount = days.length - workingDaysCount;
 
-  // Initial values for canceling
-
-  const [savedCurrency, setSavedCurrency] = useState('JOD');
-  const [savedLanguage, setSavedLanguage] = useState(language);
-  const [savedDays, setSavedDays] = useState<WorkingDay[]>(INITIAL_DAYS);
-
   const [cancelingSection, setCancelingSection] = useState<'clinic' | 'general' | 'working' | null>(null);
 
-  const handleSaveGeneralSettings = () => {
-    setSavedCurrency(currency);
-    setSavedLanguage(language);
-    window.showToast(t('common.settings_saved'), 'success');
+  const handleSaveGeneralSettings = async () => {
+    try {
+      const token = getCookie('token');
+      const headers = {
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+      };
+
+      const response = await fetch('/api/clinic/settings', {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify({
+          defaultCurrency: currency,
+          defaultAppointmentPeriod: appointmentPeriod
+        })
+      });
+
+      if (response.ok) {
+        setSavedCurrency(currency);
+        setSavedLanguage(language);
+        setSavedAppointmentPeriod(appointmentPeriod);
+        window.showToast(t('common.settings_saved'), 'success');
+      } else {
+        let errMsg = 'Failed to save settings';
+        try {
+          const errData = await response.json();
+          errMsg = errData.message || errData.error || errMsg;
+        } catch (e) {}
+        window.showToast(errMsg, 'error');
+      }
+    } catch (err: any) {
+      console.error(err);
+      window.showToast(err.message || 'Error saving settings', 'error');
+    }
   };
 
   const handleSaveDaySchedule = async (dayId: string) => {
@@ -283,6 +341,7 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
     } else if (cancelingSection === 'general') {
       setCurrency(savedCurrency);
       setLanguage(savedLanguage);
+      setAppointmentPeriod(savedAppointmentPeriod);
     } else if (cancelingSection === 'working') {
       setDays(JSON.parse(JSON.stringify(savedDays)));
     }
@@ -434,7 +493,7 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
             </figcaption>
           </figure>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="space-y-2">
               <label className={cn("text-sm font-bold text-[#1a2b3c] flex items-center gap-2", isAr ? "mr-1" : "ml-1")}>
                 <Globe className="size-4 text-primary" />
@@ -462,6 +521,23 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
                 <SelectContent>
                   <SelectItem value="JOD">{t('settings.jod', T_PAGE)}</SelectItem>
                   <SelectItem value="USD">{t('settings.usd', T_PAGE)}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <label className={cn("text-sm font-bold text-[#1a2b3c] flex items-center gap-2", isAr ? "mr-1" : "ml-1")}>
+                <Clock className="size-4 text-accent" />
+                {isAr ? 'مدة الموعد الافتراضية' : 'Default Appointment Period'}
+              </label>
+              <Select value={String(appointmentPeriod)} onValueChange={(val) => setAppointmentPeriod(Number(val))}>
+                <SelectTrigger className="h-12 rounded-xl bg-muted/30 border-border focus:bg-white transition-all font-bold">
+                  <SelectValue placeholder={isAr ? 'اختر المدة' : 'Select period'} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="15">15 {isAr ? 'دقيقة' : 'minutes'}</SelectItem>
+                  <SelectItem value="30">30 {isAr ? 'دقيقة' : 'minutes'}</SelectItem>
+                  <SelectItem value="45">45 {isAr ? 'دقيقة' : 'minutes'}</SelectItem>
+                  <SelectItem value="60">60 {isAr ? 'دقيقة' : 'minutes'}</SelectItem>
                 </SelectContent>
               </Select>
             </div>

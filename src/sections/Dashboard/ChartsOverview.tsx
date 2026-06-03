@@ -27,35 +27,83 @@ interface ChartsOverviewProps {
     income: number
     expenses: number
   }[] | null
+  genderDistribution?: {
+    gender: 'MALE' | 'FEMALE'
+    count: number
+    percentage: number
+  }[]
+  ageDistribution?: {
+    ageGroup: string
+    count: number
+  }[]
+  dailyAppointments?: {
+    dayOfWeek: string
+    date: string
+    appointmentCount: number
+  }[]
 }
 
-const ChartsOverview = ({ financialChartData }: ChartsOverviewProps) => {
+const ChartsOverview = ({
+  financialChartData,
+  genderDistribution,
+  ageDistribution,
+  dailyAppointments
+}: ChartsOverviewProps) => {
   const { isAr, t } = useLanguage()
   const T = dashboardTranslations
   const T_NAV = navTranslations
   const { isLoaded, isExiting } = usePreloader()
   const canAnimate = isLoaded && !isExiting
 
-  const translatedAppointmentData = appointmentData.map(item => {
-    let dayKey = ''
-    if (item.name === 'السبت') dayKey = 'sat'
-    else if (item.name === 'الأحد') dayKey = 'sun'
-    else if (item.name === 'الاثنين') dayKey = 'mon'
-    else if (item.name === 'الثلاثاء') dayKey = 'tue'
-    else if (item.name === 'الأربعاء') dayKey = 'wed'
-    else if (item.name === 'الخميس') dayKey = 'thu'
-    else if (item.name === 'الجمعة') dayKey = 'fri'
-    
-    return {
-      ...item,
-      name: dayKey ? t(`nav.days.${dayKey}`, T_NAV) : item.name
-    }
-  })
+  const translatedAppointmentData = (dailyAppointments && dailyAppointments.length > 0)
+    ? dailyAppointments.map(item => {
+      let name = item.dayOfWeek
+      let dayKey = ''
+      const lowerDay = item.dayOfWeek.toLowerCase()
+      if (lowerDay === 'sunday') dayKey = 'sun'
+      else if (lowerDay === 'monday') dayKey = 'mon'
+      else if (lowerDay === 'tuesday') dayKey = 'tue'
+      else if (lowerDay === 'wednesday') dayKey = 'wed'
+      else if (lowerDay === 'thursday') dayKey = 'thu'
+      else if (lowerDay === 'friday') dayKey = 'fri'
+      else if (lowerDay === 'saturday') dayKey = 'sat'
 
-  const translatedGenderData = genderData.map(item => ({
-    ...item,
-    name: item.name === 'ذكر' ? t('charts.male', T) : t('charts.female', T)
-  }))
+      return {
+        name: dayKey ? t(`nav.days.${dayKey}`, T_NAV) : name,
+        value: item.appointmentCount
+      }
+    })
+    : ['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].map(day => {
+      const dayKey = day.substring(0, 3).toLowerCase();
+      return {
+        name: t(`nav.days.${dayKey}`, T_NAV),
+        value: 0
+      }
+    })
+
+  const translatedGenderData = (genderDistribution && genderDistribution.length > 0)
+    ? genderDistribution.map(item => ({
+      name: item.gender === 'MALE' ? t('charts.male', T) : t('charts.female', T),
+      value: item.count,
+      percentage: item.percentage,
+      color: item.gender === 'MALE' ? '#0B5A8E' : '#3FB8AF'
+    }))
+    : [
+      { name: t('charts.male', T), value: 0, percentage: 0, color: '#0B5A8E' },
+      { name: t('charts.female', T), value: 0, percentage: 0, color: '#3FB8AF' }
+    ]
+
+  const activeAgeData = (ageDistribution && ageDistribution.length > 0)
+    ? ageDistribution.map(item => ({
+      range: item.ageGroup,
+      value: item.count,
+      fill: '#0B5A8E'
+    }))
+    : ['0-18', '19-35', '36-50', '51-65', '65+'].map(group => ({
+      range: group,
+      value: 0,
+      fill: '#0B5A8E'
+    }))
 
   const translatedFinancialChartData = (financialChartData || []).map(item => {
     const lowerLabel = item.label.toLowerCase()
@@ -79,6 +127,15 @@ const ChartsOverview = ({ financialChartData }: ChartsOverviewProps) => {
     }
   })
 
+  const totalGenderCount = (translatedGenderData || []).reduce((acc, curr) => acc + (curr.value || 0), 0)
+  const isEmptyGender = totalGenderCount === 0
+  const pieData = isEmptyGender
+    ? [
+      { name: t('charts.male', T), value: 1, color: '#E8EEF2' },
+      { name: t('charts.female', T), value: 1, color: '#E8EEF2' }
+    ]
+    : translatedGenderData
+
   return (
     <div
       className={cn(
@@ -96,26 +153,64 @@ const ChartsOverview = ({ financialChartData }: ChartsOverviewProps) => {
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={translatedGenderData}
+                    data={pieData}
                     cx="50%"
                     cy="50%"
                     innerRadius={70}
                     outerRadius={120}
-                    paddingAngle={6}
+                    paddingAngle={isEmptyGender ? 0 : 6}
                     dataKey="value"
                     isAnimationActive={true}
-                    label={({ name, percent }: { name?: string; percent?: number }) => {
+                    label={({ name, x, y, textAnchor }: any) => {
                       const safeName = name || ''
-                      const safePercent = (percent || 0) * 100
-                      return `${safeName} ${safePercent.toFixed(0)}%`
+                      const color = safeName === t('charts.male', T) ? '#0B5A8E' : '#3FB8AF'
+                      const displayValue = isEmptyGender ? 0 : (translatedGenderData.find(d => d.name === safeName)?.value || 0)
+                      return (
+                        <text
+                          x={x}
+                          y={y}
+                          fill={color}
+                          textAnchor={textAnchor}
+                          dominantBaseline="central"
+                          style={{ fontSize: '12px', fontWeight: 600 }}
+                        >
+                          {`${safeName} ${displayValue}`}
+                        </text>
+                      )
                     }}
                   >
-                    {genderData.map((entry, index) => (
-                      <Cell  key={`cell-${index}`} fill={entry.color} />
+                    {pieData.map((entry, index) => (
+                       <Cell key={`cell-${index}`} fill={isEmptyGender ? '#E8EEF2' : (entry as any).color} />
                     ))}
                   </Pie>
                   <Tooltip
-                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
+                    content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        return (
+                          <div 
+                            className="bg-white p-3 border border-border shadow-lg rounded-xl text-sm"
+                            style={{ direction: isAr ? 'rtl' : 'ltr' }}
+                          >
+                            {payload.map((entry: any, index: number) => {
+                              const name = entry.name
+                              const ogColor = name === t('charts.male', T) ? '#0B5A8E' : '#3FB8AF'
+                              const displayValue = isEmptyGender ? 0 : entry.value
+                              return (
+                                <div key={index} className="flex items-center gap-2 my-1">
+                                  <span 
+                                    className="w-2.5 h-2.5 rounded-full shrink-0" 
+                                    style={{ backgroundColor: ogColor }} 
+                                  />
+                                  <span className="text-gray-500 font-medium">{name}:</span>
+                                  <span className="font-bold text-gray-800">{displayValue}</span>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        )
+                      }
+                      return null
+                    }}
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -129,7 +224,7 @@ const ChartsOverview = ({ financialChartData }: ChartsOverviewProps) => {
           <figure className="h-[300px] w-full">
             {isLoaded && (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={ageData}>
+                <BarChart data={activeAgeData}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E8EEF2" />
                   <XAxis dataKey="range" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#666' }} />
                   <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#666' }} orientation="right" />

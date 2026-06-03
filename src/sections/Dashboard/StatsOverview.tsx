@@ -9,14 +9,15 @@ import { useLanguage } from '../../contexts/LanguageContext'
 import { dashboardTranslations } from '../../constants/translations/dashboard'
 
 interface StatsOverviewProps {
-  financialData?: {
-    totalIncome: number
-    totalExpenses: number
-    netProfit: number
+  clinicStats?: {
+    totalPatients: { value: string; changePercent: number; changePeriod: string }
+    appointments: { value: string; changePercent: number; changePeriod: string }
+    revenue: { value: string; changePercent: number; changePeriod: string }
+    growthRate: { value: string; changePercent: number; changePeriod: string }
   } | null
 }
 
-const StatsOverview = ({ financialData }: StatsOverviewProps) => {
+const StatsOverview = ({ clinicStats }: StatsOverviewProps) => {
   const { isAr, t } = useLanguage()
   const T = dashboardTranslations
   const { isLoaded, isExiting } = usePreloader()
@@ -39,66 +40,65 @@ const StatsOverview = ({ financialData }: StatsOverviewProps) => {
     progress: string
     isCurrency?: boolean
     isPercent?: boolean
+    changePeriod?: string
+  }
+
+  const parseValue = (val: string | undefined, defaultVal: number): number => {
+    if (!val) return defaultVal
+    const cleaned = val.replace(/,/g, '').replace(/%/g, '').trim()
+    return parseFloat(cleaned) || defaultVal
   }
 
   const dynamicStats: StatItem[] = [
     {
       label: t('stats.total_patients', T),
-      value: 1234,
-      change: '12%',
+      value: parseValue(clinicStats?.totalPatients?.value, 0),
+      change: clinicStats?.totalPatients?.changePercent !== undefined ? `${clinicStats.totalPatients.changePercent}%` : '0%',
       sub: t('stats.total_patients_sub', T),
       icon: Users,
       color: 'linear-gradient(90deg, #0B5A8E, #3FB8AF)',
       iconBg: 'from-[#0B5A8E]/10 to-[#3FB8AF]/10',
       iconColor: '#0B5A8E',
-      progress: '60%'
+      progress: '60%',
+      changePeriod: clinicStats?.totalPatients?.changePeriod
     },
     {
       label: t('stats.appointments', T),
-      value: 456,
-      change: '8%',
+      value: parseValue(clinicStats?.appointments?.value, 0),
+      change: clinicStats?.appointments?.changePercent !== undefined ? `${clinicStats.appointments.changePercent}%` : '0%',
       sub: t('stats.appointments_sub', T),
       icon: Calendar,
       color: 'linear-gradient(90deg, #3FB8AF, #5DD9D1)',
       iconBg: 'from-[#3FB8AF]/10 to-[#5DD9D1]/10',
       iconColor: '#3FB8AF',
-      progress: '60%'
+      progress: '60%',
+      changePeriod: clinicStats?.appointments?.changePeriod
     },
     {
-      label: t('stats.total_income', T),
-      value: financialData ? financialData.totalIncome : 1250,
-      change: '15%',
-      sub: isAr ? 'دينار أردني' : 'JOD',
-      icon: TrendingUp,
+      label: t('stats.revenue', T),
+      value: parseValue(clinicStats?.revenue?.value, 0),
+      change: clinicStats?.revenue?.changePercent !== undefined ? `${clinicStats.revenue.changePercent}%` : '0%',
+      sub: t('stats.revenue_sub', T),
+      icon: DollarSign,
       color: 'linear-gradient(90deg, #10B981, #14B8A6)',
       iconBg: 'from-emerald-500/10 to-teal-500/10',
       iconColor: '#10B981',
       progress: '60%',
-      isCurrency: true
+      isCurrency: true,
+      changePeriod: clinicStats?.revenue?.changePeriod
     },
     {
-      label: t('stats.total_expenses', T),
-      value: financialData ? financialData.totalExpenses : 1200,
-      change: '5%',
-      sub: isAr ? 'دينار أردني' : 'JOD',
-      icon: TrendingDown,
-      color: 'linear-gradient(90deg, #EF4444, #F87171)',
-      iconBg: 'from-red-500/10 to-rose-500/10',
-      iconColor: '#EF4444',
+      label: t('stats.growth_rate', T),
+      value: parseValue(clinicStats?.growthRate?.value, 0),
+      change: clinicStats?.growthRate?.changePercent !== undefined ? `${clinicStats.growthRate.changePercent}%` : '0%',
+      sub: t('stats.growth_rate_sub', T),
+      icon: TrendingUp,
+      color: 'linear-gradient(90deg, #F59E0B, #F97316)',
+      iconBg: 'from-amber-500/10 to-orange-500/10',
+      iconColor: '#F59E0B',
       progress: '60%',
-      isCurrency: true
-    },
-    {
-      label: t('stats.net_profit', T),
-      value: financialData ? financialData.netProfit : 50,
-      change: '18%',
-      sub: isAr ? 'دينار أردني' : 'JOD',
-      icon: DollarSign,
-      color: 'linear-gradient(90deg, #0B5A8E, #3FB8AF)',
-      iconBg: 'from-[#0B5A8E]/10 to-[#3FB8AF]/10',
-      iconColor: '#0B5A8E',
-      progress: '60%',
-      isCurrency: true
+      isPercent: true,
+      changePeriod: clinicStats?.growthRate?.changePeriod
     }
   ]
 
@@ -161,7 +161,7 @@ const StatsOverview = ({ financialData }: StatsOverviewProps) => {
     }
 
     return () => observer.disconnect()
-  }, [canAnimate, dynamicStats.length])
+  }, [canAnimate, dynamicStats.length, clinicStats])
 
   // Exit animation logic
   useEffect(() => {
@@ -180,7 +180,7 @@ const StatsOverview = ({ financialData }: StatsOverviewProps) => {
   return (
     <section
       ref={sectionRef}
-      className="grid grid-cols-1 md:grid-cols-2 overflow-visible lg:grid-cols-3 xl:grid-cols-5 gap-4 mb-10"
+      className="grid grid-cols-1 md:grid-cols-2 overflow-visible lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-10"
     >
       {dynamicStats.map((stat, index) => (
         <article
@@ -249,7 +249,11 @@ const StatsOverview = ({ financialData }: StatsOverviewProps) => {
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-700 self-start w-fit transition-transform group-hover:scale-105 will-change-transform">
               <ArrowUp className="size-3.5 stroke-3" />
               <span>{stat.change}</span>
-              <span className="text-[10px] font-bold opacity-70">{t('stats.from_last_month', T)}</span>
+              <span className="text-[10px] font-bold opacity-70">
+                {stat.changePeriod
+                  ? (isAr && stat.changePeriod === 'From last month' ? 'من الشهر السابق' : stat.changePeriod)
+                  : t('stats.from_last_month', T)}
+              </span>
             </div>
           </div>
         </article>

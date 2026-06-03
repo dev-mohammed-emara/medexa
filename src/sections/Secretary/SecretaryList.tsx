@@ -5,7 +5,9 @@ import {
   SquarePen,
   Search,
   Loader2,
-  Trash2
+  Trash2,
+  Phone,
+  Mail
 } from 'lucide-react'
 import { HiOutlineXMark } from "react-icons/hi2"
 import { usePreloader } from '../../contexts/PreloaderContext'
@@ -36,6 +38,7 @@ import {
 } from '../../components/ui/table'
 import { fetchSecretaries, fetchSecretaryByUuid, deleteSecretary } from '../../api/secretaryApi'
 import type { ApiSecretary } from '../../api/secretaryApi'
+import { initialSecretaries } from '../../constants/Secretary_dummy'
 
 const SecretaryList = () => {
   const { isAr, t } = useLanguage();
@@ -160,7 +163,11 @@ const SecretaryList = () => {
   };
 
   const handleConfirmAction = () => {
-    loadSecretaries();
+    if (dialogMode === 'add' && currentPage !== 1) {
+      setCurrentPage(1);
+    } else {
+      loadSecretaries();
+    }
     broadcast({ type: 'DATA_UPDATE', module: 'secretaries' });
   };
 
@@ -279,8 +286,8 @@ const SecretaryList = () => {
           </div>
         </div>
 
-        {/* Table View */}
-        <div className="overflow-x-auto overflow-hidden">
+        {/* Card Grid View */}
+        <div className="overflow-hidden">
           {loading && secretaries.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
               <Loader2 className="size-10 animate-spin text-primary mb-3" />
@@ -297,99 +304,82 @@ const SecretaryList = () => {
                   <Loader2 className="size-10 animate-spin text-primary" />
                 </div>
               )}
-              <Table className="min-w-[900px]">
-                <TableHeader className="bg-gray-50 border-b border-border">
-                  <TableRow>
-                    <TableHead className={isAr ? "text-right" : "text-left"}>
-                      {isAr ? "الاسم" : "Name"}
-                    </TableHead>
-                    <TableHead className={isAr ? "text-right" : "text-left"}>
-                      {t('email', T)}
-                    </TableHead>
-                    <TableHead className={isAr ? "text-right" : "text-left"}>
-                      {t('phone', T)}
-                    </TableHead>
-                    <TableHead className={isAr ? "text-right" : "text-left"}>
-                      {t('status_label', T)}
-                    </TableHead>
-                    <TableHead className={isAr ? "text-right" : "text-left"}>
-                      {isAr ? "الإجراءات" : "Actions"}
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {secretaries.map((secretary) => {
-                    const firstName = secretary.user?.firstName || '';
-                    const surName = secretary.user?.surName || '';
-                    const lastName = secretary.user?.lastName || '';
-                    const fullName = `${firstName} ${surName} ${lastName}`.trim() || '---';
-                    const initial = firstName[0] || 'S';
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {secretaries.map((secretary) => {
+                  const firstName = secretary.user?.firstName || '';
+                  const surName = secretary.user?.surName || '';
+                  const lastName = secretary.user?.lastName || '';
+                  const fullName = `${firstName} ${surName} ${lastName}`.trim() || '---';
+                  const initial = firstName[0] || 'S';
 
-                    return (
-                      <TableRow key={secretary.uuid}>
-                        {/* Name / Avatar */}
-                        <TableCell className="align-middle">
-                          <div className="flex items-center gap-3">
-                            <div className="size-10 rounded-full bg-primary flex items-center justify-center text-white font-bold shrink-0">
-                              {initial}
+                  const dummyMatch = initialSecretaries.find(
+                    (s) => s.email.toLowerCase() === secretary.user?.email?.toLowerCase()
+                  );
+                  const roleText = isAr 
+                    ? (dummyMatch?.role_ar ?? 'سكرتيرة') 
+                    : (dummyMatch?.role_en ?? 'Secretary');
+
+                  return (
+                    <div key={secretary.uuid} style={{ opacity: 1, transform: 'none' }}>
+                      <div data-slot="card" className="text-card-foreground flex flex-col gap-6 rounded-xl border duration-300 p-6 bg-white border-border shadow-sm hover:shadow-md transition-all">
+                        <div className="flex flex-col h-full justify-between gap-4">
+                          <div>
+                            <div className="flex items-start gap-4 mb-4">
+                              <span data-slot="avatar" className="relative flex size-10 shrink-0 overflow-hidden rounded-full w-16 h-16 border-2 border-secondary/20">
+                                <span data-slot="avatar-fallback" className="flex size-full items-center justify-center rounded-full bg-secondary text-white text-xl">
+                                  {initial}
+                                </span>
+                              </span>
+                              <div className="flex-1">
+                                <h3 className="text-lg mb-1" style={{ fontWeight: 600 }}>{fullName}</h3>
+                                <p className="text-sm text-muted-foreground mb-2">{roleText}</p>
+                                <Badge variant={getStatusVariant(secretary.user?.status)}>
+                                  {getStatusText(secretary.user?.status)}
+                                </Badge>
+                              </div>
                             </div>
-                            <div>
-                              <p className="font-semibold text-foreground text-sm line-clamp-1">{fullName}</p>
+                            <div className="space-y-2 mb-4">
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <Phone className="size-4 shrink-0" />
+                                <span>{secretary.user?.phoneNumber || '---'}</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <Mail className="size-4 shrink-0" />
+                                <span className="line-clamp-1">{secretary.user?.email || '---'}</span>
+                              </div>
                             </div>
                           </div>
-                        </TableCell>
-
-                        {/* Email */}
-                        <TableCell className="align-middle text-sm text-muted-foreground font-mono">
-                          {secretary.user?.email || '---'}
-                        </TableCell>
-
-                        {/* Phone */}
-                        <TableCell className="align-middle text-sm text-muted-foreground font-mono" dir="ltr">
-                          {secretary.user?.phoneNumber || '---'}
-                        </TableCell>
-
-                        {/* Status */}
-                        <TableCell className="align-middle">
-                          <Badge variant={getStatusVariant(secretary.user?.status)}>
-                            {getStatusText(secretary.user?.status)}
-                          </Badge>
-                        </TableCell>
-
-                        {/* Actions */}
-                        <TableCell className="align-middle">
                           <div className="flex gap-2">
                             <button
                               onClick={() => handleOpenDialog('view', secretary.uuid)}
                               disabled={fetchingSecretaryDetail || deleting}
-                              title={t('view', T)}
-                              className="inline-flex items-center justify-center p-2 rounded-lg text-primary hover:bg-primary/10 transition-colors"
+                              className="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-all duration-300 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md border bg-background text-foreground hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 hover:border-primary/30 h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5 flex-1"
                             >
-                              <Eye className="size-4" />
+                              <Eye className={cn("size-4", isAr ? "ml-1" : "mr-1")} />
+                              {t('view', T)}
                             </button>
                             <button
                               onClick={() => handleOpenDialog('edit', secretary.uuid)}
                               disabled={fetchingSecretaryDetail || deleting}
-                              title={t('edit', T)}
-                              className="inline-flex items-center justify-center p-2 rounded-lg text-amber-500 hover:bg-amber-50 transition-colors"
+                              className="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-all duration-300 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md border bg-background text-foreground hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 hover:border-primary/30 h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5 flex-1"
                             >
-                              <SquarePen className="size-4" />
+                              <SquarePen className={cn("size-4", isAr ? "ml-1" : "mr-1")} />
+                              {t('edit', T)}
                             </button>
                             <button
                               onClick={() => handleDeleteClick(secretary)}
                               disabled={fetchingSecretaryDetail || deleting}
-                              title={t('delete', T)}
-                              className="inline-flex items-center justify-center p-2 rounded-lg text-destructive hover:bg-destructive/10 transition-colors"
+                              className="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-all duration-300 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md border bg-background dark:bg-input/30 dark:border-input dark:hover:bg-input/50 hover:border-primary/30 h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5 text-destructive hover:text-destructive hover:bg-destructive/10"
                             >
                               <Trash2 className="size-4" />
                             </button>
                           </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-20 text-center">

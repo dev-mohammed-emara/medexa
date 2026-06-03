@@ -163,7 +163,12 @@ const ProfileView = () => {
     city: '',
     address: '',
     phoneNumber: '',
-    email: ''
+    email: '',
+    status: 'PENDING',
+    settings: {
+      defaultCurrency: 'JOD',
+      defaultAppointmentPeriod: 30
+    }
   });
 
   const [insurances, setInsurances] = useState<Array<{uuid: string; name: string; provider: string}>>([]);
@@ -214,6 +219,7 @@ const ProfileView = () => {
   const loadClinicData = async () => {
     try {
       const clinicData = await fetchClinicMe();
+      console.log('Clinic data loaded:', clinicData);
       setClinicInfo({
         uuid: clinicData.uuid || '',
         name: clinicData.name || '',
@@ -222,7 +228,12 @@ const ProfileView = () => {
         city: clinicData.city || '',
         address: clinicData.address || '',
         phoneNumber: clinicData.phoneNumber || '',
-        email: clinicData.email || ''
+        email: clinicData.email || '',
+        status: clinicData.status || 'PENDING',
+        settings: {
+          defaultCurrency: clinicData.settings?.defaultCurrency || 'JOD',
+          defaultAppointmentPeriod: clinicData.settings?.defaultAppointmentPeriod || 30
+        }
       });
     } catch (error) {
       console.error('Failed to load clinic data:', error);
@@ -336,6 +347,7 @@ const ProfileView = () => {
       };
 
       const updatedClinic = await updateClinicMe(payload);
+      console.log('Clinic data updated:', updatedClinic);
       setClinicInfo({
         uuid: updatedClinic.uuid || '',
         name: updatedClinic.name || '',
@@ -344,7 +356,12 @@ const ProfileView = () => {
         city: updatedClinic.city || '',
         address: updatedClinic.address || '',
         phoneNumber: updatedClinic.phoneNumber || '',
-        email: updatedClinic.email || ''
+        email: updatedClinic.email || '',
+        status: updatedClinic.status || 'PENDING',
+        settings: {
+          defaultCurrency: updatedClinic.settings?.defaultCurrency || 'JOD',
+          defaultAppointmentPeriod: updatedClinic.settings?.defaultAppointmentPeriod || 30
+        }
       });
       window.showToast(t('profile.clinic_saved', T_PAGE), 'success');
     } catch (error: any) {
@@ -364,7 +381,12 @@ const ProfileView = () => {
         city: clinicData.city || '',
         address: clinicData.address || '',
         phoneNumber: clinicData.phoneNumber || '',
-        email: clinicData.email || ''
+        email: clinicData.email || '',
+        status: clinicData.status || 'PENDING',
+        settings: {
+          defaultCurrency: clinicData.settings?.defaultCurrency || 'JOD',
+          defaultAppointmentPeriod: clinicData.settings?.defaultAppointmentPeriod || 30
+        }
       });
       window.showToast(t('profile.changes_canceled', T_PAGE), 'info');
     } catch (error) {
@@ -930,7 +952,7 @@ const ProfileView = () => {
                 </div>
                 <div className="flex-1">
                   <h2 className="text-3xl mb-2 font-bold">{clinicInfo.name || 'Clinic Name'}</h2>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 flex-wrap">
                     <span className="inline-flex items-center justify-center rounded-xl border text-xs font-medium bg-secondary/10 text-secondary border-secondary/20 px-3 py-1">
                       {clinicInfo.medicalCategory || 'Medical Category'}
                     </span>
@@ -938,6 +960,20 @@ const ProfileView = () => {
                       <MapPin size={16} />
                       <span>{clinicInfo.city || 'City'}، {clinicInfo.country || 'Country'}</span>
                     </div>
+                  </div>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 mt-4 pt-4 border-t border-border/30">
+                    <p className="text-xs text-muted-foreground font-mono">
+                      <strong>UUID:</strong> {clinicInfo.uuid}
+                    </p>
+                    <p className="text-xs text-muted-foreground font-bold flex items-center gap-2">
+                      <strong>{isAr ? 'الحالة:' : 'Status:'}</strong>
+                      <span className={cn(
+                        "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold",
+                        clinicInfo.status === 'ACTIVE' ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"
+                      )}>
+                        {clinicInfo.status || 'PENDING'}
+                      </span>
+                    </p>
                   </div>
                 </div>
               </div>

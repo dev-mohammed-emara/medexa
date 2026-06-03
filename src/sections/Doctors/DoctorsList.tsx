@@ -5,7 +5,11 @@ import {
   SquarePen,
   Search,
   Loader2,
-  Trash2
+  Trash2,
+  Phone,
+  Mail,
+  Users,
+  DollarSign
 } from 'lucide-react'
 import { HiOutlineXMark } from "react-icons/hi2"
 import { usePreloader } from '../../contexts/PreloaderContext'
@@ -37,6 +41,7 @@ import {
 import { fetchDoctors, fetchDoctorByUuid, deleteDoctor } from '../../api/doctorApi'
 import type { ApiDoctor } from '../../api/doctorApi'
 import { useAuth } from '../../contexts/AuthContext'
+import { initialDoctors } from '../../constants/Doctors_dummy'
 
 const DoctorsList = () => {
   const { isAr, t } = useLanguage();
@@ -163,7 +168,11 @@ const DoctorsList = () => {
 
   const handleConfirmAction = () => {
     // Reload data on create or edit success
-    loadDoctors();
+    if (dialogMode === 'add' && currentPage !== 1) {
+      setCurrentPage(1);
+    } else {
+      loadDoctors();
+    }
     broadcast({ type: 'DATA_UPDATE', module: 'doctors' });
   };
 
@@ -301,8 +310,8 @@ const DoctorsList = () => {
           </div>
         </div>
 
-        {/* Table View */}
-        <div className="overflow-x-auto overflow-hidden">
+        {/* Card Grid View */}
+        <div className="overflow-hidden">
           {loading && doctors.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
               <Loader2 className="size-10 animate-spin text-primary mb-3" />
@@ -319,116 +328,106 @@ const DoctorsList = () => {
                   <Loader2 className="size-10 animate-spin text-primary" />
                 </div>
               )}
-              <Table className="min-w-[900px]">
-                <TableHeader className="bg-gray-50 border-b border-border">
-                  <TableRow>
-                    <TableHead className={isAr ? "text-right" : "text-left"}>
-                      {isAr ? "الاسم" : "Name"}
-                    </TableHead>
-                    <TableHead className={isAr ? "text-right" : "text-left"}>
-                      {t('dialog.specialty', T)}
-                    </TableHead>
-                    <TableHead className={isAr ? "text-right" : "text-left"}>
-                      {t('dialog.email', T)}
-                    </TableHead>
-                    <TableHead className={isAr ? "text-right" : "text-left"}>
-                      {t('dialog.phone', T)}
-                    </TableHead>
-                    <TableHead className={isAr ? "text-right" : "text-left"}>
-                      {t('status_label', T)}
-                    </TableHead>
-                    <TableHead className={isAr ? "text-right" : "text-left"}>
-                      {isAr ? "الإجراءات" : "Actions"}
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {doctors.map((doctor) => {
-                    const firstName = doctor.user?.firstName || '';
-                    const surName = doctor.user?.surName || '';
-                    const lastName = doctor.user?.lastName || '';
-                    const fullName = `${firstName} ${surName} ${lastName}`.trim() || '---';
-                    const initial = firstName[0] || 'D';
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {doctors.map((doctor) => {
+                  const firstName = doctor.user?.firstName || '';
+                  const surName = doctor.user?.surName || '';
+                  const lastName = doctor.user?.lastName || '';
+                  const fullName = `${firstName} ${surName} ${lastName}`.trim() || '---';
+                  const initial = firstName[0] || 'D';
 
-                    return (
-                      <TableRow key={doctor.uuid}>
-                        {/* Name / Avatar */}
-                        <TableCell className="align-middle">
-                          <div className="flex items-center gap-3">
-                            <div className="size-10 rounded-full bg-primary flex items-center justify-center text-white font-bold shrink-0">
-                              {initial}
+                  const dummyMatch = initialDoctors.find(
+                    (d) => d.email.toLowerCase() === doctor.user?.email?.toLowerCase()
+                  );
+                  const patientsCount = dummyMatch?.patients ?? 145;
+                  const revenueAmount = dummyMatch?.revenue ? `${Number(dummyMatch.revenue).toLocaleString()} د.أ` : "2,400 د.أ";
+
+                  return (
+                    <div key={doctor.uuid} style={{ opacity: 1, transform: 'none' }}>
+                      <div data-slot="card" className="text-card-foreground flex flex-col gap-6 rounded-xl border p-6 bg-white border-border shadow-lg hover:shadow-xl transition-all duration-300 relative overflow-hidden group">
+                        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                        <div className="relative z-10 flex flex-col h-full justify-between">
+                          <div>
+                            <div className="flex items-start gap-4 mb-4">
+                              <span data-slot="avatar" className="relative flex size-10 shrink-0 overflow-hidden rounded-full w-16 h-16 border-2 border-primary/20 shadow-md">
+                                <span data-slot="avatar-fallback" className="flex size-full items-center justify-center rounded-full bg-primary text-white text-xl">
+                                  {initial}
+                                </span>
+                              </span>
+                              <div className="flex-1">
+                                <h3 className="text-lg mb-1" style={{ fontWeight: 600 }}>{fullName}</h3>
+                                <p className="text-sm text-muted-foreground mb-2">{getSpecialtyText(doctor.specialty)}</p>
+                                <div>
+                                  <Badge variant={getStatusVariant(doctor.user?.status)}>
+                                    {getStatusText(doctor.user?.status)}
+                                  </Badge>
+                                </div>
+                              </div>
                             </div>
-                            <div>
-                              <p className="font-semibold text-foreground text-sm line-clamp-1">{fullName}</p>
+                            <div className="space-y-2 mb-4">
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <Phone className="size-4 shrink-0" />
+                                <span dir="ltr">{doctor.user?.phoneNumber || '---'}</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <Mail className="size-4 shrink-0" />
+                                <span className="line-clamp-1">{doctor.user?.email || '---'}</span>
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3 mb-4 p-3 bg-muted/30 rounded-lg">
+                              <div className="text-center">
+                                <div className="flex items-center justify-center gap-1 mb-1">
+                                  <Users className="text-primary size-4" />
+                                  <p className="text-xs text-muted-foreground">{isAr ? "المرضى" : "Patients"}</p>
+                                </div>
+                                <p className="text-lg" style={{ fontWeight: 600 }}>{patientsCount}</p>
+                              </div>
+                              <div className="text-center">
+                                <div className="flex items-center justify-center gap-1 mb-1">
+                                  <DollarSign className="text-secondary size-4" />
+                                  <p className="text-xs text-muted-foreground">{isAr ? "الإيرادات" : "Revenue"}</p>
+                                </div>
+                                <p className="text-sm" style={{ fontWeight: 600 }}>{isAr ? revenueAmount : `${revenueAmount.replace(' د.أ', '')} JOD`}</p>
+                              </div>
                             </div>
                           </div>
-                        </TableCell>
-
-                        {/* Specialty */}
-                        <TableCell className="align-middle text-sm text-muted-foreground">
-                          {getSpecialtyText(doctor.specialty)}
-                        </TableCell>
-
-                        {/* Email */}
-                        <TableCell className="align-middle text-sm text-muted-foreground font-mono">
-                          {doctor.user?.email || '---'}
-                        </TableCell>
-
-                        {/* Phone */}
-                        <TableCell className="align-middle text-sm text-muted-foreground font-mono" dir="ltr">
-                          {doctor.user?.phoneNumber || '---'}
-                        </TableCell>
-
-                        {/* Status */}
-                        <TableCell className="align-middle">
-                          <Badge variant={getStatusVariant(doctor.user?.status)}>
-                            {getStatusText(doctor.user?.status)}
-                          </Badge>
-                        </TableCell>
-
-                        {/* Actions */}
-                        <TableCell className="align-middle">
                           <div className="flex gap-2">
                             <button
                               onClick={() => handleOpenDialog('view', doctor.uuid)}
                               disabled={fetchingDoctorDetail || deleting}
-                              title={t('view', T)}
-                              className="inline-flex items-center justify-center p-2 rounded-lg text-primary hover:bg-primary/10 transition-colors"
+                              className="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-all duration-300 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md border bg-background text-foreground hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 hover:border-primary/30 h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5 flex-1"
                             >
-                              <Eye className="size-4" />
+                              <Eye className={cn("size-4", isAr ? "ml-1" : "mr-1")} />
+                              {t('view', T)}
                             </button>
                             <button
                               onClick={() => handleOpenDialog('edit', doctor.uuid)}
                               disabled={fetchingDoctorDetail || deleting}
-                              title={t('edit', T)}
-                              className="inline-flex items-center justify-center p-2 rounded-lg text-amber-500 hover:bg-amber-50 transition-colors"
+                              className="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-all duration-300 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md border bg-background text-foreground hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 hover:border-primary/30 h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5 flex-1"
                             >
-                              <SquarePen className="size-4" />
+                              <SquarePen className={cn("size-4", isAr ? "ml-1" : "mr-1")} />
+                              {t('edit', T)}
                             </button>
                             {doctor.user?.email === currentUser?.email ? (
-                              <button
-                                onClick={() => window.showToast?.(isAr ? "هذا أنت. لا يمكنك إلغاء تعيين نفسك." : "That's you. You can't unassign yourself.", 'info')}
-                                className="inline-flex items-center justify-center px-3 py-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 text-xs font-bold whitespace-nowrap self-center transition-colors cursor-pointer"
-                              >
+                              <span className="inline-flex items-center justify-center px-3 rounded-lg bg-primary/10 text-primary text-xs font-bold whitespace-nowrap self-center h-8">
                                 {isAr ? "أنت" : "You"}
-                              </button>
+                              </span>
                             ) : (
                               <button
                                 onClick={() => handleDeleteClick(doctor)}
                                 disabled={fetchingDoctorDetail || deleting}
-                                title={t('delete', T)}
-                                className="inline-flex items-center justify-center p-2 rounded-lg text-destructive hover:bg-destructive/10 transition-colors"
+                                className="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-all duration-300 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md border bg-background dark:bg-input/30 dark:border-input dark:hover:bg-input/50 hover:border-primary/30 h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5 text-destructive hover:text-destructive hover:bg-destructive/10"
                               >
                                 <Trash2 className="size-4" />
                               </button>
                             )}
                           </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-20 text-center">

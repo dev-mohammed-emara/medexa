@@ -28,6 +28,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { financeTranslations } from '../../constants/translations/finance';
 import { cn } from '../../utils/cn';
 import { useBroadcast } from '../../hooks/useBroadcast';
+import DateFromTo from '../../components/ui/DateFromTo';
 import AddOperationModal from './AddOperationModal';
 import TableFooter from '../../components/ui/TableFooter';
 import {
@@ -55,8 +56,8 @@ const FinanceOverview = () => {
     }
   });
 
-  const [fromDate, setFromDate] = useState<string>("2026-01-01");
-  const [toDate, setToDate] = useState<string>("2026-12-31");
+  const [fromDate, setFromDate] = useState<string>("2025-01-01");
+  const [toDate, setToDate] = useState<string>("2025-06-30");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'add' | 'edit' | 'view'>('add');
   const [selectedTransactionUuid, setSelectedTransactionUuid] = useState<string | null>(null);
@@ -116,7 +117,7 @@ const FinanceOverview = () => {
       queryParams.append('fromDate', fromDate);
       queryParams.append('toDate', toDate);
 
-      const response = await fetch(`/api/statistics/financial?${queryParams.toString()}`, {
+      const response = await fetch(`/api/statistics/transaction?${queryParams.toString()}`, {
         method: 'GET',
         headers: getHeaders()
       });
@@ -144,7 +145,7 @@ const FinanceOverview = () => {
     loadStatistics();
   };
 
-  const chartData = stats.monthlyData.map(item => ({
+  const chartData = (stats?.monthlyData || []).map(item => ({
     name: item.month,
     income: item.income,
     expenses: item.expense
@@ -177,9 +178,9 @@ const FinanceOverview = () => {
       {/* Stats Cards */}
       <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {[
-          { label: t('total_income', T), value: `${stats.totalIncome.toLocaleString()} ${t('jod', T)}`, icon: TrendingUp, color: 'text-secondary', bgColor: 'bg-secondary/10', delay: 100 },
-          { label: t('total_expenses', T), value: `${stats.totalExpense.toLocaleString()} ${t('jod', T)}`, icon: TrendingDown, color: 'text-destructive', bgColor: 'bg-destructive/10', delay: 200 },
-          { label: t('net_profit', T), value: `${stats.netProfit.toLocaleString()} ${t('jod', T)}`, icon: DollarSign, color: 'text-primary', bgColor: 'bg-primary/10', delay: 300 }
+          { label: t('total_income', T), value: `${(stats?.totalIncome || 0).toLocaleString()} ${t('jod', T)}`, icon: TrendingUp, color: 'text-secondary', bgColor: 'bg-secondary/10', delay: 100 },
+          { label: t('total_expenses', T), value: `${(stats?.totalExpense || 0).toLocaleString()} ${t('jod', T)}`, icon: TrendingDown, color: 'text-destructive', bgColor: 'bg-destructive/10', delay: 200 },
+          { label: t('net_profit', T), value: `${(stats?.netProfit || 0).toLocaleString()} ${t('jod', T)}`, icon: DollarSign, color: 'text-primary', bgColor: 'bg-primary/10', delay: 300 }
         ].map((stat, idx) => (
           <article
             key={idx}
@@ -287,63 +288,13 @@ const FinanceOverview = () => {
           <h3 className="text-xl font-bold">{t('financial_operations', T)}</h3>
 
           <div className={cn("flex flex-wrap items-end gap-3 transition-all duration-700", canAnimate ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4")} style={{ transitionDelay: '550ms' }}>
-            <div className="space-y-1.5 flex-1 min-w-[170px]">
-              <label className={cn("flex items-center gap-2 font-bold select-none text-xs text-muted-foreground", isAr ? "mr-1" : "ml-1")}>{t('from_date', T)}</label>
-              <div className="relative group flex items-center justify-between h-11 bg-white border border-border rounded-xl px-4 transition-all focus-within:ring-4 focus-within:ring-primary/10">
-                <Flatpickr
-                  value={fromDate}
-                  onChange={([date]) => {
-                    if (date) {
-                      setFromDate(format(date, 'yyyy-MM-dd'));
-                    }
-                  }}
-                  options={{
-                    locale: isAr ? Arabic : undefined,
-                    dateFormat: "d F Y",
-                    disableMobile: true,
-                    maxDate: toDate,
-                    formatDate: (date: Date) => {
-                      return format(date, "d MMMM yyyy", { locale: isAr ? ar : undefined });
-                    }
-                  }}
-                  className="flex-1 bg-transparent rtl:text-start! border-none outline-none text-left! text-sm font-bold h-full"
-                />
-                <FaCalendarAlt className="text-muted-foreground pointer-events-none group-focus-within:text-primary transition-colors size-4" />
-              </div>
-            </div>
-
-            <div className="space-y-1.5 flex-1 min-w-[170px]">
-              <label className={cn("flex items-center gap-2 font-bold select-none text-xs text-muted-foreground", isAr ? "mr-1" : "ml-1")}>{t('to_date', T)}</label>
-              <div className="relative group flex items-center justify-between h-11 bg-white border border-border rounded-xl px-4 transition-all focus-within:ring-4 focus-within:ring-primary/10">
-                <Flatpickr
-                  value={toDate}
-                  onChange={([date]) => {
-                    if (date) {
-                      setToDate(format(date, 'yyyy-MM-dd'));
-                    }
-                  }}
-                  options={{
-                    locale: isAr ? Arabic : undefined,
-                    dateFormat: "d F Y",
-                    disableMobile: true,
-                    minDate: fromDate,
-                    maxDate: "today",
-                    formatDate: (date: Date) => {
-                      return format(date, "d MMMM yyyy", { locale: isAr ? ar : undefined });
-                    }
-                  }}
-                  className="flex-1 bg-transparent rtl:text-start! border-none outline-none text-left! text-sm font-bold h-full"
-                />
-                <FaCalendarAlt className="text-muted-foreground pointer-events-none group-focus-within:text-primary transition-colors size-4" />
-              </div>
-            </div>
-
-            <button
-              onClick={handleApply}
-              className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-bold transition-all duration-300 outline-none hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md text-primary-foreground hover:shadow-primary/20 px-6 h-11 bg-primary hover:bg-primary/90 min-w-[100px]"
-            >
-              {t('apply_filters', T)}
-            </button>
+            <DateFromTo
+              fromDate={fromDate}
+              toDate={toDate}
+              onFromDateChange={setFromDate}
+              onToDateChange={setToDate}
+              onApply={handleApply}
+            />
           </div>
         </header>
 
@@ -370,45 +321,45 @@ const FinanceOverview = () => {
             <TableBody className="divide-y divide-border/30">
               {transactions.map((tx) => (
                 <TableRow key={tx.uuid} className="hover:bg-muted/20 transition-colors">
-                    <TableCell className="p-4">
-                      <span className={cn(
-                        "inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold",
-                        (tx.type === 'income' || tx.type === 'INCOME') ? "bg-secondary/10 text-secondary" : "bg-destructive/10 text-destructive"
-                      )}>
-                        {(tx.type === 'income' || tx.type === 'INCOME') ? t('type_income', T) : t('type_expense', T)}
-                      </span>
-                    </TableCell>
-                    <TableCell className="p-4 font-bold">{tx.amount}</TableCell>
-                    <TableCell className="p-4">{t('jod', T)}</TableCell>
-                    <TableCell className="p-4 font-medium text-muted-foreground">{tx.transactionDate}</TableCell>
-                    <TableCell className="p-4 text-muted-foreground">
-                      {tx.appointmentUuid ? `${isAr ? 'موعد' : 'Appointment'} #${tx.appointmentUuid.substring(0, 8)}` : '-'}
-                    </TableCell>
-                    <TableCell className={cn("p-4 text-muted-foreground", isAr ? "text-right" : "text-left")}>{tx.note || '-'}</TableCell>
-                    <TableCell className="p-4">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => {
-                            setSelectedTransactionUuid(tx.uuid);
-                            setModalMode('view');
-                            setIsModalOpen(true);
-                          }}
-                          className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-primary"
-                        >
-                          <Eye className="size-4" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            setSelectedTransactionUuid(tx.uuid);
-                            setModalMode('edit');
-                            setIsModalOpen(true);
-                          }}
-                          className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-secondary"
-                        >
-                          <SquarePen className="size-4" />
-                        </button>
-                      </div>
-                    </TableCell>
+                  <TableCell className="p-4">
+                    <span className={cn(
+                      "inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold",
+                      (tx.type === 'income' || tx.type === 'INCOME') ? "bg-secondary/10 text-secondary" : "bg-destructive/10 text-destructive"
+                    )}>
+                      {(tx.type === 'income' || tx.type === 'INCOME') ? t('type_income', T) : t('type_expense', T)}
+                    </span>
+                  </TableCell>
+                  <TableCell className="p-4 font-bold">{tx.amount}</TableCell>
+                  <TableCell className="p-4">{t('jod', T)}</TableCell>
+                  <TableCell className="p-4 font-medium text-muted-foreground">{tx.transactionDate}</TableCell>
+                  <TableCell className="p-4 text-muted-foreground">
+                    {tx.appointmentUuid ? `${isAr ? 'موعد' : 'Appointment'} #${tx.appointmentUuid.substring(0, 8)}` : '-'}
+                  </TableCell>
+                  <TableCell className={cn("p-4 text-muted-foreground", isAr ? "text-right" : "text-left")}>{tx.note || '-'}</TableCell>
+                  <TableCell className="p-4">
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => {
+                          setSelectedTransactionUuid(tx.uuid);
+                          setModalMode('view');
+                          setIsModalOpen(true);
+                        }}
+                        className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-primary"
+                      >
+                        <Eye className="size-4" />
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSelectedTransactionUuid(tx.uuid);
+                          setModalMode('edit');
+                          setIsModalOpen(true);
+                        }}
+                        className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-secondary"
+                      >
+                        <SquarePen className="size-4" />
+                      </button>
+                    </div>
+                  </TableCell>
                 </TableRow>
               ))}
               {transactions.length === 0 && (
@@ -456,4 +407,3 @@ const FinanceOverview = () => {
 };
 
 export default FinanceOverview;
- 

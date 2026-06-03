@@ -1,5 +1,38 @@
 import { getCookie } from '../utils/cookie'
 
+export interface StatCardData {
+  value: string
+  changePercent: number
+  changePeriod: string
+}
+
+export interface GenderDistItem {
+  gender: 'MALE' | 'FEMALE'
+  count: number
+  percentage: number
+}
+
+export interface AgeDistItem {
+  ageGroup: string
+  count: number
+}
+
+export interface DailyAppointmentItem {
+  dayOfWeek: string
+  date: string
+  appointmentCount: number
+}
+
+export interface ClinicStatisticsResponse {
+  totalPatients: StatCardData
+  appointments: StatCardData
+  revenue: StatCardData
+  growthRate: StatCardData
+  genderDistribution: GenderDistItem[]
+  ageDistribution: AgeDistItem[]
+  dailyAppointments: DailyAppointmentItem[]
+}
+
 export interface FinancialChartItem {
   label: string
   income: number
@@ -22,19 +55,37 @@ const getHeaders = () => {
   }
 }
 
-export const fetchFinancialStatistics = async (fromDate: string, toDate: string): Promise<FinancialStatisticsResponse> => {
+export const fetchClinicStatistics = async (fromDate: string, toDate: string): Promise<ClinicStatisticsResponse> => {
   const queryParams = new URLSearchParams()
   queryParams.append('fromDate', fromDate)
   queryParams.append('toDate', toDate)
 
-  const url = `/api/statistics/financial?${queryParams.toString()}`
+  const url = `/api/statistics?${queryParams.toString()}`
   const response = await fetch(url, {
     method: 'GET',
     headers: getHeaders()
   })
 
   if (!response.ok) {
-    throw new Error(`Failed to fetch financial statistics. Status: ${response.status}`)
+    throw new Error(`Failed to fetch clinic statistics. Status: ${response.status}`)
+  }
+
+  return response.json()
+}
+
+export const fetchFinancialTransactions = async (fromDate: string, toDate: string): Promise<FinancialStatisticsResponse> => {
+  const queryParams = new URLSearchParams()
+  queryParams.append('fromDate', fromDate)
+  queryParams.append('toDate', toDate)
+
+  const url = `/api/statistics/transactions?${queryParams.toString()}`
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: getHeaders()
+  })
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch financial transactions. Status: ${response.status}`)
   }
 
   return response.json()
