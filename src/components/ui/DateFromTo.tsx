@@ -15,6 +15,7 @@ interface DateFromToProps {
   onApply: () => void
   isLoading?: boolean
   className?: string
+  showApply?: boolean
 }
 
 export const DateFromTo = ({
@@ -24,7 +25,8 @@ export const DateFromTo = ({
   onToDateChange,
   onApply,
   isLoading = false,
-  className
+  className,
+  showApply = true
 }: DateFromToProps) => {
   const { isAr } = useLanguage()
 
@@ -107,13 +109,15 @@ export const DateFromTo = ({
         </div>
       </div>
 
-      <button
-        onClick={onApply}
-        disabled={isLoading}
-        className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-bold transition-all duration-300 outline-none hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md text-primary-foreground hover:shadow-primary/20 px-6 h-11 bg-primary hover:bg-primary/90 min-w-[100px] disabled:opacity-50 disabled:pointer-events-none"
-      >
-        {isLoading ? (isAr ? "جاري التحميل..." : "Loading...") : (isAr ? "تطبيق" : "Apply")}
-      </button>
+      {showApply && (
+        <button
+          onClick={onApply}
+          disabled={isLoading}
+          className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-bold transition-all duration-300 outline-none hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md text-primary-foreground hover:shadow-primary/20 px-6 h-11 bg-primary hover:bg-primary/90 min-w-[100px] disabled:opacity-50 disabled:pointer-events-none"
+        >
+          {isLoading ? (isAr ? "جاري التحميل..." : "Loading...") : (isAr ? "تطبيق" : "Apply")}
+        </button>
+      )}
     </div>
   )
 }

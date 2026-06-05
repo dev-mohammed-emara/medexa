@@ -30,6 +30,7 @@ import { getCookie } from '../../utils/cookie';
 
 export interface Appointment {
   id: number | string;
+  uuid?: string;
   patientName: string;
   doctorName: string;
   date: Date | string;
@@ -75,6 +76,69 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, onC
   const [selectedPatient, setSelectedPatient] = useState(initialData?.patientId || "");
   const [doctorNotes, setDoctorNotes] = useState(initialData?.doctorNotes || "");
   const [patientNotes, setPatientNotes] = useState(initialData?.patientNotes || "");
+
+  const [fetchedDetails, setFetchedDetails] = useState<any>(null);
+
+  useEffect(() => {
+    const appointmentUuid = initialData?.uuid || initialData?.id;
+    if (isOpen && appointmentUuid && (mode === 'view' || mode === 'edit')) {
+      const loadDetails = async () => {
+        try {
+          const token = getCookie('token');
+          const res = await fetch(`/api/appointment/${appointmentUuid}`, {
+            headers: {
+              ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+            }
+          });
+          if (res.ok) {
+            const data = await res.json();
+            setFetchedDetails(data);
+            if (data.appointmentDate) {
+              setSelectedDate(data.appointmentDate);
+            }
+            if (data.appointmentStartTime) {
+              setSelectedTime(data.appointmentStartTime);
+            }
+            if (data.appointmentEndTime) {
+              setSelectedEndTime(data.appointmentEndTime);
+            }
+            if (data.doctor?.uuid) {
+              setSelectedDoctor(data.doctor.uuid);
+            }
+            if (data.patient?.uuid) {
+              setSelectedPatient(data.patient.uuid);
+            }
+            if (data.doctorNote !== undefined) {
+              setDoctorNotes(data.doctorNote || "");
+            }
+            if (data.patientNote !== undefined) {
+              setPatientNotes(data.patientNote || "");
+            }
+            if (data.status) {
+              setSelectedStatus(data.status.toLowerCase());
+            }
+            if (data.appointmentTypeUuid) {
+              setSelectedAppointmentType(data.appointmentTypeUuid);
+            }
+          }
+        } catch (e) {
+          console.error("Failed to load appointment details:", e);
+        }
+      };
+      loadDetails();
+    } else {
+      setFetchedDetails(null);
+      setSelectedDate(initialData?.date ? (typeof initialData.date === 'string' ? initialData.date : initialData.date.toISOString().split('T')[0]) : "");
+      setSelectedTime(initialData?.time || "");
+      setSelectedEndTime(initialData?.endTime || "");
+      setSelectedAppointmentType(initialData?.appointmentType || "");
+      setSelectedStatus(initialData?.status || 'pending');
+      setSelectedDoctor(initialData?.doctorId || "");
+      setSelectedPatient(initialData?.patientId || "");
+      setDoctorNotes(initialData?.doctorNotes || "");
+      setPatientNotes(initialData?.patientNotes || "");
+    }
+  }, [isOpen, initialData, mode]);
 
   // API Dropdown states
   const [doctorsList, setDoctorsList] = useState<any[]>([]);
@@ -214,7 +278,18 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, onC
       return;
     }
 
-    const payload = {
+    const isEdit = mode === 'edit';
+    const appointmentUuid = initialData?.uuid || initialData?.id;
+    const url = isEdit ? `/api/appointment/${appointmentUuid}` : '/api/appointment';
+    const method = isEdit ? 'PUT' : 'POST';
+
+    const payload = isEdit ? {
+      appointmentDate: selectedDate,
+      appointmentStartTime: selectedTime,
+      appointmentEndTime: selectedEndTime,
+      patientNote: patientNotes || "",
+      doctorNote: doctorNotes || ""
+    } : {
       patientUuid: selectedPatient,
       doctorUuid: selectedDoctor,
       appointmentDate: selectedDate,
@@ -227,8 +302,8 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, onC
 
     try {
       const token = getCookie('token');
-      const response = await fetch('/api/appointment', {
-        method: 'POST',
+      const response = await fetch(url, {
+        method: method,
         headers: {
           'Content-Type': 'application/json',
           ...(token ? { 'Authorization': `Bearer ${token}` } : {})
@@ -245,7 +320,11 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, onC
         let errMsg = 'Failed to save appointment';
         try {
           const errData = await response.json();
-          errMsg = errData.message || errData.error || errMsg;
+          if (errData.details && Array.isArray(errData.details) && errData.details.length > 0 && errData.details[0].message) {
+            errMsg = errData.details[0].message;
+          } else {
+            errMsg = errData.message || errData.error || errMsg;
+          }
         } catch (err) {}
         window.showToast?.(errMsg, 'error');
       }
@@ -308,7 +387,7 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, onC
                     <div className="flex items-center gap-2">
                       <User className="size-4 text-primary" />
                       <span className="font-medium">
-                        {(() => {
+                        {fetchedDetails?.patient?.name || (() => {
                           const patient = initialData?.patientName || 'ahmed';
                           const key = `dialog.patients.${patient}`;
                           const translated = t(key, T);
@@ -325,7 +404,7 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, onC
                     <div className="flex items-center">
                       <div className="flex items-center gap-2" dir="ltr">
                         <Phone className="size-4 text-primary" />
-                        <span className="font-medium">+962 79 123 4567</span>
+                        <span className="font-medium">{fetchedDetails?.patient?.phoneNumber || "+962 79 123 4567"}</span>
                       </div>
                     </div>
                   </div>
@@ -335,7 +414,7 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, onC
                     <div className="flex items-center gap-2">
                       <Stethoscope className="size-4 text-primary" />
                       <span className="font-medium">
-                        {(() => {
+                        {fetchedDetails?.doctor?.name || (() => {
                           const doctor = initialData?.doctorName || 'ahmed';
                           const key = `dialog.doctors.${doctor}`;
                           const translated = t(key, T);
@@ -349,26 +428,31 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, onC
                     <label className="flex items-center gap-2 font-medium text-muted-foreground text-xs">{t('dialog.time', T)}</label>
                     <div className="flex items-center gap-2">
                       <Clock className="size-4 text-primary" />
-                      <span className="font-medium">{initialData?.time || "10:00"}</span>
+                      <span className="font-medium">{fetchedDetails?.appointmentStartTime || initialData?.time || "10:00"}</span>
                     </div>
                   </div>
 
-                  {initialData?.endTime && (
+                  {(fetchedDetails?.appointmentEndTime || initialData?.endTime) && (
                     <div className="space-y-2">
                       <label className="flex items-center gap-2 font-medium text-muted-foreground text-xs">{t('dialog.end_time', T)}</label>
                       <div className="flex items-center gap-2">
                         <Clock className="size-4 text-primary" />
-                        <span className="font-medium">{initialData.endTime}</span>
+                        <span className="font-medium">{fetchedDetails?.appointmentEndTime || initialData?.endTime}</span>
                       </div>
                     </div>
                   )}
 
-                  {initialData?.appointmentType && (
+                  {(fetchedDetails?.appointmentType?.name || fetchedDetails?.appointmentType || initialData?.appointmentType) && (
                     <div className="space-y-2">
                       <label className="flex items-center gap-2 font-medium text-muted-foreground text-xs">{t('dialog.appointment_type', T)}</label>
                       <div className="flex items-center gap-2">
                         <Stethoscope className="size-4 text-primary" />
-                        <span className="font-medium">{t(`dialog.types.${initialData.appointmentType}`, T) || initialData.appointmentType}</span>
+                        <span className="font-medium">
+                          {fetchedDetails?.appointmentType?.name || 
+                           t(`dialog.types.${fetchedDetails?.appointmentType || initialData?.appointmentType}`, T) || 
+                           fetchedDetails?.appointmentType || 
+                           initialData?.appointmentType}
+                        </span>
                       </div>
                     </div>
                   )}
@@ -376,11 +460,11 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, onC
                   <div className="space-y-2">
                     <label className="flex items-center gap-2 font-medium text-muted-foreground text-xs">{t('dialog.status', T)}</label>
                     {(() => {
-                      const status = initialData?.status || 'pending';
+                      const status = (fetchedDetails?.status || initialData?.status || 'pending').toLowerCase();
                       const config = statusConfig[status] || statusConfig['pending'];
                       return (
                         <span className={cn(
-                          "inline-flex items-center justify-center rounded-lg px-3 py-1 text-xs font-bold w-fit border-2 shadow-sm transition-all animate-in fade-in zoom-in duration-300",
+                           "inline-flex items-center justify-center rounded-lg px-3 py-1 text-xs font-bold w-fit border-2 shadow-sm transition-all animate-in fade-in zoom-in duration-300",
                           config.bg,
                           config.text,
                           config.border
@@ -399,7 +483,7 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, onC
                     <label className="flex items-center gap-2 font-medium text-muted-foreground text-xs">{t('dialog.fee', T)}</label>
                     <div className="flex items-center gap-2">
                       <DollarSign className="size-4 text-primary" />
-                      <span className="font-medium">25 {t('dialog.currency', T)}</span>
+                      <span className="font-medium">{fetchedDetails?.examinationFee !== undefined ? fetchedDetails.examinationFee : 25} {t('dialog.currency', T)}</span>
                     </div>
                   </div>
                 </div>
@@ -407,30 +491,30 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, onC
                 <div className="space-y-2">
                   <label className="flex items-center gap-2 font-medium text-muted-foreground text-xs">{t('dialog.patient_notes', T)}</label>
                   <div className="p-3 bg-muted/30 rounded-lg border border-border min-h-[60px]">
-                    <p className="text-sm">{initialData?.patientNotes || t('dialog.no_notes', T)}</p>
+                    <p className="text-sm">{fetchedDetails?.patientNote || initialData?.patientNotes || t('dialog.no_notes', T)}</p>
                   </div>
                 </div>
 
                 <div className="space-y-2">
                   <label className="flex items-center gap-2 font-medium text-muted-foreground text-xs">{t('dialog.doctor_notes', T)}</label>
                   <div className="p-3 bg-muted/30 rounded-lg border border-border min-h-[60px]">
-                    <p className="text-sm">{initialData?.doctorNotes || t('dialog.no_notes', T)}</p>
+                    <p className="text-sm">{fetchedDetails?.doctorNote || initialData?.doctorNotes || t('dialog.no_notes', T)}</p>
                   </div>
                 </div>
 
-                {initialData?.status === 'canceled' && (
+                {((fetchedDetails?.status || initialData?.status) === 'canceled' || (fetchedDetails?.status || initialData?.status) === 'CANCELED') && (
                   <div className="mt-6 p-4 rounded-xl border-2 border-dashed border-rose-200 bg-rose-50/30 space-y-4 animate-in fade-in slide-in-from-top-4 duration-500 shadow-sm">
                     <div className="flex items-center gap-2 text-rose-600 font-bold text-sm">
                       <X className="size-4" />
-                      {t('canceled_by', T)}: {initialData.canceledBy === 'doctor' ? t('cancelers.doctor', T) :
-                                               initialData.canceledBy === 'patient' ? t('cancelers.patient', T) :
-                                               initialData.canceledBy === 'secretary' ? t('cancelers.secretary', T) :
-                                               (initialData.canceledBy || (isAr ? "غير محدد" : "Not specified"))}
+                      {t('canceled_by', T)}: {(fetchedDetails?.cancelledBy || fetchedDetails?.canceledBy) === 'DOCTOR' || (fetchedDetails?.cancelledBy || fetchedDetails?.canceledBy) === 'doctor' ? t('cancelers.doctor', T) :
+                                               (fetchedDetails?.cancelledBy || fetchedDetails?.canceledBy) === 'PATIENT' || (fetchedDetails?.cancelledBy || fetchedDetails?.canceledBy) === 'patient' ? t('cancelers.patient', T) :
+                                               (fetchedDetails?.cancelledBy || fetchedDetails?.canceledBy) === 'SECRETARY' || (fetchedDetails?.cancelledBy || fetchedDetails?.canceledBy) === 'secretary' ? t('cancelers.secretary', T) :
+                                               (fetchedDetails?.cancelledBy || fetchedDetails?.canceledBy || initialData?.canceledBy || (isAr ? "غير محدد" : "Not specified"))}
                     </div>
                     <div className="space-y-2">
                       <label className="text-xs font-bold text-rose-600/70">{t('reason', T)}</label>
                       <p className="text-sm text-rose-700 bg-white/50 p-3 rounded-lg border border-rose-100 italic">
-                        {t(`cancel_reasons.${initialData.cancellationReason}`, T) || initialData.cancellationReason || (isAr ? "لا يوجد سبب محدد" : "No specific reason provided")}
+                        {t(`cancel_reasons.${fetchedDetails?.cancellationReason || initialData?.cancellationReason}`, T) || fetchedDetails?.cancellationReason || initialData?.cancellationReason || (isAr ? "لا يوجد سبب محدد" : "No specific reason provided")}
                       </p>
                     </div>
                   </div>

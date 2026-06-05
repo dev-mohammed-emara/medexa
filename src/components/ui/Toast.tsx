@@ -91,10 +91,34 @@ export const ToastContainer = () => {
   const [toasts, setToasts] = useState<{ id: number; message: string; type: ToastType }[]>([]);
 
   useEffect(() => {
-    window.showToast = (message: string, type: ToastType = 'success') => {
+    window.showToast = (message: any, type: ToastType = 'success') => {
+      let finalMessage = '';
+      if (typeof message === 'string') {
+        try {
+          const parsed = JSON.parse(message);
+          if (parsed && parsed.details && Array.isArray(parsed.details) && parsed.details.length > 0 && parsed.details[0].message) {
+            finalMessage = parsed.details[0].message;
+          } else if (parsed && (parsed.message || parsed.error)) {
+            finalMessage = parsed.message || parsed.error;
+          } else {
+            finalMessage = message;
+          }
+        } catch (e) {
+          finalMessage = message;
+        }
+      } else if (message && typeof message === 'object') {
+        if (message.details && Array.isArray(message.details) && message.details.length > 0 && message.details[0].message) {
+          finalMessage = message.details[0].message;
+        } else {
+          finalMessage = message.message || message.error || String(message);
+        }
+      } else {
+        finalMessage = String(message);
+      }
+
       setToasts(prev => {
         const id = Date.now() + Math.random();
-        return [...prev, { id, message, type }];
+        return [...prev, { id, message: finalMessage, type }];
       });
     };
   }, []);
@@ -122,7 +146,7 @@ export const ToastContainer = () => {
 
 declare global {
   interface Window {
-    showToast: (message: string, type?: ToastType) => void;
+    showToast: (message: any, type?: ToastType) => void;
   }
 }
 

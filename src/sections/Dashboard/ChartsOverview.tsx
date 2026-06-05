@@ -19,8 +19,6 @@ import { useLanguage } from '../../contexts/LanguageContext'
 import { dashboardTranslations } from '../../constants/translations/dashboard'
 import { navTranslations } from '../../constants/nav'
 
-
-
 interface ChartsOverviewProps {
   financialChartData?: {
     label: string
@@ -81,17 +79,23 @@ const ChartsOverview = ({
       }
     })
 
-  const translatedGenderData = (genderDistribution && genderDistribution.length > 0)
-    ? genderDistribution.map(item => ({
-      name: item.gender === 'MALE' ? t('charts.male', T) : t('charts.female', T),
-      value: item.count,
-      percentage: item.percentage,
-      color: item.gender === 'MALE' ? '#0B5A8E' : '#3FB8AF'
-    }))
-    : [
-      { name: t('charts.male', T), value: 0, percentage: 0, color: '#0B5A8E' },
-      { name: t('charts.female', T), value: 0, percentage: 0, color: '#3FB8AF' }
-    ]
+  const maleItem = genderDistribution?.find(item => item.gender === 'MALE')
+  const femaleItem = genderDistribution?.find(item => item.gender === 'FEMALE')
+
+  const translatedGenderData = [
+    {
+      name: t('charts.male', T),
+      value: maleItem ? maleItem.count : 0,
+      percentage: maleItem ? maleItem.percentage : 0,
+      color: '#0B5A8E'
+    },
+    {
+      name: t('charts.female', T),
+      value: femaleItem ? femaleItem.count : 0,
+      percentage: femaleItem ? femaleItem.percentage : 0,
+      color: '#3FB8AF'
+    }
+  ]
 
   const activeAgeData = (ageDistribution && ageDistribution.length > 0)
     ? ageDistribution.map(item => ({
@@ -161,22 +165,37 @@ const ChartsOverview = ({
                     paddingAngle={isEmptyGender ? 0 : 6}
                     dataKey="value"
                     isAnimationActive={true}
-                    label={({ name, x, y, textAnchor }: any) => {
-                      const safeName = name || ''
-                      const color = safeName === t('charts.male', T) ? '#0B5A8E' : '#3FB8AF'
-                      const displayValue = isEmptyGender ? 0 : (translatedGenderData.find(d => d.name === safeName)?.value || 0)
+                    labelLine={true}
+                    label={({ cx, cy, midAngle, outerRadius, name, value }: any) => {
+                      if (value === 0 && !isEmptyGender) return null;
+
+                      const RADIAN = Math.PI / 180;
+                      // Outer boundary cushion offset (25px outside the chart edge)
+                      const radius = outerRadius + 25;
+                      const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                      const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+                      const safeName = name || '';
+                      const color = safeName === t('charts.male', T) ? '#0B5A8E' : '#3FB8AF';
+                      const displayValue = isEmptyGender ? 0 : (translatedGenderData.find(d => d.name === safeName)?.value || 0);
+
+                      // Smart alignment selector contextually customized for RTL vs LTR layout boundaries
+                      const anchorValue = isAr 
+                        ? (x > cx ? 'end' : 'start') 
+                        : (x > cx ? 'start' : 'end');
+
                       return (
                         <text
                           x={x}
                           y={y}
                           fill={color}
-                          textAnchor={textAnchor}
+                          textAnchor={anchorValue}
                           dominantBaseline="central"
                           style={{ fontSize: '12px', fontWeight: 600 }}
                         >
-                          {`${safeName} ${displayValue}`}
+                          {isAr ? `${safeName}: ${displayValue}` : `${safeName}: ${displayValue}`}
                         </text>
-                      )
+                      );
                     }}
                   >
                     {pieData.map((entry, index) => (
@@ -227,7 +246,7 @@ const ChartsOverview = ({
                 <BarChart data={activeAgeData}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E8EEF2" />
                   <XAxis dataKey="range" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#666' }} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#666' }} orientation="right" />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#666' }} orientation="right" allowDecimals={false} />
                   <Tooltip cursor={{ fill: '#f3f4f6' }} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} />
                   <Bar dataKey="value" fill="#0B5A8E" radius={[8, 8, 0, 0]} barSize={80} isAnimationActive={true} />
                 </BarChart>
@@ -246,7 +265,7 @@ const ChartsOverview = ({
               <LineChart data={translatedAppointmentData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E8EEF2" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#666' }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#666' }} orientation="right" />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#666' }} orientation="right" allowDecimals={false} />
                 <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} />
                 <Legend verticalAlign="bottom" height={36} />
                 <Line

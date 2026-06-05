@@ -54,11 +54,17 @@ const DoctorsList = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Filters & Pagination State
+  // Local Filter Input States
   const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [sort, setSort] = useState('createdAt,desc');
   const [status, setStatus] = useState('all');
+  const [sort, setSort] = useState('createdAt,desc');
+
+  // Active Filter States (applied on Confirm)
+  const [activeSearch, setActiveSearch] = useState('');
+  const [activeStatus, setActiveStatus] = useState('all');
+  const [activeSort, setActiveSort] = useState('createdAt,desc');
+
+  // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
@@ -75,16 +81,6 @@ const DoctorsList = () => {
   const [doctorToDelete, setDoctorToDelete] = useState<ApiDoctor | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  // Debounce search query
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearch(search);
-      setCurrentPage(1); // Reset page to 1 on new search
-    }, 400);
-
-    return () => clearTimeout(handler);
-  }, [search]);
-
   // Load doctors from API
   const loadDoctors = useCallback(async () => {
     setLoading(true);
@@ -93,9 +89,9 @@ const DoctorsList = () => {
       const data = await fetchDoctors({
         page: currentPage - 1, // API is 0-indexed
         size: pageSize,
-        search: debouncedSearch || undefined,
-        sort: sort !== '--' ? sort : undefined,
-        status: status !== 'all' ? status : undefined
+        search: activeSearch || undefined,
+        sort: activeSort !== '--' ? activeSort : undefined,
+        status: activeStatus !== 'all' ? activeStatus : undefined
       });
       setDoctors(data.content || []);
       setTotalPages(data.totalPages || 1);
@@ -106,11 +102,18 @@ const DoctorsList = () => {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, pageSize, debouncedSearch, sort, status, t]);
+  }, [currentPage, pageSize, activeSearch, activeSort, activeStatus, t]);
 
   useEffect(() => {
     loadDoctors();
   }, [loadDoctors]);
+
+  const handleApplyFilters = () => {
+    setActiveSearch(search);
+    setActiveStatus(status);
+    setActiveSort(sort);
+    setCurrentPage(1);
+  };
 
   const handleOpenDialog = async (mode: 'add' | 'edit' | 'view', doctorUuid?: string) => {
     if (mode === 'add') {
@@ -161,8 +164,18 @@ const DoctorsList = () => {
 
   const handleConfirmAction = () => {
     // Reload data on create or edit success
-    if (dialogMode === 'add' && currentPage !== 1) {
-      setCurrentPage(1);
+    if (dialogMode === 'add') {
+      setSearch('');
+      setStatus('all');
+      setSort('createdAt,desc');
+      setActiveSearch('');
+      setActiveStatus('all');
+      setActiveSort('createdAt,desc');
+      if (currentPage !== 1) {
+        setCurrentPage(1);
+      } else {
+        loadDoctors();
+      }
     } else {
       loadDoctors();
     }
@@ -239,14 +252,13 @@ const DoctorsList = () => {
 
       {/* Filter and Table Card */}
       <div
-        data-slot="card"
         className={cn(
-          "text-card-foreground flex flex-col gap-6 rounded-xl border p-6 bg-white border-border shadow-md",
+          "text-card-foreground flex flex-col gap-6 bg-transparent border-none shadow-none p-0",
           isExiting && "animate-fadeDownOut"
         )}
       >
         {/* Filters Panel */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end bg-white p-6 rounded-xl border border-border shadow-md">
           {/* Search Box */}
           <div className="relative">
             <label className="text-xs text-muted-foreground mb-2 block font-medium">
@@ -268,7 +280,7 @@ const DoctorsList = () => {
             <label className="text-xs text-muted-foreground mb-2 block font-medium">
               {t('status_label', T)}
             </label>
-            <Select value={status} onValueChange={(val) => { setStatus(val); setCurrentPage(1); }}>
+            <Select value={status} onValueChange={setStatus}>
               <SelectTrigger className="h-11 rounded-xl">
                 <SelectValue placeholder={t('all_statuses', T)} />
               </SelectTrigger>
@@ -286,7 +298,7 @@ const DoctorsList = () => {
             <label className="text-xs text-muted-foreground mb-2 block font-medium">
               {t('sort_label', T)}
             </label>
-            <Select value={sort} onValueChange={(val) => { setSort(val); setCurrentPage(1); }}>
+            <Select value={sort} onValueChange={sortVal => setSort(sortVal)}>
               <SelectTrigger className="h-11 rounded-xl">
                 <SelectValue />
               </SelectTrigger>
@@ -300,6 +312,17 @@ const DoctorsList = () => {
                 <SelectItem value="user.firstName,desc">user.firstName,desc</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Apply Filters Button */}
+          <div>
+            <Button
+              onClick={handleApplyFilters}
+              disabled={loading}
+              className="h-11 w-full rounded-xl bg-primary text-white hover:bg-primary/90 font-bold transition-all shadow-md"
+            >
+              {isAr ? "تطبيق الفلاتر" : "Apply Filters"}
+            </Button>
           </div>
         </div>
 
@@ -322,7 +345,7 @@ const DoctorsList = () => {
                 </div>
               )}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {doctors.map((doctor) => {
+                {doctors.map((doctor, index) => {
                   const firstName = doctor.user?.firstName || '';
                   const surName = doctor.user?.surName || '';
                   const lastName = doctor.user?.lastName || '';
@@ -336,7 +359,14 @@ const DoctorsList = () => {
                   const revenueAmount = dummyMatch?.revenue ? `${Number(dummyMatch.revenue).toLocaleString()} د.أ` : "2,400 د.أ";
 
                   return (
-                    <div key={doctor.uuid} style={{ opacity: 1, transform: 'none' }}>
+                    <div
+                      key={doctor.uuid}
+                      className="animate-fadeUp opacity-0"
+                      style={{
+                        animationDelay: `${(index + 1) * 80}ms`,
+                        animationFillMode: 'forwards'
+                      }}
+                    >
                       <div data-slot="card" className="text-card-foreground flex flex-col gap-6 rounded-xl border p-6 bg-white border-border shadow-lg hover:shadow-xl transition-all duration-300 relative overflow-hidden group">
                         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                         <div className="relative z-10 flex flex-col h-full justify-between">
@@ -423,31 +453,63 @@ const DoctorsList = () => {
               </div>
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center py-20 text-center">
-              <div className="size-20 rounded-full bg-primary/10 flex items-center justify-center mb-6">
-                <HiOutlineXMark className="size-10 text-primary" />
-              </div>
-              <h3 className="text-2xl font-bold text-foreground mb-2">{t('no_doctors', T)}</h3>
-              <p className="text-muted-foreground max-w-md mb-6">{t('no_doctors_desc', T)}</p>
-              <button
-                onClick={() => handleOpenDialog('add')}
-                className="inline-flex items-center justify-center gap-2 rounded-xl text-white bg-primary hover:bg-primary/90 h-11 px-6 shadow-md transition-all font-bold"
-              >
-                <Plus className="size-5" />
-                {t('add_new_button', T)}
-              </button>
-            </div>
+            (() => {
+              const isFiltering = activeSearch !== '' || activeStatus !== 'all' || activeSort !== 'createdAt,desc';
+              return (
+                <div className="flex flex-col items-center justify-center py-20 text-center bg-white rounded-xl border border-border shadow-md w-full">
+                  <div className="size-20 rounded-full bg-primary/10 flex items-center justify-center mb-6">
+                    <HiOutlineXMark className="size-10 text-primary" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-foreground mb-2">
+                    {isFiltering 
+                      ? (isAr ? "لا توجد نتائج مطابقة" : "No matching results found")
+                      : t('no_doctors', T)}
+                  </h3>
+                  <p className="text-muted-foreground max-w-md mb-6">
+                    {isFiltering
+                      ? (isAr ? "لم نجد أي عيادات أو أطباء يطابقون فلاتر البحث الحالية. يرجى إعادة ضبط الفلاتر والمحاولة مرة أخرى." : "We couldn't find any doctors matching your search filters. Please reset your filters and try again.")
+                      : t('no_doctors_desc', T)}
+                  </p>
+                  <button
+                    onClick={() => {
+                      if (isFiltering) {
+                        setSearch('');
+                        setStatus('all');
+                        setSort('createdAt,desc');
+                        setActiveSearch('');
+                        setActiveStatus('all');
+                        setActiveSort('createdAt,desc');
+                        setCurrentPage(1);
+                      } else {
+                        handleOpenDialog('add');
+                      }
+                    }}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl text-white bg-primary hover:bg-primary/90 h-11 px-6 shadow-md transition-all font-bold"
+                  >
+                    {isFiltering ? (
+                      isAr ? "إعادة ضبط الفلاتر" : "Reset Filters"
+                    ) : (
+                      <>
+                        <Plus className="size-5" />
+                        {t('add_new_button', T)}
+                      </>
+                    )}
+                  </button>
+                </div>
+              );
+            })()
           )}
         </div>
 
         {/* Footer & Pagination */}
         {!loading && !error && doctors.length > 0 && (
-          <div className="flex flex-col sm:flex-row items-center justify-between border-t border-border pt-4 mt-2">
+          <div className="flex flex-col sm:flex-row items-center justify-between border-t border-transparent pt-4 mt-2">
             <span className="text-sm text-muted-foreground font-bold">
               {isAr ? "إجمالي السجلات:" : "Total Records:"} <span className="font-black text-foreground ml-1">{totalElements}</span>
             </span>
             <TableFooter
               variant="table"
+              className="bg-transparent shadow-none border-none p-0 mt-0"
               totalItems={totalElements}
               itemsPerPage={pageSize}
               currentPage={currentPage}

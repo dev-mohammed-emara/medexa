@@ -37,6 +37,13 @@ import {
   TableHead,
   TableCell,
 } from '../../components/ui/table';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../../components/ui/select';
 
 import { getCookie } from '../../utils/cookie';
 
@@ -55,6 +62,14 @@ const FinanceOverview = () => {
 
   const [fromDate, setFromDate] = useState<string>("2025-01-01");
   const [toDate, setToDate] = useState<string>("2025-06-30");
+  const [type, setType] = useState<string>("");
+  const [sort, setSort] = useState<string>("createdAt,desc");
+
+  const [tempFromDate, setTempFromDate] = useState<string>("2025-01-01");
+  const [tempToDate, setTempToDate] = useState<string>("2025-06-30");
+  const [tempType, setTempType] = useState<string>("");
+  const [tempSort, setTempSort] = useState<string>("createdAt,desc");
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'add' | 'edit' | 'view'>('add');
   const [selectedTransactionUuid, setSelectedTransactionUuid] = useState<string | null>(null);
@@ -89,9 +104,12 @@ const FinanceOverview = () => {
       const queryParams = new URLSearchParams();
       queryParams.append('fromDate', fromDate);
       queryParams.append('toDate', toDate);
+      if (type && type !== 'DEFAULT') {
+        queryParams.append('type', type);
+      }
       queryParams.append('page', String(currentPage - 1));
       queryParams.append('size', String(itemsPerPage));
-      queryParams.append('sort', 'createdAt,desc');
+      queryParams.append('sort', sort);
 
       const response = await fetch(`/api/financial/transactions?${queryParams.toString()}`, {
         method: 'GET',
@@ -106,7 +124,7 @@ const FinanceOverview = () => {
     } catch (err) {
       console.error('Error fetching transactions:', err);
     }
-  }, [fromDate, toDate, currentPage, itemsPerPage]);
+  }, [fromDate, toDate, type, sort, currentPage, itemsPerPage]);
 
   const loadStatistics = useCallback(async () => {
     try {
@@ -137,9 +155,11 @@ const FinanceOverview = () => {
   }, [loadStatistics]);
 
   const handleApply = () => {
+    setFromDate(tempFromDate);
+    setToDate(tempToDate);
+    setType(tempType);
+    setSort(tempSort);
     setCurrentPage(1);
-    loadTransactions();
-    loadStatistics();
   };
 
   const chartData = (stats?.monthlyData || []).map(item => ({
@@ -284,14 +304,57 @@ const FinanceOverview = () => {
         <header className={cn("flex flex-col xl:flex-row xl:items-end justify-between gap-6 mb-8 p-6 pb-0", isAr ? "xl:flex-row" : "xl:flex-row-reverse")}>
           <h3 className="text-xl font-bold">{t('financial_operations', T)}</h3>
 
-          <div className={cn("flex flex-wrap items-end gap-3 transition-all duration-700", canAnimate ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4")} style={{ transitionDelay: '550ms' }}>
+          <div className={cn("flex flex-wrap items-end gap-3 transition-all duration-700 w-full xl:w-auto", canAnimate ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4")} style={{ transitionDelay: '550ms' }}>
             <DateFromTo
-              fromDate={fromDate}
-              toDate={toDate}
-              onFromDateChange={setFromDate}
-              onToDateChange={setToDate}
-              onApply={handleApply}
+              fromDate={tempFromDate}
+              toDate={tempToDate}
+              onFromDateChange={setTempFromDate}
+              onToDateChange={setTempToDate}
+              onApply={() => {}}
+              showApply={false}
             />
+
+            {/* Type Filter */}
+            <div className="space-y-1.5 flex-1 min-w-[150px] text-start">
+              <label className="flex items-center gap-2 font-bold select-none text-xs text-muted-foreground mr-1">
+                {isAr ? "نوع العملية" : "Type"}
+              </label>
+              <Select value={tempType} onValueChange={setTempType}>
+                <SelectTrigger className="rounded-xl h-11 bg-white border-border text-foreground font-bold">
+                  <SelectValue placeholder={isAr ? "الكل" : "All"} />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl z-600 bg-white" dir={isAr ? "rtl" : "ltr"}>
+                  <SelectItem value="DEFAULT">{isAr ? "الكل" : "All"}</SelectItem>
+                  <SelectItem value="INCOME">{isAr ? "دخل" : "Income"}</SelectItem>
+                  <SelectItem value="EXPENSE">{isAr ? "مصروف" : "Expense"}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Sort Filter */}
+            <div className="space-y-1.5 flex-1 min-w-[180px] text-start">
+              <label className="flex items-center gap-2 font-bold select-none text-xs text-muted-foreground mr-1">
+                {isAr ? "ترتيب حسب" : "Sort By"}
+              </label>
+              <Select value={tempSort} onValueChange={setTempSort}>
+                <SelectTrigger className="rounded-xl h-11 bg-white border-border text-foreground font-bold">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl z-600 bg-white" dir={isAr ? "rtl" : "ltr"}>
+                  <SelectItem value="createdAt,desc">{isAr ? "الأحدث أولاً" : "Newest First"}</SelectItem>
+                  <SelectItem value="createdAt,asc">{isAr ? "الأقدم أولاً" : "Oldest First"}</SelectItem>
+                  <SelectItem value="amount,asc">{isAr ? "المبلغ (من الأقل للأكثر)" : "Amount (Low to High)"}</SelectItem>
+                  <SelectItem value="amount,desc">{isAr ? "المبلغ (من الأكثر للأقل)" : "Amount (High to Low)"}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <button
+              onClick={handleApply}
+              className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-bold transition-all duration-300 outline-none hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md text-primary-foreground hover:shadow-primary/20 px-6 h-11 bg-primary hover:bg-primary/90 min-w-[100px]"
+            >
+              {isAr ? "تأكيد" : "Confirm"}
+            </button>
           </div>
         </header>
 

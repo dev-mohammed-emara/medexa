@@ -1,4 +1,4 @@
-import { getCookie } from '../utils/cookie'
+import { getCookie, checkTokenOrRedirect } from '../utils/cookie'
 
 export interface ApiPatient {
   uuid?: string
@@ -32,6 +32,7 @@ interface FetchPatientsParams {
 }
 
 const getHeaders = () => {
+  checkTokenOrRedirect()
   const token = getCookie('token')
   return {
     'Content-Type': 'application/json',

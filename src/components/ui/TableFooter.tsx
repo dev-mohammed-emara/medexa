@@ -34,16 +34,22 @@ const TableFooter = ({
   const safeItemsPerPage = itemsPerPage > 0 ? itemsPerPage : Math.max(1, totalItems)
   const resolvedTotalPages = totalPages ?? Math.max(1, Math.ceil(totalItems / safeItemsPerPage))
 
-  // Generate page size options based on totalItems
+  // Generate page size options
   const getPageSizeOptions = (): number[] => {
     const defaultOptions = [5, 10, 20, 50];
-    if (totalItems < 5) {
-      return [totalItems];
+    if (totalItems <= 0) {
+      return [10];
     }
-    return defaultOptions.filter(option => option <= totalItems);
+    const filtered = defaultOptions.filter(option => option <= totalItems);
+    if (!filtered.includes(totalItems)) {
+      filtered.push(totalItems);
+    }
+    return filtered.sort((a, b) => a - b);
   };
 
   const pageSizeOptions = getPageSizeOptions();
+  const maxOption = pageSizeOptions[pageSizeOptions.length - 1] || 10;
+  const activePageSize = itemsPerPage > maxOption ? maxOption : itemsPerPage;
 
   const PrevIcon = isAr ? LuChevronRight : LuChevronLeft;
   const NextIcon = isAr ? LuChevronLeft : LuChevronRight;
@@ -70,7 +76,7 @@ const TableFooter = ({
               </span>
               <div className="min-w-[70px]">
                 <Select
-                  value={String(itemsPerPage)}
+                  value={String(activePageSize)}
                   onValueChange={onItemsPerPageChange}
                 >
                   <SelectTrigger className="h-9 rounded-xl border border-border bg-white text-foreground px-3 flex items-center justify-center gap-2 font-bold">

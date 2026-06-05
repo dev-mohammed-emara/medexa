@@ -95,7 +95,7 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
       const formDataObj = Object.fromEntries(formData.entries());
 
       const permissions: string[] = []
-      const permissionCheckboxes = ['MANAGE_DOCTORS', 'MANAGE_SECRETARIES', 'MANAGE_CLINIC', 'MANAGE_PATIENTS', 'MANAGE_APPOINTMENTS']
+      const permissionCheckboxes = ['MANAGE_DOCTORS', 'MANAGE_SECRETARIES', 'MANAGE_CLINIC', 'MANAGE_PATIENTS', 'MANAGE_APPOINTMENTS', 'MANAGE_TRANSACTIONS', 'MANAGE_MEDICAL_RECORDS']
       permissionCheckboxes.forEach(p => {
         const checkbox = (e.target as HTMLFormElement).querySelector(`#${p}`) as HTMLButtonElement
         if (checkbox?.dataset.state === 'checked') permissions.push(p)
@@ -409,6 +409,8 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
                   <PermissionCheckbox id="MANAGE_CLINIC" label={isAr ? "إدارة العيادة" : "Manage Clinic"} defaultChecked={initialData?.user?.permissions?.includes('MANAGE_CLINIC') ?? true} disabled={mode === 'view'} />
                   <PermissionCheckbox id="MANAGE_PATIENTS" label={isAr ? "إدارة المرضى" : "Manage Patients"} defaultChecked={initialData?.user?.permissions?.includes('MANAGE_PATIENTS') ?? false} disabled={mode === 'view'} />
                   <PermissionCheckbox id="MANAGE_APPOINTMENTS" label={isAr ? "إدارة المواعيد" : "Manage Appointments"} defaultChecked={initialData?.user?.permissions?.includes('MANAGE_APPOINTMENTS')} disabled={mode === 'view'} />
+                  <PermissionCheckbox id="MANAGE_TRANSACTIONS" label={isAr ? "إدارة المعاملات المالية" : "Manage Transactions"} defaultChecked={initialData?.user?.permissions?.includes('MANAGE_TRANSACTIONS') ?? true} disabled={mode === 'view'} />
+                  <PermissionCheckbox id="MANAGE_MEDICAL_RECORDS" label={isAr ? "إدارة السجلات الطبية" : "Manage Medical Records"} defaultChecked={initialData?.user?.permissions?.includes('MANAGE_MEDICAL_RECORDS') ?? true} disabled={mode === 'view'} />
                 </div>
               </footer>
             </form>

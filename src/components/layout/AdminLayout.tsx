@@ -3,6 +3,7 @@ import { useSidebar } from '../../contexts/SidebarContext'
 import { cn } from '../../utils/cn'
 import AdminNavbar from './AdminNavbar'
 import AdminSidebar from './AdminSidebar'
+import SupportTicket from '../ui/SupportTicket'
 
 interface AdminLayoutProps {
   children: React.ReactNode
@@ -29,6 +30,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
         {/* Dynamic content */}
         <main className="relative flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-4 lg:p-8 custom-scrollbar scroll-smooth">
           {children}
+          <SupportTicket />
         </main>
       </div>
     </div>

@@ -1,4 +1,4 @@
-import { getCookie } from '../utils/cookie'
+import { getCookie, checkTokenOrRedirect } from '../utils/cookie'
 
 export interface ClinicSettings {
   defaultCurrency: string
@@ -37,6 +37,7 @@ export interface ApiInsurance {
 }
 
 const getHeaders = () => {
+  checkTokenOrRedirect()
   const token = getCookie('token')
   return {
     'Content-Type': 'application/json',

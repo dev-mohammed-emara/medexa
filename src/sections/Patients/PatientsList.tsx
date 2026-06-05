@@ -47,10 +47,15 @@ const PatientsList = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Filters & Pagination State
+  // Local Filter Input States
   const [search, setSearch] = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [sort, setSort] = useState('createdAt,desc');
+
+  // Active Filter States (applied on Confirm)
+  const [activeSearch, setActiveSearch] = useState('');
+  const [activeSort, setActiveSort] = useState('createdAt,desc');
+
+  // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
@@ -73,16 +78,6 @@ const PatientsList = () => {
     }
   });
 
-  // Debounce search query
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearch(search);
-      setCurrentPage(1); // Reset page on new search
-    }, 400);
-
-    return () => clearTimeout(handler);
-  }, [search]);
-
   // Load patients from API
   const loadPatients = useCallback(async () => {
     setLoading(true);
@@ -91,8 +86,8 @@ const PatientsList = () => {
       const data = await fetchPatients({
         page: currentPage - 1, // API is 0-indexed
         size: pageSize,
-        search: debouncedSearch || undefined,
-        sort: sort !== '--' ? sort : undefined
+        search: activeSearch || undefined,
+        sort: activeSort !== '--' ? activeSort : undefined
       });
       setPatients(data.content || []);
       setTotalPages(data.totalPages || 1);
@@ -103,11 +98,17 @@ const PatientsList = () => {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, pageSize, debouncedSearch, sort, t]);
+  }, [currentPage, pageSize, activeSearch, activeSort, t]);
 
   useEffect(() => {
     loadPatients();
   }, [loadPatients]);
+
+  const handleApplyFilters = () => {
+    setActiveSearch(search);
+    setActiveSort(sort);
+    setCurrentPage(1);
+  };
 
   const handleOpenDialog = async (mode: 'add' | 'edit' | 'view', patientUuid?: string) => {
     if (mode === 'add') {
@@ -157,8 +158,16 @@ const PatientsList = () => {
   };
 
   const handleConfirmAction = () => {
-    if (dialogMode === 'add' && currentPage !== 1) {
-      setCurrentPage(1);
+    if (dialogMode === 'add') {
+      setSearch('');
+      setSort('createdAt,desc');
+      setActiveSearch('');
+      setActiveSort('createdAt,desc');
+      if (currentPage !== 1) {
+        setCurrentPage(1);
+      } else {
+        loadPatients();
+      }
     } else {
       loadPatients();
     }
@@ -206,33 +215,40 @@ const PatientsList = () => {
 
         {/* Search and Table Card */}
         <article
-          data-slot="card"
           className={cn(
-            "text-card-foreground flex flex-col rounded-xl border transition-all duration-300 hover:shadow-lg bg-white border-border shadow-sm opacity-0 overflow-hidden",
+            "text-card-foreground flex flex-col bg-transparent border-none shadow-none opacity-0 overflow-hidden",
             canAnimate && "animate-fadeUp animate-delay-200"
           )}
         >
           {/* Header Filters */}
-          <div className="p-6 pb-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="p-6 pb-4 bg-white rounded-xl border border-border shadow-md mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
               {/* Search */}
-              <div className="relative w-full md:w-96">
-                <Search className={cn("absolute top-1/2 -translate-y-1/2 text-muted-foreground size-[18px]", isAr ? "right-3" : "left-3")} />
-                <input
-                  data-slot="input"
-                  className={cn(
-                    "file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-border flex w-full min-w-0 rounded-xl border py-1 text-base transition-[color,box-shadow] outline-none md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive h-10 bg-input-background",
-                    isAr ? "pr-10 pl-3" : "pl-10 pr-3"
-                  )}
-                  placeholder={t('search_placeholder', T)}
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
+              <div className="relative w-full md:w-96 text-start">
+                <label className="text-xs text-muted-foreground mb-2 block font-medium">
+                  {isAr ? "البحث" : "Search"}
+                </label>
+                <div className="relative">
+                  <Search className={cn("absolute top-1/2 -translate-y-1/2 text-muted-foreground size-[18px]", isAr ? "right-3" : "left-3")} />
+                  <input
+                    data-slot="input"
+                    className={cn(
+                      "file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-border flex w-full min-w-0 rounded-xl border py-1 text-base transition-[color,box-shadow] outline-none md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive h-10 bg-input-background",
+                      isAr ? "pr-10 pl-3" : "pl-10 pr-3"
+                    )}
+                    placeholder={t('search_placeholder', T)}
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                  />
+                </div>
               </div>
 
               {/* Sort Filter */}
               <div className="w-full sm:w-48 text-start">
-                <Select value={sort} onValueChange={(val) => { setSort(val); setCurrentPage(1); }}>
+                <label className="text-xs text-muted-foreground mb-2 block font-medium">
+                  {t('sort_label', T) || 'Sort By'}
+                </label>
+                <Select value={sort} onValueChange={setSort}>
                   <SelectTrigger className="h-10 rounded-xl">
                     <SelectValue placeholder={t('sort_label', T) || 'Sort By'} />
                   </SelectTrigger>
@@ -245,10 +261,21 @@ const PatientsList = () => {
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* Apply Button */}
+              <div className="w-full sm:w-auto">
+                <Button
+                  onClick={handleApplyFilters}
+                  disabled={loading}
+                  className="h-10 px-6 rounded-xl bg-primary text-white hover:bg-primary/90 font-bold transition-all shadow-md w-full sm:w-auto"
+                >
+                  {isAr ? "تطبيق الفلاتر" : "Apply Filters"}
+                </Button>
+              </div>
             </div>
           </div>
 
-          <section className="overflow-x-auto">
+          <section className="overflow-x-auto bg-white rounded-xl border border-border shadow-md">
             {loading && patients.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
                 <Loader2 className="size-10 animate-spin text-primary mb-3" />
@@ -343,36 +370,66 @@ const PatientsList = () => {
                 </Table>
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center py-20 text-center">
-                <div className="size-20 rounded-full bg-primary/10 flex items-center justify-center mb-6">
-                  <X className="size-10 text-primary" />
-                </div>
-                <h3 className="text-2xl font-bold text-foreground mb-2">{t('no_results', T)}</h3>
-                <button
-                  onClick={() => handleOpenDialog('add')}
-                  className="inline-flex items-center justify-center gap-2 rounded-xl text-white bg-primary hover:bg-primary/90 h-11 px-6 shadow-md transition-all font-bold"
-                >
-                  <Plus className="size-5" />
-                  {t('add_button', T)}
-                </button>
-              </div>
+              (() => {
+                const isFiltering = activeSearch !== '' || activeSort !== 'createdAt,desc';
+                return (
+                  <div className="flex flex-col items-center justify-center py-20 text-center bg-white rounded-xl border border-border shadow-md w-full">
+                    <div className="size-20 rounded-full bg-primary/10 flex items-center justify-center mb-6">
+                      <X className="size-10 text-primary" />
+                    </div>
+                    <h3 className="text-2xl font-bold text-foreground mb-2">
+                      {isFiltering 
+                        ? (isAr ? "لا توجد نتائج مطابقة" : "No matching results found")
+                        : (t('no_results', T) || "No patients found")}
+                    </h3>
+                    <p className="text-muted-foreground max-w-md mb-6">
+                      {isFiltering
+                        ? (isAr ? "لم نجد أي مرضى يطابقون فلاتر البحث الحالية. يرجى إعادة ضبط الفلاتر والمحاولة مرة أخرى." : "We couldn't find any patients matching your search filters. Please reset your filters and try again.")
+                        : (isAr ? "البدء بإضافة المرضى الخاصين بك للظهور هنا في القائمة." : "Start by adding patients to see them in this list.")}
+                    </p>
+                    <button
+                      onClick={() => {
+                        if (isFiltering) {
+                          setSearch('');
+                          setSort('createdAt,desc');
+                          setActiveSearch('');
+                          setActiveSort('createdAt,desc');
+                          setCurrentPage(1);
+                        } else {
+                          handleOpenDialog('add');
+                        }
+                      }}
+                      className="inline-flex items-center justify-center gap-2 rounded-xl text-white bg-primary hover:bg-primary/90 h-11 px-6 shadow-md transition-all font-bold"
+                    >
+                      {isFiltering ? (
+                        isAr ? "إعادة ضبط الفلاتر" : "Reset Filters"
+                      ) : (
+                        <>
+                          <Plus className="size-5" />
+                          {t('add_button', T)}
+                        </>
+                      )}
+                    </button>
+                  </div>
+                );
+              })()
             )}
           </section>
 
           {/* Table Footer with Pagination & Page Size */}
           {!loading && !error && patients.length > 0 && (
-            <div className="flex flex-col sm:flex-row items-center justify-between border-t border-border pt-4 mt-2">
+            <div className="flex flex-col sm:flex-row items-center justify-between border-t border-transparent pt-4 mt-2">
               <span className="text-sm text-muted-foreground font-bold">
                 {isAr ? "إجمالي السجلات:" : "Total Records:"} <span className="font-black text-foreground ml-1">{totalElements}</span>
               </span>
               <TableFooter
                 variant="table"
+                className="bg-transparent shadow-none border-none p-0 pb-4 mt-0"
                 totalItems={totalElements}
                 itemsPerPage={pageSize}
                 currentPage={currentPage}
                 onPageChange={setCurrentPage}
                 totalPages={totalPages}
-                className='pb-4'
                 onItemsPerPageChange={(val) => {
                   setPageSize(Number(val));
                   setCurrentPage(1);

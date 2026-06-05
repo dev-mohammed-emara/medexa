@@ -2,6 +2,7 @@ import React from 'react'
 import { useSidebar } from '../../contexts/SidebarContext'
 import Navbar from './Navbar'
 import Sidebar from './Sidebar'
+import SupportTicket from '../ui/SupportTicket'
 
 interface MainLayoutProps {
   children: React.ReactNode
@@ -28,6 +29,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
         {/* Dynamic content */}
         <main className="relative flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-4 lg:p-6 custom-scrollbar scroll-smooth">
           {children}
+          <SupportTicket />
         </main>
       </div>
     </div>

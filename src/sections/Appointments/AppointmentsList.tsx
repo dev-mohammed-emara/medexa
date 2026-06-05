@@ -42,24 +42,9 @@ import { fetchDoctors } from '../../api/doctorApi';
 import { getCookie } from '../../utils/cookie';
 // Mock data for appointments
 const INITIAL_APPOINTMENTS: Appointment[] = [
-  { id: 1, date: new Date(2026, 2, 2), time: '10:00', patientName: 'ahmed', doctorName: 'ahmed', status: 'completed' },
-  { id: 2, date: new Date(2026, 2, 2), time: '11:30', patientName: 'sara', doctorName: 'layla', status: 'completed' },
-  { id: 3, date: new Date(2026, 2, 6), time: '09:00', patientName: 'mahmoud', doctorName: 'ahmed', status: 'completed' },
-  { id: 4, date: new Date(2026, 2, 6), time: '14:00', patientName: 'layla', doctorName: 'layla', status: 'canceled', canceledBy: 'doctor', cancellationReason: 'emergency' },
-  { id: 5, date: new Date(2026, 2, 10), time: '10:00', patientName: 'khaled', doctorName: 'sami', status: 'completed' },
-  { id: 6, date: new Date(2026, 2, 10), time: '11:00', patientName: 'muna', doctorName: 'ahmed', status: 'pending' },
-  { id: 7, date: new Date(2026, 2, 15), time: '09:30', patientName: 'ahmed', doctorName: 'layla', status: 'completed' },
-  { id: 8, date: new Date(2026, 2, 15), time: '16:00', patientName: 'sara', doctorName: 'sami', status: 'canceled', canceledBy: 'patient', cancellationReason: 'unexpected_travel' },
-  { id: 9, date: new Date(2026, 2, 20), time: '13:00', patientName: 'mahmoud', doctorName: 'ahmed', status: 'completed' },
-  { id: 10, date: new Date(2026, 2, 20), time: '15:00', patientName: 'layla', doctorName: 'layla', status: 'completed' },
-  { id: 11, date: new Date(2026, 2, 21), time: '10:30', patientName: 'khaled', doctorName: 'sami', status: 'completed' },
-  { id: 12, date: new Date(2026, 2, 24), time: '09:00', patientName: 'muna', doctorName: 'ahmed', status: 'completed' },
-  { id: 13, date: new Date(2026, 2, 25), time: '14:30', patientName: 'ahmed', doctorName: 'layla', status: 'completed' },
-  { id: 14, date: new Date(2026, 2, 26), time: '11:00', patientName: 'sara', doctorName: 'sami', status: 'completed' },
-  { id: 15, date: new Date(2026, 2, 27), patientName: 'mahmoud', doctorName: 'sami', time: '10:30', status: 'completed' },
-  { id: 16, date: new Date(2026, 2, 27), patientName: 'layla', doctorName: 'ahmed', time: '12:00', status: 'completed' },
-  { id: 17, date: new Date(2026, 2, 27), patientName: 'khaled', doctorName: 'layla', time: '14:00', status: 'canceled', canceledBy: 'secretary', cancellationReason: 'reschedule' },
-  { id: 18, date: new Date(2026, 2, 28), patientName: 'muna', doctorName: 'sami', time: '09:30', status: 'canceled', canceledBy: 'doctor', cancellationReason: 'emergency' },
+  { id: 'dummy-completed', uuid: 'dummy-completed', date: new Date(2026, 2, 2), time: '10:00', patientName: 'ahmed', doctorName: 'ahmed', status: 'completed' },
+  { id: 'dummy-pending', uuid: 'dummy-pending', date: new Date(2026, 2, 10), time: '11:00', patientName: 'muna', doctorName: 'ahmed', status: 'pending' },
+  { id: 'dummy-canceled', uuid: 'dummy-canceled', date: new Date(2026, 2, 15), time: '16:00', patientName: 'sara', doctorName: 'sami', status: 'canceled', canceledBy: 'patient', cancellationReason: 'unexpected_travel' }
 ];
 
 const AppointmentsList = () => {
@@ -118,7 +103,7 @@ const AppointmentsList = () => {
       queryParams.append('month', String(month));
       queryParams.append('year', String(year));
       if (selectedDoctor && selectedDoctor !== 'all') {
-        queryParams.append('doctorId', selectedDoctor);
+        queryParams.append('doctorUuid', selectedDoctor);
       }
 
       const token = getCookie('token');
@@ -440,15 +425,42 @@ const AppointmentsList = () => {
     }
   }, [appointments]);
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (appointmentToDelete) {
-      updateAndBroadcast(prev => prev.map(a =>
-        a.id === appointmentToDelete.id
-          ? { ...a, status: 'canceled', canceledBy: canceledBy as any, cancellationReason }
-          : a
-      ));
-      window.showToast?.(t('toast_delete_success', T));
-      // Removed setIsDialogOpen(false) to keep the underlying modal open as requested
+      try {
+        const token = getCookie('token');
+        const response = await fetch(`/api/appointment/${appointmentToDelete.uuid || appointmentToDelete.id}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+          },
+          body: JSON.stringify({
+            cancelledBy: canceledBy.toUpperCase(),
+            cancellationReason: cancellationReason
+          })
+        });
+
+        if (response.ok) {
+          const resData = await response.json();
+          window.showToast?.(isAr ? 'تم إلغاء الموعد بنجاح' : (resData.message || 'Appointment cancelled successfully'), 'success');
+          loadCalendarAppointments();
+        } else {
+          let errMsg = 'Failed to cancel appointment';
+          try {
+            const errData = await response.json();
+            if (errData.details && Array.isArray(errData.details) && errData.details.length > 0 && errData.details[0].message) {
+              errMsg = errData.details[0].message;
+            } else {
+              errMsg = errData.message || errData.error || errMsg;
+            }
+          } catch (e) {}
+          window.showToast?.(errMsg, 'error');
+        }
+      } catch (error: any) {
+        console.error('Error cancelling appointment:', error);
+        window.showToast?.(error.message || 'Error communicating with server', 'error');
+      }
     }
     setIsDeleteModalOpen(false);
   };
@@ -533,7 +545,7 @@ const AppointmentsList = () => {
           ref={calendarRef}
           data-slot="card"
           className={cn(
-            "transition-[width] duration-700 ease-in-out will-change-[width] flex flex-col gap-6 rounded-2xl border shadow-xl p-6 bg-white border-border opacity-0",
+            "transition-[width] duration-700 ease-in-out will-change-[width] flex flex-col gap-6 rounded-2xl border  p-6 bg-white border-border opacity-0",
             selectedDate ? "lg:w-[67%] w-full" : "w-full",
             canAnimate && "animate-fadeUp animate-delay-200"
           )}
@@ -708,7 +720,7 @@ const AppointmentsList = () => {
             <article
               data-slot="card"
               className={cn(
-                "flex flex-col w-full gap-6 rounded-2xl border shadow-xl p-6 bg-white border-border transition-all duration-500",
+                "flex flex-col w-full gap-6 rounded-2xl border  p-6 bg-white border-border transition-all duration-500",
                 "lg:w-full lg:min-w-[300px]",
                 selectedDate ? "flex animate-fadeRight" : "hidden animate-fadeOutRight",
               )}

@@ -1,4 +1,4 @@
-import { getCookie } from '../utils/cookie'
+import { getCookie, checkTokenOrRedirect } from '../utils/cookie'
 
 export interface StatCardData {
   value: string
@@ -48,6 +48,7 @@ export interface FinancialStatisticsResponse {
 }
 
 const getHeaders = () => {
+  checkTokenOrRedirect()
   const token = getCookie('token')
   return {
     'Content-Type': 'application/json',

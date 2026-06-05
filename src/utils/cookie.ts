@@ -2,6 +2,31 @@
  * Light-weight utilities for managing browser cookies.
  */
 
+// Helper function to parse JWT token
+export const parseJWT = (token: string): any => {
+  try {
+    const base64Url = token.split('.')[1]
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    )
+    return JSON.parse(jsonPayload)
+  } catch (error) {
+    console.error('Failed to parse JWT:', error)
+    return null
+  }
+}
+
+export const isTokenExpired = (token: string): boolean => {
+  const decoded = parseJWT(token)
+  if (!decoded || !decoded.exp) return true
+  // exp is in seconds, Date.now() is in milliseconds
+  return decoded.exp * 1000 < Date.now()
+}
+
 export const getCookie = (name: string): string | null => {
   const nameEQ = name + "=";
   const ca = document.cookie.split(';');
@@ -36,3 +61,19 @@ export const deleteCookie = (name: string): void => {
   // Also remove from localStorage
   localStorage.removeItem(name);
 };
+
+export const checkTokenOrRedirect = (): void => {
+  const token = getCookie('token')
+  if (!token || isTokenExpired(token)) {
+    // Perform cleanup
+    deleteCookie('token')
+    deleteCookie('refreshToken')
+    localStorage.removeItem('medexa_user')
+    // Redirect
+    if (window.location.pathname !== '/login') {
+      window.location.href = '/login'
+    }
+    throw new Error('Session expired. Redirecting to login...')
+  }
+}
+

@@ -13,7 +13,7 @@ interface ModalProps {
   message?: string;
   confirmText: string;
   cancelText: string;
-  variant?: 'danger' | 'primary';
+  variant?: 'danger' | 'primary' | 'warning';
   children?: React.ReactNode;
   footer?: React.ReactNode;
   isConfirmDisabled?: boolean;
@@ -109,7 +109,7 @@ const Modal = ({
         data-slot="dialog-overlay"
         aria-hidden="true"
         className={cn(
-          "fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50",
+          "fixed inset-0 z-600 flex items-center justify-center p-4 bg-black/50",
           isClosing ? "animate-fadeOut" : "animate-fade"
         )}
         dir="rtl"
@@ -132,23 +132,27 @@ const Modal = ({
         >
           <ScrollLockWrapper className="relative flex-1 overflow-y-auto p-6 scrollbar-hide">
             {!hideHeaderIcon && (
-              <header data-slot="dialog-header" className="flex flex-col gap-2 items-center text-center mb-6">
-                <div className={`p-3 rounded-2xl ${variant === 'danger' ? 'bg-destructive/10 text-destructive' : 'bg-emerald-100 text-emerald-600'}`}>
-                  {variant === 'danger' ? <AlertTriangle className="size-6" /> : <IoMdCheckmarkCircleOutline className="size-6" />}
+              <header data-slot="dialog-header" className="flex flex-col gap-2 items-center text-center mb-3">
+                <div className={`p-2.5 rounded-xl ${
+                  variant === 'danger' ? 'bg-destructive/10 text-destructive' :
+                  variant === 'warning' ? 'bg-yellow-500 text-black' :
+                  'bg-emerald-100 text-emerald-600'
+                }`}>
+                  {variant === 'danger' || variant === 'warning' ? <AlertTriangle className="size-5" /> : <IoMdCheckmarkCircleOutline className="size-5" />}
                 </div>
               </header>
             )}
 
             {title && (
               <div className={cn(
-                "flex flex-col gap-2 mb-6",
-                variant === 'danger' ? "items-center text-center" : "items-start text-start"
+                "flex flex-col gap-1.5 mb-4",
+                (variant === 'danger' || variant === 'warning') ? "items-center text-center" : "items-start text-start"
               )}>
-                <h3 id={titleId.current} className="text-2xl font-semibold text-[#1A2B3C]">
+                <h3 id={titleId.current} className="text-xl font-bold text-[#1A2B3C]">
                   {title}
                 </h3>
                 {message && (
-                  <p id={descriptionId.current} className="text-sm text-gray-500 text-balance">
+                  <p id={descriptionId.current} className="text-xs text-gray-500 text-balance">
                     {message}
                   </p>
                 )}
@@ -186,10 +190,12 @@ const Modal = ({
                 className={`flex-1 h-12 rounded-xl font-bold transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${
                   variant === 'danger'
                   ? 'bg-destructive text-white hover:bg-destructive/90 shadow-lg shadow-destructive/20'
+                  : variant === 'warning'
+                  ? 'bg-yellow-500 hover:bg-yellow-600 text-black hover:text-black shadow-lg shadow-yellow-500/20'
                   : 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg shadow-emerald-200/50'
                 }`}
               >
-                {variant !== 'danger' && <Check className="size-4" />}
+                {variant !== 'danger' && variant !== 'warning' && <Check className="size-4" />}
                 {confirmText}
               </button>
               <button

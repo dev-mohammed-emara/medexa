@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react'
-import { deleteCookie, getCookie, setCookie } from '../utils/cookie'
+import { deleteCookie, getCookie, setCookie, isTokenExpired } from '../utils/cookie'
 
 export interface UserProfile {
   uuid?: string
@@ -55,12 +55,15 @@ const parseJWT = (token: string): any => {
 const extractPermissionsFromJWT = (token: string): string[] => {
   const decoded = parseJWT(token)
   if (!decoded || !decoded.authorities) {
-    return ['MANAGE_CLINIC']
+    return ['MANAGE_CLINIC', 'MANAGE_APPOINTMENTS']
   }
   const permissions = decoded.authorities.split(',').map((p: string) => p.trim())
   // Add MANAGE_CLINIC as default if not already present
   if (!permissions.includes('MANAGE_CLINIC')) {
     permissions.push('MANAGE_CLINIC')
+  }
+  if (!permissions.includes('MANAGE_APPOINTMENTS')) {
+    permissions.push('MANAGE_APPOINTMENTS')
   }
   return permissions
 }
@@ -72,10 +75,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return saved ? JSON.parse(saved) : null
   })
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    return !!getCookie('token')
+    const token = getCookie('token')
+    return !!token && !isTokenExpired(token)
   })
   const [loading, setLoading] = useState<boolean>(() => {
-    return !!getCookie('token') && !!getCookie('refreshToken')
+    const token = getCookie('token')
+    return !!token && !isTokenExpired(token) && !!getCookie('refreshToken')
   })
 
   const refreshTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -188,6 +193,56 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const performInitialRefresh = async () => {
+      const token = getCookie('token')
+      if (token && isTokenExpired(token)) {
+        console.warn("Initial load token expired, logging out...")
+        await logout()
+        setLoading(false)
+        return
+      }
+
+      // If token is valid, schedule refresh for later and finish loading immediately
+      if (token && !isTokenExpired(token)) {
+        try {
+          const decoded = parseJWT(token)
+          if (decoded && decoded.exp) {
+            const expiresInSeconds = decoded.exp - Math.floor(Date.now() / 1000)
+            if (expiresInSeconds > 0) {
+              scheduleTokenRefresh(expiresInSeconds)
+            }
+          }
+
+          // Fetch user data from /api/doctor/me
+          const response = await fetch('/api/doctor/me', {
+            method: 'GET',
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          })
+          if (response.ok) {
+            const data = await response.json()
+            const permissions = decoded?.roles || decoded?.permissions || []
+            const userProfile: UserProfile = {
+              ...data.user,
+              specialty: data.specialty,
+              summary: data.summary,
+              uuid: data.uuid,
+              email: decoded?.username || data.user?.email || '',
+              username: decoded?.username,
+              sub: decoded?.sub,
+              clinicId: decoded?.clinicId,
+              permissions: permissions,
+            }
+            setUser(userProfile)
+            localStorage.setItem('medexa_user', JSON.stringify(userProfile))
+          }
+        } catch (e) {
+          console.error("Failed to schedule refresh or fetch doctor profile from existing token:", e)
+        }
+        setLoading(false)
+        return
+      }
+
       if (isAuthenticated && getCookie('refreshToken')) {
         try {
           await refresh()
@@ -253,34 +308,59 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const decodedToken = parseJWT(token)
     const permissions = extractPermissionsFromJWT(token)
 
-    // Save user data (prefer JWT data, fallback to response data, then defaults)
+    // Save user data (prefer /api/doctor/me, fallback to JWT/response data, then defaults)
     let userProfile: UserProfile;
-    if (data.user) {
-      userProfile = {
-        ...data.user,
-        email: decodedToken?.username || data.user.email || email,
-        username: decodedToken?.username,
-        sub: decodedToken?.sub,
-        clinicId: decodedToken?.clinicId,
-        permissions: permissions,
-      };
-    } else {
-      const savedUserStr = localStorage.getItem('medexa_user');
-      const savedUser = savedUserStr ? JSON.parse(savedUserStr) : null;
-      userProfile = {
-        firstName: savedUser?.firstName || "Ahmad",
-        surName: savedUser?.surName || "Mohammed",
-        lastName: savedUser?.lastName || "Almasri",
-        email: decodedToken?.username || email,
-        phoneNumber: savedUser?.phoneNumber || "0791234567",
-        gender: savedUser?.gender || "MALE",
-        dateOfBirth: savedUser?.dateOfBirth || "1985-06-09",
-        role: "ROLE_CLINIC_OWNER",
-        username: decodedToken?.username,
-        sub: decodedToken?.sub,
-        clinicId: decodedToken?.clinicId,
-        permissions: permissions,
-      };
+    try {
+      const profileRes = await fetch('/api/doctor/me', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      if (profileRes.ok) {
+        const profileData = await profileRes.json()
+        userProfile = {
+          ...profileData.user,
+          specialty: profileData.specialty,
+          summary: profileData.summary,
+          uuid: profileData.uuid,
+          email: decodedToken?.username || profileData.user?.email || email,
+          username: decodedToken?.username,
+          sub: decodedToken?.sub,
+          clinicId: decodedToken?.clinicId,
+          permissions: permissions,
+        }
+      } else {
+        throw new Error("Failed to fetch doctor profile")
+      }
+    } catch (err) {
+      if (data.user) {
+        userProfile = {
+          ...data.user,
+          email: decodedToken?.username || data.user.email || email,
+          username: decodedToken?.username,
+          sub: decodedToken?.sub,
+          clinicId: decodedToken?.clinicId,
+          permissions: permissions,
+        };
+      } else {
+        const savedUserStr = localStorage.getItem('medexa_user');
+        const savedUser = savedUserStr ? JSON.parse(savedUserStr) : null;
+        userProfile = {
+          firstName: savedUser?.firstName || "Ahmad",
+          surName: savedUser?.surName || "Mohammed",
+          lastName: savedUser?.lastName || "Almasri",
+          email: decodedToken?.username || email,
+          phoneNumber: savedUser?.phoneNumber || "0791234567",
+          gender: savedUser?.gender || "MALE",
+          dateOfBirth: savedUser?.dateOfBirth || "1985-06-09",
+          role: "ROLE_CLINIC_OWNER",
+          username: decodedToken?.username,
+          sub: decodedToken?.sub,
+          clinicId: decodedToken?.clinicId,
+          permissions: permissions,
+        };
+      }
     }
     setUser(userProfile)
     localStorage.setItem('medexa_user', JSON.stringify(userProfile))
@@ -325,7 +405,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         gender: ownerUser.gender,
         dateOfBirth: ownerUser.dateOfBirth,
         role: "ROLE_CLINIC_OWNER",
-        permissions: ['MANAGE_CLINIC']
+        permissions: ['MANAGE_CLINIC','MANAGE_TRANSACTIONS','MANAGE_DOCTORS','MANAGE_SECRETARIES','MANAGE_APPOINTMENTS']
       }
       setUser(userProfile)
       localStorage.setItem('medexa_user', JSON.stringify(userProfile))
