@@ -13,11 +13,7 @@ import { useState } from 'react';
 import { ImBlocked } from 'react-icons/im';
 import { IoMdCheckmarkCircleOutline } from 'react-icons/io';
 
-declare global {
-  interface Window {
-    showToast: (message: string, type?: 'success' | 'error' | 'info') => void;
-  }
-}
+
 
 interface Category {
   id: number;
