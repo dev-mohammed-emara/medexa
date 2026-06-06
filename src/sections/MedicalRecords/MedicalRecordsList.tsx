@@ -61,7 +61,7 @@ const MedicalRecordsList = () => {
       queryParams.append('size', String(itemsPerPage));
       queryParams.append('sort', sort);
 
-      const response = await fetch(`/api/medical-records?${queryParams.toString()}`, {
+      const response = await fetch(`http://178.128.198.121:8080/api/v1/medical-records?${queryParams.toString()}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',

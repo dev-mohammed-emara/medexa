@@ -61,7 +61,7 @@ export const fetchClinicStatistics = async (fromDate: string, toDate: string): P
   queryParams.append('fromDate', fromDate)
   queryParams.append('toDate', toDate)
 
-  const url = `/api/statistics?${queryParams.toString()}`
+  const url = `http://178.128.198.121:8080/api/v1/statistics?${queryParams.toString()}`
   const response = await fetch(url, {
     method: 'GET',
     headers: getHeaders()
@@ -79,7 +79,7 @@ export const fetchFinancialTransactions = async (fromDate: string, toDate: strin
   queryParams.append('fromDate', fromDate)
   queryParams.append('toDate', toDate)
 
-  const url = `/api/statistics/transactions?${queryParams.toString()}`
+  const url = `http://178.128.198.121:8080/api/v1/statistics/transactions?${queryParams.toString()}`
   const response = await fetch(url, {
     method: 'GET',
     headers: getHeaders()

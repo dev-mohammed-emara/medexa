@@ -97,7 +97,7 @@ const PasswordChangeDialog = ({ isOpen, onClose }: PasswordChangeDialogProps) =>
     setLoading(true);
     try {
       const token = getCookie('token');
-      const response = await fetch('/api/auth/password/change', {
+      const response = await fetch('http://178.128.198.121:8080/api/v1/auth/password/change', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

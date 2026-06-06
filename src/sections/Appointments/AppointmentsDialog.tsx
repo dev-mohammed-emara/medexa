@@ -85,7 +85,7 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, onC
       const loadDetails = async () => {
         try {
           const token = getCookie('token');
-          const res = await fetch(`/api/appointment/${appointmentUuid}`, {
+          const res = await fetch(`http://178.128.198.121:8080/api/v1/appointment/${appointmentUuid}`, {
             headers: {
               ...(token ? { 'Authorization': `Bearer ${token}` } : {})
             }
@@ -191,7 +191,7 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, onC
 
         try {
           const token = getCookie('token');
-          const res = await fetch('/api/appointment-type', {
+          const res = await fetch('http://178.128.198.121:8080/api/v1/appointment-type', {
             headers: {
               ...(token ? { 'Authorization': `Bearer ${token}` } : {})
             }
@@ -280,7 +280,7 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, onC
 
     const isEdit = mode === 'edit';
     const appointmentUuid = initialData?.uuid || initialData?.id;
-    const url = isEdit ? `/api/appointment/${appointmentUuid}` : '/api/appointment';
+    const url = isEdit ? `http://178.128.198.121:8080/api/v1/appointment/${appointmentUuid}` : 'http://178.128.198.121:8080/api/v1/appointment';
     const method = isEdit ? 'PUT' : 'POST';
 
     const payload = isEdit ? {

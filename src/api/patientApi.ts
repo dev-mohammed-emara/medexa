@@ -47,7 +47,7 @@ export const fetchPatients = async (params: FetchPatientsParams = {}): Promise<F
   if (params.search) queryParams.append('search', params.search)
   if (params.sort) queryParams.append('sort', params.sort)
 
-  const url = `/api/patient?${queryParams.toString()}`
+  const url = `http://178.128.198.121:8080/api/v1/patient?${queryParams.toString()}`
   const response = await fetch(url, {
     method: 'GET',
     headers: getHeaders()
@@ -61,7 +61,7 @@ export const fetchPatients = async (params: FetchPatientsParams = {}): Promise<F
 }
 
 export const fetchPatientByUuid = async (uuid: string): Promise<ApiPatient> => {
-  const response = await fetch(`/api/patient/${uuid}`, {
+  const response = await fetch(`http://178.128.198.121:8080/api/v1/patient/${uuid}`, {
     method: 'GET',
     headers: getHeaders()
   })
@@ -74,7 +74,7 @@ export const fetchPatientByUuid = async (uuid: string): Promise<ApiPatient> => {
 }
 
 export const createPatient = async (body: any): Promise<ApiPatient> => {
-  const response = await fetch('/api/patient', {
+  const response = await fetch('http://178.128.198.121:8080/api/v1/patient', {
     method: 'POST',
     headers: getHeaders(),
     body: JSON.stringify(body)
@@ -95,7 +95,7 @@ export const createPatient = async (body: any): Promise<ApiPatient> => {
 }
 
 export const updatePatient = async (uuid: string, body: any): Promise<ApiPatient> => {
-  const response = await fetch(`/api/patient/${uuid}`, {
+  const response = await fetch(`http://178.128.198.121:8080/api/v1/patient/${uuid}`, {
     method: 'PUT',
     headers: getHeaders(),
     body: JSON.stringify(body)
@@ -116,7 +116,7 @@ export const updatePatient = async (uuid: string, body: any): Promise<ApiPatient
 }
 
 export const deletePatient = async (uuid: string): Promise<void> => {
-  const response = await fetch(`/api/patient/${uuid}`, {
+  const response = await fetch(`http://178.128.198.121:8080/api/v1/patient/${uuid}`, {
     method: 'DELETE',
     headers: getHeaders()
   })

@@ -83,7 +83,7 @@ const AddOperationModal = ({ isOpen, onClose, onSuccess, mode = 'add', transacti
               'Content-Type': 'application/json',
               ...(token ? { 'Authorization': `Bearer ${token}` } : {})
             };
-            const response = await fetch(`/api/financial/transactions/${transactionUuid}`, {
+            const response = await fetch(`http://178.128.198.121:8080/api/v1/financial/transactions/${transactionUuid}`, {
               method: 'GET',
               headers
             });
@@ -138,7 +138,7 @@ const AddOperationModal = ({ isOpen, onClose, onSuccess, mode = 'add', transacti
         ...(token ? { 'Authorization': `Bearer ${token}` } : {})
       };
 
-      const response = await fetch('/api/financial/transactions', {
+      const response = await fetch('http://178.128.198.121:8080/api/v1/financial/transactions', {
         method: 'POST',
         headers,
         body: JSON.stringify(payload)
@@ -187,7 +187,7 @@ const AddOperationModal = ({ isOpen, onClose, onSuccess, mode = 'add', transacti
         ...(token ? { 'Authorization': `Bearer ${token}` } : {})
       };
 
-      const response = await fetch(`/api/financial/transactions/${transactionUuid}`, {
+      const response = await fetch(`http://178.128.198.121:8080/api/v1/financial/transactions/${transactionUuid}`, {
         method: 'PUT',
         headers,
         body: JSON.stringify(payload)

@@ -46,7 +46,7 @@ const getHeaders = () => {
 }
 
 export const fetchClinicMe = async (): Promise<ApiClinic> => {
-  const response = await fetch('/api/clinic/me', {
+  const response = await fetch('http://178.128.198.121:8080/api/v1/clinic/me', {
     method: 'GET',
     headers: getHeaders()
   })
@@ -59,7 +59,7 @@ export const fetchClinicMe = async (): Promise<ApiClinic> => {
 }
 
 export const updateClinicMe = async (body: UpdateClinicBody): Promise<ApiClinic> => {
-  const response = await fetch('/api/clinic/me', {
+  const response = await fetch('http://178.128.198.121:8080/api/v1/clinic/me', {
     method: 'PUT',
     headers: getHeaders(),
     body: JSON.stringify(body)
@@ -80,7 +80,7 @@ export const updateClinicMe = async (body: UpdateClinicBody): Promise<ApiClinic>
 }
 
 export const fetchInsurances = async (): Promise<ApiInsurance[]> => {
-  const response = await fetch('/api/insurance', {
+  const response = await fetch('http://178.128.198.121:8080/api/v1/insurance', {
     method: 'GET',
     headers: getHeaders()
   })
@@ -93,7 +93,7 @@ export const fetchInsurances = async (): Promise<ApiInsurance[]> => {
 }
 
 export const updateClinicSettings = async (body: ClinicSettings): Promise<ApiClinic> => {
-  const response = await fetch('/api/clinic/settings', {
+  const response = await fetch('http://178.128.198.121:8080/api/v1/clinic/settings', {
     method: 'PATCH',
     headers: getHeaders(),
     body: JSON.stringify(body)

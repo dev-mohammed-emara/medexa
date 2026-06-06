@@ -107,7 +107,7 @@ const AppointmentsList = () => {
       }
 
       const token = getCookie('token');
-      const response = await fetch(`/api/appointment/calendar?${queryParams.toString()}`, {
+      const response = await fetch(`http://178.128.198.121:8080/api/v1/appointment/calendar?${queryParams.toString()}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -429,7 +429,7 @@ const AppointmentsList = () => {
     if (appointmentToDelete) {
       try {
         const token = getCookie('token');
-        const response = await fetch(`/api/appointment/${appointmentToDelete.uuid || appointmentToDelete.id}`, {
+        const response = await fetch(`http://178.128.198.121:8080/api/v1/appointment/${appointmentToDelete.uuid || appointmentToDelete.id}`, {
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json',
