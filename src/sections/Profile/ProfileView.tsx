@@ -244,7 +244,7 @@ const ProfileView = () => {
 
   const loadSchedule = async () => {
     try {
-      const response = await fetch('http://178.128.198.121:8080/api/v1/clinicschedule/me', {
+      const response = await fetch('/api/clinicschedule/me', {
         method: 'GET',
         headers: getHeaders()
       });
@@ -320,7 +320,7 @@ const ProfileView = () => {
 
   const loadClinicInsurances = async () => {
     try {
-      const response = await fetch('http://178.128.198.121:8080/api/v1/clinic/insurance', {
+      const response = await fetch('/api/clinic/insurance', {
         method: 'GET',
         headers: getHeaders()
       });
@@ -360,7 +360,7 @@ const ProfileView = () => {
     });
 
     try {
-      const endpoint = 'http://178.128.198.121:8080/api/v1/insurance/clinic';
+      const endpoint = '/api/insurance/clinic';
       const method = isActive ? 'DELETE' : 'POST';
       const response = await fetch(endpoint, {
         method,
@@ -539,7 +539,7 @@ const ProfileView = () => {
     }).filter(Boolean);
 
     try {
-      const response = await fetch('http://178.128.198.121:8080/api/v1/clinicschedule/assignschedule', {
+      const response = await fetch('/api/clinicschedule/assignschedule', {
         method: 'PUT',
         headers: getHeaders(),
         body: JSON.stringify({ schedules: schedulesPayload })

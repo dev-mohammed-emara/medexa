@@ -35,7 +35,7 @@ const SupportTicket = () => {
 
     try {
       const token = getCookie('token');
-      const response = await fetch('http://178.128.198.121:8080/api/v1/support-ticket', {
+      const response = await fetch('/api/support-ticket', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

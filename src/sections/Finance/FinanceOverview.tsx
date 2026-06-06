@@ -111,7 +111,7 @@ const FinanceOverview = () => {
       queryParams.append('size', String(itemsPerPage));
       queryParams.append('sort', sort);
 
-      const response = await fetch(`http://178.128.198.121:8080/api/v1/financial/transactions?${queryParams.toString()}`, {
+      const response = await fetch(`/api/financial/transactions?${queryParams.toString()}`, {
         method: 'GET',
         headers: getHeaders()
       });
@@ -132,7 +132,7 @@ const FinanceOverview = () => {
       queryParams.append('fromDate', fromDate);
       queryParams.append('toDate', toDate);
 
-      const response = await fetch(`http://178.128.198.121:8080/api/v1/statistics/transaction?${queryParams.toString()}`, {
+      const response = await fetch(`/api/statistics/transaction?${queryParams.toString()}`, {
         method: 'GET',
         headers: getHeaders()
       });

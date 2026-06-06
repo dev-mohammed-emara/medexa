@@ -62,7 +62,7 @@ const LoginForm = () => {
       }
       setIsLoading(true)
       try {
-        const resp = await fetch('http://178.128.198.121:8080/api/v1/auth/password/request-reset', {
+        const resp = await fetch('/api/auth/password/request-reset', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email })

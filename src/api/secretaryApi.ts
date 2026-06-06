@@ -54,7 +54,7 @@ export const fetchSecretaries = async (params: FetchSecretariesParams = {}): Pro
   if (params.sort) queryParams.append('sort', params.sort)
   if (params.status) queryParams.append('status', params.status)
 
-  const url = `http://178.128.198.121:8080/api/v1/secretary?${queryParams.toString()}`
+  const url = `/api/secretary?${queryParams.toString()}`
   const response = await fetch(url, {
     method: 'GET',
     headers: getHeaders()
@@ -68,7 +68,7 @@ export const fetchSecretaries = async (params: FetchSecretariesParams = {}): Pro
 }
 
 export const fetchSecretaryByUuid = async (uuid: string): Promise<ApiSecretary> => {
-  const response = await fetch(`http://178.128.198.121:8080/api/v1/secretary/${uuid}`, {
+  const response = await fetch(`/api/secretary/${uuid}`, {
     method: 'GET',
     headers: getHeaders()
   })
@@ -81,7 +81,7 @@ export const fetchSecretaryByUuid = async (uuid: string): Promise<ApiSecretary> 
 }
 
 export const createSecretary = async (body: any): Promise<ApiSecretary> => {
-  const response = await fetch('http://178.128.198.121:8080/api/v1/secretary', {
+  const response = await fetch('/api/secretary', {
     method: 'POST',
     headers: getHeaders(),
     body: JSON.stringify(body)
@@ -102,7 +102,7 @@ export const createSecretary = async (body: any): Promise<ApiSecretary> => {
 }
 
 export const updateSecretary = async (uuid: string, body: any): Promise<ApiSecretary> => {
-  const response = await fetch(`http://178.128.198.121:8080/api/v1/secretary/${uuid}`, {
+  const response = await fetch(`/api/secretary/${uuid}`, {
     method: 'PUT',
     headers: getHeaders(),
     body: JSON.stringify(body)
@@ -123,7 +123,7 @@ export const updateSecretary = async (uuid: string, body: any): Promise<ApiSecre
 }
 
 export const deleteSecretary = async (uuid: string): Promise<void> => {
-  const response = await fetch(`http://178.128.198.121:8080/api/v1/clinic/me/${uuid}?userType=SECRETARY`, {
+  const response = await fetch(`/api/clinic/me/${uuid}?userType=SECRETARY`, {
     method: 'DELETE',
     headers: getHeaders()
   })

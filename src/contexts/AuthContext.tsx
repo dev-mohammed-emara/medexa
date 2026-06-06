@@ -109,7 +109,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw new Error('No refresh token available')
     }
 
-    const response = await fetch('http://178.128.198.121:8080/api/v1/auth/refresh', {
+    const response = await fetch('/api/auth/refresh', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -213,7 +213,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
 
           // Fetch user data from /api/doctor/me
-          const response = await fetch('http://178.128.198.121:8080/api/v1/doctor/me', {
+          const response = await fetch('/api/doctor/me', {
             method: 'GET',
             headers: {
               'Authorization': `Bearer ${token}`
@@ -266,7 +266,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [])
 
   const login = async (email: string, password: string) => {
-    const response = await fetch('http://178.128.198.121:8080/api/v1/auth/login', {
+    const response = await fetch('/api/auth/login', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -311,7 +311,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Save user data (prefer /api/doctor/me, fallback to JWT/response data, then defaults)
     let userProfile: UserProfile;
     try {
-      const profileRes = await fetch('http://178.128.198.121:8080/api/v1/doctor/me', {
+      const profileRes = await fetch('/api/doctor/me', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -373,7 +373,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }
 
   const register = async (payload: Record<string, any>) => {
-    const response = await fetch('http://178.128.198.121:8080/api/v1/clinic', {
+    const response = await fetch('/api/clinic', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -427,7 +427,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const token = getCookie('token')
     if (token) {
       try {
-        const res = await fetch('http://178.128.198.121:8080/api/v1/auth/logout', {
+        const res = await fetch('/api/auth/logout', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

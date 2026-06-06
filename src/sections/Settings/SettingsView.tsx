@@ -99,7 +99,7 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
           'Content-Type': 'application/json',
           ...(token ? { 'Authorization': `Bearer ${token}` } : {})
         };
-        const response = await fetch('http://178.128.198.121:8080/api/v1/clinic/me', {
+        const response = await fetch('/api/clinic/me', {
           method: 'GET',
           headers
         });
@@ -127,7 +127,7 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
           'Content-Type': 'application/json',
           ...(token ? { 'Authorization': `Bearer ${token}` } : {})
         };
-        const response = await fetch('http://178.128.198.121:8080/api/v1/clinicschedule/me', {
+        const response = await fetch('/api/clinicschedule/me', {
           method: 'GET',
           headers
         });
@@ -232,7 +232,7 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
         ...(token ? { 'Authorization': `Bearer ${token}` } : {})
       };
 
-      const response = await fetch('http://178.128.198.121:8080/api/v1/clinic/settings', {
+      const response = await fetch('/api/clinic/settings', {
         method: 'PATCH',
         headers,
         body: JSON.stringify({
@@ -282,7 +282,7 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
     }).filter(Boolean);
 
     try {
-      const response = await fetch('http://178.128.198.121:8080/api/v1/clinicschedule/assignschedule', {
+      const response = await fetch('/api/clinicschedule/assignschedule', {
         method: 'PUT',
         headers,
         body: JSON.stringify({ schedules: schedulesPayload })
