@@ -14,6 +14,15 @@ const Toast = ({ message, type = 'success', stackIndex, onClose }: ToastProps) =
   const [mounted, setMounted] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
 
+  const hasModalOpen = typeof document !== 'undefined' ? !!document.querySelector('[role="dialog"]') : false;
+
+  const handleClose = () => {
+    setIsExiting(true);
+    setTimeout(() => {
+      onClose();
+    }, 250); // transition duration
+  };
+
   useEffect(() => {
     const timeout = setTimeout(() => {
       setMounted(true);
@@ -29,23 +38,18 @@ const Toast = ({ message, type = 'success', stackIndex, onClose }: ToastProps) =
     };
   }, []);
 
-  const handleClose = () => {
-    setIsExiting(true);
-    setTimeout(() => {
-      onClose();
-    }, 250); // transition duration
-  };
-
   const icons = {
     success: <CheckCircle2 className="size-5 text-emerald-500 shrink-0" />,
     error: <AlertCircle className="size-5 text-destructive shrink-0" />,
-    info: <Info className="size-5 text-primary shrink-0" />
+    info: <Info className="size-5 text-amber-500 shrink-0" />
   };
 
   const styles = {
     success: 'border-emerald-500/20 bg-emerald-50/90 text-emerald-900',
-    error: 'border-destructive/20 bg-destructive/5 text-destructive',
-    info: 'border-primary/20 bg-primary/5 text-primary'
+    error: hasModalOpen 
+      ? 'border-destructive/20 bg-white/50 text-destructive' 
+      : 'border-destructive/20 bg-destructive/5 text-destructive',
+    info: 'border-amber-500/20 bg-amber-50/90 text-amber-900'
   };
 
   // Stack index 0 is top card, 1 is secondary, 2 is tertiary

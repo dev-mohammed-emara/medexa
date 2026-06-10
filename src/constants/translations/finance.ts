@@ -57,7 +57,8 @@ export const financeTranslations = {
     action_edit: "تعديل",
     confirm_edits: "تأكيد التعديلات",
     modal_title_view: "عرض العملية المالية",
-    modal_title_edit: "تعديل العملية المالية"
+    modal_title_edit: "تعديل العملية المالية",
+    no_results: "لا توجد عمليات مالية تطابق بحثك."
   },
   en: {
     page_title: "Finance",
@@ -116,6 +117,7 @@ export const financeTranslations = {
     action_edit: "Edit",
     confirm_edits: "Confirm Edits",
     modal_title_view: "View Financial Operation",
-    modal_title_edit: "Edit Financial Operation"
+    modal_title_edit: "Edit Financial Operation",
+    no_results: "No financial operations match your search."
   }
 };

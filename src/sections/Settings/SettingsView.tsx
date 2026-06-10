@@ -186,9 +186,21 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
   const addPeriod = (dayId: string) => {
     setDays(prev => prev.map(day => {
       if (day.id === dayId) {
+        const lastPeriod = day.periods[day.periods.length - 1];
+        let newPeriod;
+        if (lastPeriod) {
+          const from = lastPeriod.to;
+          const [hStr, mStr] = from.split(':');
+          let h = parseInt(hStr) + 2;
+          if (h >= 24) h = h % 24;
+          const to = `${h.toString().padStart(2, '0')}:${mStr || '00'}`;
+          newPeriod = { id: Date.now().toString(), from, to };
+        } else {
+          newPeriod = { id: Date.now().toString(), from: '08:00', to: '10:00' };
+        }
         return {
           ...day,
-          periods: [...day.periods, { id: Date.now().toString(), from: '08:00', to: '18:00' }]
+          periods: [...day.periods, newPeriod]
         };
       }
       return day;
@@ -261,6 +273,29 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
   };
 
   const handleSaveDaySchedule = async (dayId: string) => {
+    const day = days.find(d => d.id === dayId);
+    if (day) {
+      const seen = new Set<string>();
+      let hasDuplicates = false;
+      for (const p of day.periods) {
+        const key = `${p.from}-${p.to}`;
+        if (seen.has(key)) {
+          hasDuplicates = true;
+          break;
+        }
+        seen.add(key);
+      }
+      if (hasDuplicates) {
+        window.showToast(
+          isAr 
+            ? 'لا يمكن إضافة فترات عمل متطابقة لنفس اليوم' 
+            : 'Cannot have identical working periods on the same day', 
+          'info'
+        );
+        return;
+      }
+    }
+
     const token = getCookie('token');
     const headers = {
       'Content-Type': 'application/json',

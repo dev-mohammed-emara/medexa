@@ -1,4 +1,5 @@
 import { getCookie, checkTokenOrRedirect } from '../utils/cookie'
+import { getErrorMessage } from '../utils/error'
 
 export interface ApiPatient {
   uuid?: string
@@ -84,7 +85,7 @@ export const createPatient = async (body: any): Promise<ApiPatient> => {
     let errorMessage = 'Failed to create patient'
     try {
       const errorData = await response.json()
-      errorMessage = errorData.message || errorData.error || errorMessage
+      errorMessage = getErrorMessage(errorData, errorMessage)
     } catch (e) {
       // ignore
     }
@@ -105,7 +106,7 @@ export const updatePatient = async (uuid: string, body: any): Promise<ApiPatient
     let errorMessage = 'Failed to update patient'
     try {
       const errorData = await response.json()
-      errorMessage = errorData.message || errorData.error || errorMessage
+      errorMessage = getErrorMessage(errorData, errorMessage)
     } catch (e) {
       // ignore
     }

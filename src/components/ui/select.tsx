@@ -6,6 +6,7 @@ import { Select as SelectPrimitive } from "radix-ui"
 import { cn } from "../../utils/cn"
 import { ChevronDownIcon, CheckIcon, Search } from "lucide-react"
 import ScrollLockWrapper from "./ScrollLockWrapper"
+import { useLanguage } from "../../contexts/LanguageContext"
 
 const getElementText = (node: React.ReactNode): string => {
   if (node == null) return ""
@@ -34,6 +35,7 @@ function SelectGroup({
   )
 }
 
+// @ts-ignore
 function SelectValue({
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Value>) {
@@ -63,8 +65,6 @@ function SelectTrigger({
     </SelectPrimitive.Trigger>
   )
 }
-
-import { useLanguage } from "../../contexts/LanguageContext"
 
 function SelectContent({
   smallZ = false,
@@ -96,6 +96,16 @@ function SelectContent({
   }, [children])
 
   const showSearch = itemsCount > 10
+
+  // Focus search input on mount when list is open
+  React.useEffect(() => {
+    if (showSearch) {
+      const timer = setTimeout(() => {
+        inputRef.current?.focus()
+      }, 50)
+      return () => clearTimeout(timer)
+    }
+  }, [showSearch])
 
   const filteredChildren = React.useMemo(() => {
     if (!search || !showSearch) return children
@@ -138,13 +148,6 @@ function SelectContent({
         )}
         position={position}
         align={align}
-        // @ts-ignore
-        onOpenAutoFocus={(e: any) => {
-          if (showSearch) {
-            e.preventDefault()
-            inputRef.current?.focus()
-          }
-        }}
         onKeyDown={(e) => {
           if (showSearch && e.key === "ArrowUp") {
             const items = e.currentTarget.querySelectorAll('[data-slot="select-item"]')
@@ -254,7 +257,6 @@ function SelectSeparator({
     />
   )
 }
-
 
 export {
   Select,

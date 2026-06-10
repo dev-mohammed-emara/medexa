@@ -142,7 +142,7 @@ const RegisterForm = () => {
           phoneNumber: formatPhone(formData.ownerPhone),
           gender: (formData.gender === "male" ? "MALE" : "FEMALE") as any,
           dateOfBirth: formData.dob,
-          permissions: ['MANAGE_DOCTORS', 'MANAGE_SECRETARIES', 'MANAGE_TRANSACTIONS']
+          // permissions: ['MANAGE_DOCTORS', 'MANAGE_SECRETARIES', 'MANAGE_TRANSACTIONS']
         },
         specialty: formData.ownerSpecialty,
         summary: formData.ownerSummary
@@ -323,21 +323,14 @@ const RegisterForm = () => {
 
               <div>
                 <label className="text-sm font-semibold text-[#1a2b3c] pr-1 block mb-2">مدة الموعد الافتراضية (بالدقائق)</label>
-                <Select
-                  onValueChange={(val: string) => setFormData((prev: any) => ({...prev, defaultAppointmentPeriod: val}))}
-                  value={formData.defaultAppointmentPeriod}
+                <Input
+                  type="tel"
+                  name="defaultAppointmentPeriod"
                   required
-                >
-                  <SelectTrigger className="focus:ring-4 focus:ring-primary/10">
-                    <SelectValue placeholder="اختر المدة الافتراضية" />
-                  </SelectTrigger>
-                  <SelectContent className="text-right">
-                    <SelectItem value="15">15 دقيقة</SelectItem>
-                    <SelectItem value="30">30 دقيقة</SelectItem>
-                    <SelectItem value="45">45 دقيقة</SelectItem>
-                    <SelectItem value="60">60 دقيقة</SelectItem>
-                  </SelectContent>
-                </Select>
+                  placeholder="مثال: 30"
+                  value={formData.defaultAppointmentPeriod}
+                  onChange={handleChange}
+                />
               </div>
             </div>
           </article>

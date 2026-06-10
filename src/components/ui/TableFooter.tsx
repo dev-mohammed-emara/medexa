@@ -57,7 +57,7 @@ const TableFooter = ({
   return (
     <div
       className={cn(
-        "flex flex-col md:flex-row items-center gap-4 pt-4 px-6",
+        "flex flex-col md:flex-row flex-wrap-reverse whitespace-nowrap items-center gap-4 pt-4 px-6",
         variant === 'table' ? "bg-white rounded-b-xl mt-0" : "bg-transparent mt-6",
         isAr ? "flex-row-reverse" : "flex-row",
         className
@@ -65,7 +65,7 @@ const TableFooter = ({
       dir={isAr ? "rtl" : "ltr"}
     >
       {variant === 'table' && (
-        <div className="flex items-center gap-4 flex-1">
+        <div className="flex items-center gap-4 sm:flex-1 sm:mx-0 mx-auto w-fit">
           <span className="text-sm text-muted-foreground font-bold">
             {isAr ? "إجمالي السجلات:" : "Total Records:"} <span className="font-black text-foreground ml-1">{totalItems}</span>
           </span>
@@ -94,7 +94,7 @@ const TableFooter = ({
         </div>
       )}
 
-      <div className={cn("flex items-center gap-2", variant === 'list' && "mx-auto")}>
+      <div className={cn("flex items-center gap-2 mx-auto sm:mx-0", variant === 'list' && "mx-auto")}>
         <button
           disabled={currentPage === 1}
           onClick={() => onPageChange(currentPage - 1)}

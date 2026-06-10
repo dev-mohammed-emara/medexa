@@ -3,7 +3,7 @@ import { useEffect } from 'react';
 type BroadcastEvent = 
   | { type: 'LANGUAGE_UPDATE'; language: 'ar' | 'en' }
   | { type: 'AUTH_UPDATE'; isAuthenticated: boolean }
-  | { type: 'DATA_UPDATE'; module: 'doctors' | 'secretaries' | 'patients' | 'records' | 'finance' | 'appointments' }
+  | { type: 'DATA_UPDATE'; module: 'doctors' | 'secretaries' | 'patients' | 'records' | 'finance' | 'appointments' | 'support-tickets' }
   | { type: 'APPOINTMENTS_UPDATE'; appointments: Array<{ id: string | number; date: string; time: string; patientName: string; doctorName: string; status: string; [key: string]: any }> };
 
 const channel = new BroadcastChannel('medexa_sync');

@@ -5,7 +5,7 @@ import {
   SquarePen,
   Trash2,
   Loader2,
-  X
+  RotateCcw
 } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { Button } from '../../components/ui/Button';
@@ -16,6 +16,7 @@ import { useBroadcast } from '../../hooks/useBroadcast';
 import { cn } from '../../utils/cn';
 import PatientsDialog from './PatientsDialog';
 import TableFooter from '../../components/ui/TableFooter';
+import EmptyShell from '../../components/ui/EmptyShell';
 import Modal from '../../components/ui/Modal';
 import {
   Select,
@@ -224,7 +225,7 @@ const PatientsList = () => {
           <div className="p-6 pb-4 bg-white rounded-xl border border-border shadow-md mb-6">
             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
               {/* Search */}
-              <div className="relative w-full md:w-96 text-start">
+              <div className="relative flex-1 text-start">
                 <label className="text-xs text-muted-foreground mb-2 block font-medium">
                   {isAr ? "البحث" : "Search"}
                 </label>
@@ -262,14 +263,28 @@ const PatientsList = () => {
                 </Select>
               </div>
 
-              {/* Apply Button */}
-              <div className="w-full sm:w-auto">
+              {/* Apply & Reset Buttons */}
+              <div className="flex gap-2 w-full sm:w-auto">
                 <Button
                   onClick={handleApplyFilters}
                   disabled={loading}
-                  className="h-10 px-6 rounded-xl bg-primary text-white hover:bg-primary/90 font-bold transition-all shadow-md w-full sm:w-auto"
+                  className="h-10 px-6 rounded-xl bg-primary text-white hover:bg-primary/90 font-bold transition-all shadow-md flex-1 sm:flex-initial"
                 >
                   {isAr ? "تطبيق الفلاتر" : "Apply Filters"}
+                </Button>
+                <Button
+                  onClick={() => {
+                    setSearch('');
+                    setSort('createdAt,desc');
+                    setActiveSearch('');
+                    setActiveSort('createdAt,desc');
+                    setCurrentPage(1);
+                  }}
+                  variant="outline"
+                  className="h-10 px-3.5 rounded-xl border border-border hover:bg-slate-50 font-bold transition-all"
+                  title={isAr ? "إعادة ضبط" : "Reset"}
+                >
+                  <RotateCcw className="size-5" />
                 </Button>
               </div>
             </div>
@@ -370,49 +385,44 @@ const PatientsList = () => {
                 </Table>
               </div>
             ) : (
-              (() => {
-                const isFiltering = activeSearch !== '' || activeSort !== 'createdAt,desc';
-                return (
-                  <div className="flex flex-col items-center justify-center py-20 text-center bg-white rounded-xl border border-border shadow-md w-full">
-                    <div className="size-20 rounded-full bg-primary/10 flex items-center justify-center mb-6">
-                      <X className="size-10 text-primary" />
-                    </div>
-                    <h3 className="text-2xl font-bold text-foreground mb-2">
-                      {isFiltering 
-                        ? (isAr ? "لا توجد نتائج مطابقة" : "No matching results found")
-                        : (t('no_results', T) || "No patients found")}
-                    </h3>
-                    <p className="text-muted-foreground max-w-md mb-6">
-                      {isFiltering
-                        ? (isAr ? "لم نجد أي مرضى يطابقون فلاتر البحث الحالية. يرجى إعادة ضبط الفلاتر والمحاولة مرة أخرى." : "We couldn't find any patients matching your search filters. Please reset your filters and try again.")
-                        : (isAr ? "البدء بإضافة المرضى الخاصين بك للظهور هنا في القائمة." : "Start by adding patients to see them in this list.")}
-                    </p>
-                    <button
-                      onClick={() => {
-                        if (isFiltering) {
-                          setSearch('');
-                          setSort('createdAt,desc');
-                          setActiveSearch('');
-                          setActiveSort('createdAt,desc');
-                          setCurrentPage(1);
-                        } else {
-                          handleOpenDialog('add');
-                        }
-                      }}
-                      className="inline-flex items-center justify-center gap-2 rounded-xl text-white bg-primary hover:bg-primary/90 h-11 px-6 shadow-md transition-all font-bold"
-                    >
-                      {isFiltering ? (
-                        isAr ? "إعادة ضبط الفلاتر" : "Reset Filters"
-                      ) : (
-                        <>
-                          <Plus className="size-5" />
-                          {t('add_button', T)}
-                        </>
-                      )}
-                    </button>
-                  </div>
-                );
-              })()
+            (() => {
+              const isFiltering = activeSearch !== '' || activeSort !== 'createdAt,desc';
+              return (
+                <EmptyShell
+                  title={
+                    isFiltering
+                      ? (isAr ? "لا توجد نتائج مطابقة" : "No matching results found")
+                      : (t('no_results', T) || "No patients found")
+                  }
+                  description={
+                    isFiltering
+                      ? (isAr ? "لم نجد أي مرضى يطابقون فلاتر البحث الحالية. يرجى إعادة ضبط الفلاتر والمحاولة مرة أخرى." : "We couldn't find any patients matching your search filters. Please reset your filters and try again.")
+                      : (isAr ? "البدء بإضافة المرضى الخاصين بك للظهور هنا في القائمة." : "Start by adding patients to see them in this list.")
+                  }
+                  buttonText={
+                    isFiltering ? (
+                      isAr ? "إعادة ضبط الفلاتر" : "Reset Filters"
+                    ) : (
+                      <>
+                        <Plus className="size-5" />
+                        {t('add_button', T)}
+                      </>
+                    )
+                  }
+                  onButtonClick={() => {
+                    if (isFiltering) {
+                      setSearch('');
+                      setSort('createdAt,desc');
+                      setActiveSearch('');
+                      setActiveSort('createdAt,desc');
+                      setCurrentPage(1);
+                    } else {
+                      handleOpenDialog('add');
+                    }
+                  }}
+                />
+              );
+            })()
             )}
           </section>
 

@@ -7,8 +7,19 @@ import { fetchClinicStatistics } from '../api/statisticsApi'
 import type { ClinicStatisticsResponse } from '../api/statisticsApi'
 
 const Dashboard = () => {
-  const [fromDate, setFromDate] = useState<string>("2025-01-01")
-  const [toDate, setToDate] = useState<string>("2025-06-30")
+  const getLocalDateString = (d: Date) => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  const [fromDate, setFromDate] = useState<string>(getLocalDateString(yesterday))
+  const [toDate, setToDate] = useState<string>(getLocalDateString(today))
   const [clinicStats, setClinicStats] = useState<ClinicStatisticsResponse | null>(null)
   const [isLoading, setIsLoading] = useState<boolean>(false)
 

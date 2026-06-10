@@ -121,7 +121,7 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
         phoneNumber: formatPhone(String(formDataObj.phoneNumber)),
         gender: selectedGender || 'MALE',
         dateOfBirth: selectedDob || '1990-01-01',
-        permissions: permissions.length > 0 ? permissions : ['MANAGE_DOCTORS', 'MANAGE_SECRETARIES']
+        // permissions: permissions.length > 0 ? permissions : ['MANAGE_DOCTORS', 'MANAGE_SECRETARIES']
       }
 
       // Password is required for adding new secretary

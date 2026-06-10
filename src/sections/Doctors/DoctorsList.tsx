@@ -9,9 +9,9 @@ import {
   Phone,
   Mail,
   Users,
-  DollarSign
+  DollarSign,
+  RotateCcw
 } from 'lucide-react'
-import { HiOutlineXMark } from "react-icons/hi2"
 import { usePreloader } from '../../contexts/PreloaderContext'
 import { cn } from '../../utils/cn'
 import DoctorDialog from './DoctorDialog'
@@ -21,6 +21,7 @@ import { useLanguage } from '../../contexts/LanguageContext'
 import { doctorsTranslations } from '../../constants/translations/doctors'
 import { useBroadcast } from '../../hooks/useBroadcast'
 import TableFooter from '../../components/ui/TableFooter'
+import EmptyShell from '../../components/ui/EmptyShell'
 import Badge from '../../components/ui/badge'
 import Input from '../../components/ui/Input'
 import {
@@ -253,8 +254,8 @@ const DoctorsList = () => {
       {/* Filter and Table Card */}
       <div
         className={cn(
-          "text-card-foreground flex flex-col gap-6 bg-transparent border-none shadow-none p-0",
-          isExiting && "animate-fadeDownOut"
+          "text-card-foreground flex flex-col gap-6 bg-transparent border-none shadow-none p-0 opacity-0",
+          canAnimate && "animate-fadeUp animate-delay-200"
         )}
       >
         {/* Filters Panel */}
@@ -314,14 +315,30 @@ const DoctorsList = () => {
             </Select>
           </div>
 
-          {/* Apply Filters Button */}
-          <div>
+          {/* Apply & Reset Filters */}
+          <div className="flex gap-2 w-full">
             <Button
               onClick={handleApplyFilters}
               disabled={loading}
-              className="h-11 w-full rounded-xl bg-primary text-white hover:bg-primary/90 font-bold transition-all shadow-md"
+              className="h-11 flex-1 rounded-xl bg-primary text-white hover:bg-primary/90 font-bold transition-all shadow-md"
             >
               {isAr ? "تطبيق الفلاتر" : "Apply Filters"}
+            </Button>
+            <Button
+              onClick={() => {
+                setSearch('');
+                setStatus('all');
+                setSort('createdAt,desc');
+                setActiveSearch('');
+                setActiveStatus('all');
+                setActiveSort('createdAt,desc');
+                setCurrentPage(1);
+              }}
+              variant="outline"
+              className="h-11 px-3.5 rounded-xl border border-border hover:bg-slate-50 font-bold transition-all"
+              title={isAr ? "إعادة ضبط" : "Reset"}
+            >
+              <RotateCcw className="size-5" />
             </Button>
           </div>
         </div>
@@ -456,46 +473,41 @@ const DoctorsList = () => {
             (() => {
               const isFiltering = activeSearch !== '' || activeStatus !== 'all' || activeSort !== 'createdAt,desc';
               return (
-                <div className="flex flex-col items-center justify-center py-20 text-center bg-white rounded-xl border border-border shadow-md w-full">
-                  <div className="size-20 rounded-full bg-primary/10 flex items-center justify-center mb-6">
-                    <HiOutlineXMark className="size-10 text-primary" />
-                  </div>
-                  <h3 className="text-2xl font-bold text-foreground mb-2">
-                    {isFiltering 
+                <EmptyShell
+                  title={
+                    isFiltering
                       ? (isAr ? "لا توجد نتائج مطابقة" : "No matching results found")
-                      : t('no_doctors', T)}
-                  </h3>
-                  <p className="text-muted-foreground max-w-md mb-6">
-                    {isFiltering
+                      : t('no_doctors', T)
+                  }
+                  description={
+                    isFiltering
                       ? (isAr ? "لم نجد أي عيادات أو أطباء يطابقون فلاتر البحث الحالية. يرجى إعادة ضبط الفلاتر والمحاولة مرة أخرى." : "We couldn't find any doctors matching your search filters. Please reset your filters and try again.")
-                      : t('no_doctors_desc', T)}
-                  </p>
-                  <button
-                    onClick={() => {
-                      if (isFiltering) {
-                        setSearch('');
-                        setStatus('all');
-                        setSort('createdAt,desc');
-                        setActiveSearch('');
-                        setActiveStatus('all');
-                        setActiveSort('createdAt,desc');
-                        setCurrentPage(1);
-                      } else {
-                        handleOpenDialog('add');
-                      }
-                    }}
-                    className="inline-flex items-center justify-center gap-2 rounded-xl text-white bg-primary hover:bg-primary/90 h-11 px-6 shadow-md transition-all font-bold"
-                  >
-                    {isFiltering ? (
+                      : t('no_doctors_desc', T)
+                  }
+                  buttonText={
+                    isFiltering ? (
                       isAr ? "إعادة ضبط الفلاتر" : "Reset Filters"
                     ) : (
                       <>
                         <Plus className="size-5" />
                         {t('add_new_button', T)}
                       </>
-                    )}
-                  </button>
-                </div>
+                    )
+                  }
+                  onButtonClick={() => {
+                    if (isFiltering) {
+                      setSearch('');
+                      setStatus('all');
+                      setSort('createdAt,desc');
+                      setActiveSearch('');
+                      setActiveStatus('all');
+                      setActiveSort('createdAt,desc');
+                      setCurrentPage(1);
+                    } else {
+                      handleOpenDialog('add');
+                    }
+                  }}
+                />
               );
             })()
           )}

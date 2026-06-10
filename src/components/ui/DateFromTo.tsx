@@ -1,3 +1,4 @@
+import { useMemo } from "react"
 import "flatpickr/dist/flatpickr.css"
 import { Arabic } from "flatpickr/dist/l10n/ar.js"
 import Flatpickr from "react-flatpickr"
@@ -42,6 +43,29 @@ export const DateFromTo = ({
   const fromDateObj = parseLocalDate(fromDate)
   const toDateObj = parseLocalDate(toDate)
 
+  // Base configurations shared conceptually but returned as brand new objects
+  const sharedFormatters = useMemo(() => ({
+    locale: isAr ? Arabic : undefined,
+    dateFormat: "d F Y",
+    disableMobile: true,
+    formatDate: (date: Date) => {
+      return format(date, "d MMMM yyyy", { locale: isAr ? ar : undefined })
+    }
+  }), [isAr])
+
+  // Independent options for "From Date"
+  const fromDateOptions = useMemo(() => ({
+    ...sharedFormatters,
+    maxDate: toDateObj || "today" // Cannot select a start date later than the end date
+  }), [sharedFormatters, toDateObj])
+
+  // Independent options for "To Date"
+  const toDateOptions = useMemo(() => ({
+    ...sharedFormatters,
+    minDate: fromDateObj, // Cannot select an end date earlier than the start date
+    maxDate: "today"
+  }), [sharedFormatters, fromDateObj])
+
   return (
     <div className={cn("flex flex-wrap items-end gap-3", className)}>
       <div className="space-y-1.5 flex-1 min-w-[170px] text-start">
@@ -50,7 +74,7 @@ export const DateFromTo = ({
         </label>
         <div className="relative group flex items-center justify-between h-11 bg-white border border-border rounded-xl px-4 transition-all focus-within:ring-4 focus-within:ring-primary/10">
           <Flatpickr
-            key="from-date-flatpickr"
+            key={`from-date-${fromDate}`} // Forces re-render on value update to sync min/max boundaries
             id="from-date-flatpickr"
             value={fromDateObj}
             onChange={([date]) => {
@@ -58,15 +82,7 @@ export const DateFromTo = ({
                 onFromDateChange(format(date, 'yyyy-MM-dd'))
               }
             }}
-            options={{
-              locale: isAr ? Arabic : undefined,
-              dateFormat: "d F Y",
-              disableMobile: true,
-              maxDate: toDateObj || undefined,
-              formatDate: (date: Date) => {
-                return format(date, "d MMMM yyyy", { locale: isAr ? ar : undefined })
-              }
-            }}
+            options={fromDateOptions}
             className={cn(
               "flex-1 bg-transparent border-none outline-none text-sm font-bold h-full",
               isAr ? "text-right" : "text-left"
@@ -82,7 +98,7 @@ export const DateFromTo = ({
         </label>
         <div className="relative group flex items-center justify-between h-11 bg-white border border-border rounded-xl px-4 transition-all focus-within:ring-4 focus-within:ring-primary/10">
           <Flatpickr
-            key="to-date-flatpickr"
+            key={`to-date-${toDate}`} // Forces re-render on value update to sync min/max boundaries
             id="to-date-flatpickr"
             value={toDateObj}
             onChange={([date]) => {
@@ -90,16 +106,7 @@ export const DateFromTo = ({
                 onToDateChange(format(date, 'yyyy-MM-dd'))
               }
             }}
-            options={{
-              locale: isAr ? Arabic : undefined,
-              dateFormat: "d F Y",
-              disableMobile: true,
-              minDate: fromDateObj || undefined,
-              maxDate: "today",
-              formatDate: (date: Date) => {
-                return format(date, "d MMMM yyyy", { locale: isAr ? ar : undefined })
-              }
-            }}
+            options={toDateOptions}
             className={cn(
               "flex-1 bg-transparent border-none outline-none text-sm font-bold h-full",
               isAr ? "text-right" : "text-left"

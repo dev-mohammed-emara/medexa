@@ -162,8 +162,8 @@ const LoginForm = () => {
               )}>
                 <p className="text-xs text-primary font-medium leading-relaxed">
                   {serverMessage || (isAr
-                    ? "هذا الخيار مخصص للوصول السريع للعيادات المسجلة مسبقاً. يرجى إدخال البريد الإلكتروني المسجل للدخول مباشرة."
-                    : "Please enter a valid email so the reset request can be sent to you")}
+                    ? "يرجى إدخال البريد الإلكتروني المسجل وسنقوم بإرسال رابط إعادة تعيين كلمة المرور."
+                    : "Please enter your registered email address and we will send you a password reset link.")}
                 </p>
               </div>
             )}

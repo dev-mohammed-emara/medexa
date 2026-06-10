@@ -155,7 +155,7 @@ const ChartsOverview = ({
           <figure className="h-[300px] w-full">
             {isLoaded && (
               <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
+                <PieChart >
                   <Pie
                     data={pieData}
                     cx="50%"

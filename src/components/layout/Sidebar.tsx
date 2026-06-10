@@ -4,6 +4,7 @@ import {
     DollarSign,
     FileText,
     LayoutDashboard,
+    ListChecks,
     Menu,
     User,
     UserCog,
@@ -13,6 +14,7 @@ import {
 } from 'lucide-react'
 import { useEffect, useRef } from 'react'
 import { FaCalendarAlt } from 'react-icons/fa'
+import { BiSupport } from 'react-icons/bi'
 import { useMediaQuery } from 'react-responsive'
 import { useLocation } from 'react-router-dom'
 import { navTranslations } from '../../constants/nav'
@@ -27,9 +29,11 @@ const navItems = [
   { icon: UserCog, label: 'secretary', href: '/secretary' },
   { icon: UsersRound, label: 'patients', href: '/patients' },
   { icon: FaCalendarAlt, label: 'appointments', href: '/appointments' },
+  { icon: ListChecks, label: 'appointmentTypes', href: '/appointment-types' },
   { icon: FileText, label: 'records', href: '/records' },
   { icon: DollarSign, label: 'finance', href: '/finance' },
   { icon: User, label: 'profile', href: '/profile' },
+  { icon: BiSupport, label: 'supportTickets', href: '/support-tickets' },
 ]
 
 interface SidebarProps {

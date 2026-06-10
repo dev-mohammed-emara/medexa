@@ -1,5 +1,6 @@
 import { fetchClinicMe, fetchInsurances, updateClinicMe } from '@/api/clinicApi';
 import { fetchDoctorMe, updateDoctorMe, updateDoctorAppointmentPeriod } from '@/api/doctorApi';
+import { fetchSecretaryMe, updateSecretaryMe } from '@/api/secretaryApi';
 import Input from '@/components/ui/Input';
 import {
     Select,
@@ -100,7 +101,8 @@ const ProfileView = () => {
 
   const loadDoctorData = async () => {
     try {
-      const data = await fetchDoctorMe();
+      const isSecretary = user?.role === 'ROLE_SECRETARY';
+      const data: any = isSecretary ? await fetchSecretaryMe() : await fetchDoctorMe();
       if (data && data.user) {
         setPersonalInfo({
           uuid: data.uuid || '',
@@ -110,14 +112,14 @@ const ProfileView = () => {
           email: data.user.email || '',
           gender: data.user.gender || 'MALE',
           dateOfBirth: data.user.dateOfBirth || '',
-          specialty: data.specialty || '',
-          summary: data.summary || '',
-          defaultAppointmentPeriod: (data.defaultAppointmentPeriod || 30).toString()
+          specialty: (!isSecretary && data.specialty) || '',
+          summary: (!isSecretary && data.summary) || '',
+          defaultAppointmentPeriod: (!isSecretary && (data.defaultAppointmentPeriod || 30).toString()) || '30'
         });
         setPersonalPhone(data.user.phoneNumber || '');
 
         updateUser({
-          uuid: data.uuid || '', // Doctor UUID
+          uuid: data.uuid || '', 
           firstName: data.user.firstName || '',
           surName: data.user.surName || '',
           lastName: data.user.lastName || '',
@@ -126,12 +128,12 @@ const ProfileView = () => {
           gender: data.user.gender || 'MALE',
           dateOfBirth: data.user.dateOfBirth || '',
           status: data.user.status || 'WAITING_VERIFICATION',
-          role: data.user.role || 'ROLE_CLINIC_OWNER',
-          permissions: data.user.permissions || ['MANAGE_CLINIC']
+          role: data.user.role || (isSecretary ? 'ROLE_SECRETARY' : 'ROLE_CLINIC_OWNER'),
+          permissions: data.user.permissions || []
         });
       }
     } catch (e) {
-      console.error('Failed to load doctor data:', e);
+      console.error('Failed to load user profile data:', e);
     }
   };
 
@@ -156,19 +158,33 @@ const ProfileView = () => {
 
   const handleSaveGeneral = async () => {
     try {
-      await updateDoctorMe({
-        user: {
-          firstName: personalInfo.firstName,
-          surName: personalInfo.surName,
-          lastName: personalInfo.lastName,
-          phoneNumber: personalPhone,
-          gender: personalInfo.gender,
-          dateOfBirth: personalInfo.dateOfBirth,
-          permissions: user?.permissions || []
-        },
-        specialty: personalInfo.specialty,
-        summary: personalInfo.summary
-      });
+      const isSecretary = user?.role === 'ROLE_SECRETARY';
+      if (isSecretary) {
+        await updateSecretaryMe({
+          user: {
+            firstName: personalInfo.firstName,
+            surName: personalInfo.surName,
+            lastName: personalInfo.lastName,
+            phoneNumber: personalPhone,
+            gender: personalInfo.gender,
+            dateOfBirth: personalInfo.dateOfBirth,
+            permissions: user?.permissions || []
+          }
+        });
+      } else {
+        await updateDoctorMe({
+          user: {
+            firstName: personalInfo.firstName,
+            surName: personalInfo.surName,
+            lastName: personalInfo.lastName,
+            phoneNumber: personalPhone,
+            gender: personalInfo.gender,
+            dateOfBirth: personalInfo.dateOfBirth,
+          },
+          specialty: personalInfo.specialty,
+          summary: personalInfo.summary
+        });
+      }
       updateUser({
         firstName: personalInfo.firstName,
         surName: personalInfo.surName,
@@ -805,25 +821,27 @@ const ProfileView = () => {
                     </div>
                   </div>
 
-                  {/* Doctor Info Fields (Specialty, Summary, Appt Period) */}
-                  <div className="flex flex-col gap-6 pt-4 border-t border-border mt-2">
-                    <div className="flex flex-col gap-2">
-                      <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{isAr ? 'التخصص الطبي' : 'Specialty'}</label>
-                      <Input
-                        value={personalInfo.specialty}
-                        onChange={(e) => setPersonalInfo(p => ({ ...p, specialty: e.target.value }))}
-                        className="h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold"
-                      />
+                  {/* Doctor Info Fields (Specialty, Summary) */}
+                  {user?.role !== 'ROLE_SECRETARY' && (
+                    <div className="flex flex-col gap-6 pt-4 border-t border-border mt-2">
+                      <div className="flex flex-col gap-2">
+                        <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{isAr ? 'التخصص الطبي' : 'Specialty'}</label>
+                        <Input
+                          value={personalInfo.specialty}
+                          onChange={(e) => setPersonalInfo(p => ({ ...p, specialty: e.target.value }))}
+                          className="h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{isAr ? 'نبذة تعريفية' : 'Summary'}</label>
+                        <Input
+                          value={personalInfo.summary}
+                          onChange={(e) => setPersonalInfo(p => ({ ...p, summary: e.target.value }))}
+                          className="h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold"
+                        />
+                      </div>
                     </div>
-                    <div className="flex flex-col gap-2">
-                      <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{isAr ? 'نبذة تعريفية' : 'Summary'}</label>
-                      <Input
-                        value={personalInfo.summary}
-                        onChange={(e) => setPersonalInfo(p => ({ ...p, summary: e.target.value }))}
-                        className="h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold"
-                      />
-                    </div>
-                  </div>
+                  )}
                 </div>
                 <div className="flex justify-end gap-3 mt-auto pt-6 ">
                   <button
@@ -883,40 +901,43 @@ const ProfileView = () => {
               </div>
 
               {/* Appointment Period Settings */}
-              <div data-slot="card" className="tab-pane flex flex-col bg-white rounded-xl border p-6 border-border shadow-lg hover:shadow-xl transition-all duration-300 h-fit">
-                <h3 className="text-xl mb-6 font-bold">{isAr ? 'إعدادات المواعيد' : 'Appointment Settings'}</h3>
-                <div className="space-y-5">
-                  <div className="flex flex-col gap-2">
-                    <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{isAr ? 'مدة الموعد الافتراضية (بالدقائق)' : 'Default Appointment Period (mins)'}</label>
-                    <Input
-                      type="tel"
-                      value={personalInfo.defaultAppointmentPeriod}
-                      onChange={(e) => setPersonalInfo(p => ({ ...p, defaultAppointmentPeriod: e.target.value.replace(/\D/g, '') }))}
-                      dir="ltr"
-                      className={cn("h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold", isAr ? "text-right" : "text-left")}
-                    />
+              {user?.role !== 'ROLE_SECRETARY' && (
+                <div data-slot="card" className="tab-pane h-full flex flex-col bg-white rounded-xl border p-6 border-border shadow-lg hover:shadow-xl transition-all duration-300 h-fit">
+                  <h3 className="text-xl mb-6 font-bold">{isAr ? 'إعدادات المواعيد' : 'Appointment Settings'}</h3>
+                  <div className="space-y-5">
+                    <div className="flex flex-col gap-2">
+                      <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{isAr ? 'مدة الموعد الافتراضية (بالدقائق)' : 'Default Appointment Period (mins)'}</label>
+                      <Input
+                        type="tel"
+                        value={personalInfo.defaultAppointmentPeriod}
+                        onChange={(e) => setPersonalInfo(p => ({ ...p, defaultAppointmentPeriod: e.target.value.replace(/\D/g, '') }))}
+                        dir="ltr"
+                        className={cn("h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold", isAr ? "text-right" : "text-left")}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-3 mt-auto pt-6 ">
+                    <button
+                      onClick={handleCancelAppointmentPeriod}
+                      className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-300 border bg-background text-foreground hover:bg-accent hover:text-white hover:border-accent h-10 px-6"
+                    >
+                      {t('common.cancel')}
+                    </button>
+                    <button
+                      onClick={handleSaveAppointmentPeriod}
+                      className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-300 text-primary-foreground bg-primary hover:bg-primary/90 h-10 px-6 shadow-lg shadow-primary/20 hover:shadow-primary/30"
+                    >
+                      <Check size={16} className={isAr ? "ml-1" : "mr-1"} />
+                      {t('common.save_changes')}
+                    </button>
                   </div>
                 </div>
-                <div className="flex justify-end gap-3 mt-auto pt-6 ">
-                  <button
-                    onClick={handleCancelAppointmentPeriod}
-                    className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-300 border bg-background text-foreground hover:bg-accent hover:text-white hover:border-accent h-10 px-6"
-                  >
-                    {t('common.cancel')}
-                  </button>
-                  <button
-                    onClick={handleSaveAppointmentPeriod}
-                    className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-300 text-primary-foreground bg-primary hover:bg-primary/90 h-10 px-6 shadow-lg shadow-primary/20 hover:shadow-primary/30"
-                  >
-                    <Check size={16} className={isAr ? "ml-1" : "mr-1"} />
-                    {t('common.save_changes')}
-                  </button>
-                </div>
-              </div>
+              )}
               </div>
             </div>
 
             {/* Working Hours */}
+            {user?.role !== 'ROLE_SECRETARY' && (
             <div data-slot="card" className="tab-pane  bg-white rounded-xl border p-6 border-border shadow-lg hover:shadow-xl transition-all duration-300">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
@@ -1054,6 +1075,7 @@ const ProfileView = () => {
                 ))}
               </div>
             </div>
+            )}
           </div>
         </div>
 

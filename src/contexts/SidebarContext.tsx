@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 
 interface SidebarContextType {
   isCollapsed: boolean;
@@ -12,16 +12,15 @@ interface SidebarContextType {
 const SidebarContext = createContext<SidebarContextType | undefined>(undefined);
 
 export const SidebarProvider = ({ children }: { children: React.ReactNode }) => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth < 1024;
+    }
+    return false;
+  });
   const [previousCollapsedState, setPreviousCollapsedState] = useState<boolean | null>(null);
 
   const toggleSidebar = () => setIsCollapsed(prev => !prev);
-
-  // Sync initial state based on desktop screen size if not already set
-  useEffect(() => {
-    const isDesktop = window.innerWidth >= 1024;
-    setIsCollapsed(!isDesktop);
-  }, []);
 
   return (
     <SidebarContext.Provider 

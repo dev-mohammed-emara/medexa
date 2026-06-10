@@ -1,4 +1,5 @@
 import { getCookie, checkTokenOrRedirect } from '../utils/cookie'
+import { getErrorMessage } from '../utils/error'
 
 export interface ClinicSettings {
   defaultCurrency: string
@@ -69,7 +70,7 @@ export const updateClinicMe = async (body: UpdateClinicBody): Promise<ApiClinic>
     let errorMessage = 'Failed to update clinic'
     try {
       const errorData = await response.json()
-      errorMessage = errorData.message || errorData.error || errorMessage
+      errorMessage = getErrorMessage(errorData, errorMessage)
     } catch (e) {
       // ignore
     }
@@ -103,7 +104,7 @@ export const updateClinicSettings = async (body: ClinicSettings): Promise<ApiCli
     let errorMessage = 'Failed to update clinic settings'
     try {
       const errorData = await response.json()
-      errorMessage = errorData.message || errorData.error || errorMessage
+      errorMessage = getErrorMessage(errorData, errorMessage)
     } catch (e) {
       // ignore
     }

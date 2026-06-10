@@ -42,16 +42,20 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://178.128.198.121:8080/api/v1',
+        target: 'https://178.128.198.121/api/v1',
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path.replace(/^\/api/, ''),
+        headers: {
+          origin: 'https://178.128.198.121',
+          referer: 'https://178.128.198.121/'
+        }
       }
     },
     headers: {
     'Content-Security-Policy': `
       default-src 'self';
-      connect-src 'self' http://178.128.198.121:8080/api/v1 ws: wss:;
+      connect-src 'self' https://178.128.198.121 ws: wss:;
       script-src 'self' 'unsafe-inline' 'unsafe-eval';
       worker-src 'self' blob:;
       style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;

@@ -1,5 +1,6 @@
-import React, { type InputHTMLAttributes } from 'react'
+import React, { type InputHTMLAttributes, useState } from 'react'
 import { cn } from '../../utils/cn'
+import { Eye, EyeOff } from 'lucide-react'
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   icon?: React.ReactNode
@@ -8,6 +9,8 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, type, icon, containerClassName, onChange, ...props }, ref) => {
+    const [showPassword, setShowPassword] = useState(false);
+    const isPassword = type === 'password';
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
       // Prevent negative sign and exponent 'e' in number inputs as per user request
       if (type === 'number' && (e.key === '-' || e.key === 'e' || e.key === 'E')) {
@@ -49,6 +52,8 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
       } else if (type === 'number') {
         // Ensure no negative value even if bypasses keydown (e.g. mobile or weird browsers)
         value = value.replace(/-/g, '');
+        // Strip leading zeros if followed by another digit
+        value = value.replace(/^0+(?=\d)/, '');
         if (value && parseFloat(value) < 0) value = '0';
       } else if (
         props.name?.toLowerCase().includes('role') ||
@@ -80,7 +85,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           </div>
         )}
         <input
-          type={type === 'tel' ? 'text' : type} // Change tel to text to avoid mobile keyboard issues with regex stripping
+          type={type === 'tel' ? 'text' : (isPassword ? (showPassword ? 'text' : 'password') : type)}
           inputMode={type === 'tel' || type === 'number' ? 'numeric' : undefined}
           min={type === 'number' ? "0" : props.min}
           className={cn(
@@ -89,6 +94,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             "focus:border-primary focus:ring-4 focus:ring-primary/10",
             "disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
             icon && (props.dir === 'ltr' ? "pl-12" : "pr-12"),
+            isPassword && (props.dir === 'ltr' ? "pr-12" : "pl-12"),
             className
           )}
           ref={ref}
@@ -97,6 +103,18 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           onPaste={handlePaste}
           {...props}
         />
+        {isPassword && (
+          <button
+            type="button"
+            onClick={() => setShowPassword(prev => !prev)}
+            className={cn(
+              "absolute top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer z-10 p-1 rounded",
+              props.dir === 'ltr' ? "right-3" : "left-3"
+            )}
+          >
+            {showPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
+          </button>
+        )}
       </div>
     )
   }

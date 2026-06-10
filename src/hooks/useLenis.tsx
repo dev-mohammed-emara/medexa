@@ -1,15 +1,11 @@
 'use client';
 
 import Lenis from 'lenis';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useMediaQuery } from 'react-responsive';
 
 export default function useLenis(): Lenis | null {
-  // Use a Ref to store the actual instance (prevents cascading renders)
-  const lenisRef = useRef<Lenis | null>(null);
-
-  // Use a simple boolean state just to trigger a single re-render once initialized
-  const [, setIsReady] = useState(false);
+  const [lenis, setLenis] = useState<Lenis | null>(null);
 
   const isTouchDevice = useMediaQuery({
     query: '(hover: none), (pointer: coarse)',
@@ -27,32 +23,26 @@ export default function useLenis(): Lenis | null {
       lerp: 0.1,
     });
 
-    // Store in Ref
-    lenisRef.current = lenisInstance;
+    setLenis(lenisInstance);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (window as any).lenis = lenisInstance;
 
-    // Set ready state - React allows this because it's a primitive update
-    // specifically intended to sync the UI with the external system.
-    setIsReady(true);
-
     // GSAP Ticker Synchronization
+    let active = true;
     const raf = (time: number) => {
+      if (!active) return;
       lenisInstance.raf(time);
       requestAnimationFrame(raf);
     };
 
     requestAnimationFrame(raf);
 
-
     return () => {
+      active = false;
       lenisInstance.destroy();
-      lenisRef.current = null;
-      setIsReady(false);
+      setLenis(null);
     };
   }, [isTouchDevice]);
 
-  // Return the instance from the Ref
-  // eslint-disable-next-line react-hooks/refs
-  return lenisRef.current;
+  return lenis;
 }

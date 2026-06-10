@@ -171,6 +171,10 @@ html[dir='ltr']{
     display: none;
   }
 
+  header{
+    @apply flex-wrap;
+  }
+
   header:has(> button[data-variant="default"]),
   section:has(> button[data-variant="default"]){
     flex-wrap: wrap;

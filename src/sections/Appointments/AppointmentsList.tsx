@@ -15,7 +15,7 @@ import {
   subMonths
 } from 'date-fns';
 import { ar } from 'date-fns/locale';
-import { ChevronRight, ChevronLeft, Plus, Clock, User, Stethoscope, Eye, SquarePen, X, Smartphone, MoveHorizontal, Check } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Plus, Clock, User, Stethoscope, Eye, SquarePen, X, Smartphone, MoveHorizontal, Check, FileText } from 'lucide-react';
 import { FaCalendarAlt } from 'react-icons/fa';
 import { TbCancel } from 'react-icons/tb';
 import { useEffect, useRef, useState, useCallback } from 'react';
@@ -40,6 +40,7 @@ import { statusConfig } from './constants';
 import { useBroadcast } from '../../hooks/useBroadcast';
 import { fetchDoctors } from '../../api/doctorApi';
 import { getCookie } from '../../utils/cookie';
+import { useAuth } from '../../contexts/AuthContext';
 // Mock data for appointments
 const INITIAL_APPOINTMENTS: Appointment[] = [
   { id: 'dummy-completed', uuid: 'dummy-completed', date: new Date(2026, 2, 2), time: '10:00', patientName: 'ahmed', doctorName: 'ahmed', status: 'completed' },
@@ -49,6 +50,8 @@ const INITIAL_APPOINTMENTS: Appointment[] = [
 
 const AppointmentsList = () => {
   const { isAr, t } = useLanguage();
+  const { user } = useAuth();
+  const hasManageMedicalRecords = user?.permissions?.includes('MANAGE_MEDICAL_RECORDS') || user?.role === 'ROLE_CLINIC_OWNER';
   const T = appointmentsTranslations;
   const currentLocale = isAr ? ar : enUS;
   const { isLoaded, isExiting } = usePreloader();
@@ -187,6 +190,436 @@ const AppointmentsList = () => {
     attachments: ''
   });
 
+  // Medical Record Modal States
+  const [isMedicalRecordModalOpen, setIsMedicalRecordModalOpen] = useState(false);
+  const [medicalRecordModalMode, setMedicalRecordModalMode] = useState<'add' | 'edit' | 'view'>('add');
+  const [medicalRecordUuid, setMedicalRecordUuid] = useState('');
+  const [pendingAppointments, setPendingAppointments] = useState<any[]>([]);
+  const [patientName, setPatientName] = useState('');
+  const [doctorName, setDoctorName] = useState('');
+  const [isSubmittingRecord, setIsSubmittingRecord] = useState(false);
+  const [medicalRecordData, setMedicalRecordData] = useState({
+    patientUuid: '',
+    doctorUuid: '',
+    appointmentUuid: '',
+    caseDescription: '',
+    diagnosis: '',
+    treatmentPlan: '',
+    note: '',
+    amount: 0,
+    transactionNote: ''
+  });
+
+  // Fetch pending appointments from calendar for dropdown list
+  const loadPendingAppointments = useCallback(async () => {
+    try {
+      const month = getMonth(currentDate) + 1;
+      const year = getYear(currentDate);
+      const token = getCookie('token');
+      const response = await fetch(`/api/appointment/calendar?month=${month}&year=${year}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        const pendingList = data.flatMap((dayData: any) => {
+          return dayData.appointments
+            .filter((app: any) => app.status === 'PENDING')
+            .map((app: any) => ({
+              uuid: app.uuid,
+              date: dayData.date,
+              time: app.appointmentStartTime,
+              patientName: app.patientName,
+              doctorName: app.doctorName
+            }));
+        });
+        setPendingAppointments(pendingList);
+      }
+    } catch (err) {
+      console.error('Error loading pending appointments:', err);
+    }
+  }, [currentDate]);
+
+  // Fetch individual appointment details when selected in dropdown
+  const loadAppointmentDetails = useCallback(async (appUuid: string) => {
+    if (!appUuid) return;
+    try {
+      const token = getCookie('token');
+      const response = await fetch(`/api/appointment/${appUuid}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setMedicalRecordData(prev => ({
+          ...prev,
+          appointmentUuid: data.uuid,
+          patientUuid: data.patient?.uuid || '',
+          doctorUuid: data.doctor?.uuid || '',
+          amount: data.examinationFee || 0
+        }));
+        setPatientName(data.patient?.name || '');
+        setDoctorName(data.doctor?.name || '');
+      }
+    } catch (err) {
+      console.error('Error fetching appointment details:', err);
+    }
+  }, []);
+
+  const fetchMedicalRecordForAppointment = async (appointmentUuid: string) => {
+    try {
+      const token = getCookie('token');
+      // 1. Try fetching the appointment details first to see if it links to a medical record uuid
+      const appRes = await fetch(`/api/appointment/${appointmentUuid}`, {
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        }
+      });
+      if (appRes.ok) {
+        const appData = await appRes.json();
+        const recordUuid = appData.medicalRecordUuid || appData.medicalRecord?.uuid;
+        if (recordUuid) {
+          const recRes = await fetch(`/api/medical-records/${recordUuid}`, {
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+            }
+          });
+          if (recRes.ok) {
+            return await recRes.json();
+          }
+        }
+      }
+
+      // 2. Try searching in medical-records list
+      const listRes = await fetch(`/api/medical-records?size=100`, {
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        }
+      });
+      if (listRes.ok) {
+        const listData = await listRes.json();
+        const records = listData.content || [];
+        const found = records.find((r: any) => r.appointmentUuid === appointmentUuid);
+        if (found) {
+          const detailRes = await fetch(`/api/medical-records/${found.uuid}`, {
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+            }
+          });
+          if (detailRes.ok) {
+            return await detailRes.json();
+          }
+          return found;
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching medical record for appointment:', err);
+    }
+    return null;
+  };
+
+  const handlePrintRecord = (record: any) => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const html = `
+      <html>
+        <head>
+          <title>${isAr ? 'السجل الطبي' : 'Medical Record'} - ${record.patientName || patientName}</title>
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&family=Outfit:wght@400;600;700&display=swap');
+            body {
+              font-family: ${isAr ? "'Cairo', sans-serif" : "'Outfit', sans-serif"};
+              direction: ${isAr ? 'rtl' : 'ltr'};
+              padding: 40px;
+              color: #1a2b3c;
+              background: #fff;
+            }
+            .header {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              border-bottom: 2px solid #0B5A8E;
+              padding-bottom: 20px;
+              margin-bottom: 30px;
+            }
+            .logo-text {
+              font-size: 26px;
+              font-weight: bold;
+              color: #0B5A8E;
+            }
+            .title {
+              font-size: 24px;
+              font-weight: bold;
+              text-align: center;
+              margin-bottom: 30px;
+              color: #0B5A8E;
+            }
+            .info-grid {
+              display: grid;
+              grid-template-cols: 1fr 1fr;
+              gap: 15px;
+              background-color: #f8fafc;
+              padding: 20px;
+              border-radius: 12px;
+              margin-bottom: 30px;
+              border: 1px solid #e2e8f0;
+            }
+            .info-item {
+              font-size: 14px;
+            }
+            .info-item span {
+              font-weight: bold;
+              color: #4a5568;
+            }
+            .section {
+              margin-bottom: 25px;
+            }
+            .section-title {
+              font-size: 16px;
+              font-weight: bold;
+              color: #0B5A8E;
+              border-bottom: 1px solid #edf2f7;
+              padding-bottom: 8px;
+              margin-bottom: 12px;
+            }
+            .section-content {
+              font-size: 14px;
+              line-height: 1.6;
+              background-color: #ffffff;
+              padding: 15px;
+              border-radius: 8px;
+              border: 1px solid #edf2f7;
+              white-space: pre-wrap;
+            }
+            .footer {
+              margin-top: 60px;
+              display: flex;
+              justify-content: space-between;
+              align-items: end;
+              border-top: 1px solid #e2e8f0;
+              padding-top: 25px;
+              font-size: 12px;
+              color: #718096;
+            }
+            .signature {
+              text-align: center;
+            }
+            .signature-line {
+              margin-top: 50px;
+              border-top: 1.5px solid #a0aec0;
+              width: 160px;
+            }
+            @media print {
+              body { padding: 0; }
+              .info-grid { background-color: #f8fafc !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div class="logo-text">MEDEXA</div>
+            <div>
+              <strong>${isAr ? 'التاريخ:' : 'Date:'}</strong> ${new Date(record.createdAt || new Date()).toLocaleDateString(isAr ? 'ar-JO' : 'en-US')}
+            </div>
+          </div>
+          <div class="title">${isAr ? 'تقرير السجل الطبي' : 'Medical Record Report'}</div>
+          
+          <div class="info-grid">
+            <div class="info-item">
+              <span>${isAr ? 'اسم المريض:' : 'Patient Name:'}</span> ${record.patientName || patientName}
+            </div>
+            <div class="info-item">
+              <span>${isAr ? 'الطبيب المعالج:' : 'Treating Doctor:'}</span> ${record.doctorName || doctorName}
+            </div>
+            <div class="info-item">
+              <span>${isAr ? 'رقم الموعد:' : 'Appointment ID:'}</span> #${record.appointmentUuid?.substring(0, 8) || '-'}
+            </div>
+            <div class="info-item">
+              <span>${isAr ? 'تاريخ الإنشاء:' : 'Created At:'}</span> ${new Date(record.createdAt || new Date()).toLocaleDateString(isAr ? 'ar-JO' : 'en-US')}
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">${isAr ? 'حالة المريض (الأعراض):' : 'Case Description / Symptoms:'}</div>
+            <div class="section-content">${record.caseDescription || '-'}</div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">${isAr ? 'التشخيص الطبي:' : 'Diagnosis:'}</div>
+            <div class="section-content">${record.diagnosis}</div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">${isAr ? 'الخطة العلاجية:' : 'Treatment Plan:'}</div>
+            <div class="section-content">${record.treatmentPlan}</div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">${isAr ? 'ملاحظات الطبيب:' : 'Doctor Notes:'}</div>
+            <div class="section-content">${record.note || '-'}</div>
+          </div>
+
+          <div class="footer">
+            <div>
+              ${isAr ? 'تم إنشاؤه بواسطة نظام مديكسا السحابي' : 'Generated by Medexa Cloud System'}
+            </div>
+            <div class="signature">
+              <div>${isAr ? 'توقيع الطبيب' : 'Doctor Signature'}</div>
+              <div class="signature-line"></div>
+            </div>
+          </div>
+
+          <script>
+            window.onload = function() {
+              window.print();
+              setTimeout(function() { window.close(); }, 500);
+            };
+          </script>
+        </body>
+      </html>
+    `;
+    printWindow.document.write(html);
+    printWindow.document.close();
+  };
+
+  const handleOpenMedicalRecordModal = async (app?: any, mode: 'add' | 'edit' | 'view' = 'add') => {
+    setMedicalRecordModalMode(mode);
+    setMedicalRecordUuid('');
+    setMedicalRecordData({
+      patientUuid: '',
+      doctorUuid: '',
+      appointmentUuid: '',
+      caseDescription: '',
+      diagnosis: '',
+      treatmentPlan: '',
+      note: '',
+      amount: 0,
+      transactionNote: ''
+    });
+    setPatientName('');
+    setDoctorName('');
+
+    if (mode === 'add') {
+      loadPendingAppointments();
+      if (app && app.uuid) {
+        setMedicalRecordData(prev => ({
+          ...prev,
+          appointmentUuid: app.uuid
+        }));
+        loadAppointmentDetails(app.uuid);
+      }
+      setIsMedicalRecordModalOpen(true);
+    } else {
+      if (app && app.uuid) {
+        setIsSubmittingRecord(true);
+        const record = await fetchMedicalRecordForAppointment(app.uuid);
+        setIsSubmittingRecord(false);
+        if (record) {
+          setMedicalRecordUuid(record.uuid || '');
+          setMedicalRecordData({
+            patientUuid: record.patientUuid || '',
+            doctorUuid: record.doctorUuid || '',
+            appointmentUuid: record.appointmentUuid || app.uuid,
+            caseDescription: record.caseDescription || '',
+            diagnosis: record.diagnosis || '',
+            treatmentPlan: record.treatmentPlan || '',
+            note: record.note || '',
+            amount: record.amount || 0,
+            transactionNote: record.transactionNote || ''
+          });
+          setPatientName(record.patientName || app.patientName || '');
+          setDoctorName(record.doctorName || app.doctorName || '');
+          setIsMedicalRecordModalOpen(true);
+        } else {
+          window.showToast?.(isAr ? 'لم يتم العثور على سجل طبي لهذا الموعد' : 'No medical record found for this appointment', 'error');
+        }
+      }
+    }
+  };
+
+  const handleConfirmMedicalRecord = async () => {
+    if (medicalRecordModalMode === 'view') {
+      setIsMedicalRecordModalOpen(false);
+      return;
+    }
+
+    if (medicalRecordModalMode === 'add') {
+      if (!medicalRecordData.appointmentUuid || !medicalRecordData.patientUuid || !medicalRecordData.doctorUuid) {
+        window.showToast?.(isAr ? 'يرجى تحديد موعد صالح' : 'Please select a valid appointment', 'error');
+        return;
+      }
+    }
+
+    if (!medicalRecordData.caseDescription.trim() || !medicalRecordData.diagnosis.trim() || !medicalRecordData.treatmentPlan.trim()) {
+      window.showToast?.(isAr ? 'يرجى ملء جميع الحقول المطلوبة' : 'Please fill all required fields', 'error');
+      return;
+    }
+
+    setIsSubmittingRecord(true);
+    try {
+      const token = getCookie('token');
+      const isEdit = medicalRecordModalMode === 'edit';
+      const url = '/api/medical-records';
+      const method = isEdit ? 'PUT' : 'POST';
+
+      const payload = isEdit 
+        ? {
+            uuid: medicalRecordUuid,
+            caseDescription: medicalRecordData.caseDescription,
+            diagnosis: medicalRecordData.diagnosis,
+            treatmentPlan: medicalRecordData.treatmentPlan,
+            note: medicalRecordData.note
+          }
+        : {
+            ...medicalRecordData,
+            amount: Number(medicalRecordData.amount)
+          };
+
+      const response = await fetch(url, {
+        method: method,
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (response.ok) {
+        window.showToast?.(
+          isEdit 
+            ? (isAr ? 'تم تحديث السجل الطبي بنجاح!' : 'Medical record updated successfully!')
+            : (isAr ? 'تم إرسال السجل الطبي بنجاح والتحول لحالة مكتمل!' : 'Medical record submitted and appointment marked Completed!'),
+          'success'
+        );
+        setIsMedicalRecordModalOpen(false);
+        loadCalendarAppointments();
+      } else {
+        let errMsg = isEdit ? 'Failed to update medical record' : 'Failed to submit medical record';
+        try {
+          const errData = await response.json();
+          errMsg = errData.message || errData.error || errMsg;
+        } catch (e) {}
+        window.showToast?.(errMsg, 'error');
+      }
+    } catch (err: any) {
+      console.error('Error submitting medical record:', err);
+      window.showToast?.(err.message || 'Error communicating with server', 'error');
+    } finally {
+      setIsSubmittingRecord(false);
+    }
+  };
+
   // Height and Scroll tracking for the detail sidebar
   const calendarRef = useRef<HTMLElement>(null);
   const detailSidebarRef = useRef<HTMLDivElement>(null);
@@ -261,6 +694,59 @@ const AppointmentsList = () => {
     e.dataTransfer.dropEffect = 'move';
   };
 
+  const handleUpdateAppointmentDate = async (app: Appointment, newDate: Date) => {
+    try {
+      const token = getCookie('token');
+      const res = await fetch(`/api/appointment/${app.uuid || app.id}`, {
+        headers: {
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        }
+      });
+
+      let currentDetails: any = {};
+      if (res.ok) {
+        currentDetails = await res.json();
+      }
+
+      const year = newDate.getFullYear();
+      const month = String(newDate.getMonth() + 1).padStart(2, '0');
+      const day = String(newDate.getDate()).padStart(2, '0');
+      const newDateStr = `${year}-${month}-${day}`;
+
+      const payload = {
+        appointmentDate: newDateStr,
+        appointmentStartTime: currentDetails.appointmentStartTime || app.time || "10:00",
+        appointmentEndTime: currentDetails.appointmentEndTime || app.endTime || "11:00",
+        patientNote: currentDetails.patientNote || app.patientNotes || "",
+        doctorNote: currentDetails.doctorNote || app.doctorNotes || ""
+      };
+
+      const putRes = await fetch(`/api/appointment/${app.uuid || app.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (putRes.ok) {
+        window.showToast?.(isAr ? 'تم نقل الموعد بنجاح' : 'Appointment moved successfully', 'success');
+        loadCalendarAppointments();
+      } else {
+        let errMsg = 'Failed to move appointment';
+        try {
+          const errData = await putRes.json();
+          errMsg = errData.message || errData.error || errMsg;
+        } catch (e) {}
+        window.showToast?.(errMsg, 'error');
+      }
+    } catch (err) {
+      console.error('Error updating appointment date:', err);
+      window.showToast?.(isAr ? 'خطأ في الاتصال بالخادم' : 'Server connection error', 'error');
+    }
+  };
+
   const handleDrop = (e: React.DragEvent, newDate: Date) => {
     e.preventDefault();
     const appId = parseInt(e.dataTransfer.getData('appId'));
@@ -270,10 +756,7 @@ const AppointmentsList = () => {
       if (isSameDay(app.date, newDate)) {
          window.showToast?.(isAr ? 'الموعد موجود بالفعل في هذا اليوم' : 'Appointment is already on this day', 'error');
       } else {
-        updateAndBroadcast(prev => prev.map(a =>
-          a.id === app.id ? { ...a, date: newDate } : a
-        ));
-        window.showToast?.(isAr ? 'تم نقل الموعد بنجاح' : 'Appointment moved successfully', 'success');
+        handleUpdateAppointmentDate(app, newDate);
       }
     }
 
@@ -319,10 +802,7 @@ const AppointmentsList = () => {
       if (isSameDay(draggedApp.date, dropTargetDate)) {
         window.showToast?.(isAr ? 'الموعد موجود بالفعل في هذا اليوم' : 'Appointment is already on this day', 'error');
       } else {
-        updateAndBroadcast(prev => prev.map(a =>
-          a.id === draggedApp.id ? { ...a, date: dropTargetDate } : a
-        ));
-        window.showToast?.(isAr ? 'تم نقل الموعد بنجاح' : 'Appointment moved successfully', 'success');
+        handleUpdateAppointmentDate(draggedApp, dropTargetDate);
       }
     }
 
@@ -466,15 +946,7 @@ const AppointmentsList = () => {
   };
 
   const handleOpenCompleteModal = (app: Appointment) => {
-    setAppointmentToComplete(app);
-    setCompleteData({
-      byWho: app.doctorName,
-      diagnosis: '',
-      treatmentPlan: '',
-      doctorNotes: '',
-      attachments: ''
-    });
-    setIsCompleteModalOpen(true);
+    handleOpenMedicalRecordModal(app);
   };
 
   const confirmComplete = () => {
@@ -805,12 +1277,30 @@ const AppointmentsList = () => {
                                 </div>
 
                                 <div className={cn("flex flex-wrap gap-2 pt-2", isAr ? "flex-row" : "flex-row-reverse")}>
-                                  <button
+                                                                  <button
                                     onClick={(e) => { e.stopPropagation(); handleOpenDialog('view', app); }}
                                     className="inline-flex items-center justify-center whitespace-nowrap font-medium transition-all duration-300 border bg-background text-foreground hover:bg-accent hover:text-accent-foreground rounded-md gap-1.5 px-3 flex-1 h-8 text-xs hover:border-primary/30 hover:shadow-lg hover:-translate-y-0.5"
                                   >
                                     <Eye className={cn("size-3.5", isAr ? "ml-1" : "mr-1")} /> {t('actions.view', T)}
                                   </button>
+                                  {app.status === 'completed' && (
+                                    <>
+                                      <button
+                                        onClick={(e) => { e.stopPropagation(); handleOpenMedicalRecordModal(app, 'view'); }}
+                                        className="inline-flex items-center justify-center whitespace-nowrap font-medium transition-all duration-300 border bg-blue-600 text-white hover:bg-blue-700 rounded-md gap-1.5 px-3 flex-1 h-8 text-xs shadow-sm hover:shadow-blue-200/50 hover:-translate-y-0.5"
+                                      >
+                                        <FileText className={cn("size-3.5", isAr ? "ml-1" : "mr-1")} /> {isAr ? 'السجل الطبي' : 'Medical Record'}
+                                      </button>
+                                      {hasManageMedicalRecords && (
+                                        <button
+                                          onClick={(e) => { e.stopPropagation(); handleOpenMedicalRecordModal(app, 'edit'); }}
+                                          className="inline-flex items-center justify-center whitespace-nowrap font-medium transition-all duration-300 border bg-amber-600 text-white hover:bg-amber-700 rounded-md p-2 size-8 text-xs shadow-sm hover:shadow-amber-200/50 hover:-translate-y-0.5 shadow-xs"
+                                        >
+                                          <SquarePen className="size-4" />
+                                        </button>
+                                      )}
+                                    </>
+                                  )}
                                   {app.status === 'pending' && (
                                     <>
                                       <button
@@ -819,12 +1309,14 @@ const AppointmentsList = () => {
                                       >
                                         <SquarePen className={cn("size-3.5", isAr ? "ml-1" : "mr-1")} /> {t('actions.edit', T)}
                                       </button>
-                                      <button
-                                        onClick={(e) => { e.stopPropagation(); handleOpenCompleteModal(app); }}
-                                        className="inline-flex items-center justify-center whitespace-nowrap font-medium transition-all duration-300 border bg-emerald-600 text-white hover:bg-emerald-700 rounded-md p-2 size-8 text-xs shadow-sm hover:shadow-emerald-200/50 hover:-translate-y-0.5"
-                                      >
-                                        <Check className="size-4" />
-                                      </button>
+                                      {hasManageMedicalRecords && (
+                                        <button
+                                          onClick={(e) => { e.stopPropagation(); handleOpenCompleteModal(app); }}
+                                          className="inline-flex items-center justify-center whitespace-nowrap font-medium transition-all duration-300 border bg-emerald-600 text-white hover:bg-emerald-700 rounded-md p-2 size-8 text-xs shadow-sm hover:shadow-emerald-200/50 hover:-translate-y-0.5"
+                                        >
+                                          <Check className="size-4" />
+                                        </button>
+                                      )}
                                       <button
                                         onClick={(e) => { e.stopPropagation(); handleDeleteAppointment(app.id); }}
                                         className="inline-flex items-center justify-center whitespace-nowrap font-medium transition-all duration-300 border border-rose-200 bg-rose-600 text-white hover:bg-rose-700 rounded-md p-2 size-8 text-xs shadow-sm hover:shadow-rose-200/50 hover:-translate-y-0.5 shrink-0"
@@ -1020,6 +1512,280 @@ const AppointmentsList = () => {
             </label>
             <div className="h-12 rounded-xl bg-muted/10 border-2 border-dashed border-border flex items-center justify-center text-muted-foreground text-xs italic">
               {t('attachments', T)}
+            </div>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Submit/Edit/View Medical Record Modal */}
+      <Modal
+        isOpen={isMedicalRecordModalOpen}
+        onClose={() => setIsMedicalRecordModalOpen(false)}
+        onConfirm={handleConfirmMedicalRecord}
+        title={
+          medicalRecordModalMode === 'view'
+            ? (isAr ? 'تفاصيل السجل الطبي' : 'Medical Record Details')
+            : medicalRecordModalMode === 'edit'
+            ? (isAr ? 'تعديل السجل الطبي' : 'Edit Medical Record')
+            : (isAr ? 'تقديم السجل الطبي' : 'Submit Medical Record')
+        }
+        message={
+          medicalRecordModalMode === 'view'
+            ? (isAr ? 'عرض تفاصيل السجل الطبي للمريض' : 'View patient medical record details')
+            : medicalRecordModalMode === 'edit'
+            ? (isAr ? 'تعديل تفاصيل السجل الطبي للمريض' : 'Edit patient medical record details')
+            : (isAr ? 'أدخل تفاصيل السجل الطبي الجديد للمريض' : 'Enter the details of the new medical record for the patient')
+        }
+        hideHeaderIcon={true}
+        showCloseButton={true}
+        confirmText={
+          medicalRecordModalMode === 'edit'
+            ? (isAr ? 'حفظ التعديلات' : 'Save Changes')
+            : (isAr ? 'حفظ وإرسال' : 'Submit')
+        }
+        cancelText={isAr ? 'إلغاء' : 'Cancel'}
+        variant="primary"
+        hideFooter={true}
+        footer={
+          <div className="p-6 pt-2 bg-white border-t border-border flex gap-3">
+            {medicalRecordModalMode === 'view' ? (
+              <>
+                <button
+                  onClick={() => handlePrintRecord(medicalRecordData)}
+                  className="flex-1 h-12 rounded-xl font-bold bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/20 flex items-center justify-center gap-2 cursor-pointer transition-all hover:-translate-y-0.5 active:translate-y-0 shadow-xs"
+                >
+                  {isAr ? 'طباعة' : 'Print'}
+                </button>
+                <button
+                  onClick={() => handlePrintRecord(medicalRecordData)}
+                  className="flex-1 h-12 rounded-xl border border-border font-bold hover:bg-slate-50 transition-all flex items-center justify-center gap-2 cursor-pointer hover:-translate-y-0.5 active:translate-y-0 shadow-xs"
+                >
+                  {isAr ? 'تصدير PDF' : 'Export PDF'}
+                </button>
+                <button
+                  onClick={() => setIsMedicalRecordModalOpen(false)}
+                  className="flex-1 h-12 rounded-xl border border-border font-bold hover:bg-slate-50 transition-all cursor-pointer"
+                >
+                  {isAr ? 'إغلاق' : 'Close'}
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={handleConfirmMedicalRecord}
+                  disabled={
+                    isSubmittingRecord ||
+                    (medicalRecordModalMode === 'add' && !medicalRecordData.appointmentUuid) ||
+                    !medicalRecordData.caseDescription.trim() ||
+                    !medicalRecordData.diagnosis.trim() ||
+                    !medicalRecordData.treatmentPlan.trim()
+                  }
+                  className="flex-1 h-12 rounded-xl font-bold bg-emerald-600 text-white hover:bg-emerald-700 shadow-lg shadow-emerald-200/50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer transition-all hover:-translate-y-0.5 active:translate-y-0"
+                >
+                  <Check className="size-4" />
+                  {medicalRecordModalMode === 'edit'
+                    ? (isAr ? 'حفظ التعديلات' : 'Save Changes')
+                    : (isAr ? 'حفظ وإرسال' : 'Submit')}
+                </button>
+                <button
+                  onClick={() => setIsMedicalRecordModalOpen(false)}
+                  className="flex-1 h-12 rounded-xl border border-border font-bold hover:bg-slate-50 transition-all cursor-pointer"
+                >
+                  {isAr ? 'إلغاء' : 'Cancel'}
+                </button>
+              </>
+            )}
+          </div>
+        }
+      >
+        <div className="space-y-6 py-2 text-start" dir={isAr ? 'rtl' : 'ltr'}>
+          <div className="md:grid flex flex-col md:grid-cols-2 gap-6">
+            {/* Choose Appointment / Appointment ID */}
+            {medicalRecordModalMode === 'add' ? (
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-semibold text-foreground/80 pr-1 pl-1">
+                  {isAr ? 'اختيار الموعد المعلق' : 'Select Pending Appointment'} <span className="text-destructive">*</span>
+                </label>
+                <Select
+                  value={medicalRecordData.appointmentUuid}
+                  onValueChange={(val) => {
+                    setMedicalRecordData(prev => ({ ...prev, appointmentUuid: val }));
+                    loadAppointmentDetails(val);
+                  }}
+                >
+                  <SelectTrigger className="rounded-xl h-12 bg-input-background transition-all focus:ring-4 focus:ring-primary/10">
+                    <SelectValue placeholder={isAr ? 'اختر موعداً معلقاً للبدء...' : 'Select a pending appointment to start...'} />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl z-[2000] text-start">
+                    {pendingAppointments.map((app) => (
+                      <SelectItem key={app.uuid} value={app.uuid}>
+                        {app.patientName} - {app.time} ({app.date})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-semibold text-foreground/80 pr-1 pl-1">
+                  {isAr ? 'رقم الموعد' : 'Appointment ID'}
+                </label>
+                <input
+                  type="text"
+                  readOnly
+                  disabled
+                  value={medicalRecordData.appointmentUuid}
+                  className="w-full h-12 px-4 rounded-xl border border-border bg-slate-100 font-semibold text-sm outline-none text-muted-foreground cursor-not-allowed text-start"
+                />
+              </div>
+            )}
+
+            {/* Patient Name */}
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-semibold text-foreground/80 pr-1 pl-1">
+                {isAr ? 'اسم المريض' : 'Patient Name'}
+              </label>
+              <input
+                type="text"
+                readOnly
+                disabled
+                value={patientName}
+                placeholder={isAr ? 'سيتم ملء اسم المريض تلقائياً عند اختيار الموعد' : 'Patient name will be filled automatically when selecting an appointment'}
+                className="w-full h-12 px-4 rounded-xl border border-border bg-slate-100 font-semibold text-sm outline-none text-muted-foreground cursor-not-allowed text-start placeholder:text-[11px] placeholder:text-muted-foreground/60"
+              />
+            </div>
+
+            {/* Doctor Name */}
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-semibold text-foreground/80 pr-1 pl-1">
+                {isAr ? 'اسم الطبيب' : 'Doctor Name'}
+              </label>
+              <input
+                type="text"
+                readOnly
+                disabled
+                value={doctorName}
+                placeholder={isAr ? 'سيتم ملء اسم الطبيب تلقائياً عند اختيار الموعد' : 'Doctor name will be filled automatically when selecting an appointment'}
+                className="w-full h-12 px-4 rounded-xl border border-border bg-slate-100 font-semibold text-sm outline-none text-muted-foreground cursor-not-allowed text-start placeholder:text-[11px] placeholder:text-muted-foreground/60"
+              />
+            </div>
+
+            {/* Amount */}
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-semibold text-foreground/80 pr-1 pl-1">
+                {isAr ? 'قيمة المعاملة' : 'Amount'}
+              </label>
+              <input
+                type="number"
+                disabled={medicalRecordModalMode === 'view'}
+                value={medicalRecordData.amount || ''}
+                onChange={(e) => setMedicalRecordData(prev => ({ ...prev, amount: Number(e.target.value) }))}
+                placeholder={isAr ? 'المبلغ...' : 'Amount...'}
+                className={cn(
+                  "w-full h-12 px-4 rounded-xl border border-border focus:ring-4 focus:ring-primary/10 transition-all outline-none font-medium text-sm text-start",
+                  medicalRecordModalMode === 'view' ? "bg-slate-100 cursor-not-allowed text-muted-foreground" : "bg-muted/20"
+                )}
+              />
+            </div>
+
+            {/* Diagnosis */}
+            <div className="flex flex-col gap-2 col-span-1 md:col-span-2">
+              <label className="text-sm font-semibold text-foreground/80 pr-1 pl-1">
+                {isAr ? 'التشخيص' : 'Diagnosis'} <span className="text-destructive">*</span>
+              </label>
+              <input
+                type="text"
+                disabled={medicalRecordModalMode === 'view'}
+                value={medicalRecordData.diagnosis}
+                onChange={(e) => setMedicalRecordData(prev => ({ ...prev, diagnosis: e.target.value }))}
+                placeholder={isAr ? 'التشخيص...' : 'Diagnosis...'}
+                className={cn(
+                  "w-full h-12 px-4 rounded-xl border border-border focus:ring-4 focus:ring-primary/10 transition-all outline-none font-medium text-sm text-start",
+                  medicalRecordModalMode === 'view' ? "bg-slate-100 cursor-not-allowed text-muted-foreground" : "bg-muted/20"
+                )}
+              />
+            </div>
+
+            {/* Note */}
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-semibold text-foreground/80 pr-1 pl-1">
+                {isAr ? 'ملاحظة إضافية' : 'Additional Note'}
+              </label>
+              <textarea
+                disabled={medicalRecordModalMode === 'view'}
+                value={medicalRecordData.note}
+                onChange={(e) => setMedicalRecordData(prev => ({ ...prev, note: e.target.value }))}
+                placeholder={isAr ? 'ملاحظات...' : 'Notes...'}
+                className={cn(
+                  "w-full min-h-[100px] p-4 rounded-xl border border-border bg-input-background focus:ring-4 focus:ring-primary/10 transition-all outline-none font-medium text-sm resize-none",
+                  medicalRecordModalMode === 'view' ? "bg-slate-100 cursor-not-allowed text-muted-foreground" : "",
+                  isAr ? "text-right" : "text-left"
+                )}
+              />
+            </div>
+
+            {/* Case Description */}
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-semibold text-foreground/80 pr-1 pl-1">
+                {isAr ? 'وصف الحالة' : 'Case Description'} <span className="text-destructive">*</span>
+              </label>
+              <textarea
+                disabled={medicalRecordModalMode === 'view'}
+                value={medicalRecordData.caseDescription}
+                onChange={(e) => setMedicalRecordData(prev => ({ ...prev, caseDescription: e.target.value }))}
+                placeholder={isAr ? 'أدخل وصف الحالة...' : 'Enter case description...'}
+                className={cn(
+                  "w-full min-h-[100px] p-4 rounded-xl border border-border bg-input-background focus:ring-4 focus:ring-primary/10 transition-all outline-none font-medium text-sm resize-none",
+                  medicalRecordModalMode === 'view' ? "bg-slate-100 cursor-not-allowed text-muted-foreground" : "",
+                  isAr ? "text-right" : "text-left"
+                )}
+              />
+            </div>
+
+            {/* Treatment Plan */}
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-semibold text-foreground/80 pr-1 pl-1">
+                {isAr ? 'خطة العلاج' : 'Treatment Plan'} <span className="text-destructive">*</span>
+              </label>
+              <textarea
+                disabled={medicalRecordModalMode === 'view'}
+                value={medicalRecordData.treatmentPlan}
+                onChange={(e) => setMedicalRecordData(prev => ({ ...prev, treatmentPlan: e.target.value }))}
+                placeholder={isAr ? 'أدخل خطة العلاج...' : 'Enter treatment plan...'}
+                className={cn(
+                  "w-full min-h-[100px] p-4 rounded-xl border border-border bg-input-background focus:ring-4 focus:ring-primary/10 transition-all outline-none font-medium text-sm resize-none",
+                  medicalRecordModalMode === 'view' ? "bg-slate-100 cursor-not-allowed text-muted-foreground" : "",
+                  isAr ? "text-right" : "text-left"
+                )}
+              />
+            </div>
+
+            {/* Transaction Note */}
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-semibold text-foreground/80 pr-1 pl-1">
+                {isAr ? 'ملاحظات المعاملة' : 'Transaction Note'}
+              </label>
+              <textarea
+                disabled={medicalRecordModalMode === 'view'}
+                value={medicalRecordData.transactionNote}
+                onChange={(e) => setMedicalRecordData(prev => ({ ...prev, transactionNote: e.target.value }))}
+                placeholder={isAr ? 'ملاحظات المعاملة الماليّة...' : 'Financial transaction notes...'}
+                className={cn(
+                  "w-full min-h-[100px] p-4 rounded-xl border border-border bg-input-background focus:ring-4 focus:ring-primary/10 transition-all outline-none font-medium text-sm resize-none",
+                  medicalRecordModalMode === 'view' ? "bg-slate-100 cursor-not-allowed text-muted-foreground" : "",
+                  isAr ? "text-right" : "text-left"
+                )}
+              />
+            </div>
+
+            {/* Attachments Placeholder */}
+            <div className="flex flex-col gap-2 col-span-1 md:col-span-2 pt-2 border-t border-border">
+              <label className="text-sm font-semibold text-foreground/80 pr-1 pl-1">
+                {isAr ? 'المرفقات (قريباً)' : 'Attachments (Soon)'}
+              </label>
+              <div className="h-16 rounded-xl bg-muted/10 border-2 border-dashed border-border flex items-center justify-center text-muted-foreground text-xs font-semibold italic">
+                {isAr ? 'المرفقات (قريباً)' : 'Attachments (Soon)'}
+              </div>
             </div>
           </div>
         </div>

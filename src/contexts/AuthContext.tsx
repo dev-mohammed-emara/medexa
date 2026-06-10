@@ -55,21 +55,42 @@ const parseJWT = (token: string): any => {
 const extractPermissionsFromJWT = (token: string): string[] => {
   const decoded = parseJWT(token)
   if (!decoded || !decoded.authorities) {
-    return ['MANAGE_CLINIC', 'MANAGE_APPOINTMENTS']
+    return []
   }
   const permissions = decoded.authorities.split(',').map((p: string) => p.trim())
-  // Add MANAGE_CLINIC as default if not already present
-  if (!permissions.includes('MANAGE_CLINIC')) {
-    permissions.push('MANAGE_CLINIC')
-  }
-  if (!permissions.includes('MANAGE_APPOINTMENTS')) {
-    permissions.push('MANAGE_APPOINTMENTS')
-  }
   return permissions
+}
+
+const getProfileEndpoint = (token: string): string => {
+  try {
+    const savedUserStr = localStorage.getItem('medexa_user')
+    if (savedUserStr) {
+      const savedUser = JSON.parse(savedUserStr)
+      if (savedUser && savedUser.role === 'ROLE_SECRETARY') {
+        return '/api/secretary/me'
+      }
+    }
+  } catch (e) {}
+
+  const decoded = parseJWT(token)
+  if (!decoded) return '/api/doctor/me'
+
+  const authorities = decoded.authorities || ''
+  const roles = decoded.roles || []
+  const role = decoded.role || ''
+
+  const isSecretary =
+    authorities.includes('ROLE_SECRETARY') ||
+    (Array.isArray(roles) && roles.includes('ROLE_SECRETARY')) ||
+    (typeof roles === 'string' && roles.includes('ROLE_SECRETARY')) ||
+    role === 'ROLE_SECRETARY'
+
+  return isSecretary ? '/api/secretary/me' : '/api/doctor/me'
 }
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [profileImage, setProfileImage] = useState<string | null>(null)
+
   const [user, setUser] = useState<UserProfile | null>(() => {
     const saved = localStorage.getItem('medexa_user')
     return saved ? JSON.parse(saved) : null
@@ -82,6 +103,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const token = getCookie('token')
     return !!token && !isTokenExpired(token) && !!getCookie('refreshToken')
   })
+
+  useEffect(() => {
+    if (user?.email) {
+      const savedImage = localStorage.getItem(`medexa_profile_image_${user.email}`)
+      setProfileImage(savedImage)
+    } else {
+      setProfileImage(null)
+    }
+  }, [user?.email])
 
   const refreshTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -212,8 +242,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
           }
 
-          // Fetch user data from /api/doctor/me
-          const response = await fetch('/api/doctor/me', {
+          // Fetch user data from correct endpoint depending on role
+          const profileUrl = getProfileEndpoint(token);
+          const response = await fetch(profileUrl, {
             method: 'GET',
             headers: {
               'Authorization': `Bearer ${token}`
@@ -308,10 +339,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const decodedToken = parseJWT(token)
     const permissions = extractPermissionsFromJWT(token)
 
-    // Save user data (prefer /api/doctor/me, fallback to JWT/response data, then defaults)
+    // Save user data (prefer profile endpoint, fallback to JWT/response data, then defaults)
     let userProfile: UserProfile;
     try {
-      const profileRes = await fetch('/api/doctor/me', {
+      const profileUrl = getProfileEndpoint(token);
+      const profileRes = await fetch(profileUrl, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -405,7 +437,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         gender: ownerUser.gender,
         dateOfBirth: ownerUser.dateOfBirth,
         role: "ROLE_CLINIC_OWNER",
-        permissions: ['MANAGE_CLINIC','MANAGE_TRANSACTIONS','MANAGE_DOCTORS','MANAGE_SECRETARIES','MANAGE_APPOINTMENTS']
+        permissions: []
       }
       setUser(userProfile)
       localStorage.setItem('medexa_user', JSON.stringify(userProfile))
@@ -415,7 +447,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }
 
-  const logout = async (): Promise<string | void> => {
+  async function logout(): Promise<string | void> {
     // Clear scheduled timer
     if (refreshTimeoutRef.current) {
       clearTimeout(refreshTimeoutRef.current as any)
@@ -458,6 +490,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const updateProfileImage = (image: string | null) => {
     setProfileImage(image)
+    if (user?.email) {
+      if (image) {
+        localStorage.setItem(`medexa_profile_image_${user.email}`, image)
+      } else {
+        localStorage.removeItem(`medexa_profile_image_${user.email}`)
+      }
+    }
   }
 
   const updateUser = (updatedFields: Partial<UserProfile>) => {

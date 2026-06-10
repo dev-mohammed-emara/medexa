@@ -1,4 +1,5 @@
 import { getCookie, checkTokenOrRedirect } from '../utils/cookie'
+import { getErrorMessage } from '../utils/error'
 
 export interface ApiDoctorUser {
   uuid?: string
@@ -94,7 +95,7 @@ export const createDoctor = async (body: any): Promise<ApiDoctor> => {
     let errorMessage = 'Failed to create doctor'
     try {
       const errorData = await response.json()
-      errorMessage = errorData.message || errorData.error || errorMessage
+      errorMessage = getErrorMessage(errorData, errorMessage)
     } catch (e) {
       // ignore
     }
@@ -115,7 +116,7 @@ export const updateDoctor = async (uuid: string, body: any): Promise<ApiDoctor> 
     let errorMessage = 'Failed to update doctor'
     try {
       const errorData = await response.json()
-      errorMessage = errorData.message || errorData.error || errorMessage
+      errorMessage = getErrorMessage(errorData, errorMessage)
     } catch (e) {
       // ignore
     }
@@ -160,7 +161,7 @@ export const updateDoctorMe = async (body: any): Promise<ApiDoctor> => {
     let errorMessage = 'Failed to update my doctor profile'
     try {
       const errorData = await response.json()
-      errorMessage = errorData.message || errorData.error || errorMessage
+      errorMessage = getErrorMessage(errorData, errorMessage)
     } catch (e) {
       // ignore
     }
@@ -181,7 +182,7 @@ export const updateDoctorAppointmentPeriod = async (period: number): Promise<{me
     let errorMessage = 'Failed to update appointment period'
     try {
       const errorData = await response.json()
-      errorMessage = errorData.message || errorData.error || errorMessage
+      errorMessage = getErrorMessage(errorData, errorMessage)
     } catch (e) {
       // ignore
     }

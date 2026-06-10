@@ -60,13 +60,27 @@ const FinanceOverview = () => {
     }
   });
 
-  const [fromDate, setFromDate] = useState<string>("2025-01-01");
-  const [toDate, setToDate] = useState<string>("2025-06-30");
+  const getLocalDateString = (d: Date) => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  const defaultToDate = getLocalDateString(today);
+  const defaultFromDate = getLocalDateString(yesterday);
+
+  const [fromDate, setFromDate] = useState<string>(defaultFromDate);
+  const [toDate, setToDate] = useState<string>(defaultToDate);
   const [type, setType] = useState<string>("");
   const [sort, setSort] = useState<string>("createdAt,desc");
 
-  const [tempFromDate, setTempFromDate] = useState<string>("2025-01-01");
-  const [tempToDate, setTempToDate] = useState<string>("2025-06-30");
+  const [tempFromDate, setTempFromDate] = useState<string>(defaultFromDate);
+  const [tempToDate, setTempToDate] = useState<string>(defaultToDate);
   const [tempType, setTempType] = useState<string>("");
   const [tempSort, setTempSort] = useState<string>("createdAt,desc");
 

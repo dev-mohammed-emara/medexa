@@ -4,7 +4,13 @@ import { MdFeedback } from 'react-icons/md';
 import Modal from './Modal';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { getCookie } from '../../utils/cookie';
-import { cn } from '../../utils/cn';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from './select';
 
 const SupportTicket = () => {
   const { isAr } = useLanguage();
@@ -12,6 +18,11 @@ const SupportTicket = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [description, setDescription] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [section, setSection] = useState('dashboard_page');
+
+  // Hide the floating button on the support-tickets page
+  const isSupportTicketsPage = location.pathname.includes('/support-tickets');
+  if (isSupportTicketsPage) return null;
 
   const getSectionName = (path: string) => {
     const cleanPath = path.toLowerCase().replace(/^\/admin/, '').replace(/^\//, '').split('/')[0];
@@ -28,10 +39,14 @@ const SupportTicket = () => {
     return `${cleanPath}_page`;
   };
 
+  const handleOpen = () => {
+    setSection(getSectionName(location.pathname));
+    setIsOpen(true);
+  };
+
   const handleSubmit = async () => {
     if (!description.trim()) return;
     setIsSubmitting(true);
-    const sectionName = getSectionName(location.pathname);
 
     try {
       const token = getCookie('token');
@@ -42,7 +57,7 @@ const SupportTicket = () => {
           ...(token ? { 'Authorization': `Bearer ${token}` } : {})
         },
         body: JSON.stringify({
-          section: sectionName,
+          section: section,
           description: description
         })
       });
@@ -69,21 +84,10 @@ const SupportTicket = () => {
 
   return (
     <>
-      {/* Bottom Warning Button (Yellowish warning theme) */}
-      <div className="mt-8 mb-4 flex justify-center w-full">
-        <button
-          type="button"
-          onClick={() => setIsOpen(true)}
-          className="px-6 py-3 rounded-xl font-bold bg-yellow-400 hover:bg-yellow-500 text-yellow-950 shadow-lg shadow-yellow-400/20 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 cursor-pointer"
-        >
-          {isAr ? 'هل تواجه أي مشكلة؟' : 'Having any issue?'}
-        </button>
-      </div>
-
       {/* Floating Support Icon on the far left - Opens Modal directly now */}
       <button
         type="button"
-        onClick={() => setIsOpen(true)}
+        onClick={handleOpen}
         className="fixed bottom-6 left-6 z-40 p-3.5 rounded-full bg-yellow-400 hover:bg-yellow-500 text-black shadow-xl hover:scale-110 active:scale-95 transition-all duration-200 flex items-center justify-center cursor-pointer border border-yellow-300"
         title={isAr ? 'الدعم الفني' : 'Support'}
       >
@@ -105,18 +109,38 @@ const SupportTicket = () => {
         variant="warning"
         isConfirmDisabled={!description.trim() || isSubmitting}
       >
-        <div className="space-y-4 py-2  flex flex-col items-start">
+        <div className="space-y-4 py-2 flex flex-col w-full text-start" dir={isAr ? 'rtl' : 'ltr'}>
           <div className="space-y-2 w-full">
-            <label className="text-xs font-bold text-foreground/70 block ">
+            <label className="text-xs font-bold text-foreground/70 block">
+              {isAr ? 'الصفحة المعنية' : 'Related Page'} <span className="text-destructive">*</span>
+            </label>
+            <Select value={section} onValueChange={setSection}>
+              <SelectTrigger className="w-full h-12 rounded-xl bg-white border border-border text-start">
+                <SelectValue placeholder={isAr ? 'الصفحة المعنية' : 'Related Page'} />
+              </SelectTrigger>
+              <SelectContent smallZ className="z-[700]">
+                <SelectItem value="dashboard_page">{isAr ? 'لوحة التحكم' : 'Dashboard'}</SelectItem>
+                <SelectItem value="doctor_page">{isAr ? 'الأطباء' : 'Doctors'}</SelectItem>
+                <SelectItem value="patient_page">{isAr ? 'المرضى' : 'Patients'}</SelectItem>
+                <SelectItem value="secretary_page">{isAr ? 'السكرتاريا' : 'Secretaries'}</SelectItem>
+                <SelectItem value="appointment_page">{isAr ? 'المواعيد' : 'Appointments'}</SelectItem>
+                <SelectItem value="medical_record_page">{isAr ? 'السجلات الطبية' : 'Medical Records'}</SelectItem>
+                <SelectItem value="finance_page">{isAr ? 'المالية' : 'Finance'}</SelectItem>
+                <SelectItem value="profile_page">{isAr ? 'الملف الشخصي' : 'Profile'}</SelectItem>
+                <SelectItem value="settings_page">{isAr ? 'الإعدادات' : 'Settings'}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2 w-full text-start">
+            <label className="text-xs font-bold text-foreground/70 block">
               {isAr ? 'صف المشكلة' : 'Issue Description'} <span className="text-destructive">*</span>
             </label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder={isAr ? 'اكتب تفاصيل المشكلة هنا...' : 'Type issue details here...'}
-              className={cn(
-                "w-full min-h-[120px] p-4 rounded-xl border border-border bg-muted/20 focus:ring-4 focus:ring-yellow-500/10 focus:border-yellow-500 transition-all outline-none font-semibold text-sm resize-none  text-foreground placeholder:text-muted-foreground/60"
-              )}
+              className="w-full min-h-[120px] p-4 rounded-xl border border-border bg-muted/20 focus:ring-4 focus:ring-yellow-500/10 focus:border-yellow-500 transition-all outline-none font-semibold text-sm resize-none text-foreground placeholder:text-muted-foreground/60"
               dir={isAr ? 'rtl' : 'ltr'}
             />
           </div>

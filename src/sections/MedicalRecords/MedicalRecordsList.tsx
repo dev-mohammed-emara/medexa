@@ -31,14 +31,28 @@ const MedicalRecordsList = () => {
 
   const [openId, setOpenId] = useState<string | null>(null);
 
+  const getLocalDateString = (d: Date) => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const today = new Date();
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  const defaultToDate = getLocalDateString(today);
+  const defaultFromDate = getLocalDateString(yesterday);
+
   // Active filter states
-  const [fromDate, setFromDate] = useState<string>("2026-01-01");
-  const [toDate, setToDate] = useState<string>("2026-12-31");
+  const [fromDate, setFromDate] = useState<string>(defaultFromDate);
+  const [toDate, setToDate] = useState<string>(defaultToDate);
   const [sort, setSort] = useState<string>("createdAt,desc");
 
   // Temp filter states
-  const [tempFromDate, setTempFromDate] = useState<string>("2026-01-01");
-  const [tempToDate, setTempToDate] = useState<string>("2026-12-31");
+  const [tempFromDate, setTempFromDate] = useState<string>(defaultFromDate);
+  const [tempToDate, setTempToDate] = useState<string>(defaultToDate);
   const [tempSort, setTempSort] = useState<string>("createdAt,desc");
 
   const [records, setRecords] = useState<any[]>([]);

@@ -1,5 +1,5 @@
 import { AlertTriangle, Check } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, useId } from 'react';
 import { IoMdCheckmarkCircleOutline } from "react-icons/io";
 import { cn } from '../../utils/cn';
 import Portal from './Portal';
@@ -45,9 +45,9 @@ const Modal = ({
   const overlayRef = useRef<HTMLDivElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
   const [isClosing, setIsClosing] = useState(false);
-  const modalId = useRef(Date.now());
-  const titleId = useRef(`modal-title-${modalId.current}`);
-  const descriptionId = useRef(`modal-desc-${modalId.current}`);
+  const modalUniqueId = useId();
+  const titleId = `modal-title-${modalUniqueId}`;
+  const descriptionId = `modal-desc-${modalUniqueId}`;
 
   const handleClose = useCallback(() => {
     setIsClosing(true);
@@ -64,7 +64,7 @@ const Modal = ({
       document.body.style.overflow = 'hidden';
 
       if (!historyPushed.current) {
-        window.history.pushState({ modalOpen: true, modalId: modalId.current }, '');
+        window.history.pushState({ modalOpen: true, modalId: modalUniqueId }, '');
         historyPushed.current = true;
       }
 
@@ -74,7 +74,7 @@ const Modal = ({
       };
 
       const handlePopState = (e: PopStateEvent) => {
-        if (!e.state || e.state.modalId !== modalId.current) {
+        if (!e.state || e.state.modalId !== modalUniqueId) {
           handleClose();
         }
       };
@@ -88,16 +88,16 @@ const Modal = ({
         window.removeEventListener('popstate', handlePopState);
       };
     }
-  }, [isOpen, onConfirm, handleClose, isConfirmDisabled]);
+  }, [isOpen, onConfirm, handleClose, isConfirmDisabled, modalUniqueId]);
 
   useEffect(() => {
     if (isClosing && historyPushed.current) {
-      if (window.history.state?.modalOpen && window.history.state?.modalId === modalId.current) {
+      if (window.history.state?.modalOpen && window.history.state?.modalId === modalUniqueId) {
         window.history.back();
       }
       historyPushed.current = false;
     }
-  }, [isClosing]);
+  }, [isClosing, modalUniqueId]);
 
   if (!isOpen) return null;
 
@@ -118,8 +118,8 @@ const Modal = ({
         <div
           ref={modalRef}
           role="dialog"
-          aria-labelledby={titleId.current}
-          aria-describedby={message ? descriptionId.current : undefined}
+          aria-labelledby={titleId}
+          aria-describedby={message ? descriptionId : undefined}
           data-state={isClosing ? 'closed' : 'open'}
           data-slot="dialog-content"
           tabIndex={-1}
@@ -148,11 +148,11 @@ const Modal = ({
                 "flex flex-col gap-1.5 mb-4",
                 (variant === 'danger' || variant === 'warning') ? "items-center text-center" : "items-start text-start"
               )}>
-                <h3 id={titleId.current} className="text-xl font-bold text-[#1A2B3C]">
+                <h3 id={titleId} className="text-xl font-bold text-[#1A2B3C]">
                   {title}
                 </h3>
                 {message && (
-                  <p id={descriptionId.current} className="text-xs text-gray-500 text-balance">
+                  <p id={descriptionId} className="text-xs text-gray-500 text-balance">
                     {message}
                   </p>
                 )}

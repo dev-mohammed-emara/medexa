@@ -123,7 +123,7 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
         phoneNumber: formatPhone(String(rawData.phoneNumber)),
         gender: selectedGender || 'MALE',
         dateOfBirth: selectedDob || '1990-01-01',
-        permissions: permissions.length > 0 ? permissions : ['MANAGE_DOCTORS', 'MANAGE_SECRETARIES']
+        // permissions: permissions.length > 0 ? permissions : ['MANAGE_DOCTORS', 'MANAGE_SECRETARIES']
       }
 
       // Password is required for adding new doctor
@@ -262,7 +262,7 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
                     <p className="text-[11px] text-[#0B5A8E] mt-0.5 leading-relaxed font-semibold">
                       {isAr 
                         ? "* يرجى إدخال رقم هاتف أردني صحيح (مثال: 962791234567)"
-                        : "* Please enter a valid Jordanian phone number (e.g. 962791234567)"
+                        : "* Please enter a valid Jordanian ++phone number  (e.g. 962791234567)"
                       }
                     </p>
                   )}

@@ -27,7 +27,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
         <Navbar onMenuClick={toggleSidebar} />
 
         {/* Dynamic content */}
-        <main className="relative flex-1 min-h-0 overflow-y-auto overflow-x-hidden p-4 lg:p-6 custom-scrollbar scroll-smooth">
+        <main className="relative flex-1 pb-20! min-h-0 overflow-y-auto overflow-x-hidden p-4 lg:p-6 custom-scrollbar scroll-smooth">
           {children}
           <SupportTicket />
         </main>

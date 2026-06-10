@@ -1,4 +1,5 @@
 import { getCookie, checkTokenOrRedirect } from '../utils/cookie'
+import { getErrorMessage } from '../utils/error'
 
 export interface ApiSecretaryUser {
   uuid?: string
@@ -91,7 +92,7 @@ export const createSecretary = async (body: any): Promise<ApiSecretary> => {
     let errorMessage = 'Failed to create secretary'
     try {
       const errorData = await response.json()
-      errorMessage = errorData.message || errorData.error || errorMessage
+      errorMessage = getErrorMessage(errorData, errorMessage)
     } catch (e) {
       // ignore
     }
@@ -112,7 +113,7 @@ export const updateSecretary = async (uuid: string, body: any): Promise<ApiSecre
     let errorMessage = 'Failed to update secretary'
     try {
       const errorData = await response.json()
-      errorMessage = errorData.message || errorData.error || errorMessage
+      errorMessage = getErrorMessage(errorData, errorMessage)
     } catch (e) {
       // ignore
     }
@@ -131,4 +132,38 @@ export const deleteSecretary = async (uuid: string): Promise<void> => {
   if (!response.ok) {
     throw new Error(`Failed to delete secretary. Status: ${response.status}`)
   }
+}
+
+export const fetchSecretaryMe = async (): Promise<ApiSecretary> => {
+  const response = await fetch(`/api/secretary/me`, {
+    method: 'GET',
+    headers: getHeaders()
+  })
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch my secretary profile. Status: ${response.status}`)
+  }
+
+  return response.json()
+}
+
+export const updateSecretaryMe = async (body: any): Promise<ApiSecretary> => {
+  const response = await fetch(`/api/secretary/me`, {
+    method: 'PUT',
+    headers: getHeaders(),
+    body: JSON.stringify(body)
+  })
+
+  if (!response.ok) {
+    let errorMessage = 'Failed to update my secretary profile'
+    try {
+      const errorData = await response.json()
+      errorMessage = getErrorMessage(errorData, errorMessage)
+    } catch (e) {
+      // ignore
+    }
+    throw new Error(errorMessage)
+  }
+
+  return response.json()
 }

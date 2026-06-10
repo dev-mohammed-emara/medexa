@@ -12,6 +12,7 @@ import ProtectedRoute from './components/auth/ProtectedRoute'
 import Preloader from './components/transition/Preloader'
 import { LanguageProvider } from './contexts/LanguageContext'
 import { PreloaderProvider } from './contexts/PreloaderContext'
+import AppointmentTypes from './pages/AppointmentTypes'
 import Appointments from './pages/Appointments'
 import Dashboard from './pages/Dashboard'
 import Doctors from './pages/Doctors'
@@ -23,6 +24,7 @@ import Records from './pages/Records'
 import Secretary from './pages/Secretary'
 import ServerError from './pages/ServerError'
 import SessionExpired from './pages/SessionExpired'
+import SupportTickets from './pages/SupportTickets'
 import AdminApprovals from './pages/admin/AdminApprovals'
 import AdminClinicDetails from './pages/admin/AdminClinicDetails'
 import AdminClinics from './pages/admin/AdminClinics'
@@ -83,9 +85,11 @@ const AppRoutes = () => {
           <Route path="/secretary" element={<Secretary />} />
           <Route path="/patients" element={<Patients />} />
           <Route path="/appointments" element={<Appointments />} />
+          <Route path="/appointment-types" element={<AppointmentTypes />} />
           <Route path="/records" element={<Records />} />
           <Route path="/finance" element={<Finance />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/support-tickets" element={<SupportTickets />} />
           <Route path="/500" element={<ServerError />} />
           <Route path="/419" element={<SessionExpired />} />
         </Route>
