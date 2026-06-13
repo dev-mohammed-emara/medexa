@@ -185,7 +185,7 @@ const AdminTickets = () => {
   })
 
   // Sorting Logic (by ticket ID number)
-  const sortedTickets = [...filteredTickets].sort((a, b) => {
+  const sortedTickets = filteredTickets.toSorted((a, b) => {
     const numA = parseInt(a.id.replace('TKT-', ''))
     const numB = parseInt(b.id.replace('TKT-', ''))
     return sortAsc ? numA - numB : numB - numA

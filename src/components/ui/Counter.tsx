@@ -59,6 +59,9 @@ interface CounterProps {
   isCurrency?: boolean;
 }
 
+const currencyFormatter = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const numberFormatter = new Intl.NumberFormat('en-US');
+
 export default function Counter({
   value,
   fontSize = 100,
@@ -70,11 +73,9 @@ export default function Counter({
 }: CounterProps) {
   const height = fontSize * 1.2;
 
-  // For currency/floats, we might want to handle it differently
-  // If isCurrency, we'll force 2 decimal places.
   const formattedValue = isCurrency
-    ? new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value)
-    : new Intl.NumberFormat('en-US').format(value);
+    ? currencyFormatter.format(value)
+    : numberFormatter.format(value);
 
   const digits = formattedValue.split('');
 

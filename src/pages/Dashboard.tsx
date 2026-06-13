@@ -6,20 +6,20 @@ import StatsOverview from '../sections/Dashboard/StatsOverview'
 import { fetchClinicStatistics } from '../api/statisticsApi'
 import type { ClinicStatisticsResponse } from '../api/statisticsApi'
 
+const getLocalDateString = (d: Date) => {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 const Dashboard = () => {
-  const getLocalDateString = (d: Date) => {
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
-
-  const today = new Date();
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-
-  const [fromDate, setFromDate] = useState<string>(getLocalDateString(yesterday))
-  const [toDate, setToDate] = useState<string>(getLocalDateString(today))
+  const [fromDate, setFromDate] = useState<string>(() => {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    return getLocalDateString(yesterday);
+  })
+  const [toDate, setToDate] = useState<string>(() => getLocalDateString(new Date()))
   const [clinicStats, setClinicStats] = useState<ClinicStatisticsResponse | null>(null)
   const [isLoading, setIsLoading] = useState<boolean>(false)
 

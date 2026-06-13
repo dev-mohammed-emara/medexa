@@ -36,9 +36,12 @@ const LoginForm = () => {
     }
   }
 
+  // Derive a stable string from location.search for dependency
+  const searchStr = location.search;
+
   // Sync component state with URL query params so back/forward works
   useEffect(() => {
-    const params = new URLSearchParams(location.search)
+    const params = new URLSearchParams(searchStr)
     const auth = params.get('auth')
 
     if (auth === 'forgot') {
@@ -47,7 +50,7 @@ const LoginForm = () => {
       setIsForgot(false)
     }
 
-  }, [location.search])
+  }, [searchStr])
 
   // Get the page user was trying to visit before being redirected to login
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/'

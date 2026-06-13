@@ -6,8 +6,14 @@ import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
 import { useMediaQuery } from 'react-responsive';
 import { useLocation } from 'react-router-dom';
 
-const Preloader = () => {
+// Derive a stable string key from location to use as a dependency
+const useLocationKey = () => {
   const location = useLocation();
+  return `${location.pathname}${location.search}`;
+};
+
+const Preloader = () => {
+  const locationKey = useLocationKey();
   const { language } = useLanguage();
   const loaderRef = useRef<HTMLDivElement>(null);
   const logoRef = useRef<HTMLDivElement>(null);
@@ -116,7 +122,7 @@ const Preloader = () => {
 
   useEffect(() => {
     lastUrlRef.current = window.location.href;
-  }, [location.pathname, location.search]);
+  }, [locationKey]);
 
   useEffect(() => {
     const handlePopState = () => {
@@ -141,7 +147,7 @@ const Preloader = () => {
 
   useLayoutEffect(() => {
     revealTransition();
-  }, [location.pathname, language, revealTransition]);
+  }, [locationKey, language, revealTransition]);
 
   return (
     <div

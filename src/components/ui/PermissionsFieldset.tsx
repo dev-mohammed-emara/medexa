@@ -2,7 +2,7 @@ import { Check } from 'lucide-react'
 import { cn } from '../../utils/cn'
 import { useLanguage } from '../../contexts/LanguageContext'
 
-export const AVAILABLE_PERMISSIONS = [
+const AVAILABLE_PERMISSIONS = [
   { value: 'MANAGE_CLINIC', labelAr: 'إدارة العيادة', labelEn: 'Clinic Settings' },
   { value: 'MANAGE_DOCTORS', labelAr: 'إدارة الأطباء', labelEn: 'Doctors' },
   { value: 'MANAGE_SECRETARIES', labelAr: 'إدارة السكرتاريا', labelEn: 'Secretaries' },
@@ -69,7 +69,6 @@ export default function PermissionsFieldset({
               </button>
               <label 
                 htmlFor={permission.value} 
-                onClick={() => togglePermission(permission.value)}
                 className={cn("text-sm cursor-pointer select-none font-semibold text-foreground/80", disabled && "opacity-50 cursor-not-allowed")}
               >
                 {isAr ? permission.labelAr : permission.labelEn}

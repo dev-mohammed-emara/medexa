@@ -10,30 +10,24 @@ interface TimePickerProps {
   noClock?: boolean;
 }
 
-const TimePicker: React.FC<TimePickerProps> = ({ value, onChange, className, noClock = false }) => {
-  const parseTo12h = (val: string) => {
-    const [h24Str, m] = val.split(':');
-    const h24 = parseInt(h24Str || '8');
-    const p = h24 >= 12 ? 'PM' : 'AM';
-    let h12 = h24 % 12;
-    if (h12 === 0) h12 = 12;
-    return {
-      h: h12.toString().padStart(2, '0'),
-      m: m || '00',
-      p: p as 'AM' | 'PM'
-    };
+const parseTo12h = (val: string) => {
+  const [h24Str, m] = val.split(':');
+  const h24 = parseInt(h24Str || '8');
+  const p = h24 >= 12 ? 'PM' : 'AM';
+  let h12 = h24 % 12;
+  if (h12 === 0) h12 = 12;
+  return {
+    h: h12.toString().padStart(2, '0'),
+    m: m || '00',
+    p: p as 'AM' | 'PM'
   };
+};
 
-  const [hours, setHours] = useState('');
-  const [minutes, setMinutes] = useState('');
-  const [period, setPeriod] = useState<'AM' | 'PM'>('AM');
-
-  useEffect(() => {
-    const initial = parseTo12h(value || '08:00');
-    setHours(initial.h);
-    setMinutes(initial.m);
-    setPeriod(initial.p);
-  }, []);
+const TimePicker: React.FC<TimePickerProps> = ({ value, onChange, className, noClock = false }) => {
+  const initial = parseTo12h(value || '08:00');
+  const [hours, setHours] = useState(initial.h);
+  const [minutes, setMinutes] = useState(initial.m);
+  const [period, setPeriod] = useState<'AM' | 'PM'>(initial.p);
 
   useEffect(() => {
     const next = parseTo12h(value);
