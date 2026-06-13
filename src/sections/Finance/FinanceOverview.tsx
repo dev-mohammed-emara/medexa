@@ -23,6 +23,7 @@ import {
 import 'flatpickr/dist/themes/material_green.css';
 import { usePreloader } from '../../contexts/PreloaderContext';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { financeTranslations } from '../../constants/translations/finance';
 import { cn } from '../../utils/cn';
 import { useBroadcast } from '../../hooks/useBroadcast';
@@ -52,7 +53,9 @@ const FinanceOverview = () => {
   const { isAr, t, dir } = useLanguage();
   const T = financeTranslations;
   const { isLoaded, isExiting } = usePreloader();
+  const { user } = useAuth();
   const canAnimate = isLoaded && !isExiting;
+  const canManageTransactions = user?.permissions?.includes('MANAGE_TRANSACTIONS') || user?.roles?.includes('MANAGE_TRANSACTIONS') || false;
 
   useBroadcast((event) => {
     if (event.type === 'DATA_UPDATE' && event.module === 'finance') {
@@ -114,6 +117,7 @@ const FinanceOverview = () => {
   };
 
   const loadTransactions = useCallback(async () => {
+    if (!canManageTransactions) return;
     try {
       const queryParams = new URLSearchParams();
       queryParams.append('fromDate', fromDate);
@@ -138,7 +142,7 @@ const FinanceOverview = () => {
     } catch (err) {
       console.error('Error fetching transactions:', err);
     }
-  }, [fromDate, toDate, type, sort, currentPage, itemsPerPage]);
+  }, [fromDate, toDate, type, sort, currentPage, itemsPerPage, canManageTransactions]);
 
   const loadStatistics = useCallback(async () => {
     try {
@@ -193,21 +197,23 @@ const FinanceOverview = () => {
           <h1 className="text-3xl mb-1 font-bold">{t('page_title', T)}</h1>
           <p className="text-muted-foreground">{t('page_desc', T)}</p>
         </div>
-        <button
-          onClick={() => {
-            setModalMode('add');
-            setSelectedTransactionUuid(null);
-            setIsModalOpen(true);
-          }}
-          className="inline-flex items-center justify-center gap-2 rounded-md text-sm font-bold transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md text-primary-foreground bg-primary hover:bg-primary/90 h-10 px-6 shadow-sm shadow-primary/20"
-        >
-          <Plus className={cn("size-5", isAr ? "ml-1" : "mr-1")} />
-          {t('add_operation', T)}
-        </button>
+        {canManageTransactions && (
+          <button
+            onClick={() => {
+              setModalMode('add');
+              setSelectedTransactionUuid(null);
+              setIsModalOpen(true);
+            }}
+            className="inline-flex items-center justify-center gap-2 rounded-md text-sm font-bold transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md text-primary-foreground bg-primary hover:bg-primary/90 h-10 px-6 shadow-sm shadow-primary/20"
+          >
+            <Plus className={cn("size-5", isAr ? "ml-1" : "mr-1")} />
+            {t('add_operation', T)}
+          </button>
+        )}
       </header>
 
       {/* Stats Cards */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <section className="grid grid-cols-1 md:grid-cols-2  lg:grid-cols-3 gap-4">
         {[
           { label: t('total_income', T), value: `${(stats?.totalIncome || 0).toLocaleString()} ${t('jod', T)}`, icon: TrendingUp, color: 'text-secondary', bgColor: 'bg-secondary/10', delay: 100 },
           { label: t('total_expenses', T), value: `${(stats?.totalExpense || 0).toLocaleString()} ${t('jod', T)}`, icon: TrendingDown, color: 'text-destructive', bgColor: 'bg-destructive/10', delay: 200 },
@@ -307,159 +313,161 @@ const FinanceOverview = () => {
       </article>
 
       {/* Transactions Table Card */}
-      <article
-        data-slot="card"
-        className={cn(
-          "text-card-foreground flex flex-col rounded-xl border transition-all duration-500 bg-white border-border shadow-sm overflow-hidden",
-          canAnimate ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-        )}
-        style={{ transitionDelay: '500ms' }}
-      >
-        <header className={cn("flex flex-col xl:flex-row xl:items-end justify-between gap-6 mb-8 p-6 pb-0", isAr ? "xl:flex-row" : "xl:flex-row-reverse")}>
-          <h3 className="text-xl font-bold">{t('financial_operations', T)}</h3>
+      {canManageTransactions && (
+        <article
+          data-slot="card"
+          className={cn(
+            "text-card-foreground flex flex-col rounded-xl border transition-all duration-500 bg-white border-border shadow-sm overflow-hidden",
+            canAnimate ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+          )}
+          style={{ transitionDelay: '500ms' }}
+        >
+          <header className={cn("flex flex-col xl:flex-row xl:items-end justify-between gap-6 mb-8 p-6 pb-0", isAr ? "xl:flex-row" : "xl:flex-row-reverse")}>
+            <h3 className="text-xl font-bold">{t('financial_operations', T)}</h3>
 
-          <div className={cn("flex flex-wrap items-end gap-3 transition-all duration-700 w-full xl:w-auto", canAnimate ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4")} style={{ transitionDelay: '550ms' }}>
-            <DateFromTo
-              fromDate={tempFromDate}
-              toDate={tempToDate}
-              onFromDateChange={setTempFromDate}
-              onToDateChange={setTempToDate}
-              onApply={() => {}}
-              showApply={false}
-            />
+            <div className={cn("flex flex-wrap items-end gap-3 transition-all duration-700 w-full xl:w-auto", canAnimate ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4")} style={{ transitionDelay: '550ms' }}>
+              <DateFromTo
+                fromDate={tempFromDate}
+                toDate={tempToDate}
+                onFromDateChange={setTempFromDate}
+                onToDateChange={setTempToDate}
+                onApply={() => { }}
+                showApply={false}
+              />
 
-            {/* Type Filter */}
-            <div className="space-y-1.5 flex-1 min-w-[150px] text-start">
-              <label className="flex items-center gap-2 font-bold select-none text-xs text-muted-foreground mr-1">
-                {isAr ? "نوع العملية" : "Type"}
-              </label>
-              <Select value={tempType} onValueChange={setTempType}>
-                <SelectTrigger className="rounded-xl h-11 bg-white border-border text-foreground font-bold">
-                  <SelectValue placeholder={isAr ? "الكل" : "All"} />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl z-600 bg-white" dir={isAr ? "rtl" : "ltr"}>
-                  <SelectItem value="DEFAULT">{isAr ? "الكل" : "All"}</SelectItem>
-                  <SelectItem value="INCOME">{isAr ? "دخل" : "Income"}</SelectItem>
-                  <SelectItem value="EXPENSE">{isAr ? "مصروف" : "Expense"}</SelectItem>
-                </SelectContent>
-              </Select>
+              {/* Type Filter */}
+              <div className="space-y-1.5 flex-1 min-w-[150px] text-start">
+                <label className="flex items-center gap-2 font-bold select-none text-xs text-muted-foreground mr-1">
+                  {isAr ? "نوع العملية" : "Type"}
+                </label>
+                <Select value={tempType} onValueChange={setTempType}>
+                  <SelectTrigger className="rounded-xl h-11 bg-white border-border text-foreground font-bold">
+                    <SelectValue placeholder={isAr ? "الكل" : "All"} />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl z-600 bg-white" dir={isAr ? "rtl" : "ltr"}>
+                    <SelectItem value="DEFAULT">{isAr ? "الكل" : "All"}</SelectItem>
+                    <SelectItem value="INCOME">{isAr ? "دخل" : "Income"}</SelectItem>
+                    <SelectItem value="EXPENSE">{isAr ? "مصروف" : "Expense"}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Sort Filter */}
+              <div className="space-y-1.5 flex-1 min-w-[180px] text-start">
+                <label className="flex items-center gap-2 font-bold select-none text-xs text-muted-foreground mr-1">
+                  {isAr ? "ترتيب حسب" : "Sort By"}
+                </label>
+                <Select value={tempSort} onValueChange={setTempSort}>
+                  <SelectTrigger className="rounded-xl h-11 bg-white border-border text-foreground font-bold">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="rounded-xl z-600 bg-white" dir={isAr ? "rtl" : "ltr"}>
+                    <SelectItem value="createdAt,desc">{isAr ? "الأحدث أولاً" : "Newest First"}</SelectItem>
+                    <SelectItem value="createdAt,asc">{isAr ? "الأقدم أولاً" : "Oldest First"}</SelectItem>
+                    <SelectItem value="amount,asc">{isAr ? "المبلغ (من الأقل للأكثر)" : "Amount (Low to High)"}</SelectItem>
+                    <SelectItem value="amount,desc">{isAr ? "المبلغ (من الأكثر للأقل)" : "Amount (High to Low)"}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <button
+                onClick={handleApply}
+                className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-bold transition-all duration-300 outline-none hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md text-primary-foreground hover:shadow-primary/20 px-6 h-11 bg-primary hover:bg-primary/90 min-w-[100px]"
+              >
+                {isAr ? "تأكيد" : "Confirm"}
+              </button>
             </div>
+          </header>
 
-            {/* Sort Filter */}
-            <div className="space-y-1.5 flex-1 min-w-[180px] text-start">
-              <label className="flex items-center gap-2 font-bold select-none text-xs text-muted-foreground mr-1">
-                {isAr ? "ترتيب حسب" : "Sort By"}
-              </label>
-              <Select value={tempSort} onValueChange={setTempSort}>
-                <SelectTrigger className="rounded-xl h-11 bg-white border-border text-foreground font-bold">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl z-600 bg-white" dir={isAr ? "rtl" : "ltr"}>
-                  <SelectItem value="createdAt,desc">{isAr ? "الأحدث أولاً" : "Newest First"}</SelectItem>
-                  <SelectItem value="createdAt,asc">{isAr ? "الأقدم أولاً" : "Oldest First"}</SelectItem>
-                  <SelectItem value="amount,asc">{isAr ? "المبلغ (من الأقل للأكثر)" : "Amount (Low to High)"}</SelectItem>
-                  <SelectItem value="amount,desc">{isAr ? "المبلغ (من الأكثر للأقل)" : "Amount (High to Low)"}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          {/* Mobile Swipe Indicator */}
+          <aside className="sm:hidden flex items-center justify-center gap-3 mb-4 py-2 px-4 rounded-full bg-muted/30 text-muted-foreground/80 text-xs font-bold ring-1 ring-border/50 animate-pulse backdrop-blur-xs">
+            <Smartphone className="size-3.5" />
+            <span>{t('mobile_swipe', T)}</span>
+            <MoveHorizontal className="size-3.5" />
+          </aside>
 
-            <button
-              onClick={handleApply}
-              className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-bold transition-all duration-300 outline-none hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md text-primary-foreground hover:shadow-primary/20 px-6 h-11 bg-primary hover:bg-primary/90 min-w-[100px]"
-            >
-              {isAr ? "تأكيد" : "Confirm"}
-            </button>
-          </div>
-        </header>
-
-        {/* Mobile Swipe Indicator */}
-        <aside className="sm:hidden flex items-center justify-center gap-3 mb-4 py-2 px-4 rounded-full bg-muted/30 text-muted-foreground/80 text-xs font-bold ring-1 ring-border/50 animate-pulse backdrop-blur-xs">
-          <Smartphone className="size-3.5" />
-          <span>{t('mobile_swipe', T)}</span>
-          <MoveHorizontal className="size-3.5" />
-        </aside>
-
-        <section className="overflow-x-auto">
-          <Table className="w-full text-sm text-right whitespace-nowrap">
-            <TableHeader className="bg-muted/30 border-b border-border/50 text-muted-foreground font-bold">
-              <TableRow>
-                <TableHead className={cn("p-4", isAr ? "text-right" : "text-left")}>{t('table_type', T)}</TableHead>
-                <TableHead className={cn("p-4", isAr ? "text-right" : "text-left")}>{t('table_amount', T)}</TableHead>
-                <TableHead className={cn("p-4", isAr ? "text-right" : "text-left")}>{t('table_currency', T)}</TableHead>
-                <TableHead className={cn("p-4", isAr ? "text-right" : "text-left")}>{t('table_date', T)}</TableHead>
-                <TableHead className={cn("p-4", isAr ? "text-right" : "text-left")}>{t('table_related', T)}</TableHead>
-                <TableHead className={cn("p-4", isAr ? "text-right" : "text-left")}>{t('table_notes', T)}</TableHead>
-                <TableHead className={cn("p-4", isAr ? "text-right" : "text-left")}>{t('table_operations', T)}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody className="divide-y divide-border/30">
-              {transactions.map((tx) => (
-                <TableRow key={tx.uuid} className="hover:bg-muted/20 transition-colors">
-                  <TableCell className="p-4">
-                    <span className={cn(
-                      "inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold",
-                      (tx.type === 'income' || tx.type === 'INCOME') ? "bg-secondary/10 text-secondary" : "bg-destructive/10 text-destructive"
-                    )}>
-                      {(tx.type === 'income' || tx.type === 'INCOME') ? t('type_income', T) : t('type_expense', T)}
-                    </span>
-                  </TableCell>
-                  <TableCell className="p-4 font-bold">{tx.amount}</TableCell>
-                  <TableCell className="p-4">{t('jod', T)}</TableCell>
-                  <TableCell className="p-4 font-medium text-muted-foreground">{tx.transactionDate}</TableCell>
-                  <TableCell className="p-4 text-muted-foreground">
-                    {tx.appointmentUuid ? `${isAr ? 'موعد' : 'Appointment'} #${tx.appointmentUuid.substring(0, 8)}` : '-'}
-                  </TableCell>
-                  <TableCell className={cn("p-4 text-muted-foreground", isAr ? "text-right" : "text-left")}>{tx.note || '-'}</TableCell>
-                  <TableCell className="p-4">
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => {
-                          setSelectedTransactionUuid(tx.uuid);
-                          setModalMode('view');
-                          setIsModalOpen(true);
-                        }}
-                        className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-primary"
-                      >
-                        <Eye className="size-4" />
-                      </button>
-                      <button
-                        onClick={() => {
-                          setSelectedTransactionUuid(tx.uuid);
-                          setModalMode('edit');
-                          setIsModalOpen(true);
-                        }}
-                        className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-secondary"
-                      >
-                        <SquarePen className="size-4" />
-                      </button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {transactions.length === 0 && (
+          <section className="overflow-x-auto">
+            <Table className="w-full text-sm text-right whitespace-nowrap">
+              <TableHeader className="bg-muted/30 border-b border-gray-200 text-muted-foreground font-bold">
                 <TableRow>
-                  <TableCell colSpan={7} className="h-40 text-center text-muted-foreground p-4">
-                    {t('no_results', T)}
-                  </TableCell>
+                  <TableHead className={cn("p-4", isAr ? "text-right" : "text-left")}>{t('table_type', T)}</TableHead>
+                  <TableHead className={cn("p-4", isAr ? "text-right" : "text-left")}>{t('table_amount', T)}</TableHead>
+                  <TableHead className={cn("p-4", isAr ? "text-right" : "text-left")}>{t('table_currency', T)}</TableHead>
+                  <TableHead className={cn("p-4", isAr ? "text-right" : "text-left")}>{t('table_date', T)}</TableHead>
+                  <TableHead className={cn("p-4", isAr ? "text-right" : "text-left")}>{t('table_related', T)}</TableHead>
+                  <TableHead className={cn("p-4", isAr ? "text-right" : "text-left")}>{t('table_notes', T)}</TableHead>
+                  <TableHead className={cn("p-4", isAr ? "text-right" : "text-left")}>{t('table_operations', T)}</TableHead>
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody className="divide-y divide-border/30">
+                {transactions.map((tx) => (
+                  <TableRow key={tx.uuid} className="hover:bg-muted/20 transition-colors">
+                    <TableCell className="p-4">
+                      <span className={cn(
+                        "inline-flex items-center px-2.5 py-1 rounded-md text-xs font-bold",
+                        (tx.type === 'income' || tx.type === 'INCOME') ? "bg-secondary/10 text-secondary" : "bg-destructive/10 text-destructive"
+                      )}>
+                        {(tx.type === 'income' || tx.type === 'INCOME') ? t('type_income', T) : t('type_expense', T)}
+                      </span>
+                    </TableCell>
+                    <TableCell className="p-4 font-bold">{tx.amount}</TableCell>
+                    <TableCell className="p-4">{t('jod', T)}</TableCell>
+                    <TableCell className="p-4 font-medium text-muted-foreground">{tx.transactionDate}</TableCell>
+                    <TableCell className="p-4 text-muted-foreground">
+                      {tx.appointmentUuid ? `${isAr ? 'موعد' : 'Appointment'} #${tx.appointmentUuid.substring(0, 8)}` : '-'}
+                    </TableCell>
+                    <TableCell className={cn("p-4 text-muted-foreground", isAr ? "text-right" : "text-left")}>{tx.note || '-'}</TableCell>
+                    <TableCell className="p-4">
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            setSelectedTransactionUuid(tx.uuid);
+                            setModalMode('view');
+                            setIsModalOpen(true);
+                          }}
+                          className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-primary"
+                        >
+                          <Eye className="size-4" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            setSelectedTransactionUuid(tx.uuid);
+                            setModalMode('edit');
+                            setIsModalOpen(true);
+                          }}
+                          className="p-1.5 hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-secondary"
+                        >
+                          <SquarePen className="size-4" />
+                        </button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {transactions.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={7} className="h-40 text-center text-muted-foreground p-4">
+                      {t('no_results', T)}
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
 
-          <TableFooter
-            variant="table"
-            totalItems={totalElements}
-            itemsPerPage={itemsPerPage}
-            currentPage={currentPage}
-            onPageChange={setCurrentPage}
-            className='pb-4'
-            onItemsPerPageChange={(val) => {
-              setItemsPerPage(val === 'all' ? totalElements : Number(val));
-              setCurrentPage(1);
-            }}
-          />
-        </section>
-      </article>
+            <TableFooter
+              variant="table"
+              totalItems={totalElements}
+              itemsPerPage={itemsPerPage}
+              currentPage={currentPage}
+              onPageChange={setCurrentPage}
+              className='pb-4'
+              onItemsPerPageChange={(val) => {
+                setItemsPerPage(val === 'all' ? totalElements : Number(val));
+                setCurrentPage(1);
+              }}
+            />
+          </section>
+        </article>
+      )}
 
       <AddOperationModal
         isOpen={isModalOpen}

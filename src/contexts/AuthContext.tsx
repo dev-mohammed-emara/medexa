@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react'
 import { deleteCookie, getCookie, setCookie, isTokenExpired } from '../utils/cookie'
+import { jwtDecode } from 'jwt-decode'
 
 export interface UserProfile {
   uuid?: string
@@ -13,6 +14,7 @@ export interface UserProfile {
   dateOfBirth: string
   status?: string
   role?: string
+  roles?: string[]
   permissions?: string[]
   clinicId?: number
   username?: string
@@ -29,6 +31,9 @@ interface AuthContextType {
   logout: () => Promise<string | void>
   updateProfileImage: (image: string | null) => void
   updateUser: (updatedFields: Partial<UserProfile>) => void
+  hasRole: (role: string) => boolean
+  hasPermission: (permission: string) => boolean
+  hasAnyPermission: (permissions: string[]) => boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -36,29 +41,13 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 // Helper function to parse JWT token
 const parseJWT = (token: string): any => {
   try {
-    const base64Url = token.split('.')[1]
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
-    const jsonPayload = decodeURIComponent(
-      atob(base64)
-        .split('')
-        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-        .join('')
-    )
-    return JSON.parse(jsonPayload)
+    const decoded = jwtDecode(token)
+    console.log('Decoded JWT Claims:', decoded)
+    return decoded
   } catch (error) {
     console.error('Failed to parse JWT:', error)
     return null
   }
-}
-
-// Helper function to extract permissions from JWT
-const extractPermissionsFromJWT = (token: string): string[] => {
-  const decoded = parseJWT(token)
-  if (!decoded || !decoded.authorities) {
-    return []
-  }
-  const permissions = decoded.authorities.split(',').map((p: string) => p.trim())
-  return permissions
 }
 
 const getProfileEndpoint = (token: string): string => {
@@ -172,7 +161,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Parse JWT to extract user data
     const decodedToken = parseJWT(newAccessToken)
-    const permissions = extractPermissionsFromJWT(newAccessToken)
+    const tokenRoles = decodedToken?.roles || []
+    if (tokenRoles.length > 0) {
+      console.log('Roles from refresh token:', tokenRoles)
+    }
 
     // Update access token (always)
     setCookie('token', newAccessToken, 7)
@@ -190,7 +182,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       username: decodedToken?.username,
       sub: decodedToken?.sub,
       clinicId: decodedToken?.clinicId,
-      permissions: permissions,
+      permissions: tokenRoles,
+      roles: tokenRoles,
       firstName: currentUser.firstName || decodedToken?.sub || 'User',
       surName: currentUser.surName || '',
       lastName: currentUser.lastName || '',
@@ -252,7 +245,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           })
           if (response.ok) {
             const data = await response.json()
-            const permissions = decoded?.roles || decoded?.permissions || []
+            const tokenRoles = decoded?.roles || []
+            const tokenAuthoritiesStr = decoded?.authorities || ''
+            const tokenAuthorities = typeof tokenAuthoritiesStr === 'string' 
+              ? tokenAuthoritiesStr.split(',').map(s => s.trim()).filter(Boolean)
+              : (Array.isArray(tokenAuthoritiesStr) ? tokenAuthoritiesStr : [])
+            const allPermissions = Array.from(new Set([...tokenRoles, ...tokenAuthorities]))
+
             const userProfile: UserProfile = {
               ...data.user,
               specialty: data.specialty,
@@ -262,7 +261,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               username: decoded?.username,
               sub: decoded?.sub,
               clinicId: decoded?.clinicId,
-              permissions: permissions,
+              permissions: allPermissions,
+              roles: allPermissions,
             }
             setUser(userProfile)
             localStorage.setItem('medexa_user', JSON.stringify(userProfile))
@@ -337,7 +337,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Parse JWT to extract user data
     const decodedToken = parseJWT(token)
-    const permissions = extractPermissionsFromJWT(token)
+    const tokenRoles = decodedToken?.roles || []
+    if (tokenRoles.length > 0) {
+      console.log('Roles from login token:', tokenRoles)
+    }
 
     // Save user data (prefer profile endpoint, fallback to JWT/response data, then defaults)
     let userProfile: UserProfile;
@@ -360,7 +363,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           username: decodedToken?.username,
           sub: decodedToken?.sub,
           clinicId: decodedToken?.clinicId,
-          permissions: permissions,
+          permissions: tokenRoles,
+          roles: tokenRoles,
         }
       } else {
         throw new Error("Failed to fetch doctor profile")
@@ -373,11 +377,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           username: decodedToken?.username,
           sub: decodedToken?.sub,
           clinicId: decodedToken?.clinicId,
-          permissions: permissions,
+          permissions: tokenRoles,
+          roles: tokenRoles,
         };
       } else {
         const savedUserStr = localStorage.getItem('medexa_user');
         const savedUser = savedUserStr ? JSON.parse(savedUserStr) : null;
+        const tokenRoles = decodedToken?.roles || [];
+        const tokenAuthoritiesStr = decodedToken?.authorities || '';
+        const tokenAuthorities = typeof tokenAuthoritiesStr === 'string' 
+          ? tokenAuthoritiesStr.split(',').map(s => s.trim()).filter(Boolean)
+          : (Array.isArray(tokenAuthoritiesStr) ? tokenAuthoritiesStr : [])
+        const allPermissions = Array.from(new Set([...tokenRoles, ...tokenAuthorities]))
+
         userProfile = {
           firstName: savedUser?.firstName || "Ahmad",
           surName: savedUser?.surName || "Mohammed",
@@ -390,7 +402,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           username: decodedToken?.username,
           sub: decodedToken?.sub,
           clinicId: decodedToken?.clinicId,
-          permissions: permissions,
+          permissions: allPermissions,
+          roles: allPermissions,
         };
       }
     }
@@ -510,8 +523,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     })
   }
 
+  const hasRole = (role: string): boolean => {
+    if (!user) return false
+    return user.roles?.includes(role) || user.role === role || false
+  }
+
+  const hasPermission = (permission: string): boolean => {
+    if (!user) return false
+    if (user.roles?.includes('ROLE_ADMIN') || user.role === 'ROLE_ADMIN') return true
+    if (user.roles?.includes('ROLE_CLINIC_OWNER') || user.role === 'ROLE_CLINIC_OWNER') return true
+
+    return user.permissions?.includes(permission) || user.roles?.includes(permission) || false
+  }
+
+  const hasAnyPermission = (permissions: string[]): boolean => {
+    if (!user) return false
+    if (user.roles?.includes('ROLE_ADMIN') || user.role === 'ROLE_ADMIN') return true
+    if (user.roles?.includes('ROLE_CLINIC_OWNER') || user.role === 'ROLE_CLINIC_OWNER') return true
+
+    return permissions.some(p => user.permissions?.includes(p) || user.roles?.includes(p))
+  }
+
   return (
-    <AuthContext.Provider value={{ isAuthenticated, loading, user, profileImage, login, register, logout, updateProfileImage, updateUser }}>
+    <AuthContext.Provider value={{ 
+      isAuthenticated, 
+      loading, 
+      user, 
+      profileImage, 
+      login, 
+      register, 
+      logout, 
+      updateProfileImage, 
+      updateUser,
+      hasRole,
+      hasPermission,
+      hasAnyPermission
+    }}>
       {children}
     </AuthContext.Provider>
   )

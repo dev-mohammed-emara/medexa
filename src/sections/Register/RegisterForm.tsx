@@ -192,7 +192,7 @@ const RegisterForm = () => {
         )}>
           <figure className="mb-2">
             <h1 className="text-4xl flex justify-center" style={{ fontWeight: 700, color: 'rgb(11, 90, 142)' }}>
-               <img src="/images/logo.png" alt="Medexa Cloud" className="h-16 w-auto" />
+              <img src="/images/logo.png" alt="Medexa Cloud" className="h-16 w-auto" />
             </h1>
           </figure>
           <p className="text-muted-foreground">تسجيل عيادة جديدة</p>
@@ -227,7 +227,7 @@ const RegisterForm = () => {
               <div>
                 <label className="text-sm font-semibold text-[#1a2b3c] pr-1 block mb-2">التخصص الطبي</label>
                 <Select
-                  onValueChange={(val: string) => setFormData((prev: any) => ({...prev, specialty: val}))}
+                  onValueChange={(val: string) => setFormData((prev: any) => ({ ...prev, specialty: val }))}
                   value={formData.specialty}
                   required
                 >
@@ -307,7 +307,7 @@ const RegisterForm = () => {
               <div>
                 <label className="text-sm font-semibold text-[#1a2b3c] pr-1 block mb-2">العملة الافتراضية</label>
                 <Select
-                  onValueChange={(val: string) => setFormData((prev: any) => ({...prev, currency: val}))}
+                  onValueChange={(val: string) => setFormData((prev: any) => ({ ...prev, currency: val }))}
                   value={formData.currency}
                   required
                 >
@@ -344,7 +344,7 @@ const RegisterForm = () => {
               <h3 className="text-xl" style={{ fontWeight: 600 }}>معلومات مالك العيادة</h3>
             </header>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2  lg:grid-cols-3 gap-4">
               <div>
                 <label className="text-sm font-semibold text-[#1a2b3c] pr-1 block mb-2">الاسم الأول</label>
                 <Input
@@ -491,7 +491,7 @@ const RegisterForm = () => {
               <div>
                 <label className="text-sm font-semibold text-[#1a2b3c] pr-1 block mb-2">الجنس</label>
                 <Select
-                  onValueChange={(val: string) => setFormData((prev: any) => ({...prev, gender: val}))}
+                  onValueChange={(val: string) => setFormData((prev: any) => ({ ...prev, gender: val }))}
                   value={formData.gender}
                   required
                 >
@@ -511,7 +511,7 @@ const RegisterForm = () => {
                   <Flatpickr
                     value={formData.dob}
                     onChange={([date]) => {
-                      setFormData((prev: any) => ({...prev, dob: date ? date.toISOString().split('T')[0] : ''}))
+                      setFormData((prev: any) => ({ ...prev, dob: date ? date.toISOString().split('T')[0] : '' }))
                     }}
                     options={{
                       locale: Arabic,
@@ -532,7 +532,7 @@ const RegisterForm = () => {
               <div>
                 <label className="text-sm font-semibold text-[#1a2b3c] pr-1 block mb-2">التخصص الطبي للمالك</label>
                 <Select
-                  onValueChange={(val: string) => setFormData((prev: any) => ({...prev, ownerSpecialty: val}))}
+                  onValueChange={(val: string) => setFormData((prev: any) => ({ ...prev, ownerSpecialty: val }))}
                   value={formData.ownerSpecialty}
                   required
                 >

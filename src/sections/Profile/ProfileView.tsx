@@ -3,11 +3,11 @@ import { fetchDoctorMe, updateDoctorMe, updateDoctorAppointmentPeriod } from '@/
 import { fetchSecretaryMe, updateSecretaryMe } from '@/api/secretaryApi';
 import Input from '@/components/ui/Input';
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/Switch';
 import TimePicker from '@/components/ui/TimePicker';
@@ -19,19 +19,19 @@ import { cn } from '@/utils/cn';
 import { Arabic } from "flatpickr/dist/l10n/ar.js";
 import "flatpickr/dist/themes/material_blue.css";
 import {
-    Building2,
-    Camera,
-    Check,
-    Clock,
-    Key,
-    Mail,
-    MapPin,
-    Pen,
-    Phone,
-    Plus,
-    Shield,
-    User,
-    X
+  Building2,
+  Camera,
+  Check,
+  Clock,
+  Key,
+  Mail,
+  MapPin,
+  Pen,
+  Phone,
+  Plus,
+  Shield,
+  User,
+  X
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import Flatpickr from "react-flatpickr";
@@ -54,7 +54,7 @@ const DAY_MAPPING: { [key: string]: { labelKey: string, index: number } } = {
 };
 
 const ProfileView = () => {
-  const { profileImage, updateProfileImage, user, updateUser } = useAuth();
+  const { profileImage, updateProfileImage, user, updateUser, hasPermission } = useAuth();
   const { isLoaded, isExiting } = usePreloader();
   const { dir, isAr, t } = useLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -119,7 +119,7 @@ const ProfileView = () => {
         setPersonalPhone(data.user.phoneNumber || '');
 
         updateUser({
-          uuid: data.uuid || '', 
+          uuid: data.uuid || '',
           firstName: data.user.firstName || '',
           surName: data.user.surName || '',
           lastName: data.user.lastName || '',
@@ -254,7 +254,7 @@ const ProfileView = () => {
     }
   });
 
-  const [insurances, setInsurances] = useState<Array<{uuid: string; name: string; provider: string}>>([]);
+  const [insurances, setInsurances] = useState<Array<{ uuid: string; name: string; provider: string }>>([]);
   const [clinicInsuranceUuids, setClinicInsuranceUuids] = useState<Set<string>>(new Set());
   const [togglingInsurances, setTogglingInsurances] = useState<Set<string>>(new Set());
 
@@ -267,7 +267,7 @@ const ProfileView = () => {
       if (response.ok) {
         const data = await response.json();
         const schedules = data.schedules || [];
-        
+
         setWorkingHours(prev => prev.map(day => {
           const serverDay = schedules.find((s: any) => s.dayOfWeek === day.dayOfWeek);
           if (serverDay && serverDay.timeSlots && serverDay.timeSlots.length > 0) {
@@ -354,20 +354,24 @@ const ProfileView = () => {
 
   // Fetch clinic data, insurances, active clinic insurances, schedules, and doctor data when component mounts
   useEffect(() => {
-    loadClinicData();
-    loadInsurances();
-    loadClinicInsurances();
+    if (hasPermission('ROLE_CLINIC_OWNER')) {
+      loadClinicData();
+      loadInsurances();
+      loadClinicInsurances();
+    }
     loadDoctorData();
-  }, []);
+  }, [hasPermission]);
 
   // Refetch schedule whenever activeTab changes to keep both tabs fully in sync
   useEffect(() => {
-    loadSchedule();
-  }, [activeTab]);
+    if (hasPermission('ROLE_CLINIC_OWNER')) {
+      loadSchedule();
+    }
+  }, [activeTab, hasPermission]);
 
   const handleToggleInsurance = async (uuid: string) => {
     const isActive = clinicInsuranceUuids.has(uuid);
-    
+
     // Add to toggling set to show loading/disabled state
     setTogglingInsurances(prev => {
       const next = new Set(prev);
@@ -402,7 +406,7 @@ const ProfileView = () => {
         try {
           const errData = await response.json();
           errMsg = errData.message || errData.error || errMsg;
-        } catch (e) {}
+        } catch (e) { }
         window.showToast(errMsg, 'error');
       }
     } catch (error: any) {
@@ -536,15 +540,15 @@ const ProfileView = () => {
 
   const handleSaveDaySchedule = async (dayIndex: number) => {
     const day = workingHours[dayIndex];
-    
+
     // Construct the entire schedules list to send to the backend
     const schedulesPayload = workingHours.map((d, idx) => {
       const currentDay = idx === dayIndex ? day : d;
-      
+
       if (!currentDay.active || currentDay.periods.length === 0) {
         return null;
       }
-      
+
       return {
         dayOfWeek: currentDay.dayOfWeek,
         timeSlots: currentDay.periods.map(p => ({
@@ -580,7 +584,7 @@ const ProfileView = () => {
         try {
           const errData = await response.json();
           errMsg = errData.message || errData.error || errMsg;
-        } catch (e) {}
+        } catch (e) { }
         window.showToast(errMsg, 'error');
       }
     } catch (err: any) {
@@ -635,21 +639,23 @@ const ProfileView = () => {
             {t('profile.profile', T_PAGE)}
           </span>
         </button>
-        <button
-          onClick={() => handleTabChange('clinic')}
-          className={cn(
-            "relative px-6 py-2.5 rounded-xl text-sm transition-all duration-300 flex items-center gap-2",
-            activeTab === 'clinic' ? "text-primary font-semibold" : "text-muted-foreground hover:text-foreground font-normal"
-          )}
-        >
-          {activeTab === 'clinic' && (
-            <div className="absolute inset-0 bg-white rounded-xl shadow-md animate-in fade-in zoom-in-95 duration-200" />
-          )}
-          <span className="relative z-10 flex items-center gap-2">
-            <Building2 size={16} />
-            {t('profile.clinic_profile', T_PAGE)}
-          </span>
-        </button>
+        {hasPermission('ROLE_CLINIC_OWNER') && (
+          <button
+            onClick={() => handleTabChange('clinic')}
+            className={cn(
+              "relative px-6 py-2.5 rounded-xl text-sm transition-all duration-300 flex items-center gap-2",
+              activeTab === 'clinic' ? "text-primary font-semibold" : "text-muted-foreground hover:text-foreground font-normal"
+            )}
+          >
+            {activeTab === 'clinic' && (
+              <div className="absolute inset-0 bg-white rounded-xl shadow-md animate-in fade-in zoom-in-95 duration-200" />
+            )}
+            <span className="relative z-10 flex items-center gap-2">
+              <Building2 size={16} />
+              {t('profile.clinic_profile', T_PAGE)}
+            </span>
+          </button>
+        )}
       </div>
 
       <div className={cn(
@@ -664,12 +670,12 @@ const ProfileView = () => {
         )}>
           <div className="space-y-6">
             {/* Profile Card */}
-            <div data-slot="card" className="tab-pane text-card-foreground flex flex-col sm:flex-row items-center justify-between gap-6 rounded-xl border p-8 bg-linear-to-br from-white via-white to-primary/5 border-border shadow-lg hover:shadow-xl transition-all duration-300">
+            <div data-slot="card" className="tab-pane text-card-foreground flex flex-col sm:flex-row items-center justify-between gap-6 rounded-xl border p-8 bg-white border-border shadow-lg hover:shadow-xl transition-all duration-300">
               <div className={cn("flex-1 text-center font-bold", isAr ? "sm:text-right" : "sm:text-left")}>
                 <h2 className="text-3xl mb-2 font-bold text-foreground">{user ? `د. ${user.firstName} ${user.lastName}` : t('profile.doctor_name_val', T_PAGE)}</h2>
                 <div className="flex flex-col gap-2">
                   <div className={cn("flex items-center justify-center", isAr ? "sm:justify-end" : "sm:justify-start")}>
-                    <span className="inline-flex items-center justify-center rounded-xl border text-xs font-medium bg-primary/10 text-primary border-primary/20 px-3 py-1 gap-1">
+                    <span className="inline-flex items-center justify-center rounded-xl border text-xs font-medium bg-primary/10 text-primary border-gray-200 px-3 py-1 gap-1">
                       <Shield size={14} className={isAr ? "ml-1" : "mr-1"} />
                       {t('profile.clinic_owner', T_PAGE)}
                     </span>
@@ -689,7 +695,7 @@ const ProfileView = () => {
                 className="relative group cursor-pointer hover:scale-110 transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]"
                 onClick={() => fileInputRef.current?.click()}
               >
-                <div className="w-32 h-32 rounded-full border-4 border-primary shadow-lg overflow-hidden shrink-0 bg-linear-to-br from-primary to-secondary">
+                <div className="w-32 h-32 rounded-full border-4 border-primary shadow-lg overflow-hidden shrink-0 bg-gradient-to-r from-[#0B5A8E] to-[#3FB8AF]">
                   {profileImage ? (
                     <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
                   ) : (
@@ -719,7 +725,7 @@ const ProfileView = () => {
               <div data-slot="card" className="tab-pane flex flex-col bg-white rounded-xl border p-6 border-border shadow-lg hover:shadow-xl transition-all duration-300 h-full">
                 <h3 className="text-xl mb-6 font-bold">{t('profile.personal_info', T_PAGE)}</h3>
                 <div className="space-y-5">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                     <div className="flex flex-col gap-2">
                       <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('common.first_name')}</label>
                       <Input
@@ -863,430 +869,432 @@ const ProfileView = () => {
               <div className="flex flex-col gap-6">
                 {/* Account Information */}
                 <div data-slot="card" className="tab-pane flex flex-col bg-white rounded-xl border p-6 border-border shadow-lg hover:shadow-xl transition-all duration-300 h-fit">
-                <h3 className="text-xl mb-6 font-bold">{t('profile.account_info', T_PAGE)}</h3>
-                <div className="space-y-5">
-                  <div className="p-4 bg-muted/30 rounded-xl border border-border">
-                    <label className="text-xs text-muted-foreground mb-1 block">{t('common.role')}</label>
-                    <div className="flex items-center gap-2">
-                      <Shield size={18} className="text-primary" />
-                      <span className="text-base font-bold text-foreground">{t('profile.clinic_owner', T_PAGE)}</span>
-                    </div>
-                  </div>
-                  <div className="p-4 bg-muted/30 rounded-xl border border-border">
-                    <label className="text-xs text-muted-foreground mb-1 block">{t('common.status')}</label>
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-secondary rounded-full animate-pulse" />
-                      <span className="text-base text-secondary font-bold">{t('common.active')}</span>
-                    </div>
-                  </div>
-                  <div className="p-4 bg-muted/30 rounded-xl border border-border">
-                    <label className="text-xs text-muted-foreground mb-1 block">{t('common.last_login')}</label>
-                    <div className="flex items-center gap-2">
-                      <Clock size={18} className="text-muted-foreground" />
-                      <span className="text-base font-bold text-foreground">{t('common.today')}, 10:30 {t('common.am')}</span>
-                    </div>
-                  </div>
-                  <div className="p-4 bg-muted/30 rounded-xl border border-border">
-                    <label className="text-xs text-muted-foreground mb-1 block">{t('common.join_date')}</label>
-                    <div className="flex items-center justify-between">
-                      <span className="text-base font-bold text-foreground">15 Jan 2025</span>
-                      <FaCalendarAlt size={16} className="text-muted-foreground" />
-                    </div>
-                  </div>
-                  <div className="p-4 bg-primary/5 rounded-xl border border-primary/20">
-                    <label className="text-xs text-primary mb-1 block">{t('common.user_id')}</label>
-                    <span className="text-sm font-mono text-primary font-bold">{personalInfo.uuid || 'USR-2026-0001'}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Appointment Period Settings */}
-              {user?.role !== 'ROLE_SECRETARY' && (
-                <div data-slot="card" className="tab-pane h-full flex flex-col bg-white rounded-xl border p-6 border-border shadow-lg hover:shadow-xl transition-all duration-300 h-fit">
-                  <h3 className="text-xl mb-6 font-bold">{isAr ? 'إعدادات المواعيد' : 'Appointment Settings'}</h3>
+                  <h3 className="text-xl mb-6 font-bold">{t('profile.account_info', T_PAGE)}</h3>
                   <div className="space-y-5">
-                    <div className="flex flex-col gap-2">
-                      <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{isAr ? 'مدة الموعد الافتراضية (بالدقائق)' : 'Default Appointment Period (mins)'}</label>
-                      <Input
-                        type="tel"
-                        value={personalInfo.defaultAppointmentPeriod}
-                        onChange={(e) => setPersonalInfo(p => ({ ...p, defaultAppointmentPeriod: e.target.value.replace(/\D/g, '') }))}
-                        dir="ltr"
-                        className={cn("h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold", isAr ? "text-right" : "text-left")}
-                      />
+                    <div className="p-4 bg-muted/30 rounded-xl border border-border">
+                      <label className="text-xs text-muted-foreground mb-1 block">{t('common.role')}</label>
+                      <div className="flex items-center gap-2">
+                        <Shield size={18} className="text-primary" />
+                        <span className="text-base font-bold text-foreground">{t('profile.clinic_owner', T_PAGE)}</span>
+                      </div>
+                    </div>
+                    <div className="p-4 bg-muted/30 rounded-xl border border-border">
+                      <label className="text-xs text-muted-foreground mb-1 block">{t('common.status')}</label>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-secondary rounded-full animate-pulse" />
+                        <span className="text-base text-secondary font-bold">{t('common.active')}</span>
+                      </div>
+                    </div>
+                    <div className="p-4 bg-muted/30 rounded-xl border border-border">
+                      <label className="text-xs text-muted-foreground mb-1 block">{t('common.last_login')}</label>
+                      <div className="flex items-center gap-2">
+                        <Clock size={18} className="text-muted-foreground" />
+                        <span className="text-base font-bold text-foreground">{t('common.today')}, 10:30 {t('common.am')}</span>
+                      </div>
+                    </div>
+                    <div className="p-4 bg-muted/30 rounded-xl border border-border">
+                      <label className="text-xs text-muted-foreground mb-1 block">{t('common.join_date')}</label>
+                      <div className="flex items-center justify-between">
+                        <span className="text-base font-bold text-foreground">15 Jan 2025</span>
+                        <FaCalendarAlt size={16} className="text-muted-foreground" />
+                      </div>
+                    </div>
+                    <div className="p-4 bg-primary/5 rounded-xl border border-gray-200">
+                      <label className="text-xs text-primary mb-1 block">{t('common.user_id')}</label>
+                      <span className="text-sm font-mono text-primary font-bold">{personalInfo.uuid || 'USR-2026-0001'}</span>
                     </div>
                   </div>
-                  <div className="flex justify-end gap-3 mt-auto pt-6 ">
-                    <button
-                      onClick={handleCancelAppointmentPeriod}
-                      className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-300 border bg-background text-foreground hover:bg-accent hover:text-white hover:border-accent h-10 px-6"
-                    >
-                      {t('common.cancel')}
-                    </button>
-                    <button
-                      onClick={handleSaveAppointmentPeriod}
-                      className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-300 text-primary-foreground bg-primary hover:bg-primary/90 h-10 px-6 shadow-lg shadow-primary/20 hover:shadow-primary/30"
-                    >
-                      <Check size={16} className={isAr ? "ml-1" : "mr-1"} />
-                      {t('common.save_changes')}
-                    </button>
-                  </div>
                 </div>
-              )}
+
+                {/* Appointment Period Settings */}
+                {user?.role !== 'ROLE_SECRETARY' && (
+                  <div data-slot="card" className="tab-pane h-full flex flex-col bg-white rounded-xl border p-6 border-border shadow-lg hover:shadow-xl transition-all duration-300 h-fit">
+                    <h3 className="text-xl mb-6 font-bold">{isAr ? 'إعدادات المواعيد' : 'Appointment Settings'}</h3>
+                    <div className="space-y-5">
+                      <div className="flex flex-col gap-2">
+                        <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{isAr ? 'مدة الموعد الافتراضية (بالدقائق)' : 'Default Appointment Period (mins)'}</label>
+                        <Input
+                          type="tel"
+                          value={personalInfo.defaultAppointmentPeriod}
+                          onChange={(e) => setPersonalInfo(p => ({ ...p, defaultAppointmentPeriod: e.target.value.replace(/\D/g, '') }))}
+                          dir="ltr"
+                          className={cn("h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold", isAr ? "text-right" : "text-left")}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex justify-end gap-3 mt-auto pt-6 ">
+                      <button
+                        onClick={handleCancelAppointmentPeriod}
+                        className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-300 border bg-background text-foreground hover:bg-accent hover:text-white hover:border-accent h-10 px-6"
+                      >
+                        {t('common.cancel')}
+                      </button>
+                      <button
+                        onClick={handleSaveAppointmentPeriod}
+                        className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-300 text-primary-foreground bg-primary hover:bg-primary/90 h-10 px-6 shadow-lg shadow-primary/20 hover:shadow-primary/30"
+                      >
+                        <Check size={16} className={isAr ? "ml-1" : "mr-1"} />
+                        {t('common.save_changes')}
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
             {/* Working Hours */}
             {user?.role !== 'ROLE_SECRETARY' && (
-            <div data-slot="card" className="tab-pane  bg-white rounded-xl border p-6 border-border shadow-lg hover:shadow-xl transition-all duration-300">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
-                    <Clock size={24} className="text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-bold">{t('common.working_hours')}</h3>
-                    <p className="text-sm text-muted-foreground">{t('common.working_days')}</p>
+              <div data-slot="card" className="tab-pane  bg-white rounded-xl border p-6 border-border shadow-lg hover:shadow-xl transition-all duration-300">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
+                      <Clock size={24} className="text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold">{t('common.working_hours')}</h3>
+                      <p className="text-sm text-muted-foreground">{t('common.working_days')}</p>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {workingHours.map((day, dIdx) => (
-                  <div
-                    key={day.dayOfWeek}
-                    className={cn(
-                      "p-4 rounded-xl border transition-all duration-300 flex flex-col justify-between min-h-[180px]",
-                      day.active
-                        ? "bg-muted/20 border-border hover:border-primary/30"
-                        : "bg-destructive/5 border-destructive/20"
-                    )}
-                  >
-                    <div>
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <div className={cn("w-2 h-2 rounded-full", day.active ? "bg-secondary" : "bg-destructive/50")} />
-                          <span className={cn("font-bold text-sm", !day.active && "text-destructive")}>
-                            {t(DAY_MAPPING[day.dayOfWeek].labelKey, T_PAGE)}
-                          </span>
-                        </div>
-                        
-                        {!day.isEditing ? (
-                          <button
-                            onClick={() => {
-                              setWorkingHours(prev => prev.map((d, idx) => {
-                                if (idx === dIdx) {
-                                  return {
-                                    ...d,
-                                    isEditing: true,
-                                    originalPeriods: [...d.periods],
-                                    originalActive: d.active
-                                  };
-                                }
-                                return d;
-                              }));
-                            }}
-                            className="p-1.5 text-primary hover:bg-primary/5 rounded-lg transition-all"
-                            aria-label="Edit day schedule"
-                          >
-                            <Pen size={14} />
-                          </button>
-                        ) : (
-                          <Switch
-                            checked={day.active}
-                            onCheckedChange={() => toggleDay(dIdx)}
-                            className="scale-90"
-                          />
-                        )}
-                      </div>
-
-                      <div className="flex flex-col gap-2">
-                        {day.active ? (
-                          <>
-                            {day.periods.map((period, pIdx) => (
-                              <div key={pIdx} className="flex items-center gap-2">
-                                {day.isEditing ? (
-                                  <div className="flex items-center gap-1.5 w-full">
-                                    <TimePicker
-                                      noClock
-                                      value={period.from}
-                                      onChange={(val) => updatePeriod(dIdx, pIdx, 'from', val)}
-                                      className="h-8 py-0 px-2 min-w-0 flex-1 border-muted bg-white shadow-none focus-within:ring-0"
-                                    />
-                                    <span className="text-muted-foreground text-xs">→</span>
-                                    <TimePicker
-                                      noClock
-                                      value={period.to}
-                                      onChange={(val) => updatePeriod(dIdx, pIdx, 'to', val)}
-                                      className="h-8 py-0 px-2 min-w-0 flex-1 border-muted bg-white shadow-none focus-within:ring-0"
-                                    />
-                                    <button
-                                      onClick={() => removePeriod(dIdx, pIdx)}
-                                      className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl transition-all shrink-0"
-                                    >
-                                      <X size={12} />
-                                    </button>
-                                  </div>
-                                ) : (
-                                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                    <Clock size={14} />
-                                    <span>{period.from} → {period.to}</span>
-                                  </div>
-                                )}
-                              </div>
-                            ))}
-                            {day.isEditing && (
-                              <button
-                                onClick={() => addPeriod(dIdx)}
-                                className="w-full h-8 mt-2 flex items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-transparent text-xs text-muted-foreground hover:bg-muted/50 transition-all"
-                              >
-                                <Plus size={12} />
-                                {t('common.add_period')}
-                              </button>
-                            )}
-                          </>
-                        ) : (
-                          <div className="flex items-center gap-2 text-sm">
-                            <span className="text-destructive/70 font-medium italic">{t('common.holiday')}</span>
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {workingHours.map((day, dIdx) => (
+                    <div
+                      key={day.dayOfWeek}
+                      className={cn(
+                        "p-4 rounded-xl border transition-all duration-300 flex flex-col justify-between min-h-[180px]",
+                        day.active
+                          ? "bg-muted/20 border-border hover:border-primary/30"
+                          : "bg-destructive/5 border-destructive/20"
+                      )}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <div className={cn("w-2 h-2 rounded-full", day.active ? "bg-secondary" : "bg-destructive/50")} />
+                            <span className={cn("font-bold text-sm", !day.active && "text-destructive")}>
+                              {t(DAY_MAPPING[day.dayOfWeek].labelKey, T_PAGE)}
+                            </span>
                           </div>
-                        )}
-                      </div>
-                    </div>
 
-                    {day.isEditing && (
-                      <div className="flex gap-2 justify-end mt-4 pt-3 border-t border-border/50">
-                        <button
-                          onClick={() => handleCancelDaySchedule(dIdx)}
-                          className="h-8 px-3 rounded-lg border border-border text-xs text-foreground bg-white hover:bg-muted transition-all font-semibold flex items-center gap-1"
-                        >
-                          <X size={12} />
-                          {t('common.cancel')}
-                        </button>
-                        <button
-                          onClick={() => handleSaveDaySchedule(dIdx)}
-                          className="h-8 px-3 rounded-lg bg-primary text-white text-xs hover:bg-primary/90 transition-all font-semibold flex items-center gap-1"
-                        >
-                          <Check size={12} />
-                          {t('common.save')}
-                        </button>
+                          {!day.isEditing ? (
+                            <button
+                              onClick={() => {
+                                setWorkingHours(prev => prev.map((d, idx) => {
+                                  if (idx === dIdx) {
+                                    return {
+                                      ...d,
+                                      isEditing: true,
+                                      originalPeriods: [...d.periods],
+                                      originalActive: d.active
+                                    };
+                                  }
+                                  return d;
+                                }));
+                              }}
+                              className="p-1.5 text-primary hover:bg-primary/5 rounded-lg transition-all"
+                              aria-label="Edit day schedule"
+                            >
+                              <Pen size={14} />
+                            </button>
+                          ) : (
+                            <Switch
+                              checked={day.active}
+                              onCheckedChange={() => toggleDay(dIdx)}
+                              className="scale-90"
+                            />
+                          )}
+                        </div>
+
+                        <div className="flex flex-col gap-2">
+                          {day.active ? (
+                            <>
+                              {day.periods.map((period, pIdx) => (
+                                <div key={pIdx} className="flex items-center gap-2">
+                                  {day.isEditing ? (
+                                    <div className="flex items-center gap-1.5 w-full">
+                                      <TimePicker
+                                        noClock
+                                        value={period.from}
+                                        onChange={(val) => updatePeriod(dIdx, pIdx, 'from', val)}
+                                        className="h-8 py-0 px-2 min-w-0 flex-1 border-muted bg-white shadow-none focus-within:ring-0"
+                                      />
+                                      <span className="text-muted-foreground text-xs">→</span>
+                                      <TimePicker
+                                        noClock
+                                        value={period.to}
+                                        onChange={(val) => updatePeriod(dIdx, pIdx, 'to', val)}
+                                        className="h-8 py-0 px-2 min-w-0 flex-1 border-muted bg-white shadow-none focus-within:ring-0"
+                                      />
+                                      <button
+                                        onClick={() => removePeriod(dIdx, pIdx)}
+                                        className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl transition-all shrink-0"
+                                      >
+                                        <X size={12} />
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                      <Clock size={14} />
+                                      <span>{period.from} → {period.to}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                              {day.isEditing && (
+                                <button
+                                  onClick={() => addPeriod(dIdx)}
+                                  className="w-full h-8 mt-2 flex items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-transparent text-xs text-muted-foreground hover:bg-muted/50 transition-all"
+                                >
+                                  <Plus size={12} />
+                                  {t('common.add_period')}
+                                </button>
+                              )}
+                            </>
+                          ) : (
+                            <div className="flex items-center gap-2 text-sm">
+                              <span className="text-destructive/70 font-medium italic">{t('common.holiday')}</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    )}
-                  </div>
-                ))}
+
+                      {day.isEditing && (
+                        <div className="flex gap-2 justify-end mt-4 pt-3 border-t border-gray-200">
+                          <button
+                            onClick={() => handleCancelDaySchedule(dIdx)}
+                            className="h-8 px-3 rounded-lg border border-border text-xs text-foreground bg-white hover:bg-muted transition-all font-semibold flex items-center gap-1"
+                          >
+                            <X size={12} />
+                            {t('common.cancel')}
+                          </button>
+                          <button
+                            onClick={() => handleSaveDaySchedule(dIdx)}
+                            className="h-8 px-3 rounded-lg bg-primary text-white text-xs hover:bg-primary/90 transition-all font-semibold flex items-center gap-1"
+                          >
+                            <Check size={12} />
+                            {t('common.save')}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
             )}
           </div>
         </div>
 
-        <div className={cn(
-          "transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] transform",
-          activeTab === 'clinic'
-            ? "relative opacity-100 translate-x-0 z-10"
-            : "absolute inset-x-0 top-0 opacity-0 translate-x-12 -z-10 pointer-events-none"
-        )}>
-          <div className="space-y-6">
-            {/* Clinic Card */}
-            <div data-slot="card" className="tab-pane  text-card-foreground flex flex-col gap-6 rounded-xl border p-8 bg-linear-to-br from-white via-white to-secondary/5 border-border shadow-lg hover:shadow-xl transition-all duration-300">
-              <div className="flex items-center gap-6">
-                <div className="w-24 h-24 bg-linear-to-br from-primary to-secondary rounded-2xl flex items-center justify-center shadow-lg shrink-0">
-                  <Building2 size={40} className="text-white" />
-                </div>
-                <div className="flex-1">
-                  <h2 className="text-3xl mb-2 font-bold">{clinicInfo.name || 'Clinic Name'}</h2>
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <span className="inline-flex items-center justify-center rounded-xl border text-xs font-medium bg-secondary/10 text-secondary border-secondary/20 px-3 py-1">
-                      {clinicInfo.medicalCategory || 'Medical Category'}
-                    </span>
-                    <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                      <MapPin size={16} />
-                      <span>{clinicInfo.city || 'City'}، {clinicInfo.country || 'Country'}</span>
+        {hasPermission('ROLE_CLINIC_OWNER') && (
+          <div className={cn(
+            "transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] transform",
+            activeTab === 'clinic'
+              ? "relative opacity-100 translate-x-0 z-10"
+              : "absolute inset-x-0 top-0 opacity-0 translate-x-12 -z-10 pointer-events-none"
+          )}>
+            <div className="space-y-6">
+              {/* Clinic Card */}
+              <div data-slot="card" className="tab-pane  text-card-foreground flex flex-col gap-6 rounded-xl border p-8 bg-white border-border shadow-lg hover:shadow-xl transition-all duration-300">
+                <div className="flex items-center gap-6">
+                  <div className="w-24 h-24 bg-gradient-to-r from-[#0B5A8E] to-[#3FB8AF] rounded-2xl flex items-center justify-center shadow-lg shrink-0">
+                    <Building2 size={40} className="text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h2 className="text-3xl mb-2 font-bold">{clinicInfo.name || 'Clinic Name'}</h2>
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <span className="inline-flex items-center justify-center rounded-xl border text-xs font-medium bg-secondary/10 text-secondary border-secondary/20 px-3 py-1">
+                        {clinicInfo.medicalCategory || 'Medical Category'}
+                      </span>
+                      <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                        <MapPin size={16} />
+                        <span>{clinicInfo.city || 'City'}، {clinicInfo.country || 'Country'}</span>
+                      </div>
+                    </div>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 mt-4 pt-4 border-t border-border/30">
+                      <p className="text-xs text-muted-foreground font-mono">
+                        <strong>UUID:</strong> {clinicInfo.uuid}
+                      </p>
+                      <p className="text-xs text-muted-foreground font-bold flex items-center gap-2">
+                        <strong>{isAr ? 'الحالة:' : 'Status:'}</strong>
+                        <span className={cn(
+                          "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold",
+                          clinicInfo.status === 'ACTIVE' ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"
+                        )}>
+                          {clinicInfo.status || 'PENDING'}
+                        </span>
+                      </p>
                     </div>
                   </div>
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 mt-4 pt-4 border-t border-border/30">
-                    <p className="text-xs text-muted-foreground font-mono">
-                      <strong>UUID:</strong> {clinicInfo.uuid}
-                    </p>
-                    <p className="text-xs text-muted-foreground font-bold flex items-center gap-2">
-                      <strong>{isAr ? 'الحالة:' : 'Status:'}</strong>
-                      <span className={cn(
-                        "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold",
-                        clinicInfo.status === 'ACTIVE' ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"
-                      )}>
-                        {clinicInfo.status || 'PENDING'}
-                      </span>
-                    </p>
+                </div>
+              </div>
+
+              {/* Clinic Info Form */}
+              <div data-slot="card" className="tab-pane  bg-white rounded-xl border p-6 border-border shadow-lg hover:shadow-xl transition-all duration-300">
+                <h3 className="text-xl mb-6 font-bold">{t('profile.clinic_info', T_PAGE)}</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm font-semibold">{t('profile.clinic_name', T_PAGE)}</label>
+                    <Input
+                      value={clinicInfo.name}
+                      onChange={(e) => setClinicInfo({ ...clinicInfo, name: e.target.value })}
+                      className="h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm font-semibold">{t('profile.specialty', T_PAGE)}</label>
+                    <Input
+                      value={clinicInfo.medicalCategory}
+                      onChange={(e) => setClinicInfo({ ...clinicInfo, medicalCategory: e.target.value })}
+                      className="h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm font-semibold">{t('common.phone')}</label>
+                    <Input
+                      value={clinicInfo.phoneNumber}
+                      dir="ltr"
+                      onChange={(e) => setClinicInfo({ ...clinicInfo, phoneNumber: e.target.value })}
+                      className={cn("h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold", isAr ? "text-right" : "text-left")}
+                    />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm font-semibold">{t('common.email')}</label>
+                    <Input
+                      value={clinicInfo.email}
+                      onChange={(e) => setClinicInfo({ ...clinicInfo, email: e.target.value })}
+                      className="h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm font-semibold">{t('profile.city', T_PAGE)}</label>
+                    <Input
+                      value={clinicInfo.city}
+                      onChange={(e) => setClinicInfo({ ...clinicInfo, city: e.target.value })}
+                      className="h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <label className="text-sm font-semibold">{t('profile.country', T_PAGE)}</label>
+                    <Input
+                      value={clinicInfo.country}
+                      onChange={(e) => setClinicInfo({ ...clinicInfo, country: e.target.value })}
+                      className="h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold"
+                    />
+                  </div>
+                  <div className="flex flex-col gap-2 md:col-span-2">
+                    <label className="text-sm font-semibold">{t('profile.full_address', T_PAGE)}</label>
+                    <Input
+                      value={clinicInfo.address}
+                      onChange={(e) => setClinicInfo({ ...clinicInfo, address: e.target.value })}
+                      className="h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold"
+                    />
                   </div>
                 </div>
-              </div>
-            </div>
 
-            {/* Clinic Info Form */}
-            <div data-slot="card" className="tab-pane  bg-white rounded-xl border p-6 border-border shadow-lg hover:shadow-xl transition-all duration-300">
-              <h3 className="text-xl mb-6 font-bold">{t('profile.clinic_info', T_PAGE)}</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div className="flex flex-col gap-2">
-                  <label className="text-sm font-semibold">{t('profile.clinic_name', T_PAGE)}</label>
-                  <Input
-                    value={clinicInfo.name}
-                    onChange={(e) => setClinicInfo({ ...clinicInfo, name: e.target.value })}
-                    className="h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold"
-                  />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <label className="text-sm font-semibold">{t('profile.specialty', T_PAGE)}</label>
-                  <Input
-                    value={clinicInfo.medicalCategory}
-                    onChange={(e) => setClinicInfo({ ...clinicInfo, medicalCategory: e.target.value })}
-                    className="h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold"
-                  />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <label className="text-sm font-semibold">{t('common.phone')}</label>
-                  <Input
-                    value={clinicInfo.phoneNumber}
-                    dir="ltr"
-                    onChange={(e) => setClinicInfo({ ...clinicInfo, phoneNumber: e.target.value })}
-                    className={cn("h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold", isAr ? "text-right" : "text-left")}
-                  />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <label className="text-sm font-semibold">{t('common.email')}</label>
-                  <Input
-                    value={clinicInfo.email}
-                    onChange={(e) => setClinicInfo({ ...clinicInfo, email: e.target.value })}
-                    className="h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold"
-                  />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <label className="text-sm font-semibold">{t('profile.city', T_PAGE)}</label>
-                  <Input
-                    value={clinicInfo.city}
-                    onChange={(e) => setClinicInfo({ ...clinicInfo, city: e.target.value })}
-                    className="h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold"
-                  />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <label className="text-sm font-semibold">{t('profile.country', T_PAGE)}</label>
-                  <Input
-                    value={clinicInfo.country}
-                    onChange={(e) => setClinicInfo({ ...clinicInfo, country: e.target.value })}
-                    className="h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold"
-                  />
-                </div>
-                <div className="flex flex-col gap-2 md:col-span-2">
-                  <label className="text-sm font-semibold">{t('profile.full_address', T_PAGE)}</label>
-                  <Input
-                    value={clinicInfo.address}
-                    onChange={(e) => setClinicInfo({ ...clinicInfo, address: e.target.value })}
-                    className="h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold"
-                  />
+                <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-border">
+                  <button
+                    onClick={handleCancelClinic}
+                    className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-300 border bg-background text-foreground hover:bg-accent hover:text-white hover:border-accent h-10 px-6"
+                  >
+                    {t('common.cancel')}
+                  </button>
+                  <button
+                    onClick={handleSaveClinic}
+                    className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-300 text-primary-foreground bg-primary hover:bg-primary/90 h-10 px-6 shadow-lg shadow-primary/20 hover:shadow-primary/30"
+                  >
+                    <Check size={16} className={isAr ? "ml-1" : "mr-1"} />
+                    {t('common.save_changes')}
+                  </button>
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-border">
-                <button
-                  onClick={handleCancelClinic}
-                  className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-300 border bg-background text-foreground hover:bg-accent hover:text-white hover:border-accent h-10 px-6"
-                >
-                  {t('common.cancel')}
-                </button>
-                <button
-                  onClick={handleSaveClinic}
-                  className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-300 text-primary-foreground bg-primary hover:bg-primary/90 h-10 px-6 shadow-lg shadow-primary/20 hover:shadow-primary/30"
-                >
-                  <Check size={16} className={isAr ? "ml-1" : "mr-1"} />
-                  {t('common.save_changes')}
-                </button>
-              </div>
-            </div>
-
-            {/* Insurance Section */}
-            <div data-slot="card" className="tab-pane bg-white rounded-xl border p-6 border-border shadow-lg hover:shadow-xl transition-all duration-300">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-12 h-12 bg-secondary/10 rounded-xl flex items-center justify-center">
-                  <Shield size={24} className="text-secondary" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold">{t('profile.insurance_section', T_PAGE)}</h3>
-                  <p className="text-sm text-muted-foreground">{t('profile.insurance_section_desc', T_PAGE)}</p>
-                </div>
-              </div>
-
-              {insurances.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {insurances.map((ins) => {
-                    const isActive = clinicInsuranceUuids.has(ins.uuid);
-                    const isToggling = togglingInsurances.has(ins.uuid);
-                    return (
-                      <div
-                        key={ins.uuid}
-                        className={cn(
-                          "flex items-center justify-between p-4 rounded-xl border transition-all duration-300",
-                          isActive
-                            ? "bg-secondary/5 border-secondary/20 shadow-sm"
-                            : "bg-muted/20 border-border"
-                        )}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className={cn(
-                            "w-2 h-2 rounded-full",
-                            isActive ? "bg-secondary animate-pulse" : "bg-muted-foreground/40"
-                          )} />
-                          <div className="flex flex-col">
-                            <span className="font-bold text-foreground">{ins.name}</span>
-                            <span className="text-xs text-muted-foreground">{ins.provider}</span>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-3">
-                          <span className={cn(
-                            "text-xs font-bold",
-                            isActive ? "text-secondary" : "text-muted-foreground"
-                          )}>
-                            {isActive ? t('profile.active', T_PAGE) : (isAr ? "غير نشط" : "Inactive")}
-                          </span>
-                          <Switch
-                            checked={isActive}
-                            disabled={isToggling}
-                            onCheckedChange={() => handleToggleInsurance(ins.uuid)}
-                            className="scale-90"
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="p-8 text-center flex flex-col items-center gap-3 bg-muted/10 rounded-xl border border-dashed border-border mt-4">
-                  <div className="size-12 rounded-2xl bg-secondary/10 flex items-center justify-center text-secondary/50">
-                    <Shield className="size-6" />
+              {/* Insurance Section */}
+              <div data-slot="card" className="tab-pane bg-white rounded-xl border p-6 border-border shadow-lg hover:shadow-xl transition-all duration-300">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-12 h-12 bg-secondary/10 rounded-xl flex items-center justify-center">
+                    <Shield size={24} className="text-secondary" />
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-foreground">{isAr ? "لا توجد شركات تأمين" : "No insurance companies"}</p>
-                    <p className="text-xs text-muted-foreground">{isAr ? "لم يتم إضافة أي شركات تأمين للنظام بعد" : "No insurance companies have been added to the system yet"}</p>
+                    <h3 className="text-xl font-bold">{t('profile.insurance_section', T_PAGE)}</h3>
+                    <p className="text-sm text-muted-foreground">{t('profile.insurance_section_desc', T_PAGE)}</p>
                   </div>
                 </div>
-              )}
-            </div>
 
-            {/* Settings View */}
-            <SettingsView hideHeader={true} className="pb-0" activeTab={activeTab} />
+                {insurances.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {insurances.map((ins) => {
+                      const isActive = clinicInsuranceUuids.has(ins.uuid);
+                      const isToggling = togglingInsurances.has(ins.uuid);
+                      return (
+                        <div
+                          key={ins.uuid}
+                          className={cn(
+                            "flex items-center justify-between p-4 rounded-xl border transition-all duration-300",
+                            isActive
+                              ? "bg-secondary/5 border-secondary/20 shadow-sm"
+                              : "bg-muted/20 border-border"
+                          )}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={cn(
+                              "w-2 h-2 rounded-full",
+                              isActive ? "bg-secondary animate-pulse" : "bg-muted-foreground/40"
+                            )} />
+                            <div className="flex flex-col">
+                              <span className="font-bold text-foreground">{ins.name}</span>
+                              <span className="text-xs text-muted-foreground">{ins.provider}</span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-3">
+                            <span className={cn(
+                              "text-xs font-bold",
+                              isActive ? "text-secondary" : "text-muted-foreground"
+                            )}>
+                              {isActive ? t('profile.active', T_PAGE) : (isAr ? "غير نشط" : "Inactive")}
+                            </span>
+                            <Switch
+                              checked={isActive}
+                              disabled={isToggling}
+                              onCheckedChange={() => handleToggleInsurance(ins.uuid)}
+                              className="scale-90"
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="p-8 text-center flex flex-col items-center gap-3 bg-muted/10 rounded-xl border border-dashed border-border mt-4">
+                    <div className="size-12 rounded-2xl bg-secondary/10 flex items-center justify-center text-secondary/50">
+                      <Shield className="size-6" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-foreground">{isAr ? "لا توجد شركات تأمين" : "No insurance companies"}</p>
+                      <p className="text-xs text-muted-foreground">{isAr ? "لم يتم إضافة أي شركات تأمين للنظام بعد" : "No insurance companies have been added to the system yet"}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Settings View */}
+              <SettingsView hideHeader={true} className="pb-0" activeTab={activeTab} />
+            </div>
           </div>
-        </div>
+        )}
 
 
 
 
         {/* Change Email Dialog */}
         <EmailChangeDialog
-           isOpen={isEmailModalOpen}
-           onClose={() => setIsEmailModalOpen(false)}
+          isOpen={isEmailModalOpen}
+          onClose={() => setIsEmailModalOpen(false)}
         />
         {/* Change Password Dialog */}
         <PasswordChangeDialog
-           isOpen={isPasswordModalOpen}
-           onClose={() => setIsPasswordModalOpen(false)}
+          isOpen={isPasswordModalOpen}
+          onClose={() => setIsPasswordModalOpen(false)}
         />
       </div>
     </div>

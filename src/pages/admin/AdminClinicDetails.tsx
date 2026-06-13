@@ -171,7 +171,7 @@ const AdminClinicDetails = () => {
   // Get clinic data based on ID
   const clinicId = Number(id)
   const [clinic, setClinic] = useState<Clinic | null>(null)
-  
+
   // Stats Section Ref for Counter
   const [isInView, setIsInView] = useState(false)
   const statsSectionRef = useRef<HTMLDivElement>(null)
@@ -232,7 +232,7 @@ const AdminClinicDetails = () => {
     const isCardiac = category.includes('قلب')
     const isPediatric = category.includes('أطفال')
     const isSurgery = category.includes('جراحة')
-    
+
     return [
       {
         id: 1,
@@ -281,7 +281,7 @@ const AdminClinicDetails = () => {
             <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center text-white text-4xl font-bold shadow-lg shrink-0">
               {clinic.name.trim().startsWith('مركز') ? 'م' : 'ع'}
             </div>
-            
+
             <div>
               {/* Back Button */}
               <button
@@ -296,10 +296,10 @@ const AdminClinicDetails = () => {
                 <ArrowRight className="size-4.5 ml-2" />
                 <span>العودة إلى العيادات</span>
               </button>
-              
+
               {/* Title */}
               <h1 className="text-3xl text-[#0F172A] mb-3 font-bold">{clinic.name}</h1>
-              
+
               {/* Badges */}
               <div className="flex items-center flex-wrap gap-2 mb-3">
                 <Badge variant="purple">
@@ -313,7 +313,7 @@ const AdminClinicDetails = () => {
                   <span>{clinic.isActive ? 'مفعّل' : 'ملغى التفعيل'}</span>
                 </Badge>
               </div>
-              
+
               {/* Meta information */}
               <div className="flex flex-col sm:flex-row sm:items-center gap-4 sm:gap-6 text-sm text-[#64748B]">
                 <div className="flex items-center gap-2">
@@ -345,7 +345,7 @@ const AdminClinicDetails = () => {
             <Power className="size-4 ml-2" />
             <span>{clinic.isActive ? 'إلغاء التفعيل' : 'تفعيل العيادة'}</span>
           </button>
-          
+
           <button
             onClick={handleEditData}
             className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md hover:shadow-blue-500/20 h-9 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white cursor-pointer"
@@ -353,7 +353,7 @@ const AdminClinicDetails = () => {
             <Pen className="size-4 ml-2" />
             <span>تعديل البيانات</span>
           </button>
-          
+
           <button
             onClick={handleContactClinic}
             className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md hover:shadow-amber-500/20 h-9 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white cursor-pointer"
@@ -365,14 +365,14 @@ const AdminClinicDetails = () => {
 
         {/* Main Grid Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
+
           {/* Left Main Contents Column */}
           <div className="lg:col-span-2 space-y-6">
-            
+
             {/* Clinic Info Card */}
             <div className="text-card-foreground flex flex-col gap-6 rounded-xl transition-all duration-300 hover:shadow-lg p-6 bg-white border border-gray-200 shadow-xs">
               <h2 className="text-xl text-[#0F172A] font-bold mb-2">معلومات العيادة</h2>
-              
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
                   <div className="flex items-center gap-3 mb-2">
@@ -381,7 +381,7 @@ const AdminClinicDetails = () => {
                   </div>
                   <p className="text-[#0F172A] font-semibold">{clinic.name}</p>
                 </div>
-                
+
                 <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
                   <div className="flex items-center gap-3 mb-2">
                     <Stethoscope className="text-[#64748B] size-4.5" />
@@ -389,7 +389,7 @@ const AdminClinicDetails = () => {
                   </div>
                   <p className="text-[#0F172A] font-semibold">{clinic.category}</p>
                 </div>
-                
+
                 <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
                   <div className="flex items-center gap-3 mb-2">
                     <Phone className="text-[#64748B] size-4.5" />
@@ -397,7 +397,7 @@ const AdminClinicDetails = () => {
                   </div>
                   <p className="text-[#0F172A] font-semibold font-mono">{clinic.phone}</p>
                 </div>
-                
+
                 <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
                   <div className="flex items-center gap-3 mb-2">
                     <Mail className="text-[#64748B] size-4.5" />
@@ -405,7 +405,7 @@ const AdminClinicDetails = () => {
                   </div>
                   <p className="text-[#0F172A] font-semibold">{clinic.email}</p>
                 </div>
-                
+
                 <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
                   <div className="flex items-center gap-3 mb-2">
                     <MapPin className="text-[#64748B] size-4.5" />
@@ -413,7 +413,7 @@ const AdminClinicDetails = () => {
                   </div>
                   <p className="text-[#0F172A] font-semibold">{clinic.city}</p>
                 </div>
-                
+
                 <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
                   <div className="flex items-center gap-3 mb-2">
                     <MapPin className="text-[#64748B] size-4.5" />
@@ -421,7 +421,7 @@ const AdminClinicDetails = () => {
                   </div>
                   <p className="text-[#0F172A] font-semibold">{clinic.region}</p>
                 </div>
-                
+
                 <div className="sm:col-span-2 bg-gray-50 p-4 rounded-xl border border-gray-200">
                   <div className="flex items-center gap-3 mb-2">
                     <MapPin className="text-[#64748B] size-4.5" />
@@ -435,8 +435,8 @@ const AdminClinicDetails = () => {
             {/* Clinic Statistics Cards Grid */}
             <div ref={statsSectionRef} className="text-card-foreground flex flex-col gap-6 rounded-xl transition-all duration-300 hover:shadow-lg p-6 bg-white border border-gray-200 shadow-xs">
               <h2 className="text-xl text-[#0F172A] font-bold mb-2">إحصائيات العيادة</h2>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+
+              <div className="grid grid-cols-1 md:grid-cols-2  lg:grid-cols-3 gap-4">
                 {/* Number of Patients */}
                 <div className="bg-gradient-to-br from-blue-50 to-cyan-50 p-5 rounded-xl border border-blue-100 hover:shadow-md transition-all select-none">
                   <div className="flex items-center justify-between mb-3">
@@ -565,7 +565,7 @@ const AdminClinicDetails = () => {
             {/* Clinic Users List Card */}
             <div className="text-card-foreground flex flex-col gap-6 rounded-xl transition-all duration-300 hover:shadow-lg p-6 bg-white border border-gray-200 shadow-xs">
               <h2 className="text-xl text-[#0F172A] font-bold mb-2">المستخدمين في العيادة</h2>
-              
+
               <div className="space-y-3">
                 {clinicUsers.map((user) => (
                   <div
@@ -595,29 +595,29 @@ const AdminClinicDetails = () => {
 
           {/* Right Sidebar Contents Column */}
           <div className="space-y-6">
-            
+
             {/* Subscription Summary Card */}
             <div className="text-card-foreground flex flex-col gap-6 rounded-xl transition-all duration-300 hover:shadow-lg p-6 bg-gradient-to-br from-gray-50 to-slate-50 border border-gray-200 shadow-xs">
               <h2 className="text-xl text-[#0F172A] font-bold">ملخص الاشتراكات</h2>
-              
+
               <div className="space-y-6">
                 <div>
                   <p className="text-sm text-[#64748B] mb-2 font-medium">عدد الاشتراكات</p>
                   <p className="text-4xl text-[#0F172A] font-bold">{clinic.subscriptions}</p>
                 </div>
-                
+
                 <div>
                   <p className="text-sm text-[#64748B] mb-2 font-medium">إجمالي المدفوعات</p>
                   <p className="text-4xl text-emerald-600 font-bold">{clinic.revenue.toLocaleString()} د.أ</p>
                 </div>
-                
+
                 <div>
                   <p className="text-sm text-[#64748B] mb-2 font-medium">حالة الاشتراك</p>
                   <Badge variant={clinic.status === 'نشط' ? 'green' : 'yellow'} className="text-base px-4 py-2">
                     {clinic.status}
                   </Badge>
                 </div>
-                
+
                 <button
                   onClick={() => window.showToast('عرض تفاصيل الفاتورة والاشتراك', 'info')}
                   className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md hover:shadow-blue-500/20 h-9 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white w-full cursor-pointer"
@@ -631,7 +631,7 @@ const AdminClinicDetails = () => {
             {/* Recent Activities Card */}
             <div className="text-card-foreground flex flex-col gap-6 rounded-xl transition-all duration-300 hover:shadow-lg p-6 bg-white border border-gray-200 shadow-xs">
               <h2 className="text-xl text-[#0F172A] font-bold">النشاطات الأخيرة</h2>
-              
+
               <div className="space-y-4">
                 <div className="flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
                   <div className="w-10 h-10 bg-blue-500/10 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -682,7 +682,7 @@ const AdminClinicDetails = () => {
             {/* Latest Tickets Card */}
             <div className="text-card-foreground flex flex-col gap-6 rounded-xl transition-all duration-300 hover:shadow-lg p-6 bg-white border border-gray-200 shadow-xs">
               <h2 className="text-xl text-[#0F172A] font-bold">أحدث التذاكر</h2>
-              
+
               <div className="space-y-3">
                 <div className="p-4 bg-gray-50 rounded-xl border border-gray-200 hover:shadow-md transition-all">
                   <div className="flex items-start justify-between mb-2">
@@ -718,9 +718,9 @@ const AdminClinicDetails = () => {
                 </div>
               </div>
             </div>
-            
+
           </div>
-          
+
         </div>
       </div>
     </AdminLayout>

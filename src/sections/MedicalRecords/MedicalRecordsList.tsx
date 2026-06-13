@@ -288,7 +288,7 @@ const MedicalRecordsList = () => {
           className="transition-all duration-300"
           style={{ opacity: canAnimate ? 1 : 0, transform: canAnimate ? 'none' : 'translateY(10px)' }}
         >
-          <div data-slot="card" className="text-card-foreground flex flex-col gap-6 rounded-xl border transition-all duration-300 p-4 bg-linear-to-br from-primary/5 to-secondary/5 border-primary/20">
+          <div data-slot="card" className="text-card-foreground flex flex-col gap-6 rounded-xl border transition-all duration-300 p-4 bg-white border-gray-200">
             <figure className="flex items-start gap-4">
               <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center shrink-0">
                 <FileText className="size-5 text-primary" strokeWidth={2} />
@@ -505,7 +505,7 @@ const MedicalRecordsList = () => {
           className="transition-all duration-300"
           style={{ opacity: canAnimate ? 1 : 0, transform: canAnimate ? 'none' : 'translateY(10px)' }}
         >
-          <article data-slot="card" className="text-card-foreground flex flex-col gap-6 rounded-xl border transition-all duration-300 p-5 bg-linear-to-br from-primary/5 to-transparent border-primary/10">
+          <article data-slot="card" className="text-card-foreground flex flex-col gap-6 rounded-xl border transition-all duration-300 p-5 bg-white border-gray-200">
             <figure className="flex items-center justify-between">
               <figcaption className={cn(isAr ? "text-right" : "text-left")}>
                 <p className="text-sm text-muted-foreground">{t('total_records', T)}</p>

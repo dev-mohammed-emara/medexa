@@ -103,7 +103,36 @@ const LoginForm = () => {
         }
 
         window.showToast?.(t('toast_success', T))
-        navigate(from, { replace: true })
+        
+        let destination = from;
+        if (destination === '/' || destination === '') {
+          const savedUserStr = localStorage.getItem('medexa_user');
+          if (savedUserStr) {
+            try {
+              const savedUser = JSON.parse(savedUserStr);
+              const permissions = savedUser.permissions || [];
+              const roles = savedUser.roles || [];
+              
+              if (permissions.includes('MANAGE_STATISTICS') || roles.includes('ROLE_CLINIC_OWNER') || roles.includes('ROLE_ADMIN')) {
+                destination = '/';
+              } else if (permissions.includes('MANAGE_APPOINTMENTS')) {
+                destination = '/appointments';
+              } else if (permissions.includes('MANAGE_PATIENTS')) {
+                destination = '/patients';
+              } else if (permissions.includes('MANAGE_SECRETARIES')) {
+                destination = '/secretary';
+              } else if (permissions.includes('MANAGE_DOCTORS')) {
+                destination = '/doctors';
+              } else {
+                destination = '/profile';
+              }
+            } catch (e) {
+              destination = '/profile';
+            }
+          }
+        }
+
+        navigate(destination, { replace: true })
       } catch (err: any) {
         window.showToast?.(err.message || 'Invalid email or password', 'error')
       } finally {

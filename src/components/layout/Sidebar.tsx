@@ -1,16 +1,16 @@
 import { gsap } from 'gsap'
 import {
-    ChevronLeft,
-    DollarSign,
-    FileText,
-    LayoutDashboard,
-    ListChecks,
-    Menu,
-    User,
-    UserCog,
-    Users,
-    UsersRound,
-    X
+  ChevronLeft,
+  DollarSign,
+  FileText,
+  LayoutDashboard,
+  ListChecks,
+  Menu,
+  User,
+  UserCog,
+  Users,
+  UsersRound,
+  X
 } from 'lucide-react'
 import { useEffect, useRef } from 'react'
 import { FaCalendarAlt } from 'react-icons/fa'
@@ -22,16 +22,17 @@ import { useLanguage } from '../../contexts/LanguageContext'
 import { usePreloader } from '../../contexts/PreloaderContext'
 import { cn } from '../../utils/cn'
 import { TransitionLink } from '../transition/TransitionLink'
+import { useAuth } from '../../contexts/AuthContext'
 
 const navItems = [
-  { icon: LayoutDashboard, label: 'dashboard', href: '/' },
-  { icon: Users, label: 'doctors', href: '/doctors' },
-  { icon: UserCog, label: 'secretary', href: '/secretary' },
-  { icon: UsersRound, label: 'patients', href: '/patients' },
-  { icon: FaCalendarAlt, label: 'appointments', href: '/appointments' },
+  { icon: LayoutDashboard, label: 'dashboard', href: '/', requiredPermissions: ['MANAGE_STATISTICS', 'ROLE_CLINIC_OWNER', 'ROLE_ADMIN'] },
+  { icon: Users, label: 'doctors', href: '/doctors', requiredPermissions: ['MANAGE_DOCTORS', 'ROLE_CLINIC_OWNER', 'ROLE_ADMIN'] },
+  { icon: UserCog, label: 'secretary', href: '/secretary', requiredPermissions: ['MANAGE_SECRETARIES', 'ROLE_CLINIC_OWNER', 'ROLE_ADMIN'] },
+  { icon: UsersRound, label: 'patients', href: '/patients', requiredPermissions: ['MANAGE_PATIENTS', 'ROLE_CLINIC_OWNER', 'ROLE_ADMIN'] },
+  { icon: FaCalendarAlt, label: 'appointments', href: '/appointments', requiredPermissions: ['MANAGE_APPOINTMENTS', 'ROLE_CLINIC_OWNER', 'ROLE_ADMIN'] },
   { icon: ListChecks, label: 'appointmentTypes', href: '/appointment-types' },
-  { icon: FileText, label: 'records', href: '/records' },
-  { icon: DollarSign, label: 'finance', href: '/finance' },
+  { icon: FileText, label: 'records', href: '/records', requiredPermissions: ['MANAGE_MEDICAL_RECORDS', 'MANAGE_PATIENTS', 'ROLE_CLINIC_OWNER', 'ROLE_ADMIN'] },
+  { icon: DollarSign, label: 'finance', href: '/finance', requiredPermissions: ['MANAGE_TRANSACTIONS', 'MANAGE_CLINIC', 'ROLE_CLINIC_OWNER', 'ROLE_ADMIN'] },
   { icon: User, label: 'profile', href: '/profile' },
   { icon: BiSupport, label: 'supportTickets', href: '/support-tickets' },
 ]
@@ -44,12 +45,19 @@ interface SidebarProps {
 const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
   const { isLoaded, isExiting } = usePreloader()
   const { isAr, t } = useLanguage()
+  const { hasAnyPermission } = useAuth()
   const canAnimate = isLoaded && !isExiting
   const location = useLocation()
   const navContainerRef = useRef<HTMLDivElement>(null)
 
   const T_PAGE = navTranslations;
   const isWideScreen = useMediaQuery({ query: '(min-width: 1024px)' })
+
+  // Filter items based on permissions
+  const filteredNavItems = navItems.filter(item => {
+    if (!item.requiredPermissions) return true
+    return hasAnyPermission(item.requiredPermissions)
+  })
 
   useEffect(() => {
     if (!canAnimate || !isWideScreen) return
@@ -125,7 +133,7 @@ const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
 
         <nav className="flex-1 py-6 px-3 whitespace-nowrap overflow-y-auto no-scrollbar" ref={navContainerRef}>
           <div className="space-y-1">
-            {navItems.map((item, index) => {
+            {filteredNavItems.map((item, index) => {
               const isActive = location.pathname === item.href
               return (
                 <TransitionLink
@@ -147,7 +155,7 @@ const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
                   )}
                   <div className="relative z-10 w-full flex items-center gap-3">
                     <div className="flex items-center justify-center w-5">
-                      <item.icon className={cn("size-5 shrink-0 transition-transform duration-300 group-hover:scale-110", isActive ? "text-primary" : "text-black",item.icon ===  FaCalendarAlt  && "scale-95" )} />
+                      <item.icon className={cn("size-5 shrink-0 transition-transform duration-300 group-hover:scale-110", isActive ? "text-primary" : "text-black", item.icon === FaCalendarAlt && "scale-95")} />
                     </div>
                     {(!isCollapsed || (isCollapsed && !isWideScreen)) && (
                       <>

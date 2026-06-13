@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
 } from '../../components/ui/select';
 import { usePreloader } from '../../contexts/PreloaderContext';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -134,7 +134,7 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
         if (response.ok) {
           const data = await response.json();
           const schedules = data.schedules || [];
-          
+
           const mappedDays = INITIAL_DAYS.map(day => {
             const serverDayName = ID_TO_SERVER_DAY[day.id];
             const serverDay = schedules.find((s: any) => s.dayOfWeek === serverDayName);
@@ -263,7 +263,7 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
         try {
           const errData = await response.json();
           errMsg = errData.message || errData.error || errMsg;
-        } catch (e) {}
+        } catch (e) { }
         window.showToast(errMsg, 'error');
       }
     } catch (err: any) {
@@ -287,9 +287,9 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
       }
       if (hasDuplicates) {
         window.showToast(
-          isAr 
-            ? 'لا يمكن إضافة فترات عمل متطابقة لنفس اليوم' 
-            : 'Cannot have identical working periods on the same day', 
+          isAr
+            ? 'لا يمكن إضافة فترات عمل متطابقة لنفس اليوم'
+            : 'Cannot have identical working periods on the same day',
           'info'
         );
         return;
@@ -342,7 +342,7 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
         try {
           const errData = await response.json();
           errMsg = errData.message || errData.error || errMsg;
-        } catch (e) {}
+        } catch (e) { }
         window.showToast(errMsg, 'error');
       }
     } catch (err: any) {
@@ -388,7 +388,7 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
   };
 
   const SectionActions = ({ onSave, onCancel }: { onSave: () => void, onCancel: () => void }) => (
-    <div className="flex justify-center xs:justify-end flex-wrap gap-3 mt-8 pt-6 border-t border-border/50">
+    <div className="flex justify-center xs:justify-end flex-wrap gap-3 mt-8 pt-6 border-t border-gray-200">
       <button
         onClick={onCancel}
         className="h-10 px-6 rounded-xl border border-border font-bold text-foreground hover:bg-accent hover:text-white transition-all active:scale-95 text-sm"
@@ -529,7 +529,7 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
             </figcaption>
           </figure>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2  lg:grid-cols-3 gap-6">
             <div className="space-y-2">
               <label className={cn("text-sm font-bold text-[#1a2b3c] flex items-center gap-2", isAr ? "mr-1" : "ml-1")}>
                 <Globe className="size-4 text-primary" />
@@ -607,7 +607,7 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
                 className={cn(
                   "rounded-2xl border transition-all duration-300 overflow-hidden",
                   day.isActive
-                    ? "bg-primary/5 border-primary/20"
+                    ? "bg-primary/5 border-gray-200"
                     : "bg-destructive/5 border-destructive/20"
                 )}
               >
@@ -671,7 +671,7 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
                   {day.isActive ? (
                     <>
                       {day.periods.map((period) => (
-                        <div key={period.id} className="flex items-center gap-4 bg-white/60 p-3 rounded-xl border border-border/50 animate-in fade-in slide-in-from-top-1">
+                        <div key={period.id} className="flex items-center gap-4 bg-white/60 p-3 rounded-xl border border-gray-200 animate-in fade-in slide-in-from-top-1">
                           <div className="flex flex-wrap justify-center special:justify-start items-center gap-6 flex-1 ">
                             <div className="flex items-center gap-3">
                               <label className="text-sm font-medium text-muted-foreground">{t('common.from')}</label>
@@ -716,7 +716,7 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
                   )}
 
                   {day.isEditing && (
-                    <div className="flex gap-2 justify-end mt-4 pt-4 border-t border-border/50">
+                    <div className="flex gap-2 justify-end mt-4 pt-4 border-t border-gray-200">
                       <button
                         onClick={() => handleCancelDaySchedule(day.id)}
                         className="h-9 px-4 rounded-xl border border-border font-bold text-xs text-foreground bg-white hover:bg-muted transition-all flex items-center gap-1.5 active:scale-95"
@@ -738,7 +738,7 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
             ))}
           </div>
 
-          <figure className="mt-8 text-center xs:text-start text-pretty flex-wrap gap-4 p-4 xs:p-6 bg-linear-to-br from-primary/5 to-secondary/5 rounded-2xl border border-primary/10 flex items-center justify-between">
+          <figure className="mt-8 text-center xs:text-start text-pretty flex-wrap gap-4 p-4 xs:p-6 bg-white rounded-2xl border border-gray-200 flex items-center justify-between">
             <div className="flex items-center flex-col xs:flex-row gap-4">
               <Clock className="size-6 text-primary" />
               <figcaption className={cn("text-muted-foreground", isAr ? "text-right" : "text-left")}>

@@ -56,7 +56,7 @@ const StatsOverview = ({ clinicStats }: StatsOverviewProps) => {
       change: clinicStats?.totalPatients?.changePercent !== undefined ? `${clinicStats.totalPatients.changePercent}%` : '0%',
       sub: t('stats.total_patients_sub', T),
       icon: Users,
-      color: 'linear-gradient(90deg, #0B5A8E, #3FB8AF)',
+      color: '#0B5A8E',
       iconBg: 'from-[#0B5A8E]/10 to-[#3FB8AF]/10',
       iconColor: '#0B5A8E',
       progress: '60%',
@@ -68,7 +68,7 @@ const StatsOverview = ({ clinicStats }: StatsOverviewProps) => {
       change: clinicStats?.appointments?.changePercent !== undefined ? `${clinicStats.appointments.changePercent}%` : '0%',
       sub: t('stats.appointments_sub', T),
       icon: Calendar,
-      color: 'linear-gradient(90deg, #3FB8AF, #5DD9D1)',
+      color: '#0B5A8E',
       iconBg: 'from-[#3FB8AF]/10 to-[#5DD9D1]/10',
       iconColor: '#3FB8AF',
       progress: '60%',
@@ -80,7 +80,7 @@ const StatsOverview = ({ clinicStats }: StatsOverviewProps) => {
       change: clinicStats?.revenue?.changePercent !== undefined ? `${clinicStats.revenue.changePercent}%` : '0%',
       sub: t('stats.revenue_sub', T),
       icon: DollarSign,
-      color: 'linear-gradient(90deg, #10B981, #14B8A6)',
+      color: '#0B5A8E',
       iconBg: 'from-emerald-500/10 to-teal-500/10',
       iconColor: '#10B981',
       progress: '60%',
@@ -93,7 +93,7 @@ const StatsOverview = ({ clinicStats }: StatsOverviewProps) => {
       change: clinicStats?.growthRate?.changePercent !== undefined ? `${clinicStats.growthRate.changePercent}%` : '0%',
       sub: t('stats.growth_rate_sub', T),
       icon: TrendingUp,
-      color: 'linear-gradient(90deg, #F59E0B, #F97316)',
+      color: '#0B5A8E',
       iconBg: 'from-amber-500/10 to-orange-500/10',
       iconColor: '#F59E0B',
       progress: '60%',
@@ -187,7 +187,7 @@ const StatsOverview = ({ clinicStats }: StatsOverviewProps) => {
           key={index}
           ref={(el) => { cardsRef.current[index] = el; }}
           className={cn(
-            "relative group p-7 bg-white border border-border/50 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-600 ease-[cubic-bezier(0.34,1.56,0.64,1)] will-change-[box-shadow,transform] overflow-hidden hover:-translate-y-3! "
+            "relative group p-7 bg-white border border-gray-200 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-600 ease-[cubic-bezier(0.34,1.56,0.64,1)] will-change-[box-shadow,transform] overflow-hidden hover:-translate-y-3! "
           )}
           style={{
             opacity: 0, // Initial state
@@ -203,7 +203,7 @@ const StatsOverview = ({ clinicStats }: StatsOverviewProps) => {
 
           {/* Background effects */}
           <div className="absolute top-0 left-0 w-64 h-64 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none will-change-opacity"
-               style={{ background: `radial-gradient(circle at ${isAr ? 'right top' : 'left top'}, ${stat.iconColor}08, transparent 70%)` }} />
+               style={{ backgroundColor: 'transparent' }} />
 
           <div className="relative z-10">
             <div className="flex items-start justify-between mb-6">

@@ -6,7 +6,7 @@ const SessionExpired = () => {
     <main className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden" dir="rtl">
       {/* Small Grid Background */}
       <div className="absolute inset-0 opacity-[0.03] pointer-events-none"
-           style={{ backgroundImage: `radial-gradient(#0B5A8E 1px, transparent 1px)`, backgroundSize: '24px 24px' }} />
+           style={{ backgroundColor: 'white', backgroundSize: '24px 24px' }} />
 
       {/* Background Decorative Elements */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
@@ -18,12 +18,12 @@ const SessionExpired = () => {
       <section className="relative z-10 max-w-lg w-full text-center">
         <figure className="mb-4 flex flex-col items-center">
           {/* Icon above number */}
-          <div className="size-24 bg-white rounded-3xl shadow-2xl flex items-center justify-center border border-border/50 animate-pulse will-change-[transform,opacity] z-20 mb-[-20px]">
+          <div className="size-24 bg-white rounded-3xl shadow-2xl flex items-center justify-center border border-gray-200 animate-pulse will-change-[transform,opacity] z-20 mb-[-20px]">
             <ShieldAlert className="size-12 text-amber-500" />
           </div>
 
           {/* Whole number seen */}
-          <div className="text-[150px] font-black leading-none bg-linear-to-b from-primary to-amber-500 bg-clip-text text-transparent opacity-20 select-none z-10">
+          <div className="text-[150px] font-black leading-none bg-gradient-to-r from-[#0B5A8E] to-[#3FB8AF] bg-clip-text text-transparent opacity-20 select-none z-10">
             419
           </div>
         </figure>

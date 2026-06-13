@@ -361,7 +361,7 @@ const DoctorsList = () => {
                   <Loader2 className="size-10 animate-spin text-primary" />
                 </div>
               )}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                 {doctors.map((doctor, index) => {
                   const firstName = doctor.user?.firstName || '';
                   const surName = doctor.user?.surName || '';
@@ -385,11 +385,11 @@ const DoctorsList = () => {
                       }}
                     >
                       <div data-slot="card" className="text-card-foreground flex flex-col gap-6 rounded-xl border p-6 bg-white border-border shadow-lg hover:shadow-xl transition-all duration-300 relative overflow-hidden group">
-                        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                        <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                         <div className="relative z-10 flex flex-col h-full justify-between">
                           <div>
                             <div className="flex items-start gap-4 mb-4">
-                              <span data-slot="avatar" className="relative flex size-10 shrink-0 overflow-hidden rounded-full w-16 h-16 border-2 border-primary/20 shadow-md">
+                              <span data-slot="avatar" className="relative flex size-10 shrink-0 overflow-hidden rounded-full w-16 h-16 border-2 border-gray-200 shadow-md">
                                 <span data-slot="avatar-fallback" className="flex size-full items-center justify-center rounded-full bg-primary text-white text-xl">
                                   {initial}
                                 </span>

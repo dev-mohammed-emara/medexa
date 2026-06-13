@@ -3,6 +3,7 @@ import { cn } from '../../utils/cn';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { usePreloader } from '../../contexts/PreloaderContext';
 import { Plus, Trash2, Search, AlertCircle, Loader2, Eye, SquarePen, FileText, Clock } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
 import Modal from '../../components/ui/Modal';
 import { Button } from '../../components/ui/Button';
 import EmptyShell from '../../components/ui/EmptyShell';
@@ -27,6 +28,8 @@ const AppointmentTypesList = () => {
   const { isLoaded, isExiting } = usePreloader();
   const canAnimate = isLoaded && !isExiting;
   const { isAr } = useLanguage();
+  const { hasRole } = useAuth();
+  const isSecretary = hasRole('ROLE_SECRETARY');
 
   const [appointmentTypes, setAppointmentTypes] = useState<ApiAppointmentType[]>([]);
   const [loading, setLoading] = useState(true);
@@ -167,13 +170,15 @@ const AppointmentTypesList = () => {
               {isAr ? 'إدارة سجلات ومعلومات أنواع المواعيد' : 'Manage records and information of appointment types'}
             </p>
           </div>
-          <Button
-            onClick={handleOpenAddModal}
-            className="group/button inline-flex w-fit! shrink-0 items-center justify-center border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 bg-primary text-primary-foreground [a]:hover:bg-primary/80 gap-1.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2 h-10 px-6 rounded-xl"
-          >
-            <Plus className={cn("size-4", isAr ? "ml-2" : "mr-2")} />
-            {isAr ? 'إضافة نوع موعد' : 'Add Appointment Type'}
-          </Button>
+          {!isSecretary && (
+            <Button
+              onClick={handleOpenAddModal}
+              className="group/button inline-flex w-fit! shrink-0 items-center justify-center border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:translate-y-px disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 bg-primary text-primary-foreground [a]:hover:bg-primary/80 gap-1.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2 h-10 px-6 rounded-xl"
+            >
+              <Plus className={cn("size-4", isAr ? "ml-2" : "mr-2")} />
+              {isAr ? 'إضافة نوع موعد' : 'Add Appointment Type'}
+            </Button>
+          )}
         </header>
 
         {/* Search and Table Card */}
@@ -225,7 +230,9 @@ const AppointmentTypesList = () => {
                     <TableHead className={cn("text-foreground h-12 px-6 align-middle font-bold whitespace-nowrap", isAr ? "text-right" : "text-left")}>{isAr ? 'الاسم' : 'Name'}</TableHead>
                     <TableHead className={cn("text-foreground h-12 px-6 align-middle font-bold whitespace-nowrap", isAr ? "text-right" : "text-left")}>{isAr ? 'الوصف' : 'Description'}</TableHead>
                     <TableHead className={cn("text-foreground h-12 px-6 align-middle font-bold whitespace-nowrap", isAr ? "text-right" : "text-left")}>{isAr ? 'المدة (دقائق)' : 'Duration (mins)'}</TableHead>
-                    <TableHead className="text-foreground h-12 px-6 align-middle font-bold whitespace-nowrap text-center">{isAr ? 'الإجراءات' : 'Actions'}</TableHead>
+                    {!isSecretary && (
+                      <TableHead className="text-foreground h-12 px-6 align-middle font-bold whitespace-nowrap text-center">{isAr ? 'الإجراءات' : 'Actions'}</TableHead>
+                    )}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -235,7 +242,9 @@ const AppointmentTypesList = () => {
                         <TableCell className={cn("p-6 align-middle whitespace-nowrap", isAr ? "text-right" : "text-left")}><div className="h-4 bg-muted rounded w-32 animate-pulse"></div></TableCell>
                         <TableCell className={cn("p-6 align-middle whitespace-nowrap", isAr ? "text-right" : "text-left")}><div className="h-4 bg-muted rounded w-48 animate-pulse"></div></TableCell>
                         <TableCell className={cn("p-6 align-middle whitespace-nowrap", isAr ? "text-right" : "text-left")}><div className="h-4 bg-muted rounded w-16 animate-pulse"></div></TableCell>
-                        <TableCell className="p-6 align-middle whitespace-nowrap text-center"><div className="h-8 bg-muted rounded w-24 mx-auto animate-pulse"></div></TableCell>
+                        {!isSecretary && (
+                          <TableCell className="p-6 align-middle whitespace-nowrap text-center"><div className="h-8 bg-muted rounded w-24 mx-auto animate-pulse"></div></TableCell>
+                        )}
                       </TableRow>
                     ))
                   ) : (
@@ -244,31 +253,33 @@ const AppointmentTypesList = () => {
                         <TableCell className={cn("p-6 align-middle whitespace-nowrap font-bold text-foreground", isAr ? "text-right" : "text-left")}>{type.name}</TableCell>
                         <TableCell className={cn("p-6 align-middle whitespace-nowrap text-muted-foreground", isAr ? "text-right" : "text-left")}>{type.description || '---'}</TableCell>
                         <TableCell className={cn("p-6 align-middle whitespace-nowrap font-medium text-foreground", isAr ? "text-right" : "text-left")}>{type.duration} {isAr ? 'دقيقة' : 'mins'}</TableCell>
-                        <TableCell className="p-6 align-middle whitespace-nowrap text-center">
-                          <div className="flex items-center justify-center gap-2">
-                            <button
-                              onClick={() => handleOpenEditViewModal(type.uuid, 'view')}
-                              className="p-2 text-primary hover:bg-primary/10 rounded-xl transition-colors"
-                              title={isAr ? 'عرض' : 'View'}
-                            >
-                              <Eye className="size-4" />
-                            </button>
-                            <button
-                              onClick={() => handleOpenEditViewModal(type.uuid, 'edit')}
-                              className="p-2 text-primary hover:bg-primary/10 rounded-xl transition-colors"
-                              title={isAr ? 'تعديل' : 'Edit'}
-                            >
-                              <SquarePen className="size-4" />
-                            </button>
-                            <button
-                              onClick={() => handleOpenDeleteModal(type.uuid)}
-                              className="p-2 text-destructive hover:bg-destructive/10 rounded-xl transition-colors"
-                              title={isAr ? 'حذف' : 'Delete'}
-                            >
-                              <Trash2 className="size-4" />
-                            </button>
-                          </div>
-                        </TableCell>
+                        {!isSecretary && (
+                          <TableCell className="p-6 align-middle whitespace-nowrap text-center">
+                            <div className="flex items-center justify-center gap-2">
+                              <button
+                                onClick={() => handleOpenEditViewModal(type.uuid, 'view')}
+                                className="p-2 text-primary hover:bg-primary/10 rounded-xl transition-colors"
+                                title={isAr ? 'عرض' : 'View'}
+                              >
+                                <Eye className="size-4" />
+                              </button>
+                              <button
+                                onClick={() => handleOpenEditViewModal(type.uuid, 'edit')}
+                                className="p-2 text-primary hover:bg-primary/10 rounded-xl transition-colors"
+                                title={isAr ? 'تعديل' : 'Edit'}
+                              >
+                                <SquarePen className="size-4" />
+                              </button>
+                              <button
+                                onClick={() => handleOpenDeleteModal(type.uuid)}
+                                className="p-2 text-destructive hover:bg-destructive/10 rounded-xl transition-colors"
+                                title={isAr ? 'حذف' : 'Delete'}
+                              >
+                                <Trash2 className="size-4" />
+                              </button>
+                            </div>
+                          </TableCell>
+                        )}
                       </TableRow>
                     ))
                   )}

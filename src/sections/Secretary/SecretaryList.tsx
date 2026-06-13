@@ -337,7 +337,7 @@ const SecretaryList = () => {
                   <Loader2 className="size-10 animate-spin text-primary" />
                 </div>
               )}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                 {secretaries.map((secretary, index) => {
                   const firstName = secretary.user?.firstName || '';
                   const surName = secretary.user?.surName || '';
@@ -348,8 +348,8 @@ const SecretaryList = () => {
                   const dummyMatch = initialSecretaries.find(
                     (s) => s.email.toLowerCase() === secretary.user?.email?.toLowerCase()
                   );
-                  const roleText = isAr 
-                    ? (dummyMatch?.role_ar ?? 'سكرتيرة') 
+                  const roleText = isAr
+                    ? (dummyMatch?.role_ar ?? 'سكرتيرة')
                     : (dummyMatch?.role_en ?? 'Secretary');
 
                   return (

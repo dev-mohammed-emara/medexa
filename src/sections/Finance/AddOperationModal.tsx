@@ -378,7 +378,7 @@ const AddOperationModal = ({ isOpen, onClose, onSuccess, mode = 'add', transacti
               </div>
 
               {/* Information Alert */}
-              <div className="p-5 bg-primary/5 border border-primary/20 rounded-2xl flex gap-3 mb-2">
+              <div className="p-5 bg-primary/5 border border-gray-200 rounded-2xl flex gap-3 mb-2">
                 <DollarSign className="size-6 text-primary shrink-0 transition-transform hover:scale-110" />
                 <div className={cn("text-xs text-primary/80 leading-relaxed", isAr ? "text-right" : "text-left")}>
                   <p className="font-bold mb-1 text-sm">{t('important_note', T)}</p>

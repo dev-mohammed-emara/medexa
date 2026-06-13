@@ -9,6 +9,7 @@ import Register from './pages/Register'
 import AdminProtectedRoute from './components/auth/AdminProtectedRoute'
 import ErrorRoute from './components/auth/ErrorRoute'
 import ProtectedRoute from './components/auth/ProtectedRoute'
+import RoleProtectedRoute from './components/auth/RoleProtectedRoute'
 import Preloader from './components/transition/Preloader'
 import { LanguageProvider } from './contexts/LanguageContext'
 import { PreloaderProvider } from './contexts/PreloaderContext'
@@ -79,15 +80,29 @@ const AppRoutes = () => {
 
         {/* Guarded Application Routes */}
         <Route element={<ProtectedRoute />}>
-          <Route index element={<Dashboard />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/doctors" element={<Doctors />} />
-          <Route path="/secretary" element={<Secretary />} />
-          <Route path="/patients" element={<Patients />} />
-          <Route path="/appointments" element={<Appointments />} />
+          <Route element={<RoleProtectedRoute requiredPermissions={['MANAGE_STATISTICS', 'ROLE_CLINIC_OWNER', 'ROLE_ADMIN']} fallbackPath="/profile" />}>
+            <Route index element={<Dashboard />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+          </Route>
+          <Route element={<RoleProtectedRoute requiredPermissions={['MANAGE_DOCTORS', 'ROLE_CLINIC_OWNER', 'ROLE_ADMIN']} fallbackPath="/profile" />}>
+            <Route path="/doctors" element={<Doctors />} />
+          </Route>
+          <Route element={<RoleProtectedRoute requiredPermissions={['MANAGE_SECRETARIES', 'ROLE_CLINIC_OWNER', 'ROLE_ADMIN']} />}>
+            <Route path="/secretary" element={<Secretary />} />
+          </Route>
+          <Route element={<RoleProtectedRoute requiredPermissions={['MANAGE_PATIENTS', 'ROLE_CLINIC_OWNER', 'ROLE_ADMIN']} />}>
+            <Route path="/patients" element={<Patients />} />
+          </Route>
+          <Route element={<RoleProtectedRoute requiredPermissions={['MANAGE_APPOINTMENTS', 'ROLE_CLINIC_OWNER', 'ROLE_ADMIN']} />}>
+            <Route path="/appointments" element={<Appointments />} />
+          </Route>
           <Route path="/appointment-types" element={<AppointmentTypes />} />
-          <Route path="/records" element={<Records />} />
-          <Route path="/finance" element={<Finance />} />
+          <Route element={<RoleProtectedRoute requiredPermissions={['MANAGE_MEDICAL_RECORDS', 'MANAGE_PATIENTS', 'ROLE_CLINIC_OWNER', 'ROLE_ADMIN']} />}>
+            <Route path="/records" element={<Records />} />
+          </Route>
+          <Route element={<RoleProtectedRoute requiredPermissions={['MANAGE_TRANSACTIONS', 'MANAGE_CLINIC', 'ROLE_CLINIC_OWNER', 'ROLE_ADMIN']} />}>
+            <Route path="/finance" element={<Finance />} />
+          </Route>
           <Route path="/profile" element={<Profile />} />
           <Route path="/support-tickets" element={<SupportTickets />} />
           <Route path="/500" element={<ServerError />} />

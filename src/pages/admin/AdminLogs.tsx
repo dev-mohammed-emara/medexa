@@ -2,19 +2,19 @@ import AdminLayout from '@/components/layout/AdminLayout';
 import { Badge } from '@/components/ui/badge';
 import Input from '@/components/ui/Input';
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@/components/ui/select';
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from '@/components/ui/table';
 import TableFooter from '@/components/ui/TableFooter';
 import { AlertTriangle, Calendar, Info, Search, User } from 'lucide-react';
@@ -135,7 +135,7 @@ const AdminLogs = () => {
 
   // Helper function to get badge variant based on type
   const getTypeBadgeVariant = (type: string): 'blue' | 'green' | 'red' | 'yellow' | 'purple' => {
-    switch(type) {
+    switch (type) {
       case 'تحديث': return 'blue';
       case 'حذف': return 'red';
       case 'إنشاء': return 'green';
@@ -145,7 +145,7 @@ const AdminLogs = () => {
 
   // Helper function to get badge variant based on severity
   const getSeverityBadgeVariant = (severity: string): 'blue' | 'green' | 'red' | 'yellow' | 'purple' => {
-    switch(severity) {
+    switch (severity) {
       case 'عالية': return 'red';
       case 'متوسطة': return 'yellow';
       default: return 'purple';
@@ -164,7 +164,7 @@ const AdminLogs = () => {
         </div>
 
         {/* Dashboard Analytics Widgets */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2  lg:grid-cols-3 gap-4">
 
           {/* Card 1: Total Activities */}
           <div className="rounded-xl transition-all duration-300 hover:shadow-lg p-6 bg-white border border-gray-200 shadow-sm">

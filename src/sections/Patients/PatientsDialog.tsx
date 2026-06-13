@@ -141,15 +141,15 @@ const PatientsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Patie
     }
   };
 
-  const titles = { 
-    add: t('dialog.title_add', T), 
-    edit: t('dialog.title_edit', T), 
-    view: t('dialog.title_view', T) 
+  const titles = {
+    add: t('dialog.title_add', T),
+    edit: t('dialog.title_edit', T),
+    view: t('dialog.title_view', T)
   };
-  const descriptions = { 
-    add: t('dialog.desc_add', T), 
-    edit: t('dialog.desc_edit', T), 
-    view: t('dialog.desc_view', T) 
+  const descriptions = {
+    add: t('dialog.desc_add', T),
+    edit: t('dialog.desc_edit', T),
+    view: t('dialog.desc_view', T)
   };
 
   return (
@@ -192,7 +192,7 @@ const PatientsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Patie
             <form id="patientForm" onSubmit={handleSubmit} className="py-2" autoComplete="off">
               <article className="space-y-6">
                 {/* Name Fields - Three Columns */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2  lg:grid-cols-3 gap-4">
                   <div className="flex flex-col gap-2">
                     <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.first_name', T)}</label>
                     <Input
@@ -250,7 +250,7 @@ const PatientsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Patie
                     />
                     {mode !== 'view' && (
                       <p className="text-[11px] text-[#0B5A8E] mt-0.5 leading-relaxed font-semibold">
-                        {isAr 
+                        {isAr
                           ? "* يرجى إدخال رقم هاتف أردني صحيح (مثال: 962791234567)"
                           : "* Please enter a valid Jordanian phone number (e.g. 962791234567)"
                         }
@@ -372,7 +372,7 @@ const PatientsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Patie
             {mode === 'view' && (
               <>
                 <Button type="button" onClick={() => window.print()} className="flex-1 h-12 rounded-xl text-base shadow-lg shadow-primary/20">
-                   <Printer size={20} className={isAr ? "ml-2" : "mr-2"} /> {t('dialog.print', T) || 'طباعة'}
+                  <Printer size={20} className={isAr ? "ml-2" : "mr-2"} /> {t('dialog.print', T) || 'طباعة'}
                 </Button>
                 <Button
                   type="button"

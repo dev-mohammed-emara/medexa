@@ -9,12 +9,13 @@ import Flatpickr from "react-flatpickr"
 import { Button } from '../../components/ui/Button'
 import Input from '../../components/ui/Input'
 import ScrollLockWrapper from '../../components/ui/ScrollLockWrapper'
+import PermissionsFieldset from '../../components/ui/PermissionsFieldset'
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "../../components/ui/select"
 import { cn } from '../../utils/cn'
 import Portal from '../../components/ui/Portal'
@@ -38,10 +39,11 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
   const currentLocale = isAr ? ar : enUS;
   const overlayRef = useRef<HTMLDivElement>(null)
   const modalRef = useRef<HTMLDivElement>(null)
-  
+
   const [selectedSpecialty, setSelectedSpecialty] = useState(initialData?.specialty || "")
   const [selectedGender, setSelectedGender] = useState(initialData?.user?.gender || "")
   const [selectedDob, setSelectedDob] = useState<string>(initialData?.user?.dateOfBirth || "")
+  const [selectedPermissions, setSelectedPermissions] = useState<string[]>(initialData?.user?.permissions || [])
   const [isClosing, setIsClosing] = useState(false)
   const [loading, setLoading] = useState(false)
 
@@ -53,10 +55,12 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
       setSelectedSpecialty(initialData.specialty || "")
       setSelectedGender(initialData.user?.gender || "")
       setSelectedDob(initialData.user?.dateOfBirth || "")
+      setSelectedPermissions(initialData.user?.permissions || [])
     } else {
       setSelectedSpecialty("")
       setSelectedGender("")
       setSelectedDob("")
+      setSelectedPermissions([])
       setPassword("")
     }
   }, [initialData, isOpen])
@@ -96,13 +100,6 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
       const formData = new FormData(e.target as HTMLFormElement)
       const rawData = Object.fromEntries(formData.entries())
 
-      const permissions: string[] = []
-      const permissionCheckboxes = ['MANAGE_DOCTORS', 'MANAGE_SECRETARIES', 'MANAGE_CLINIC', 'MANAGE_PATIENTS', 'MANAGE_APPOINTMENTS', 'MANAGE_TRANSACTIONS', 'MANAGE_MEDICAL_RECORDS']
-      permissionCheckboxes.forEach(p => {
-        const checkbox = (e.target as HTMLFormElement).querySelector(`#${p}`) as HTMLButtonElement
-        if (checkbox?.dataset.state === 'checked') permissions.push(p)
-      })
-
       const formatPhone = (phoneStr: string) => {
         let cleaned = phoneStr.trim().replace(/[\s\-\(\)]/g, '');
         if (cleaned.startsWith('00')) {
@@ -123,7 +120,7 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
         phoneNumber: formatPhone(String(rawData.phoneNumber)),
         gender: selectedGender || 'MALE',
         dateOfBirth: selectedDob || '1990-01-01',
-        // permissions: permissions.length > 0 ? permissions : ['MANAGE_DOCTORS', 'MANAGE_SECRETARIES']
+        permissions: [...selectedPermissions]
       }
 
       // Password is required for adding new doctor
@@ -137,17 +134,19 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
         summary: String(rawData.summary || '')
       }
 
-      let responseData: ApiDoctor
+      let responseData: any
       if (mode === 'add') {
         responseData = await createDoctor(bodyPayload)
-        window.showToast?.(t('toast_add_success', T), 'success')
+        const successMsg = responseData?.details?.[0]?.message || responseData?.message || t('toast_add_success', T)
+        window.showToast?.(successMsg, 'success')
       } else {
         // Edit mode (PUT)
         if (!initialData?.uuid) {
           throw new Error('Missing doctor UUID for update')
         }
         responseData = await updateDoctor(initialData.uuid, bodyPayload)
-        window.showToast?.(t('toast_update_success', T), 'success')
+        const successMsg = responseData?.details?.[0]?.message || responseData?.message || t('toast_update_success', T)
+        window.showToast?.(successMsg, 'success')
       }
 
       onConfirm(responseData)
@@ -193,11 +192,11 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
             isClosing ? "animate-scaleDownOut" : "animate-scaleUp"
           )}
         >
-          <button onClick={handleClose} disabled={loading} type="button" className={cn("absolute top-6 p-2 rounded-full hover:bg-muted transition-colors opacity-70 hover:opacity-100 outline-none z-20", isAr ? "right-6" : "left-6")}>
+          <button onClick={handleClose} disabled={loading} type="button" className={cn("absolute top-6 p-2 rounded-full hover:bg-muted transition-colors opacity-70 hover:opacity-100 outline-none z-20", isAr ? "left-6" : "right-6")}>
             <X size={20} />
           </button>
 
-          <header data-slot="dialog-header" className="flex flex-col gap-2 text-center mb-6">
+          <header data-slot="dialog-header" className={cn("flex flex-col gap-2 mb-6", isAr ? "text-right" : "text-left")}>
             <h2 className="text-2xl font-bold text-foreground">{titles[mode]}</h2>
             <p className="text-muted-foreground text-sm">{descriptions[mode]}</p>
           </header>
@@ -205,46 +204,46 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
           <ScrollLockWrapper className="flex-1 overflow-y-auto pr-1 no-scrollbar">
             <form id="doctorForm" onSubmit={handleSubmit} className="space-y-6 py-2" autoComplete="off">
               {/* Name Fields - Three Columns */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2  lg:grid-cols-3 gap-4">
                 <div className="flex flex-col gap-2">
                   <label htmlFor={inputId('first_name')} className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.first_name', T)}</label>
-                  <Input 
-                    id={inputId('first_name')} 
-                    name="firstName" 
-                    defaultValue={initialData?.user?.firstName} 
-                    required 
-                    disabled={mode === 'view'} 
-                    placeholder={t('dialog.first_name_placeholder', T)} 
-                    icon={<User size={18} />} 
-                    className={inputClass} 
+                  <Input
+                    id={inputId('first_name')}
+                    name="firstName"
+                    defaultValue={initialData?.user?.firstName}
+                    required
+                    disabled={mode === 'view'}
+                    placeholder={t('dialog.first_name_placeholder', T)}
+                    icon={<User size={18} />}
+                    className={inputClass}
                     dir={isAr ? "rtl" : "ltr"}
                   />
                 </div>
                 <div className="flex flex-col gap-2">
                   <label htmlFor={inputId('surname')} className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.surname', T)}</label>
-                  <Input 
-                    id={inputId('surname')} 
-                    name="surName" 
-                    defaultValue={initialData?.user?.surName} 
-                    required 
-                    disabled={mode === 'view'} 
-                    placeholder={t('dialog.surname_placeholder', T)} 
+                  <Input
+                    id={inputId('surname')}
+                    name="surName"
+                    defaultValue={initialData?.user?.surName}
+                    required
+                    disabled={mode === 'view'}
+                    placeholder={t('dialog.surname_placeholder', T)}
                     icon={<User size={18} />}
-                    className={inputClass} 
+                    className={inputClass}
                     dir={isAr ? "rtl" : "ltr"}
                   />
                 </div>
                 <div className="flex flex-col gap-2">
                   <label htmlFor={inputId('last_name')} className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.last_name', T)}</label>
-                  <Input 
-                    id={inputId('last_name')} 
-                    name="lastName" 
-                    defaultValue={initialData?.user?.lastName} 
-                    required 
-                    disabled={mode === 'view'} 
-                    placeholder={t('dialog.last_name_placeholder', T)} 
+                  <Input
+                    id={inputId('last_name')}
+                    name="lastName"
+                    defaultValue={initialData?.user?.lastName}
+                    required
+                    disabled={mode === 'view'}
+                    placeholder={t('dialog.last_name_placeholder', T)}
                     icon={<User size={18} />}
-                    className={inputClass} 
+                    className={inputClass}
                     dir={isAr ? "rtl" : "ltr"}
                   />
                 </div>
@@ -260,7 +259,7 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
                   <Input id={inputId('phone')} name="phoneNumber" defaultValue={initialData?.user?.phoneNumber} required disabled={mode === 'view'} placeholder="9627XXXXXXXX" icon={<Phone size={18} />} className={inputClass} dir="ltr" />
                   {mode !== 'view' && (
                     <p className="text-[11px] text-[#0B5A8E] mt-0.5 leading-relaxed font-semibold">
-                      {isAr 
+                      {isAr
                         ? "* يرجى إدخال رقم هاتف أردني صحيح (مثال: 962791234567)"
                         : "* Please enter a valid Jordanian ++phone number  (e.g. 962791234567)"
                       }
@@ -402,19 +401,14 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
                 </div>
               </div>
 
-              <footer className="space-y-3 p-4 bg-muted/30 rounded-2xl border border-border">
-                <label className="text-lg font-bold block">{t('permissions', T)}</label>
-                <p className="text-xs text-muted-foreground mb-3">{t('permissions_desc', T)}</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-1">
-                  <PermissionCheckbox id="MANAGE_DOCTORS" label={isAr ? "إدارة الأطباء" : "Manage Doctors"} defaultChecked={initialData?.user?.permissions?.includes('MANAGE_DOCTORS') ?? true} disabled={mode === 'view'} />
-                  <PermissionCheckbox id="MANAGE_SECRETARIES" label={isAr ? "إدارة السكرتاريا" : "Manage Secretaries"} defaultChecked={initialData?.user?.permissions?.includes('MANAGE_SECRETARIES') ?? true} disabled={mode === 'view'} />
-                  <PermissionCheckbox id="MANAGE_CLINIC" label={isAr ? "إدارة العيادة" : "Manage Clinic"} defaultChecked={initialData?.user?.permissions?.includes('MANAGE_CLINIC') ?? true} disabled={mode === 'view'} />
-                  <PermissionCheckbox id="MANAGE_PATIENTS" label={isAr ? "إدارة المرضى" : "Manage Patients"} defaultChecked={initialData?.user?.permissions?.includes('MANAGE_PATIENTS')} disabled={mode === 'view'} />
-                  <PermissionCheckbox id="MANAGE_APPOINTMENTS" label={isAr ? "إدارة المواعيد" : "Manage Appointments"} defaultChecked={initialData?.user?.permissions?.includes('MANAGE_APPOINTMENTS')} disabled={mode === 'view'} />
-                  <PermissionCheckbox id="MANAGE_TRANSACTIONS" label={isAr ? "إدارة المعاملات المالية" : "Manage Transactions"} defaultChecked={initialData?.user?.permissions?.includes('MANAGE_TRANSACTIONS') ?? true} disabled={mode === 'view'} />
-                  <PermissionCheckbox id="MANAGE_MEDICAL_RECORDS" label={isAr ? "إدارة السجلات الطبية" : "Manage Medical Records"} defaultChecked={initialData?.user?.permissions?.includes('MANAGE_MEDICAL_RECORDS') ?? true} disabled={mode === 'view'} />
-                </div>
-              </footer>
+              <PermissionsFieldset
+                selectedPermissions={selectedPermissions}
+                onChange={setSelectedPermissions}
+                disabled={mode === 'view'}
+                descriptionAr="حدد صلاحيات الوصول والمهمات الموكلة للطبيب/ة"
+                descriptionEn="Select access permissions and assigned tasks for the doctor"
+              />
+
             </form>
           </ScrollLockWrapper>
 
@@ -442,28 +436,6 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
         </figure>
       </div>
     </Portal>
-  )
-}
-
-const PermissionCheckbox = ({ id, label, defaultChecked = false, disabled = false }: { id: string, label: string, defaultChecked?: boolean, disabled?: boolean }) => {
-  const [checked, setChecked] = useState(defaultChecked)
-  return (
-    <div className="flex items-center gap-3 py-1">
-      <button
-        type="button"
-        id={id}
-        disabled={disabled}
-        data-state={checked ? 'checked' : 'unchecked'}
-        onClick={() => setChecked(!checked)}
-        className={cn(
-          "peer size-5 shrink-0 rounded-md border shadow-xs transition-all outline-none focus-visible:ring-4 focus-visible:ring-primary/10 disabled:cursor-not-allowed disabled:opacity-50 flex items-center justify-center",
-          checked ? "bg-primary text-white border-primary" : "bg-input-background border-border hover:border-primary/50"
-        )}
-      >
-        {checked && <Check size={16} className="stroke-[3px]" />}
-      </button>
-      <label htmlFor={id} className="text-sm cursor-pointer select-none font-semibold text-foreground/80">{label}</label>
-    </div>
   )
 }
 

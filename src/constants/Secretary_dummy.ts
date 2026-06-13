@@ -19,7 +19,7 @@ export const initialSecretaries = [
     dob: '1992-04-12',
     description_ar: 'سكرتيرة خبيرة في إدارة العيادات والمواعيد، تتحدث العربية والإنجليزية بطلاقة.',
     description_en: 'Experienced secretary in clinic management and appointments, fluent in Arabic and English.',
-    permissions: ['managePatients', 'manageAppointments', 'medicalRecords']
+    permissions: []
   },
   {
     id: 2,
@@ -41,6 +41,6 @@ export const initialSecretaries = [
     dob: '1995-12-01',
     description_ar: 'موظف استقبال متميز، مسؤول عن تنظيم دخول المرضى والرد على الاستفسارات الهاتفية.',
     description_en: 'Distinguished receptionist, responsible for organizing patient entry and answering telephone inquiries.',
-    permissions: ['manageAppointments']
+    permissions: []
   }
 ];

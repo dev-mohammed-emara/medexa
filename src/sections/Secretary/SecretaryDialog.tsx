@@ -10,6 +10,7 @@ import { cn } from '../../utils/cn'
 import { Button } from '../../components/ui/Button'
 import Input from '../../components/ui/Input'
 import ScrollLockWrapper from '../../components/ui/ScrollLockWrapper'
+import PermissionsFieldset from '../../components/ui/PermissionsFieldset'
 import {
   Select,
   SelectContent,
@@ -40,9 +41,10 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
   const currentLocale = isAr ? ar : enUS;
   const overlayRef = useRef<HTMLDivElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
-  
+
   const [selectedGender, setSelectedGender] = useState(initialData?.user?.gender || "");
   const [selectedDob, setSelectedDob] = useState<string>(initialData?.user?.dateOfBirth || "");
+  const [selectedPermissions, setSelectedPermissions] = useState<string[]>(initialData?.user?.permissions || []);
   const [isClosing, setIsClosing] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -53,9 +55,11 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
     if (initialData) {
       setSelectedGender(initialData.user?.gender || "");
       setSelectedDob(initialData.user?.dateOfBirth || "");
+      setSelectedPermissions(initialData.user?.permissions || []);
     } else {
       setSelectedGender("");
       setSelectedDob("");
+      setSelectedPermissions([]);
       setPassword("");
     }
   }, [initialData, isOpen]);
@@ -94,13 +98,6 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
       const formData = new FormData(e.target as HTMLFormElement);
       const formDataObj = Object.fromEntries(formData.entries());
 
-      const permissions: string[] = []
-      const permissionCheckboxes = ['MANAGE_DOCTORS', 'MANAGE_SECRETARIES', 'MANAGE_CLINIC', 'MANAGE_PATIENTS', 'MANAGE_APPOINTMENTS', 'MANAGE_TRANSACTIONS', 'MANAGE_MEDICAL_RECORDS']
-      permissionCheckboxes.forEach(p => {
-        const checkbox = (e.target as HTMLFormElement).querySelector(`#${p}`) as HTMLButtonElement
-        if (checkbox?.dataset.state === 'checked') permissions.push(p)
-      })
-
       const formatPhone = (phoneStr: string) => {
         let cleaned = phoneStr.trim().replace(/[\s\-\(\)]/g, '');
         if (cleaned.startsWith('00')) {
@@ -119,9 +116,9 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
         lastName: String(formDataObj.lastName),
         email: String(formDataObj.email),
         phoneNumber: formatPhone(String(formDataObj.phoneNumber)),
-        gender: selectedGender || 'MALE',
+        gender: selectedGender || 'FEMALE',
         dateOfBirth: selectedDob || '1990-01-01',
-        // permissions: permissions.length > 0 ? permissions : ['MANAGE_DOCTORS', 'MANAGE_SECRETARIES']
+        permissions: [...selectedPermissions]
       }
 
       // Password is required for adding new secretary
@@ -133,17 +130,19 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
         user: userPayload
       }
 
-      let responseData: ApiSecretary
+      let responseData: any
       if (mode === 'add') {
         responseData = await createSecretary(bodyPayload)
-        window.showToast?.(t('toast_add_success', T), 'success')
+        const successMsg = responseData?.details?.[0]?.message || responseData?.message || t('toast_add_success', T)
+        window.showToast?.(successMsg, 'success')
       } else {
         // Edit mode (PUT)
         if (!initialData?.uuid) {
           throw new Error('Missing secretary UUID for update')
         }
         responseData = await updateSecretary(initialData.uuid, bodyPayload)
-        window.showToast?.(t('toast_update_success', T), 'success')
+        const successMsg = responseData?.details?.[0]?.message || responseData?.message || t('toast_update_success', T)
+        window.showToast?.(successMsg, 'success')
       }
 
       onConfirm(responseData);
@@ -157,15 +156,15 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
     }
   };
 
-  const titles = { 
-    add: t('title_add', T), 
-    edit: t('title_edit', T), 
-    view: t('title_view', T) 
+  const titles = {
+    add: t('title_add', T),
+    edit: t('title_edit', T),
+    view: t('title_view', T)
   };
-  const descriptions = { 
-    add: t('desc_add', T), 
-    edit: t('desc_edit', T), 
-    view: t('desc_view', T) 
+  const descriptions = {
+    add: t('desc_add', T),
+    edit: t('desc_edit', T),
+    view: t('desc_view', T)
   };
   const inputId = (name: string) => `secretary-${name}-${mode}`;
   const inputClass = "rounded-xl h-12 text-foreground font-bold";
@@ -194,15 +193,15 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
             disabled={loading}
             type="button"
             className={cn(
-               "absolute top-6 p-2 rounded-full hover:bg-muted transition-colors opacity-70 hover:opacity-100 outline-none z-20",
-               isAr ? "right-6" : "left-6"
+              "absolute top-6 p-2 rounded-full hover:bg-muted transition-colors opacity-70 hover:opacity-100 outline-none z-20",
+              isAr ? "left-6" : "right-6"
             )}
           >
             <X size={20} />
             <span className="sr-only">Close</span>
           </button>
 
-          <header data-slot="dialog-header" className="flex flex-col gap-2 text-center mb-6">
+          <header data-slot="dialog-header" className={cn("flex flex-col gap-2 mb-6", isAr ? "text-right" : "text-left")}>
             <h2 className="text-2xl font-bold text-foreground">{titles[mode]}</h2>
             <p className="text-muted-foreground text-sm">{descriptions[mode]}</p>
           </header>
@@ -210,7 +209,7 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
           <ScrollLockWrapper className="flex-1 overflow-y-auto pr-1 no-scrollbar">
             <form id="secretaryForm" onSubmit={handleSubmit} className="space-y-6 py-2" autoComplete="off">
               {/* Name Fields - Three Columns */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2  lg:grid-cols-3 gap-4">
                 <div className="flex flex-col gap-2 text-start">
                   <label htmlFor={inputId('first_name')} className="text-sm font-semibold text-foreground/80 pr-1">{t('first_name', T)}</label>
                   <Input
@@ -288,7 +287,7 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
                   />
                   {mode !== 'view' && (
                     <p className="text-[11px] text-[#0B5A8E] mt-0.5 leading-relaxed font-semibold">
-                      {isAr 
+                      {isAr
                         ? "* يرجى إدخال رقم هاتف أردني صحيح (مثال: 962791234567)"
                         : "* Please enter a valid Jordanian phone number (e.g. 962791234567)"
                       }
@@ -399,20 +398,14 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
                 </div>
               </div>
 
-              {/* Permissions */}
-              <footer className="space-y-3 p-4 bg-muted/30 rounded-2xl border border-border text-start">
-                <label className="text-lg font-bold block">{t('permissions', T)}</label>
-                <p className="text-xs text-muted-foreground mb-3">{t('permissions_desc', T)}</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 px-1">
-                  <PermissionCheckbox id="MANAGE_DOCTORS" label={isAr ? "إدارة الأطباء" : "Manage Doctors"} defaultChecked={initialData?.user?.permissions?.includes('MANAGE_DOCTORS') ?? true} disabled={mode === 'view'} />
-                  <PermissionCheckbox id="MANAGE_SECRETARIES" label={isAr ? "إدارة السكرتاريا" : "Manage Secretaries"} defaultChecked={initialData?.user?.permissions?.includes('MANAGE_SECRETARIES') ?? true} disabled={mode === 'view'} />
-                  <PermissionCheckbox id="MANAGE_CLINIC" label={isAr ? "إدارة العيادة" : "Manage Clinic"} defaultChecked={initialData?.user?.permissions?.includes('MANAGE_CLINIC') ?? true} disabled={mode === 'view'} />
-                  <PermissionCheckbox id="MANAGE_PATIENTS" label={isAr ? "إدارة المرضى" : "Manage Patients"} defaultChecked={initialData?.user?.permissions?.includes('MANAGE_PATIENTS') ?? false} disabled={mode === 'view'} />
-                  <PermissionCheckbox id="MANAGE_APPOINTMENTS" label={isAr ? "إدارة المواعيد" : "Manage Appointments"} defaultChecked={initialData?.user?.permissions?.includes('MANAGE_APPOINTMENTS')} disabled={mode === 'view'} />
-                  <PermissionCheckbox id="MANAGE_TRANSACTIONS" label={isAr ? "إدارة المعاملات المالية" : "Manage Transactions"} defaultChecked={initialData?.user?.permissions?.includes('MANAGE_TRANSACTIONS') ?? true} disabled={mode === 'view'} />
-                  <PermissionCheckbox id="MANAGE_MEDICAL_RECORDS" label={isAr ? "إدارة السجلات الطبية" : "Manage Medical Records"} defaultChecked={initialData?.user?.permissions?.includes('MANAGE_MEDICAL_RECORDS') ?? true} disabled={mode === 'view'} />
-                </div>
-              </footer>
+              <PermissionsFieldset
+                selectedPermissions={selectedPermissions}
+                onChange={setSelectedPermissions}
+                disabled={mode === 'view'}
+                descriptionAr="حدد صلاحيات الوصول والمهمات الموكلة للسكرتيرة"
+                descriptionEn="Select access permissions and assigned tasks for the secretary"
+              />
+
             </form>
           </ScrollLockWrapper>
 
@@ -454,27 +447,5 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
     </Portal>
   );
 };
-
-const PermissionCheckbox = ({ id, label, defaultChecked = false, disabled = false }: { id: string, label: string, defaultChecked?: boolean, disabled?: boolean }) => {
-  const [checked, setChecked] = useState(defaultChecked)
-  return (
-    <div className="flex items-center gap-3 py-1">
-      <button
-        type="button"
-        id={id}
-        disabled={disabled}
-        data-state={checked ? 'checked' : 'unchecked'}
-        onClick={() => setChecked(!checked)}
-        className={cn(
-          "peer size-5 shrink-0 rounded-md border shadow-xs transition-all outline-none focus-visible:ring-4 focus-visible:ring-primary/10 disabled:cursor-not-allowed disabled:opacity-50 flex items-center justify-center",
-          checked ? "bg-primary text-white border-primary" : "bg-input-background border-border hover:border-primary/50"
-        )}
-      >
-        {checked && <Check size={16} className="stroke-[3px]" />}
-      </button>
-      <label htmlFor={id} className="text-sm cursor-pointer select-none font-semibold text-foreground/80">{label}</label>
-    </div>
-  )
-}
 
 export default SecretaryDialog

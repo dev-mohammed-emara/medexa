@@ -1807,7 +1807,7 @@ const AppointmentsList = () => {
             className={cn(
               "text-xs p-3 rounded-xl border-2 shadow-2xl backdrop-blur-sm",
               statusConfig[draggedApp.status]?.bg || "bg-white",
-              statusConfig[draggedApp.status]?.border || "border-primary/20",
+              statusConfig[draggedApp.status]?.border || "border-gray-200",
               statusConfig[draggedApp.status]?.text || "text-foreground"
             )}
           >
