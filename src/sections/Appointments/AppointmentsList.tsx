@@ -41,12 +41,7 @@ import { useBroadcast } from '../../hooks/useBroadcast';
 import { fetchDoctors } from '../../api/doctorApi';
 import { getCookie } from '../../utils/cookie';
 import { useAuth } from '../../contexts/AuthContext';
-// Mock data for appointments
-const INITIAL_APPOINTMENTS: Appointment[] = [
-  { id: 'dummy-completed', uuid: 'dummy-completed', date: new Date(2026, 2, 2), time: '10:00', patientName: 'ahmed', doctorName: 'ahmed', status: 'completed' },
-  { id: 'dummy-pending', uuid: 'dummy-pending', date: new Date(2026, 2, 10), time: '11:00', patientName: 'muna', doctorName: 'ahmed', status: 'pending' },
-  { id: 'dummy-canceled', uuid: 'dummy-canceled', date: new Date(2026, 2, 15), time: '16:00', patientName: 'sara', doctorName: 'sami', status: 'canceled', canceledBy: 'patient', cancellationReason: 'unexpected_travel' }
-];
+
 
 const AppointmentsList = () => {
   const { isAr, t } = useLanguage();
@@ -67,8 +62,7 @@ const AppointmentsList = () => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [lastSelectedDate, setLastSelectedDate] = useState<Date | null>(null);
 
-  // Data State
-  const [appointments, setAppointments] = useState<Appointment[]>(INITIAL_APPOINTMENTS);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [doctorsList, setDoctorsList] = useState<any[]>([]);
 
   // Load doctors for filter select
@@ -134,13 +128,13 @@ const AppointmentsList = () => {
             doctorId: app.doctorUuid || '',
           }));
         });
-        setAppointments([...mapped, ...INITIAL_APPOINTMENTS]);
+        setAppointments(mapped);
       } else {
-        setAppointments(INITIAL_APPOINTMENTS);
+        setAppointments([]);
       }
     } catch (error) {
       console.error('Error fetching calendar appointments:', error);
-      setAppointments(INITIAL_APPOINTMENTS);
+      setAppointments([]);
     }
   }, [currentDate, selectedDoctor]);
 

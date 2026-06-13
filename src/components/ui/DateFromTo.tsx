@@ -62,8 +62,7 @@ export const DateFromTo = ({
   // Independent options for "To Date"
   const toDateOptions = useMemo(() => ({
     ...sharedFormatters,
-    minDate: fromDateObj, // Cannot select an end date earlier than the start date
-    maxDate: "today"
+    minDate: fromDateObj // Cannot select an end date earlier than the start date
   }), [sharedFormatters, fromDateObj])
 
   return (

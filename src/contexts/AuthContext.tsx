@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { createContext, useContext, useEffect, useRef, useState } from 'react'
+import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react'
 import { deleteCookie, getCookie, setCookie, isTokenExpired } from '../utils/cookie'
 import { jwtDecode } from 'jwt-decode'
 
@@ -523,26 +523,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     })
   }
 
-  const hasRole = (role: string): boolean => {
+  const hasRole = useCallback((role: string): boolean => {
     if (!user) return false
     return user.roles?.includes(role) || user.role === role || false
-  }
+  }, [user])
 
-  const hasPermission = (permission: string): boolean => {
+  const hasPermission = useCallback((permission: string): boolean => {
     if (!user) return false
     if (user.roles?.includes('ROLE_ADMIN') || user.role === 'ROLE_ADMIN') return true
     if (user.roles?.includes('ROLE_CLINIC_OWNER') || user.role === 'ROLE_CLINIC_OWNER') return true
 
     return user.permissions?.includes(permission) || user.roles?.includes(permission) || false
-  }
+  }, [user])
 
-  const hasAnyPermission = (permissions: string[]): boolean => {
+  const hasAnyPermission = useCallback((permissions: string[]): boolean => {
     if (!user) return false
     if (user.roles?.includes('ROLE_ADMIN') || user.role === 'ROLE_ADMIN') return true
     if (user.roles?.includes('ROLE_CLINIC_OWNER') || user.role === 'ROLE_CLINIC_OWNER') return true
 
     return permissions.some(p => user.permissions?.includes(p) || user.roles?.includes(p))
-  }
+  }, [user])
 
   return (
     <AuthContext.Provider value={{ 

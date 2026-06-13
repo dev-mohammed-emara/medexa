@@ -64,6 +64,16 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, onC
   const overlayRef = useRef<HTMLDivElement>(null);
   const [isClosing, setIsClosing] = useState(false);
 
+  // Safely parse yyyy-MM-dd string to local Date object to prevent timezone shifting
+  const parseLocalDate = (dateStr: string) => {
+    if (!dateStr) return undefined;
+    const datePart = dateStr.split('T')[0];
+    const parts = datePart.split('-');
+    if (parts.length !== 3) return undefined;
+    const [year, month, day] = parts.map(Number);
+    return new Date(year, month - 1, day);
+  };
+
   // Form States
   const [selectedDate, setSelectedDate] = useState<string>(
     initialData?.date ? (typeof initialData.date === 'string' ? initialData.date : initialData.date.toISOString().split('T')[0]) : ""
@@ -527,8 +537,8 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, onC
                     <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.date', T)} <span className="text-destructive">*</span></label>
                     <div className={cn("relative group flex items-center justify-between h-12 bg-input-background border border-border rounded-xl px-4 focus-within:ring-4 focus-within:ring-primary/10 transition-all", isAr ? "flex-row" : "flex-row-reverse")}>
                       <Flatpickr
-                        value={selectedDate}
-                        onChange={([date]) => setSelectedDate(date ? date.toISOString().split('T')[0] : '')}
+                        value={parseLocalDate(selectedDate)}
+                        onChange={([date]) => setSelectedDate(date ? format(date, 'yyyy-MM-dd') : '')}
                         options={{
                           locale: isAr ? Arabic : undefined,
                           dateFormat: "d F Y",
@@ -647,8 +657,8 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, onC
                     <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.date', T)}</label>
                     <div className={cn("relative group flex items-center justify-between h-12 bg-input-background border border-border rounded-xl px-4 focus-within:ring-4 focus-within:ring-primary/10 transition-all", isAr ? "flex-row" : "flex-row-reverse")}>
                       <Flatpickr
-                        value={selectedDate}
-                        onChange={([date]) => setSelectedDate(date ? date.toISOString().split('T')[0] : '')}
+                        value={parseLocalDate(selectedDate)}
+                        onChange={([date]) => setSelectedDate(date ? format(date, 'yyyy-MM-dd') : '')}
                         options={{
                           locale: isAr ? Arabic : undefined,
                           dateFormat: "d F Y",

@@ -57,7 +57,7 @@ const ProfileView = () => {
   const { profileImage, updateProfileImage, user, updateUser, hasPermission } = useAuth();
   const { isLoaded, isExiting } = usePreloader();
   const { dir, isAr, t } = useLanguage();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const initialTab = searchParams.get('tab') === 'clinic' ? 'clinic' : 'profile';
   const [activeTab, setActiveTab] = useState<'profile' | 'clinic'>(initialTab);
 
@@ -260,7 +260,8 @@ const ProfileView = () => {
 
   const loadSchedule = async () => {
     try {
-      const response = await fetch('/api/clinicschedule/me', {
+      const endpoint = activeTab === 'clinic' ? '/api/clinicschedule/me' : '/api/doctorschedule/me';
+      const response = await fetch(endpoint, {
         method: 'GET',
         headers: getHeaders()
       });
@@ -360,14 +361,16 @@ const ProfileView = () => {
       loadClinicInsurances();
     }
     loadDoctorData();
-  }, [hasPermission]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Refetch schedule whenever activeTab changes to keep both tabs fully in sync
   useEffect(() => {
     if (hasPermission('ROLE_CLINIC_OWNER')) {
       loadSchedule();
     }
-  }, [activeTab, hasPermission]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
 
   const handleToggleInsurance = async (uuid: string) => {
     const isActive = clinicInsuranceUuids.has(uuid);
@@ -485,7 +488,7 @@ const ProfileView = () => {
   const handleTabChange = (tab: 'profile' | 'clinic') => {
     if (tab === activeTab) return;
     setActiveTab(tab);
-    setSearchParams({ tab });
+    window.history.replaceState(null, '', `?tab=${tab}`);
   };
 
   const toggleDay = (index: number) => {
@@ -559,7 +562,8 @@ const ProfileView = () => {
     }).filter(Boolean);
 
     try {
-      const response = await fetch('/api/clinicschedule/assignschedule', {
+      const endpoint = activeTab === 'clinic' ? '/api/clinicschedule/assignschedule' : '/api/doctorschedule/assignschedule';
+      const response = await fetch(endpoint, {
         method: 'PUT',
         headers: getHeaders(),
         body: JSON.stringify({ schedules: schedulesPayload })
