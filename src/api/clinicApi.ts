@@ -1,3 +1,4 @@
+import { apiFetch } from '../utils/apiFetch'
 import { getCookie, checkTokenOrRedirect } from '../utils/cookie'
 import { getErrorMessage } from '../utils/error'
 
@@ -47,7 +48,7 @@ const getHeaders = () => {
 }
 
 export const fetchClinicMe = async (): Promise<ApiClinic> => {
-  const response = await fetch('/api/clinic/me', {
+  const response = await apiFetch('/api/clinic/me', {
     method: 'GET',
     headers: getHeaders()
   })
@@ -60,7 +61,7 @@ export const fetchClinicMe = async (): Promise<ApiClinic> => {
 }
 
 export const updateClinicMe = async (body: UpdateClinicBody): Promise<ApiClinic> => {
-  const response = await fetch('/api/clinic/me', {
+  const response = await apiFetch('/api/clinic/me', {
     method: 'PUT',
     headers: getHeaders(),
     body: JSON.stringify(body)
@@ -81,7 +82,7 @@ export const updateClinicMe = async (body: UpdateClinicBody): Promise<ApiClinic>
 }
 
 export const fetchInsurances = async (): Promise<ApiInsurance[]> => {
-  const response = await fetch('/api/insurance', {
+  const response = await apiFetch('/api/insurance', {
     method: 'GET',
     headers: getHeaders()
   })
@@ -94,7 +95,7 @@ export const fetchInsurances = async (): Promise<ApiInsurance[]> => {
 }
 
 export const updateClinicSettings = async (body: ClinicSettings): Promise<ApiClinic> => {
-  const response = await fetch('/api/clinic/settings', {
+  const response = await apiFetch('/api/clinic/settings', {
     method: 'PATCH',
     headers: getHeaders(),
     body: JSON.stringify(body)

@@ -1,7 +1,9 @@
+import { useEffect, useRef, useState } from 'react'
 import useLenis from '@/hooks/useLenis'
 import { Navigate, Route, BrowserRouter as Router, Routes } from 'react-router-dom'
 import { ToastContainer } from './components/ui/Toast'
 import { AuthProvider } from './contexts/AuthContext'
+import { BroadcastProvider, useBroadcast } from './contexts/BroadcastContext'
 import { SidebarProvider } from './contexts/SidebarContext'
 import Login from './pages/Login'
 import Register from './pages/Register'
@@ -11,8 +13,8 @@ import ErrorRoute from './components/auth/ErrorRoute'
 import ProtectedRoute from './components/auth/ProtectedRoute'
 import RoleProtectedRoute from './components/auth/RoleProtectedRoute'
 import Preloader from './components/transition/Preloader'
-import { LanguageProvider } from './contexts/LanguageContext'
-import { PreloaderProvider } from './contexts/PreloaderContext'
+import { LanguageProvider, useLanguage } from './contexts/LanguageContext'
+import { PreloaderProvider, usePreloader } from './contexts/PreloaderContext'
 import AppointmentTypes from './pages/AppointmentTypes'
 import Appointments from './pages/Appointments'
 import Dashboard from './pages/Dashboard'
@@ -43,9 +45,42 @@ import AdminUsers from './pages/admin/AdminUsers'
 
 
 
+const GlobalBroadcastListener = () => {
+  const { subscribe } = useBroadcast();
+  const { t } = useLanguage();
+  const { isExiting } = usePreloader();
+  const [pendingToast, setPendingToast] = useState(false);
+  const lastToastTime = useRef(0);
+
+  useEffect(() => {
+    const unsubscribeOffline = subscribe('OFFLINE_FALLBACK', () => {
+      if (Date.now() - lastToastTime.current > 5000) {
+        setPendingToast(true);
+      }
+    });
+
+    return () => {
+      unsubscribeOffline();
+    };
+  }, [subscribe]);
+
+  useEffect(() => {
+    if (pendingToast && isExiting) {
+      if (window.showToast) {
+        window.showToast(t('common.offline_fallback', undefined) || 'You are offline. Displaying cached data.', 'info');
+        lastToastTime.current = Date.now();
+        setPendingToast(false);
+      }
+    }
+  }, [pendingToast, isExiting, t]);
+
+  return null;
+}
+
 const AppRoutes = () => {
   return (
     <Router>
+      <GlobalBroadcastListener />
       <Preloader />
       <Routes>
         {/* Public Routes (routable even when authenticated) */}
@@ -122,10 +157,12 @@ const App = () => {
     <LanguageProvider>
       <PreloaderProvider>
         <SidebarProvider>
-          <AuthProvider>
-            <ToastContainer />
-            <AppRoutes />
-          </AuthProvider>
+          <BroadcastProvider>
+            <AuthProvider>
+              <ToastContainer />
+              <AppRoutes />
+            </AuthProvider>
+          </BroadcastProvider>
         </SidebarProvider>
       </PreloaderProvider>
     </LanguageProvider>

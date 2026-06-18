@@ -55,6 +55,7 @@ export const commonTranslations = {
     settings_saved: "تم حفظ الإعدادات بنجاح",
     settings_canceled: "تم إلغاء التغييرات بنجاح",
     fix_errors: "يرجى تصحيح الأخطاء قبل الحفظ",
+    offline_fallback: "أنت غير متصل بالإنترنت. يتم عرض البيانات المخزنة مؤقتاً.",
   },
   en: {
     save: "Save",
@@ -111,5 +112,6 @@ export const commonTranslations = {
     settings_saved: "Settings saved successfully",
     settings_canceled: "Changes canceled successfully",
     fix_errors: "Please fix errors before saving",
+    offline_fallback: "You are offline. Displaying cached data.",
   }
 };

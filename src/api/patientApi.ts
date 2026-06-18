@@ -1,3 +1,4 @@
+import { apiFetch } from '../utils/apiFetch'
 import { getCookie, checkTokenOrRedirect } from '../utils/cookie'
 import { getErrorMessage } from '../utils/error'
 
@@ -49,7 +50,7 @@ export const fetchPatients = async (params: FetchPatientsParams = {}): Promise<F
   if (params.sort) queryParams.append('sort', params.sort)
 
   const url = `/api/patient?${queryParams.toString()}`
-  const response = await fetch(url, {
+  const response = await apiFetch(url, {
     method: 'GET',
     headers: getHeaders()
   })
@@ -62,7 +63,7 @@ export const fetchPatients = async (params: FetchPatientsParams = {}): Promise<F
 }
 
 export const fetchPatientByUuid = async (uuid: string): Promise<ApiPatient> => {
-  const response = await fetch(`/api/patient/${uuid}`, {
+  const response = await apiFetch(`/api/patient/${uuid}`, {
     method: 'GET',
     headers: getHeaders()
   })
@@ -75,7 +76,7 @@ export const fetchPatientByUuid = async (uuid: string): Promise<ApiPatient> => {
 }
 
 export const createPatient = async (body: any): Promise<ApiPatient> => {
-  const response = await fetch('/api/patient', {
+  const response = await apiFetch('/api/patient', {
     method: 'POST',
     headers: getHeaders(),
     body: JSON.stringify(body)
@@ -96,7 +97,7 @@ export const createPatient = async (body: any): Promise<ApiPatient> => {
 }
 
 export const updatePatient = async (uuid: string, body: any): Promise<ApiPatient> => {
-  const response = await fetch(`/api/patient/${uuid}`, {
+  const response = await apiFetch(`/api/patient/${uuid}`, {
     method: 'PUT',
     headers: getHeaders(),
     body: JSON.stringify(body)
@@ -117,7 +118,7 @@ export const updatePatient = async (uuid: string, body: any): Promise<ApiPatient
 }
 
 export const deletePatient = async (uuid: string): Promise<void> => {
-  const response = await fetch(`/api/patient/${uuid}`, {
+  const response = await apiFetch(`/api/patient/${uuid}`, {
     method: 'DELETE',
     headers: getHeaders()
   })

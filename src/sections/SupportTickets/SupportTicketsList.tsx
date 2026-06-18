@@ -4,16 +4,18 @@ import {
   RotateCcw
 } from 'lucide-react';
 import { DateFromTo } from '../../components/ui/DateFromTo';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '../../components/ui/Button';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { usePreloader } from '../../contexts/PreloaderContext';
-import { useAuth } from '../../contexts/AuthContext';
+
 import { useBroadcast } from '../../hooks/useBroadcast';
 import { cn } from '../../utils/cn';
 import TableFooter from '../../components/ui/TableFooter';
 import Modal from '../../components/ui/Modal';
 import EmptyShell from '../../components/ui/EmptyShell';
+import { Badge } from '../../components/ui/badge';
+import ScrollLockWrapper from '../../components/ui/ScrollLockWrapper';
 import { getCookie } from '../../utils/cookie';
 import {
   Select,
@@ -22,14 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../../components/ui/select"
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-} from '../../components/ui/table';
+
 
 import { fetchSupportTickets } from '../../api/supportTicketApi';
 import type { ApiSupportTicket } from '../../api/supportTicketApi';
@@ -38,10 +33,7 @@ import { BiSupport } from 'react-icons/bi';
 const SupportTicketsList = () => {
   const { isAr } = useLanguage();
   const { isLoaded, isExiting } = usePreloader();
-  const { user } = useAuth();
   const canAnimate = isLoaded && !isExiting;
-  const isAdmin = user?.role === 'ROLE_ADMIN' || user?.roles?.includes('ROLE_ADMIN');
-  const isNotAdmin = !isAdmin;
 
   // State Management
   const [tickets, setTickets] = useState<ApiSupportTicket[]>([]);
@@ -88,15 +80,8 @@ const SupportTicketsList = () => {
   const [modalDescription, setModalDescription] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { broadcast } = useBroadcast((event) => {
-    if (event.type === 'DATA_UPDATE' && event.module === 'support-tickets') {
-      loadTickets();
-    }
-  });
-
   // Load support tickets from API
-  const loadTickets = useCallback(async () => {
-    if (isNotAdmin) return;
+  const loadTickets = async () => {
     setLoading(true);
     setError(null);
     try {
@@ -118,11 +103,17 @@ const SupportTicketsList = () => {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, pageSize, activeStatus, activePriority, activeFromDate, activeToDate, activeSort, isAr, isNotAdmin]);
+  };
+
+  const { broadcast } = useBroadcast((event) => {
+    if (event.type === 'DATA_UPDATE' && event.module === 'support-tickets') {
+      loadTickets();
+    }
+  });
 
   useEffect(() => {
     loadTickets();
-  }, [loadTickets]);
+  }, [currentPage, pageSize, activeStatus, activePriority, activeFromDate, activeToDate, activeSort, isAr]);
 
   const handleApplyFilters = () => {
     setActiveStatus(status);
@@ -181,12 +172,15 @@ const SupportTicketsList = () => {
         try {
           const errData = await response.json();
           errMsg = errData.message || errData.error || errMsg;
-        } catch (e) { }
+        } catch {
+          // Ignore parse error
+        }
         window.showToast?.(errMsg, 'error');
       }
-    } catch (error: any) {
-      console.error('Error submitting support ticket:', error);
-      window.showToast?.(error.message || 'Error communicating with server', 'error');
+    } catch (error: unknown) {
+      const err = error as Error;
+      console.error('Error submitting support ticket:', err);
+      window.showToast?.(err.message || 'Error communicating with server', 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -229,34 +223,7 @@ const SupportTicketsList = () => {
           </Button>
         </header>
 
-        {/* Filters and Table Card */}
-        {isNotAdmin ? (
-          <article
-            className={cn(
-              "flex flex-col items-center justify-center py-24 px-6 text-center bg-white rounded-xl border border-border shadow-md opacity-0",
-              canAnimate && "animate-fadeUp animate-delay-200"
-            )}
-          >
-            <div className="size-20 rounded-3xl bg-primary/10 flex items-center justify-center text-primary mb-6 shadow-inner">
-              <BiSupport className="size-10" />
-            </div>
-            <h2 className="text-2xl font-bold mb-3">
-              {isAr ? "مركز مساعدة السكرتاريا" : "Secretary Help Center"}
-            </h2>
-            <p className="text-muted-foreground max-w-md mb-8">
-              {isAr
-                ? "يمكنك إنشاء تذكرة دعم فني جديدة للإبلاغ عن أي مشاكل تواجهينها في النظام. سيقوم فريق الدعم بمراجعة تذكرتك في أقرب وقت."
-                : "You can create a new support ticket to report any issues you face in the system. The support team will review your ticket as soon as possible."}
-            </p>
-            <Button
-              onClick={handleOpenAddModal}
-              className="h-12 px-8 rounded-xl text-lg font-bold shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all"
-            >
-              <Plus className={cn("size-5", isAr ? "ml-2" : "mr-2")} />
-              {isAr ? "إنشاء تذكرة دعم" : "Create Support Ticket"}
-            </Button>
-          </article>
-        ) : (
+        {/* Filters and List Card */}
           <article
             className={cn(
               "text-card-foreground flex flex-col bg-transparent border-none shadow-none opacity-0 overflow-hidden",
@@ -372,71 +339,119 @@ const SupportTicketsList = () => {
                       <Loader2 className="size-10 animate-spin text-primary" />
                     </div>
                   )}
-                  <Table className="w-full text-sm">
-                    <TableHeader className="bg-muted/30 border-b">
-                      <TableRow className="text-start">
-                        <TableHead className={cn("text-foreground h-12 px-4 align-middle font-bold whitespace-nowrap", isAr ? "text-right" : "text-left")}>{isAr ? 'رقم التذكرة' : 'Ticket Number'}</TableHead>
-                        <TableHead className={cn("text-foreground h-12 px-4 align-middle font-bold whitespace-nowrap", isAr ? "text-right" : "text-left")}>{isAr ? 'الصفحة المعنية' : 'Section'}</TableHead>
-                        <TableHead className={cn("text-foreground h-12 px-4 align-middle font-bold whitespace-nowrap", isAr ? "text-right" : "text-left")}>{isAr ? 'المشكلة' : 'Description'}</TableHead>
-                        <TableHead className={cn("text-foreground h-12 px-4 align-middle font-bold whitespace-nowrap", isAr ? "text-right" : "text-left")}>{isAr ? 'الحالة' : 'Status'}</TableHead>
-                        <TableHead className={cn("text-foreground h-12 px-4 align-middle font-bold whitespace-nowrap", isAr ? "text-right" : "text-left")}>{isAr ? 'الأولوية' : 'Priority'}</TableHead>
-                        <TableHead className={cn("text-foreground h-12 px-4 align-middle font-bold whitespace-nowrap", isAr ? "text-right" : "text-left")}>{isAr ? 'مسندة إلى' : 'Assigned To'}</TableHead>
-                        <TableHead className={cn("text-foreground h-12 px-4 align-middle font-bold whitespace-nowrap", isAr ? "text-right" : "text-left")}>{isAr ? 'الملاحظات' : 'Notes'}</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody className="divide-y divide-border/30">
-                      {tickets.map((ticket) => {
-                        return (
-                          <TableRow
-                            key={ticket.uuid}
-                            className="hover:bg-muted/20 transition-colors"
-                          >
-                            <TableCell className={cn("p-4 align-middle whitespace-nowrap font-bold text-[#0B5A8E]", isAr ? "text-right" : "text-left")}>
-                              {ticket.ticketNumber}
-                            </TableCell>
-                            <TableCell className={cn("p-4 align-middle whitespace-nowrap", isAr ? "text-right" : "text-left")}>
-                              <span className="font-semibold text-foreground/80">{getSectionLabel(ticket.section)}</span>
-                            </TableCell>
-                            <TableCell className={cn("p-4 align-middle text-muted-foreground text-start whitespace-normal break-words max-w-[300px] min-w-[150px]")}>
-                              {ticket.description}
-                            </TableCell>
-                            <TableCell className={cn("p-4 align-middle whitespace-nowrap", isAr ? "text-right" : "text-left")}>
-                              <span className={cn(
-                                "inline-flex items-center justify-center rounded-md border px-2.5 py-0.5 text-xs font-bold w-fit",
-                                ticket.status === 'OPEN' && "bg-blue-100 text-blue-800 border-blue-200",
-                                ticket.status === 'IN_PROGRESS' && "bg-yellow-100 text-yellow-800 border-yellow-200",
-                                ticket.status === 'RESOLVED' && "bg-green-100 text-green-800 border-green-200",
-                                ticket.status === 'CLOSED' && "bg-slate-100 text-slate-800 border-slate-200",
-                              )}>
+                  <div className="divide-y divide-border/50 bg-white border border-border rounded-xl">
+                    {tickets.map((ticket) => (
+                      <div
+                        key={ticket.uuid}
+                        className={cn(
+                          "p-6 transition-colors hover:bg-muted/30 flex flex-col md:flex-row md:items-start justify-start gap-4 relative",
+                          ticket.status === 'OPEN' ? 'bg-primary/5' : ''
+                        )}
+                      >
+                        {/* Left Col: Avatar */}
+                        <div className="shrink-0 mt-1">
+                          <div className={cn(
+                            "w-12 h-12 rounded-full flex items-center justify-center",
+                            ticket.status === 'OPEN' ? 'bg-primary text-primary-foreground' : 'bg-primary/10 text-primary'
+                          )}>
+                            <BiSupport className="size-6" />
+                          </div>
+                        </div>
+
+                        {/* Right Col: Info */}
+                        <div className="space-y-3 flex-1 w-full min-w-0">
+                          
+                          {/* Header Block & Badges */}
+                          <div className="flex flex-col gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h3 className="font-bold text-foreground text-lg">{ticket.ticketNumber}</h3>
+                              <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider bg-muted/50 w-fit px-2 py-0.5 rounded-md">
+                                {getSectionLabel(ticket.section)}
+                              </span>
+                              {ticket.clinicName && (
+                                <span className="text-xs text-muted-foreground font-semibold">• {ticket.clinicName}</span>
+                              )}
+                              {ticket.reportedBy && (
+                                <span className="text-xs text-muted-foreground font-semibold flex items-center gap-1.5 ml-1">
+                                  • <span className="font-bold text-foreground">{ticket.reportedBy}</span>
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Badges: Status and Priority Side by Side */}
+                            <div className="flex items-center gap-2">
+                              <Badge variant={
+                                ticket.status === 'OPEN' ? 'green' : 
+                                ticket.status === 'IN_PROGRESS' ? 'yellow' : 
+                                ticket.status === 'RESOLVED' ? 'blue' : 'purple'
+                              }>
                                 {ticket.status}
-                              </span>
-                            </TableCell>
-                            <TableCell className={cn("p-4 align-middle whitespace-nowrap", isAr ? "text-right" : "text-left")}>
-                              <span className={cn(
-                                "inline-flex items-center justify-center rounded-md border px-2.5 py-0.5 text-xs font-bold w-fit",
-                                ticket.priority === 'LOW' && "bg-slate-100 text-slate-800 border-slate-200",
-                                ticket.priority === 'MEDIUM' && "bg-blue-100 text-blue-800 border-blue-200",
-                                ticket.priority === 'HIGH' && "bg-orange-100 text-orange-800 border-orange-200",
-                                ticket.priority === 'URGENT' && "bg-red-100 text-red-800 border-red-200",
-                              )}>
-                                {ticket.priority}
-                              </span>
-                            </TableCell>
-                            <TableCell className={cn("p-4 align-middle whitespace-nowrap font-medium text-foreground/80", isAr ? "text-right" : "text-left")}>
-                              {ticket.assignedTo || '---'}
-                            </TableCell>
-                            <TableCell className={cn("p-4 align-middle text-start", isAr ? "text-right" : "text-left")}>
-                              <textarea
-                                readOnly
-                                value={ticket.notes || (isAr ? "لا توجد ملاحظات مضافة للتذكرة" : "no notes from response")}
-                                className="w-full min-w-[200px] h-12 p-2 rounded-lg border border-border bg-slate-50 font-medium text-xs resize-none outline-none text-muted-foreground focus:ring-0 cursor-not-allowed"
-                              />
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
+                              </Badge>
+
+                              <Badge variant={
+                                ticket.priority === 'URGENT' ? 'red' :
+                                ticket.priority === 'HIGH' ? 'yellow' :
+                                ticket.priority === 'MEDIUM' ? 'blue' :
+                                'purple'
+                              } className={ticket.priority === 'URGENT' ? 'animate-pulse' : ''}>
+                                {ticket.priority || (isAr ? 'غير محدد' : 'N/A')}
+                              </Badge>
+                            </div>
+                          </div>
+
+                          {/* Description Block (in a frame like Support Notes) */}
+                          <div className="mt-2">
+                            <span className="text-xs font-bold text-foreground/70 mb-1.5 block">
+                              {isAr ? "تفاصيل المشكلة:" : "Issue Description:"}
+                            </span>
+                            <ScrollLockWrapper className="w-full max-w-3xl p-4 rounded-xl border-2 border-dashed border-primary/40 bg-primary/5 text-primary text-sm font-medium leading-relaxed wrap-break-word shadow-sm max-h-[300px] xs:max-h-[450px] overflow-y-auto">
+                              {ticket.description}
+                            </ScrollLockWrapper>
+                          </div>
+
+                          {/* Support Notes (Dashed & Primary) */}
+                          <div className="mt-4 pt-2">
+                            <span className="text-xs font-bold text-primary mb-1.5 block">
+                              {isAr ? "ملاحظات الدعم:" : "Support Notes:"}
+                            </span>
+                            <div className={cn(
+                              "w-full max-w-3xl p-4 rounded-xl border-2 border-dashed text-sm font-medium leading-relaxed overflow-hidden wrap-break-word shadow-sm",
+                              ticket.notes
+                                ? "border-primary/40 bg-primary/5 text-primary"
+                                : "border-border/50 bg-muted/30 text-muted-foreground italic"
+                            )}>
+                              {ticket.notes || (isAr ? "لا توجد ملاحظات." : "No notes yet.")}
+                            </div>
+                          </div>
+
+                          {/* Meta Info Grid */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-y-2 gap-x-4 mt-3 pt-3 border-t border-border/50">
+                            <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                              <span>{isAr ? "المسؤول:" : "Assigned To:"}</span>
+                              <span className="font-bold text-foreground">{ticket.assignedTo || "---"}</span>
+                            </p>
+                            <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                              <span>{isAr ? "تم الإنشاء:" : "Created:"}</span>
+                              <span className="font-bold text-foreground">{new Date(ticket.createdAt).toLocaleString(isAr ? 'ar-EG' : 'en-US', { dateStyle: 'medium', timeStyle: 'short' })}</span>
+                            </p>
+                            {ticket.updatedAt && (
+                              <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                                <span>{isAr ? "آخر تحديث:" : "Updated:"}</span>
+                                <span className="font-bold text-foreground">{new Date(ticket.updatedAt).toLocaleString(isAr ? 'ar-EG' : 'en-US', { dateStyle: 'medium', timeStyle: 'short' })}</span>
+                              </p>
+                            )}
+                            {ticket.resolvedAt && (
+                              <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                                <span>{isAr ? "تم الحل في:" : "Resolved:"}</span>
+                                <span className="font-bold text-foreground">{new Date(ticket.resolvedAt).toLocaleString(isAr ? 'ar-EG' : 'en-US', { dateStyle: 'medium', timeStyle: 'short' })}</span>
+                              </p>
+                            )}
+                          </div>
+
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               ) : (
               (() => {
@@ -478,35 +493,31 @@ const SupportTicketsList = () => {
 
             {/* Table Footer with Pagination & Page Size */}
             {!loading && !error && tickets.length > 0 && (
-              <div className="flex flex-col sm:flex-row items-center justify-between border-t border-transparent pt-4 mt-2">
-                <span className="text-sm text-muted-foreground font-bold">
-                  {isAr ? "إجمالي السجلات:" : "Total Records:"} <span className="font-black text-foreground ml-1">{totalElements}</span>
-                </span>
-                <TableFooter
-                  variant="table"
-                  className="bg-transparent shadow-none border-none p-0 pb-4 mt-0"
-                  totalItems={totalElements}
-                  itemsPerPage={pageSize}
-                  currentPage={currentPage}
-                  onPageChange={setCurrentPage}
-                  totalPages={totalPages}
-                  onItemsPerPageChange={(val) => {
-                    setPageSize(Number(val));
-                    setCurrentPage(1);
-                  }}
-                />
-              </div>
+              <TableFooter
+                variant="table"
+                className="bg-transparent shadow-none border-none border-t border-border pt-4 mt-2 px-0"
+                totalItems={totalElements}
+                itemsPerPage={pageSize}
+                currentPage={currentPage}
+                onPageChange={setCurrentPage}
+                totalPages={totalPages}
+                onItemsPerPageChange={(val) => {
+                  setPageSize(Number(val));
+                  setCurrentPage(1);
+                }}
+              />
             )}
           </article>
-        )}
       </div>
 
       {/* Support Ticket Modal (Yellow warning variant with drop-down page selection) */}
       <Modal
         isOpen={isModalOpen}
         onClose={() => {
-          setIsModalOpen(false);
-          setModalDescription('');
+          if (!isSubmitting) {
+            setIsModalOpen(false);
+            setModalDescription('');
+          }
         }}
         onConfirm={handleConfirmAddTicket}
         title={isAr ? 'إرسال تذكرة دعم' : 'Submit Support Ticket'}

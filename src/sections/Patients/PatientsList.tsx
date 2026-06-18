@@ -3,7 +3,6 @@ import {
   Plus,
   Search,
   SquarePen,
-  Trash2,
   Loader2,
   RotateCcw
 } from 'lucide-react';
@@ -17,7 +16,7 @@ import { cn } from '../../utils/cn';
 import PatientsDialog from './PatientsDialog';
 import TableFooter from '../../components/ui/TableFooter';
 import EmptyShell from '../../components/ui/EmptyShell';
-import Modal from '../../components/ui/Modal';
+
 import {
   Select,
   SelectContent,
@@ -34,7 +33,7 @@ import {
   TableCell,
 } from '../../components/ui/table';
 
-import { fetchPatients, fetchPatientByUuid, deletePatient } from '../../api/patientApi';
+import { fetchPatients, fetchPatientByUuid } from '../../api/patientApi';
 import type { ApiPatient } from '../../api/patientApi';
 
 const PatientsList = () => {
@@ -68,10 +67,6 @@ const PatientsList = () => {
   const [currentPatient, setCurrentPatient] = useState<ApiPatient | null>(null);
   const [fetchingPatientDetail, setFetchingPatientDetail] = useState(false);
 
-  // Delete Modal State
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [patientToDelete, setPatientToDelete] = useState<ApiPatient | null>(null);
-  const [deleting, setDeleting] = useState(false);
 
   const { broadcast } = useBroadcast((event) => {
     if (event.type === 'DATA_UPDATE' && event.module === 'patients') {
@@ -135,28 +130,6 @@ const PatientsList = () => {
     }
   };
 
-  const handleDeleteClick = (patient: ApiPatient) => {
-    setPatientToDelete(patient);
-    setIsDeleteModalOpen(true);
-  };
-
-  const confirmDelete = async () => {
-    if (!patientToDelete?.uuid) return;
-
-    setDeleting(true);
-    try {
-      await deletePatient(patientToDelete.uuid);
-      window.showToast?.(t('toast_delete_success', T) || 'Patient deleted successfully', 'success');
-      loadPatients();
-      broadcast({ type: 'DATA_UPDATE', module: 'patients' });
-    } catch (err: any) {
-      console.error(err);
-      window.showToast?.(err.message || t('delete_confirm_title', T), 'error');
-    } finally {
-      setDeleting(false);
-      setIsDeleteModalOpen(false);
-    }
-  };
 
   const handleConfirmAction = () => {
     if (dialogMode === 'add') {
@@ -203,7 +176,7 @@ const PatientsList = () => {
           <Button
             onClick={() => handleOpenDialog('add')}
             className="h-10 px-6 rounded-xl"
-            disabled={fetchingPatientDetail || deleting}
+            disabled={fetchingPatientDetail}
           >
             {fetchingPatientDetail ? (
               <Loader2 className="size-4 animate-spin" />
@@ -354,7 +327,7 @@ const PatientsList = () => {
                                 size="icon"
                                 onClick={() => handleOpenDialog('view', patient.uuid)}
                                 className="hover:bg-primary px-2 hover:text-white transition-all duration-300"
-                                disabled={fetchingPatientDetail || deleting}
+                                disabled={fetchingPatientDetail}
                               >
                                 <Eye className="size-4" />
                               </Button>
@@ -363,18 +336,9 @@ const PatientsList = () => {
                                 size="icon"
                                 onClick={() => handleOpenDialog('edit', patient.uuid)}
                                 className="hover:bg-primary px-2 hover:text-white transition-all duration-300"
-                                disabled={fetchingPatientDetail || deleting}
+                                disabled={fetchingPatientDetail}
                               >
                                 <SquarePen className="size-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleDeleteClick(patient)}
-                                className="hover:bg-destructive/10 px-2 text-destructive transition-all duration-300"
-                                disabled={fetchingPatientDetail || deleting}
-                              >
-                                <Trash2 className="size-4" />
                               </Button>
                             </div>
                           </TableCell>
@@ -459,17 +423,6 @@ const PatientsList = () => {
         onConfirm={handleConfirmAction}
       />
 
-      <Modal
-        isOpen={isDeleteModalOpen}
-        onClose={() => setIsDeleteModalOpen(false)}
-        onConfirm={confirmDelete}
-        title={t('delete_confirm_title', T) || 'Confirm Delete'}
-        message={(t('delete_confirm_msg', T) || 'Are you sure?').replace('{name}', `${patientToDelete?.firstName || ''} ${patientToDelete?.lastName || ''}`)}
-        confirmText={t('delete', T) || 'Delete'}
-        cancelText={t('cancel', T) || 'Cancel'}
-        variant="danger"
-        isConfirmDisabled={deleting}
-      />
     </section>
   );
 };

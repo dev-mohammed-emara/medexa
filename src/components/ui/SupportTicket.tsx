@@ -20,9 +20,10 @@ const SupportTicket = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [section, setSection] = useState('dashboard_page');
 
-  // Hide the floating button on the support-tickets page
+  // Hide the floating button on the support-tickets page and admin pages
   const isSupportTicketsPage = location.pathname.includes('/support-tickets');
-  if (isSupportTicketsPage) return null;
+  const isAdminPage = location.pathname.includes('/admin');
+  if (isSupportTicketsPage || isAdminPage) return null;
 
   const getSectionName = (path: string) => {
     const cleanPath = path.toLowerCase().replace(/^\/admin/, '').replace(/^\//, '').split('/')[0];

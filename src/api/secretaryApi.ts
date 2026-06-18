@@ -1,3 +1,4 @@
+import { apiFetch } from '../utils/apiFetch'
 import { getCookie, checkTokenOrRedirect } from '../utils/cookie'
 import { getErrorMessage } from '../utils/error'
 
@@ -56,7 +57,7 @@ export const fetchSecretaries = async (params: FetchSecretariesParams = {}): Pro
   if (params.status) queryParams.append('status', params.status)
 
   const url = `/api/secretary?${queryParams.toString()}`
-  const response = await fetch(url, {
+  const response = await apiFetch(url, {
     method: 'GET',
     headers: getHeaders()
   })
@@ -69,7 +70,7 @@ export const fetchSecretaries = async (params: FetchSecretariesParams = {}): Pro
 }
 
 export const fetchSecretaryByUuid = async (uuid: string): Promise<ApiSecretary> => {
-  const response = await fetch(`/api/secretary/${uuid}`, {
+  const response = await apiFetch(`/api/secretary/${uuid}`, {
     method: 'GET',
     headers: getHeaders()
   })
@@ -82,7 +83,7 @@ export const fetchSecretaryByUuid = async (uuid: string): Promise<ApiSecretary> 
 }
 
 export const createSecretary = async (body: any): Promise<ApiSecretary> => {
-  const response = await fetch('/api/secretary', {
+  const response = await apiFetch('/api/secretary', {
     method: 'POST',
     headers: getHeaders(),
     body: JSON.stringify(body)
@@ -103,7 +104,7 @@ export const createSecretary = async (body: any): Promise<ApiSecretary> => {
 }
 
 export const updateSecretary = async (uuid: string, body: any): Promise<ApiSecretary> => {
-  const response = await fetch(`/api/secretary/${uuid}`, {
+  const response = await apiFetch(`/api/secretary/${uuid}`, {
     method: 'PUT',
     headers: getHeaders(),
     body: JSON.stringify(body)
@@ -124,7 +125,7 @@ export const updateSecretary = async (uuid: string, body: any): Promise<ApiSecre
 }
 
 export const deleteSecretary = async (uuid: string): Promise<void> => {
-  const response = await fetch(`/api/clinic/me/${uuid}?userType=SECRETARY`, {
+  const response = await apiFetch(`/api/clinic/me/${uuid}?userType=SECRETARY`, {
     method: 'DELETE',
     headers: getHeaders()
   })
@@ -135,7 +136,7 @@ export const deleteSecretary = async (uuid: string): Promise<void> => {
 }
 
 export const fetchSecretaryMe = async (): Promise<ApiSecretary> => {
-  const response = await fetch(`/api/secretary/me`, {
+  const response = await apiFetch(`/api/secretary/me`, {
     method: 'GET',
     headers: getHeaders()
   })
@@ -148,7 +149,7 @@ export const fetchSecretaryMe = async (): Promise<ApiSecretary> => {
 }
 
 export const updateSecretaryMe = async (body: any): Promise<ApiSecretary> => {
-  const response = await fetch(`/api/secretary/me`, {
+  const response = await apiFetch(`/api/secretary/me`, {
     method: 'PUT',
     headers: getHeaders(),
     body: JSON.stringify(body)

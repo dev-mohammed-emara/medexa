@@ -1,3 +1,4 @@
+import { apiFetch } from '../utils/apiFetch'
 import { getCookie, checkTokenOrRedirect } from '../utils/cookie'
 import { getErrorMessage } from '../utils/error'
 
@@ -30,7 +31,7 @@ const getHeaders = () => {
 }
 
 export const fetchAppointmentTypes = async (): Promise<ApiAppointmentType[]> => {
-  const response = await fetch('/api/appointment-type', {
+  const response = await apiFetch('/api/appointment-type', {
     method: 'GET',
     headers: getHeaders()
   })
@@ -43,7 +44,7 @@ export const fetchAppointmentTypes = async (): Promise<ApiAppointmentType[]> => 
 }
 
 export const createAppointmentType = async (body: AppointmentTypeBody): Promise<ApiAppointmentType> => {
-  const response = await fetch('/api/appointment-type', {
+  const response = await apiFetch('/api/appointment-type', {
     method: 'POST',
     headers: getHeaders(),
     body: JSON.stringify(body)
@@ -64,7 +65,7 @@ export const createAppointmentType = async (body: AppointmentTypeBody): Promise<
 }
 
 export const updateAppointmentType = async (body: UpdateAppointmentTypeBody): Promise<ApiAppointmentType> => {
-  const response = await fetch('/api/appointment-type', {
+  const response = await apiFetch('/api/appointment-type', {
     method: 'PUT',
     headers: getHeaders(),
     body: JSON.stringify(body)
@@ -85,7 +86,7 @@ export const updateAppointmentType = async (body: UpdateAppointmentTypeBody): Pr
 }
 
 export const getAppointmentType = async (uuid: string): Promise<ApiAppointmentType> => {
-  const response = await fetch(`/api/appointment-type/${uuid}`, {
+  const response = await apiFetch(`/api/appointment-type/${uuid}`, {
     method: 'GET',
     headers: getHeaders()
   })
@@ -98,7 +99,7 @@ export const getAppointmentType = async (uuid: string): Promise<ApiAppointmentTy
 }
 
 export const deleteAppointmentType = async (uuid: string): Promise<void> => {
-  const response = await fetch(`/api/appointment-type/${uuid}`, {
+  const response = await apiFetch(`/api/appointment-type/${uuid}`, {
     method: 'DELETE',
     headers: getHeaders()
   })

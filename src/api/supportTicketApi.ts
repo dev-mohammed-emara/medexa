@@ -1,8 +1,11 @@
+import { apiFetch } from '../utils/apiFetch'
 import { getCookie, checkTokenOrRedirect } from '../utils/cookie'
 
 export interface ApiSupportTicket {
   uuid?: string
   ticketNumber: string
+  clinicName?: string
+  reportedBy?: string
   section: string
   description: string
   status: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED'
@@ -53,7 +56,7 @@ export const fetchSupportTickets = async (params: FetchSupportTicketsParams = {}
   if (params.sort && params.sort !== '--') queryParams.append('sort', params.sort)
 
   const url = `/api/support-ticket?${queryParams.toString()}`
-  const response = await fetch(url, {
+  const response = await apiFetch(url, {
     method: 'GET',
     headers: getHeaders()
   })

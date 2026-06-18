@@ -1,3 +1,4 @@
+import { apiFetch } from '../utils/apiFetch'
 import { getCookie, checkTokenOrRedirect } from '../utils/cookie'
 
 export interface StatCardData {
@@ -62,7 +63,7 @@ export const fetchClinicStatistics = async (fromDate: string, toDate: string): P
   queryParams.append('toDate', toDate)
 
   const url = `/api/statistics?${queryParams.toString()}`
-  const response = await fetch(url, {
+  const response = await apiFetch(url, {
     method: 'GET',
     headers: getHeaders()
   })
@@ -80,7 +81,7 @@ export const fetchFinancialTransactions = async (fromDate: string, toDate: strin
   queryParams.append('toDate', toDate)
 
   const url = `/api/statistics/transactions?${queryParams.toString()}`
-  const response = await fetch(url, {
+  const response = await apiFetch(url, {
     method: 'GET',
     headers: getHeaders()
   })
