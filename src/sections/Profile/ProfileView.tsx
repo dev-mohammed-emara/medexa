@@ -820,6 +820,7 @@ const ProfileView = () => {
                               setPersonalInfo(p => ({ ...p, dateOfBirth: format(date, 'yyyy-MM-dd') }));
                             }
                           }}
+                          placeholder={isAr ? "اختر التاريخ" : "Select date"}
                           className={cn("flex h-11 w-full rounded-xl border border-border bg-muted/30 px-3 py-2 text-sm font-bold focus:border-primary focus:bg-white transition-all outline-none", isAr ? "pl-10" : "pr-10 text-left!")}
                           options={{
                             locale: isAr ? Arabic : undefined,

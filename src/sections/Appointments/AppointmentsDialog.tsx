@@ -543,7 +543,6 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, onC
                           locale: isAr ? Arabic : undefined,
                           dateFormat: "d F Y",
                           disableMobile: true,
-                          minDate: "today",
                           formatDate: (date: Date) => format(date, "d MMMM yyyy", { locale: currentLocale })
                         }}
                         placeholder={t('dialog.select_date', T)}
@@ -663,7 +662,6 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, onC
                           locale: isAr ? Arabic : undefined,
                           dateFormat: "d F Y",
                           disableMobile: true,
-                          minDate: "today",
                           formatDate: (date: Date) => format(date, "d MMMM yyyy", { locale: currentLocale })
                         }}
                         placeholder={t('dialog.select_date', T)}

@@ -42,7 +42,6 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 const parseJWT = (token: string): any => {
   try {
     const decoded = jwtDecode(token)
-    console.log('Decoded JWT Claims:', decoded)
     return decoded
   } catch (error) {
     console.error('Failed to parse JWT:', error)
@@ -162,9 +161,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Parse JWT to extract user data
     const decodedToken = parseJWT(newAccessToken)
     const tokenRoles = decodedToken?.roles || []
-    if (tokenRoles.length > 0) {
-      console.log('Roles from refresh token:', tokenRoles)
-    }
 
     // Update access token (always)
     setCookie('token', newAccessToken, 7)
@@ -338,9 +334,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Parse JWT to extract user data
     const decodedToken = parseJWT(token)
     const tokenRoles = decodedToken?.roles || []
-    if (tokenRoles.length > 0) {
-      console.log('Roles from login token:', tokenRoles)
-    }
 
     // Save user data (prefer profile endpoint, fallback to JWT/response data, then defaults)
     let userProfile: UserProfile;
@@ -437,8 +430,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw new Error(errorMessage)
     }
 
-    const clinicData = await response.json() as Record<string, any>
-    console.log('Clinic registered:', clinicData)
+    await response.json() as Record<string, any>
     const ownerUser = payload.owner?.user
     if (ownerUser) {
       const userProfile: UserProfile = {

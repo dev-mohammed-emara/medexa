@@ -80,7 +80,7 @@ export const fetchFinancialTransactions = async (fromDate: string, toDate: strin
   queryParams.append('fromDate', fromDate)
   queryParams.append('toDate', toDate)
 
-  const url = `/api/statistics/transactions?${queryParams.toString()}`
+  const url = `/api/statistics/transaction?${queryParams.toString()}`
   const response = await apiFetch(url, {
     method: 'GET',
     headers: getHeaders()

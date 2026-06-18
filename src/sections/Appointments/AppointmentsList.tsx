@@ -57,7 +57,7 @@ const AppointmentsList = () => {
   const handleCloseDeleteModal = useCallback(() => setIsDeleteModalOpen(false), []);
   const isMediumScreen = useMediaQuery({ query: '(min-width: 1024px) and (max-width: 1279px)' });
 
-  const [currentDate, setCurrentDate] = useState(new Date(2026, 2, 27));
+  const [currentDate, setCurrentDate] = useState(new Date(2026, 0, 1));
   const [selectedDoctor, setSelectedDoctor] = useState('all');
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [lastSelectedDate, setLastSelectedDate] = useState<Date | null>(null);

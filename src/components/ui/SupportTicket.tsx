@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { MdFeedback } from 'react-icons/md';
 import Modal from './Modal';
@@ -20,10 +20,9 @@ const SupportTicket = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [section, setSection] = useState('dashboard_page');
 
-  // Hide the floating button on the support-tickets page and admin pages
-  const isSupportTicketsPage = location.pathname.includes('/support-tickets');
+  // Hide the floating button on admin pages only
   const isAdminPage = location.pathname.includes('/admin');
-  if (isSupportTicketsPage || isAdminPage) return null;
+  if (isAdminPage) return null;
 
   const getSectionName = (path: string) => {
     const cleanPath = path.toLowerCase().replace(/^\/admin/, '').replace(/^\//, '').split('/')[0];
@@ -33,17 +32,29 @@ const SupportTicket = () => {
     if (cleanPath === 'patients') return 'patient_page';
     if (cleanPath === 'secretary') return 'secretary_page';
     if (cleanPath === 'appointments') return 'appointment_page';
+    if (cleanPath === 'appointment-types') return 'appointment_types_page';
     if (cleanPath === 'records') return 'medical_record_page';
     if (cleanPath === 'finance') return 'finance_page';
     if (cleanPath === 'profile') return 'profile_page';
     if (cleanPath === 'settings') return 'settings_page';
-    return `${cleanPath}_page`;
+    if (cleanPath === 'support-tickets') return 'support_tickets_page';
+    return 'other';
   };
 
   const handleOpen = () => {
     setSection(getSectionName(location.pathname));
     setIsOpen(true);
   };
+
+  // Listen for global open events (so other components can trigger this same modal)
+  useEffect(() => {
+    const handleGlobalOpen = () => {
+      setSection('support_tickets_page'); // Default to support tickets page if opened from there
+      setIsOpen(true);
+    };
+    window.addEventListener('OPEN_SUPPORT_TICKET_MODAL', handleGlobalOpen);
+    return () => window.removeEventListener('OPEN_SUPPORT_TICKET_MODAL', handleGlobalOpen);
+  }, []);
 
   const handleSubmit = async () => {
     if (!description.trim()) return;
@@ -67,6 +78,10 @@ const SupportTicket = () => {
         window.showToast?.(isAr ? 'شكراً لملاحظاتك!' : 'Thanks for the feedback!', 'success');
         setIsOpen(false);
         setDescription('');
+        // Broadcast so SupportTicketsList can reload
+        const channel = new BroadcastChannel('medexa_sync');
+        channel.postMessage({ type: 'DATA_UPDATE', module: 'support-tickets' });
+        channel.close();
       } else {
         let errMsg = 'Failed to submit support ticket';
         try {
@@ -125,10 +140,13 @@ const SupportTicket = () => {
                 <SelectItem value="patient_page">{isAr ? 'المرضى' : 'Patients'}</SelectItem>
                 <SelectItem value="secretary_page">{isAr ? 'السكرتاريا' : 'Secretaries'}</SelectItem>
                 <SelectItem value="appointment_page">{isAr ? 'المواعيد' : 'Appointments'}</SelectItem>
+                <SelectItem value="appointment_types_page">{isAr ? 'أنواع المواعيد' : 'Appointment Types'}</SelectItem>
                 <SelectItem value="medical_record_page">{isAr ? 'السجلات الطبية' : 'Medical Records'}</SelectItem>
                 <SelectItem value="finance_page">{isAr ? 'المالية' : 'Finance'}</SelectItem>
                 <SelectItem value="profile_page">{isAr ? 'الملف الشخصي' : 'Profile'}</SelectItem>
                 <SelectItem value="settings_page">{isAr ? 'الإعدادات' : 'Settings'}</SelectItem>
+                <SelectItem value="support_tickets_page">{isAr ? 'تذاكر الدعم الفني' : 'Support Tickets'}</SelectItem>
+                <SelectItem value="other">{isAr ? 'أخرى' : 'Other'}</SelectItem>
               </SelectContent>
             </Select>
           </div>

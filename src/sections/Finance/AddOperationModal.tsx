@@ -83,7 +83,7 @@ const AddOperationModal = ({ isOpen, onClose, onSuccess, mode = 'add', transacti
               'Content-Type': 'application/json',
               ...(token ? { 'Authorization': `Bearer ${token}` } : {})
             };
-            const response = await fetch(`/api/financial/transactions/${transactionUuid}`, {
+            const response = await fetch(`/api/transaction/${transactionUuid}`, {
               method: 'GET',
               headers
             });
@@ -138,7 +138,7 @@ const AddOperationModal = ({ isOpen, onClose, onSuccess, mode = 'add', transacti
         ...(token ? { 'Authorization': `Bearer ${token}` } : {})
       };
 
-      const response = await fetch('/api/financial/transactions', {
+      const response = await fetch('/api/transaction', {
         method: 'POST',
         headers,
         body: JSON.stringify(payload)
@@ -156,7 +156,7 @@ const AddOperationModal = ({ isOpen, onClose, onSuccess, mode = 'add', transacti
         try {
           const errData = await response.json();
           errMsg = errData.message || errData.error || errMsg;
-        } catch (e) {}
+        } catch (e) { }
         window.showToast?.(errMsg, 'error');
       }
     } catch (error: any) {
@@ -173,6 +173,7 @@ const AddOperationModal = ({ isOpen, onClose, onSuccess, mode = 'add', transacti
     const appointmentUuid = appointment && appointment !== 'None' ? appointment : null;
 
     const payload = {
+      uuid: transactionUuid,
       type: mappedType,
       amount: parseFloat(amount),
       transactionDate: formattedDate,
@@ -187,7 +188,7 @@ const AddOperationModal = ({ isOpen, onClose, onSuccess, mode = 'add', transacti
         ...(token ? { 'Authorization': `Bearer ${token}` } : {})
       };
 
-      const response = await fetch(`/api/financial/transactions/${transactionUuid}`, {
+      const response = await fetch(`/api/transaction`, {
         method: 'PUT',
         headers,
         body: JSON.stringify(payload)
@@ -204,7 +205,7 @@ const AddOperationModal = ({ isOpen, onClose, onSuccess, mode = 'add', transacti
         try {
           const errData = await response.json();
           errMsg = errData.message || errData.error || errMsg;
-        } catch (e) {}
+        } catch (e) { }
         window.showToast?.(errMsg, 'error');
       }
     } catch (error: any) {
@@ -337,6 +338,7 @@ const AddOperationModal = ({ isOpen, onClose, onSuccess, mode = 'add', transacti
                         locale: isAr ? Arabic : undefined,
                         disableMobile: true
                       }}
+                      placeholder={isAr ? "اختر التاريخ" : "Select date"}
                       className={cn("flex-1 bg-transparent border-none outline-none text-sm font-bold h-full", isAr ? "text-right" : "text-left")}
                     />
                     <FaCalendarAlt className="size-4 text-muted-foreground pointer-events-none group-focus-within:text-primary transition-colors" />

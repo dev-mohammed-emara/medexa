@@ -4,7 +4,8 @@ import {
   FileText,
   FlaskConical,
   Pill,
-  Stethoscope
+  Stethoscope,
+  RotateCcw
 } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { FaCalendarAlt } from 'react-icons/fa';
@@ -31,28 +32,28 @@ const MedicalRecordsList = () => {
 
   const [openId, setOpenId] = useState<string | null>(null);
 
-  const getLocalDateString = (d: Date) => {
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
+  // const getLocalDateString = (d: Date) => {
+  //   const year = d.getFullYear();
+  //   const month = String(d.getMonth() + 1).padStart(2, '0');
+  //   const day = String(d.getDate()).padStart(2, '0');
+  //   return `${year}-${month}-${day}`;
+  // };
 
-  const today = new Date();
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
+  // const today = new Date();
+  // const yesterday = new Date();
+  // yesterday.setDate(yesterday.getDate() - 1);
 
-  const defaultToDate = getLocalDateString(today);
-  const defaultFromDate = getLocalDateString(yesterday);
+  // const defaultToDate = getLocalDateString(today);
+  // const defaultFromDate = getLocalDateString(yesterday);
 
   // Active filter states
-  const [fromDate, setFromDate] = useState<string>(defaultFromDate);
-  const [toDate, setToDate] = useState<string>(defaultToDate);
+  const [fromDate, setFromDate] = useState<string>("");
+  const [toDate, setToDate] = useState<string>("");
   const [sort, setSort] = useState<string>("createdAt,desc");
 
   // Temp filter states
-  const [tempFromDate, setTempFromDate] = useState<string>(defaultFromDate);
-  const [tempToDate, setTempToDate] = useState<string>(defaultToDate);
+  const [tempFromDate, setTempFromDate] = useState<string>("");
+  const [tempToDate, setTempToDate] = useState<string>("");
   const [tempSort, setTempSort] = useState<string>("createdAt,desc");
 
   const [records, setRecords] = useState<any[]>([]);
@@ -69,8 +70,8 @@ const MedicalRecordsList = () => {
     setIsLoading(true);
     try {
       const queryParams = new URLSearchParams();
-      queryParams.append('fromDate', fromDate);
-      queryParams.append('toDate', toDate);
+      if (fromDate) queryParams.append('fromDate', fromDate);
+      if (toDate) queryParams.append('toDate', toDate);
       queryParams.append('page', String(currentPage - 1));
       queryParams.append('size', String(itemsPerPage));
       queryParams.append('sort', sort);
@@ -328,12 +329,29 @@ const MedicalRecordsList = () => {
             </Select>
           </div>
 
-          <button
-            onClick={handleApply}
-            className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-bold transition-all duration-300 outline-none hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md text-primary-foreground hover:shadow-primary/20 px-6 h-11 bg-primary hover:bg-primary/90 min-w-[100px]"
-          >
-            {isAr ? "تأكيد" : "Confirm"}
-          </button>
+          <div className="flex items-center gap-3 w-full sm:w-auto mt-2 sm:mt-0">
+            <button
+              onClick={handleApply}
+              className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-bold transition-all duration-300 outline-none hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md text-primary-foreground hover:shadow-primary/20 px-6 h-11 bg-primary hover:bg-primary/90 min-w-[100px] flex-1 sm:flex-none"
+            >
+              {isAr ? "تطبيق الفلاتر" : "Apply Filters"}
+            </button>
+            <button
+              onClick={() => {
+                setTempFromDate("");
+                setTempToDate("");
+                setTempSort("createdAt,desc");
+                setFromDate("");
+                setToDate("");
+                setSort("createdAt,desc");
+                setCurrentPage(1);
+              }}
+              className="inline-flex items-center justify-center rounded-xl transition-all duration-300 outline-none hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md border border-border bg-background text-foreground hover:bg-accent px-3.5 h-11"
+              title={isAr ? "إعادة ضبط" : "Reset"}
+            >
+              <RotateCcw className="size-5" />
+            </button>
+          </div>
         </div>
 
         {/* Records List */}

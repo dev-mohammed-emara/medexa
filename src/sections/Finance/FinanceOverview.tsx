@@ -7,7 +7,8 @@ import {
   Smartphone,
   MoveHorizontal,
   Eye,
-  SquarePen
+  SquarePen,
+  RotateCcw
 } from 'lucide-react';
 
 import {
@@ -29,6 +30,7 @@ import { cn } from '../../utils/cn';
 import { useBroadcast } from '../../hooks/useBroadcast';
 import DateFromTo from '../../components/ui/DateFromTo';
 import AddOperationModal from './AddOperationModal';
+import Counter from '../../components/ui/Counter';
 import TableFooter from '../../components/ui/TableFooter';
 import {
   Table,
@@ -53,9 +55,9 @@ const FinanceOverview = () => {
   const { isAr, t, dir } = useLanguage();
   const T = financeTranslations;
   const { isLoaded, isExiting } = usePreloader();
-  const { user } = useAuth();
+  const { hasAnyPermission } = useAuth();
   const canAnimate = isLoaded && !isExiting;
-  const canManageTransactions = user?.permissions?.includes('MANAGE_TRANSACTIONS') || user?.roles?.includes('MANAGE_TRANSACTIONS') || false;
+  const canManageTransactions = hasAnyPermission(['MANAGE_TRANSACTIONS']);
 
   useBroadcast((event) => {
     if (event.type === 'DATA_UPDATE' && event.module === 'finance') {
@@ -77,13 +79,13 @@ const FinanceOverview = () => {
   const defaultToDate = getLocalDateString(today);
   const defaultFromDate = getLocalDateString(yesterday);
 
-  const [fromDate, setFromDate] = useState<string>(defaultFromDate);
-  const [toDate, setToDate] = useState<string>(defaultToDate);
+  const [fromDate, setFromDate] = useState<string>("");
+  const [toDate, setToDate] = useState<string>("");
   const [type, setType] = useState<string>("");
   const [sort, setSort] = useState<string>("createdAt,desc");
 
-  const [tempFromDate, setTempFromDate] = useState<string>(defaultFromDate);
-  const [tempToDate, setTempToDate] = useState<string>(defaultToDate);
+  const [tempFromDate, setTempFromDate] = useState<string>("");
+  const [tempToDate, setTempToDate] = useState<string>("");
   const [tempType, setTempType] = useState<string>("");
   const [tempSort, setTempSort] = useState<string>("createdAt,desc");
 
@@ -120,8 +122,8 @@ const FinanceOverview = () => {
     if (!canManageTransactions) return;
     try {
       const queryParams = new URLSearchParams();
-      queryParams.append('fromDate', fromDate);
-      queryParams.append('toDate', toDate);
+      if (fromDate) queryParams.append('fromDate', fromDate);
+      if (toDate) queryParams.append('toDate', toDate);
       if (type && type !== 'DEFAULT') {
         queryParams.append('type', type);
       }
@@ -129,7 +131,7 @@ const FinanceOverview = () => {
       queryParams.append('size', String(itemsPerPage));
       queryParams.append('sort', sort);
 
-      const response = await fetch(`/api/financial/transactions?${queryParams.toString()}`, {
+      const response = await fetch(`/api/transaction?${queryParams.toString()}`, {
         method: 'GET',
         headers: getHeaders()
       });
@@ -147,8 +149,8 @@ const FinanceOverview = () => {
   const loadStatistics = useCallback(async () => {
     try {
       const queryParams = new URLSearchParams();
-      queryParams.append('fromDate', fromDate);
-      queryParams.append('toDate', toDate);
+      queryParams.append('fromDate', fromDate || defaultFromDate);
+      queryParams.append('toDate', toDate || defaultToDate);
 
       const response = await fetch(`/api/statistics/transaction?${queryParams.toString()}`, {
         method: 'GET',
@@ -215,9 +217,9 @@ const FinanceOverview = () => {
       {/* Stats Cards */}
       <section className="grid grid-cols-1 md:grid-cols-2  lg:grid-cols-3 gap-4">
         {[
-          { label: t('total_income', T), value: `${(stats?.totalIncome || 0).toLocaleString()} ${t('jod', T)}`, icon: TrendingUp, color: 'text-secondary', bgColor: 'bg-secondary/10', delay: 100 },
-          { label: t('total_expenses', T), value: `${(stats?.totalExpense || 0).toLocaleString()} ${t('jod', T)}`, icon: TrendingDown, color: 'text-destructive', bgColor: 'bg-destructive/10', delay: 200 },
-          { label: t('net_profit', T), value: `${(stats?.netProfit || 0).toLocaleString()} ${t('jod', T)}`, icon: DollarSign, color: 'text-primary', bgColor: 'bg-primary/10', delay: 300 }
+          { label: t('total_income', T), valueNum: stats?.totalIncome || 0, icon: TrendingUp, color: 'text-secondary', bgColor: 'bg-secondary/10', delay: 100 },
+          { label: t('total_expenses', T), valueNum: stats?.totalExpense || 0, icon: TrendingDown, color: 'text-destructive', bgColor: 'bg-destructive/10', delay: 200 },
+          { label: t('net_profit', T), valueNum: stats?.netProfit || 0, icon: DollarSign, color: 'text-primary', bgColor: 'bg-primary/10', delay: 300 }
         ].map((stat, idx) => (
           <article
             key={idx}
@@ -234,7 +236,10 @@ const FinanceOverview = () => {
                 <stat.icon className={cn("size-5", stat.color)} strokeWidth={2.5} />
               </div>
             </figure>
-            <h3 className="text-2xl font-bold">{stat.value}</h3>
+            <h3 className="text-2xl font-bold flex items-center gap-1.5" dir="ltr">
+              <Counter value={stat.valueNum} fontSize={24} isInView={canAnimate} isCurrency />
+              <span className="text-lg">{t('jod', T)}</span>
+            </h3>
           </article>
         ))}
       </section>
@@ -370,12 +375,31 @@ const FinanceOverview = () => {
                 </Select>
               </div>
 
-              <button
-                onClick={handleApply}
-                className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-bold transition-all duration-300 outline-none hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md text-primary-foreground hover:shadow-primary/20 px-6 h-11 bg-primary hover:bg-primary/90 min-w-[100px]"
-              >
-                {isAr ? "تأكيد" : "Confirm"}
-              </button>
+              <div className="flex items-center gap-3 w-full sm:w-auto mt-2 sm:mt-0">
+                <button
+                  onClick={handleApply}
+                  className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-bold transition-all duration-300 outline-none hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md text-primary-foreground hover:shadow-primary/20 px-6 h-11 bg-primary hover:bg-primary/90 min-w-[100px] flex-1 sm:flex-none"
+                >
+                  {isAr ? "تطبيق الفلاتر" : "Apply Filters"}
+                </button>
+                <button
+                  onClick={() => {
+                    setTempFromDate("");
+                    setTempToDate("");
+                    setTempType("DEFAULT");
+                    setTempSort("createdAt,desc");
+                    setFromDate("");
+                    setToDate("");
+                    setType("DEFAULT");
+                    setSort("createdAt,desc");
+                    setCurrentPage(1);
+                  }}
+                  className="inline-flex items-center justify-center rounded-xl transition-all duration-300 outline-none hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md border border-border bg-background text-foreground hover:bg-accent px-3.5 h-11"
+                  title={isAr ? "إعادة ضبط" : "Reset"}
+                >
+                  <RotateCcw className="size-5" />
+                </button>
+              </div>
             </div>
           </header>
 

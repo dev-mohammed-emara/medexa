@@ -82,6 +82,7 @@ export const DateFromTo = ({
               }
             }}
             options={fromDateOptions}
+            placeholder={isAr ? "اختر التاريخ" : "Select date"}
             className={cn(
               "flex-1 bg-transparent border-none outline-none text-sm font-bold h-full",
               isAr ? "text-right" : "text-left"
@@ -106,6 +107,7 @@ export const DateFromTo = ({
               }
             }}
             options={toDateOptions}
+            placeholder={isAr ? "اختر التاريخ" : "Select date"}
             className={cn(
               "flex-1 bg-transparent border-none outline-none text-sm font-bold h-full",
               isAr ? "text-right" : "text-left"
@@ -121,7 +123,7 @@ export const DateFromTo = ({
           disabled={isLoading}
           className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-bold transition-all duration-300 outline-none hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md text-primary-foreground hover:shadow-primary/20 px-6 h-11 bg-primary hover:bg-primary/90 min-w-[100px] disabled:opacity-50 disabled:pointer-events-none"
         >
-          {isLoading ? (isAr ? "جاري التحميل..." : "Loading...") : (isAr ? "تطبيق" : "Apply")}
+          {isLoading ? (isAr ? "جاري التحميل..." : "Loading...") : (isAr ? "تطبيق الفلاتر" : "Apply Filters")}
         </button>
       )}
     </div>

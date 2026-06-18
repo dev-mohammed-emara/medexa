@@ -12,11 +12,9 @@ import { usePreloader } from '../../contexts/PreloaderContext';
 import { useBroadcast } from '../../hooks/useBroadcast';
 import { cn } from '../../utils/cn';
 import TableFooter from '../../components/ui/TableFooter';
-import Modal from '../../components/ui/Modal';
 import EmptyShell from '../../components/ui/EmptyShell';
 import { Badge } from '../../components/ui/badge';
 import ScrollLockWrapper from '../../components/ui/ScrollLockWrapper';
-import { getCookie } from '../../utils/cookie';
 import {
   Select,
   SelectContent,
@@ -40,32 +38,32 @@ const SupportTicketsList = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const getLocalDateString = (d: Date) => {
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
+  // const getLocalDateString = (d: Date) => {
+  //   const year = d.getFullYear();
+  //   const month = String(d.getMonth() + 1).padStart(2, '0');
+  //   const day = String(d.getDate()).padStart(2, '0');
+  //   return `${year}-${month}-${day}`;
+  // };
 
-  const today = new Date();
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
+  // const today = new Date();
+  // const yesterday = new Date();
+  // yesterday.setDate(yesterday.getDate() - 1);
 
-  const defaultToDate = getLocalDateString(today);
-  const defaultFromDate = getLocalDateString(yesterday);
+  // const defaultToDate = getLocalDateString(today);
+  // const defaultFromDate = getLocalDateString(yesterday);
 
   // Local Filter Input States
   const [status, setStatus] = useState('');
   const [priority, setPriority] = useState('');
-  const [fromDate, setFromDate] = useState(defaultFromDate);
-  const [toDate, setToDate] = useState(defaultToDate);
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
   const [sort, setSort] = useState('createdAt,desc');
 
   // Active Filter States (applied on Confirm)
   const [activeStatus, setActiveStatus] = useState('');
   const [activePriority, setActivePriority] = useState('');
-  const [activeFromDate, setActiveFromDate] = useState(defaultFromDate);
-  const [activeToDate, setActiveToDate] = useState(defaultToDate);
+  const [activeFromDate, setActiveFromDate] = useState("");
+  const [activeToDate, setActiveToDate] = useState("");
   const [activeSort, setActiveSort] = useState('createdAt,desc');
 
   // Pagination State
@@ -74,11 +72,7 @@ const SupportTicketsList = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [totalElements, setTotalElements] = useState(0);
 
-  // Modal State for Add New Report
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalSection, setModalSection] = useState('dashboard_page');
-  const [modalDescription, setModalDescription] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+
 
   // Load support tickets from API
   const loadTickets = async () => {
@@ -105,7 +99,7 @@ const SupportTicketsList = () => {
     }
   };
 
-  const { broadcast } = useBroadcast((event) => {
+  useBroadcast((event) => {
     if (event.type === 'DATA_UPDATE' && event.module === 'support-tickets') {
       loadTickets();
     }
@@ -139,51 +133,7 @@ const SupportTicketsList = () => {
   };
 
   const handleOpenAddModal = () => {
-    setModalSection('dashboard_page');
-    setModalDescription('');
-    setIsModalOpen(true);
-  };
-
-  const handleConfirmAddTicket = async () => {
-    if (!modalDescription.trim()) return;
-    setIsSubmitting(true);
-    try {
-      const token = getCookie('token');
-      const response = await fetch('/api/support-ticket', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-        },
-        body: JSON.stringify({
-          section: modalSection,
-          description: modalDescription
-        })
-      });
-
-      if (response.ok) {
-        window.showToast?.(isAr ? 'تم إرسال التذكرة بنجاح!' : 'Ticket submitted successfully!', 'success');
-        setIsModalOpen(false);
-        setModalDescription('');
-        loadTickets();
-        broadcast({ type: 'DATA_UPDATE', module: 'support-tickets' });
-      } else {
-        let errMsg = 'Failed to submit support ticket';
-        try {
-          const errData = await response.json();
-          errMsg = errData.message || errData.error || errMsg;
-        } catch {
-          // Ignore parse error
-        }
-        window.showToast?.(errMsg, 'error');
-      }
-    } catch (error: unknown) {
-      const err = error as Error;
-      console.error('Error submitting support ticket:', err);
-      window.showToast?.(err.message || 'Error communicating with server', 'error');
-    } finally {
-      setIsSubmitting(false);
-    }
+    window.dispatchEvent(new CustomEvent('OPEN_SUPPORT_TICKET_MODAL'));
   };
 
   const getSectionLabel = (val: string) => {
@@ -216,7 +166,7 @@ const SupportTicketsList = () => {
           <Button
             onClick={handleOpenAddModal}
             className="h-10 px-6 rounded-xl"
-            disabled={loading || isSubmitting}
+            disabled={loading}
           >
             <Plus className={cn("size-4", isAr ? "ml-2" : "mr-2")} />
             {isAr ? 'إضافة تقرير جديد' : 'Add New Report'}
@@ -510,60 +460,6 @@ const SupportTicketsList = () => {
           </article>
       </div>
 
-      {/* Support Ticket Modal (Yellow warning variant with drop-down page selection) */}
-      <Modal
-        isOpen={isModalOpen}
-        onClose={() => {
-          if (!isSubmitting) {
-            setIsModalOpen(false);
-            setModalDescription('');
-          }
-        }}
-        onConfirm={handleConfirmAddTicket}
-        title={isAr ? 'إرسال تذكرة دعم' : 'Submit Support Ticket'}
-        message={isAr ? 'يرجى اختيار الصفحة ووصف المشكلة بالتفصيل لمساعدتنا في حلها.' : 'Please choose the page and describe the issue in detail to help us resolve it.'}
-        confirmText={isAr ? 'إرسال' : 'Submit'}
-        cancelText={isAr ? 'إلغاء' : 'Cancel'}
-        variant="warning"
-        isConfirmDisabled={!modalDescription.trim() || isSubmitting}
-      >
-        <div className="space-y-4 py-2 flex flex-col w-full text-start" dir={isAr ? 'rtl' : 'ltr'}>
-          <div className="space-y-2 w-full">
-            <label className="text-xs font-bold text-foreground/70 block">
-              {isAr ? 'الصفحة المعنية' : 'Related Page'} <span className="text-destructive">*</span>
-            </label>
-            <Select value={modalSection} onValueChange={setModalSection}>
-              <SelectTrigger className="w-full h-12 rounded-xl bg-white border border-border text-start">
-                <SelectValue placeholder={isAr ? 'الصفحة المعنية' : 'Related Page'} />
-              </SelectTrigger>
-              <SelectContent smallZ className="z-[700]">
-                <SelectItem value="dashboard_page">{isAr ? 'لوحة التحكم' : 'Dashboard'}</SelectItem>
-                <SelectItem value="doctor_page">{isAr ? 'الأطباء' : 'Doctors'}</SelectItem>
-                <SelectItem value="patient_page">{isAr ? 'المرضى' : 'Patients'}</SelectItem>
-                <SelectItem value="secretary_page">{isAr ? 'السكرتاريا' : 'Secretaries'}</SelectItem>
-                <SelectItem value="appointment_page">{isAr ? 'المواعيد' : 'Appointments'}</SelectItem>
-                <SelectItem value="medical_record_page">{isAr ? 'السجلات الطبية' : 'Medical Records'}</SelectItem>
-                <SelectItem value="finance_page">{isAr ? 'المالية' : 'Finance'}</SelectItem>
-                <SelectItem value="profile_page">{isAr ? 'الملف الشخصي' : 'Profile'}</SelectItem>
-                <SelectItem value="settings_page">{isAr ? 'الإعدادات' : 'Settings'}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2 w-full text-start">
-            <label className="text-xs font-bold text-foreground/70 block">
-              {isAr ? 'صف المشكلة' : 'Issue Description'} <span className="text-destructive">*</span>
-            </label>
-            <textarea
-              value={modalDescription}
-              onChange={(e) => setModalDescription(e.target.value)}
-              placeholder={isAr ? 'اكتب تفاصيل المشكلة هنا...' : 'Type issue details here...'}
-              className="w-full min-h-[120px] p-4 rounded-xl border border-border bg-muted/20 focus:ring-4 focus:ring-yellow-500/10 focus:border-yellow-500 transition-all outline-none font-semibold text-sm resize-none text-foreground placeholder:text-muted-foreground/60"
-              dir={isAr ? 'rtl' : 'ltr'}
-            />
-          </div>
-        </div>
-      </Modal>
     </section>
   );
 };
