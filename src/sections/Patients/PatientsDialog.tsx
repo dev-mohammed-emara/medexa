@@ -2,7 +2,7 @@ import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import "flatpickr/dist/flatpickr.css";
 import { Arabic } from "flatpickr/dist/l10n/ar.js";
-import { FileText, MapPin, Phone, Plus, Save, User, X } from 'lucide-react';
+import { FileText, MapPin, Phone, Plus, Save, User, X, AlertCircle } from 'lucide-react';
 import { FaCalendarAlt } from 'react-icons/fa';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { DatePicker } from '../../components/ui/DatePicker';
@@ -47,6 +47,7 @@ const PatientsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Patie
   const [selectedDob, setSelectedDob] = useState<string>(initialData?.dateOfBirth || "");
   const [isClosing, setIsClosing] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Sync initialData values when dialog opens or changes
   useEffect(() => {
@@ -57,6 +58,7 @@ const PatientsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Patie
       setSelectedGender("");
       setSelectedDob("");
     }
+    setError(null);
   }, [initialData, isOpen]);
 
   const handleClose = useCallback(() => {
@@ -83,6 +85,7 @@ const PatientsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Patie
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
 
     setLoading(true);
     try {
@@ -122,7 +125,7 @@ const PatientsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Patie
       handleClose();
     } catch (error: any) {
       console.error(error)
-      window.showToast?.(error.message || t('error_save', T), 'error')
+      setError(error.message || t('error_save', T))
     } finally {
       setLoading(false);
     }
@@ -174,6 +177,12 @@ const PatientsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Patie
           </header>
 
           <ScrollLockWrapper className="z-500 overflow-visible overflow-y-auto pr-1 no-scrollbar">
+            {error && (
+              <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-xl flex items-center gap-3 text-destructive animate-in fade-in slide-in-from-top-2">
+                <AlertCircle className="size-5 shrink-0" />
+                <p className="text-sm font-bold">{error}</p>
+              </div>
+            )}
             <form id="patientForm" onSubmit={handleSubmit} className="flex flex-col gap-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Input
@@ -265,7 +274,7 @@ const PatientsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Patie
                       "w-full min-h-24 p-4 rounded-xl border border-border bg-input-background text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all resize-none disabled:opacity-50 placeholder:text-muted-foreground font-bold",
                       isAr ? "pr-12" : "pl-12"
                     )}
-                    placeholder={t('dialog.notes', T)}
+                    placeholder={`${t('dialog.notes', T)} ${isAr ? '(اختياري)' : '(optional)'}`}
                     rows={3}
                     dir={isAr ? "rtl" : "ltr"}
                   />

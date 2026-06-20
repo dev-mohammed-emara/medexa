@@ -479,6 +479,7 @@ const PatientDetailsView = () => {
           ) : records.length === 0 ? (
             <div className="h-48 flex items-center justify-center">
               <EmptyShell
+              className='border-none shadow-none mb-4'
                 title={isAr ? 'لا توجد سجلات' : 'No Records Found'}
                 description={isAr ? 'لا توجد سجلات طبية لهذا المريض حتى الآن' : 'No medical records exist for this patient yet'}
               />
@@ -619,7 +620,7 @@ const PatientDetailsView = () => {
           )}
         </div>
 
-        {totalPages > 0 && (
+        {totalPages > 1 && (
           <TableFooter
           className='w-fit mx-auto mb-6'
             variant="list"

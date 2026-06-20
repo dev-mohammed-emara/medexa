@@ -59,6 +59,12 @@ const TimePicker: React.FC<TimePickerProps> = ({ value, onChange, className, noC
   }, [isOpen, value]);
 
   useEffect(() => {
+    if (!value && onChange) {
+      onChange('08:00');
+    }
+  }, [value, onChange]);
+
+  useEffect(() => {
     const handlePopState = () => {
       if (isOpen) {
         handleClose();

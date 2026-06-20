@@ -3,13 +3,14 @@ import { cn } from '../../utils/cn'
 import { useLanguage } from '../../contexts/LanguageContext'
 
 const AVAILABLE_PERMISSIONS = [
-  { value: 'MANAGE_CLINIC', labelAr: 'إدارة العيادة', labelEn: 'Clinic Settings' },
   { value: 'MANAGE_DOCTORS', labelAr: 'إدارة الأطباء', labelEn: 'Doctors' },
   { value: 'MANAGE_SECRETARIES', labelAr: 'إدارة السكرتاريا', labelEn: 'Secretaries' },
   { value: 'MANAGE_PATIENTS', labelAr: 'إدارة المرضى', labelEn: 'Patients' },
   { value: 'MANAGE_APPOINTMENTS', labelAr: 'إدارة المواعيد', labelEn: 'Appointments' },
   { value: 'MANAGE_MEDICAL_RECORDS', labelAr: 'إدارة السجلات الطبية', labelEn: 'Medical Records' },
-  { value: 'MANAGE_TRANSACTIONS', labelAr: 'إدارة المعاملات المالية', labelEn: 'Finance & Transactions' }
+  { value: 'MANAGE_TRANSACTIONS', labelAr: 'إدارة المعاملات المالية', labelEn: 'Finance & Transactions' },
+  { value: 'MANAGE_STATISTICS', labelAr: 'إدارة الإحصائيات', labelEn: 'Statistics' }
+
 ];
 
 interface PermissionsFieldsetProps {

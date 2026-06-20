@@ -444,7 +444,7 @@ const AppointmentTypesList = () => {
 
                 {/* Description Field */}
                 <div className="flex flex-col gap-2 col-span-1 md:col-span-2">
-                  <label className="text-sm font-semibold text-foreground/80 pr-1">{isAr ? 'الوصف' : 'Description'}</label>
+                  <label className="text-sm font-semibold text-foreground/80 pr-1">{isAr ? 'الوصف' : 'Description'} <span className="text-xs font-normal text-muted-foreground mx-1">{isAr ? "(اختياري)" : "(optional)"}</span></label>
                   <div className="relative group">
                     <textarea
                       name="description"

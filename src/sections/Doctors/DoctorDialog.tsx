@@ -2,7 +2,7 @@ import { format } from 'date-fns'
 import { ar } from 'date-fns/locale'
 import "flatpickr/dist/flatpickr.css"
 import { Arabic } from "flatpickr/dist/l10n/ar.js"
-import { Check, Mail, Phone, Plus, Printer, Save, User, X } from 'lucide-react'
+import { Check, Mail, Phone, Plus, Printer, Save, User, X, AlertCircle } from 'lucide-react'
 import { FaCalendarAlt } from 'react-icons/fa'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { DatePicker } from '../../components/ui/DatePicker';
@@ -47,6 +47,7 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
   const [isClosing, setIsClosing] = useState(false)
   const [loading, setLoading] = useState(false)
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>(initialData?.user?.permissions || [])
+  const [error, setError] = useState<string | null>(null)
 
   const [password, setPassword] = useState('')
   const [passwordError, setPasswordError] = useState<string | null>(null)
@@ -65,6 +66,7 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
       setPassword("")
       setSelectedPermissions([])
     }
+    setError(null)
   }, [initialData, isOpen])
 
   const handleClose = useCallback(() => {
@@ -92,6 +94,7 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setError(null)
     if (mode === 'view') {
       handleClose()
       return
@@ -150,7 +153,7 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
       if (error.message && error.message.toLowerCase().includes('password')) {
         setPasswordError(error.message);
       }
-      window.showToast?.(error.message || t('error_save', T), 'error')
+      setError(error.message || t('error_save', T))
     } finally {
       setLoading(false)
     }
@@ -199,6 +202,12 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
           </header>
 
           <ScrollLockWrapper className="flex-1 overflow-y-auto pr-1 no-scrollbar">
+            {error && (
+              <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-xl flex items-center gap-3 text-destructive animate-in fade-in slide-in-from-top-2">
+                <AlertCircle className="size-5 shrink-0" />
+                <p className="text-sm font-bold">{error}</p>
+              </div>
+            )}
             <form id="doctorForm" onSubmit={handleSubmit} className="space-y-6 py-2" autoComplete="off">
               {/* Name Fields - Three Columns */}
               <div className="grid grid-cols-1 md:grid-cols-2  lg:grid-cols-3 gap-4">
@@ -396,7 +405,7 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
               />
 
               <div className="flex flex-col gap-2">
-                <label htmlFor={inputId('description')} className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.description', T)}</label>
+                <label htmlFor={inputId('description')} className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.description', T)} <span className="text-xs font-normal text-muted-foreground mx-1">{isAr ? "(اختياري)" : "(optional)"}</span></label>
                 <textarea
                   id={inputId('description')}
                   name="summary"

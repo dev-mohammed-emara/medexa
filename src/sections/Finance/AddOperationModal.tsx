@@ -3,7 +3,8 @@ import {
   DollarSign,
   Check,
   X,
-  FileText
+  FileText,
+  AlertCircle
 } from 'lucide-react';
 import { FaCalendarAlt } from 'react-icons/fa';
 import {
@@ -47,6 +48,7 @@ const AddOperationModal = ({ isOpen, onClose, onSuccess, mode = 'add', transacti
   const [appointment, setAppointment] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
   const [isClosing, setIsClosing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleClose = useCallback(() => {
     setIsClosing(true);
@@ -109,12 +111,14 @@ const AddOperationModal = ({ isOpen, onClose, onSuccess, mode = 'add', transacti
         setAppointment("");
         setNotes("");
       }
+      setError(null);
     }
   }, [isOpen, mode, transactionUuid]);
 
   if (!isOpen) return null;
 
   const handleSubmit = async () => {
+    setError(null);
     // Basic validation
     if (!type || !amount || !date) return;
 
@@ -157,15 +161,16 @@ const AddOperationModal = ({ isOpen, onClose, onSuccess, mode = 'add', transacti
           const errData = await response.json();
           errMsg = errData.message || errData.error || errMsg;
         } catch (e) { }
-        window.showToast?.(errMsg, 'error');
+        setError(errMsg);
       }
     } catch (error: any) {
       console.error('Error adding transaction:', error);
-      window.showToast?.(error.message || 'Error communicating with server', 'error');
+      setError(error.message || 'Error communicating with server');
     }
   };
 
   const handleEditSubmit = async () => {
+    setError(null);
     if (!type || !amount || !date) return;
 
     const mappedType = type === 'دخل' || type === 'INCOME' ? 'INCOME' : 'EXPENSE';
@@ -206,11 +211,11 @@ const AddOperationModal = ({ isOpen, onClose, onSuccess, mode = 'add', transacti
           const errData = await response.json();
           errMsg = errData.message || errData.error || errMsg;
         } catch (e) { }
-        window.showToast?.(errMsg, 'error');
+        setError(errMsg);
       }
     } catch (error: any) {
       console.error('Error editing transaction:', error);
-      window.showToast?.(error.message || 'Error communicating with server', 'error');
+      setError(error.message || 'Error communicating with server');
     }
   };
 
@@ -266,6 +271,13 @@ const AddOperationModal = ({ isOpen, onClose, onSuccess, mode = 'add', transacti
                 </div>
               </div>
             </div>
+
+            {error && (
+              <div className="mb-8 p-4 bg-destructive/10 border border-destructive/20 rounded-xl flex items-center gap-3 text-destructive animate-in fade-in slide-in-from-top-2">
+                <AlertCircle className="size-5 shrink-0" />
+                <p className="text-sm font-bold">{error}</p>
+              </div>
+            )}
 
             <div className="space-y-8 pb-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -363,7 +375,7 @@ const AddOperationModal = ({ isOpen, onClose, onSuccess, mode = 'add', transacti
 
               {/* Notes */}
               <div className="space-y-2">
-                <label className={cn("block text-sm font-bold text-[#1a2b3c]", isAr ? "mr-1" : "ml-1")}>{t('table_notes', T)}</label>
+                <label className={cn("block text-sm font-bold text-[#1a2b3c]", isAr ? "mr-1" : "ml-1")}>{t('table_notes', T)} <span className="text-xs font-normal text-muted-foreground mx-1">{isAr ? "(اختياري)" : "(optional)"}</span></label>
                 <div className="relative group">
                   <textarea
                     disabled={mode === 'view'}

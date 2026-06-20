@@ -2,7 +2,7 @@ import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import "flatpickr/dist/flatpickr.css";
 import { Arabic } from "flatpickr/dist/l10n/ar.js";
-import { Clock, DollarSign, Phone, Plus, Stethoscope, User, X, Check } from 'lucide-react';
+import { Clock, DollarSign, Phone, Plus, Stethoscope, User, X, Check, AlertCircle } from 'lucide-react';
 import { TbCancel } from 'react-icons/tb';
 import { FaCalendarAlt } from 'react-icons/fa';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -27,6 +27,7 @@ import { enUS } from 'date-fns/locale';
 import { fetchDoctors } from '../../api/doctorApi';
 import { fetchPatients } from '../../api/patientApi';
 import { getCookie } from '../../utils/cookie';
+import { useAuth } from '../../contexts/AuthContext';
 
 export interface Appointment {
   id: number | string;
@@ -59,10 +60,13 @@ interface AppointmentsDialogProps {
 
 const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, onCancel, onComplete }: AppointmentsDialogProps) => {
   const { isAr, dir, t } = useLanguage();
+  const { user } = useAuth();
+  const hasManageMedicalRecords = user?.permissions?.includes('MANAGE_MEDICAL_RECORDS') || user?.role === 'ROLE_CLINIC_OWNER' || user?.role === 'ROLE_DOCTOR' || user?.roles?.includes('ROLE_DOCTOR');
   const T = appointmentsTranslations;
   const currentLocale = isAr ? ar : enUS;
   const overlayRef = useRef<HTMLDivElement>(null);
   const [isClosing, setIsClosing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Safely parse yyyy-MM-dd string to local Date object to prevent timezone shifting
   const parseLocalDate = (dateStr: string) => {
@@ -148,6 +152,7 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, onC
       setDoctorNotes(initialData?.doctorNotes || "");
       setPatientNotes(initialData?.patientNotes || "");
     }
+    setError(null);
   }, [isOpen, initialData, mode]);
 
   // API Dropdown states
@@ -278,13 +283,14 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, onC
 
   const handleSubmit = async (e: React.BaseSyntheticEvent) => {
     e.preventDefault();
+    setError(null);
     if (mode === 'view') {
       handleClose();
       return;
     }
 
     if (!selectedDate || !selectedTime || !selectedPatient || !selectedDoctor) {
-      window.showToast?.(isAr ? "يرجى ملء جميع الحقول المطلوبة" : "Please fill all required fields", "error");
+      setError(isAr ? "يرجى ملء جميع الحقول المطلوبة" : "Please fill all required fields");
       return;
     }
 
@@ -293,10 +299,15 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, onC
     const url = isEdit ? `/api/appointment/${appointmentUuid}` : '/api/appointment';
     const method = isEdit ? 'PUT' : 'POST';
 
+    const formatTime = (time: string | undefined | null) => {
+      if (!time) return undefined;
+      return time.length === 5 ? `${time}:00` : time;
+    };
+
     const payload = isEdit ? {
       appointmentDate: selectedDate,
-      appointmentStartTime: selectedTime,
-      appointmentEndTime: selectedEndTime,
+      appointmentStartTime: formatTime(selectedTime),
+      appointmentEndTime: formatTime(selectedEndTime),
       patientNote: patientNotes || "",
       doctorNote: doctorNotes || ""
     } : {
@@ -304,8 +315,8 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, onC
       doctorUuid: selectedDoctor,
       appointmentDate: selectedDate,
       appointmentTypeUuid: selectedAppointmentType || "990563d1-53b0-4f0a-a98b-2ac3106e1bfc",
-      appointmentStartTime: selectedTime,
-      appointmentEndTime: selectedEndTime || "08:45",
+      appointmentStartTime: formatTime(selectedTime),
+      appointmentEndTime: formatTime(selectedEndTime) || "08:45:00",
       patientNote: patientNotes || "",
       doctorNote: doctorNotes || ""
     };
@@ -336,11 +347,11 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, onC
             errMsg = errData.message || errData.error || errMsg;
           }
         } catch (err) {}
-        window.showToast?.(errMsg, 'error');
+        setError(errMsg);
       }
     } catch (error: any) {
       console.error('Error saving appointment:', error);
-      window.showToast?.(error.message || 'Error communicating with server', 'error');
+      setError(error.message || 'Error communicating with server');
     }
   };
 
@@ -389,6 +400,13 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, onC
           </div>
 
           <ScrollLockWrapper className="flex-1 overflow-y-auto pr-1 no-scrollbar">
+            {error && (
+              <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-xl flex items-center gap-3 text-destructive animate-in fade-in slide-in-from-top-2">
+                <AlertCircle className="size-5 shrink-0" />
+                <p className="text-sm font-bold">{error}</p>
+              </div>
+            )}
+            
             {mode === 'view' ? (
               <div className="space-y-4 py-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -788,7 +806,7 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, onC
             )}
             {mode === 'view' && (
               <div className="flex gap-3 w-full">
-                {initialData?.status === 'pending' && onComplete && (
+                {hasManageMedicalRecords && initialData?.status === 'pending' && onComplete && (
                   <Button
                     type="button"
                     onClick={() => {
@@ -827,7 +845,7 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, onC
                 <Button onClick={handleSubmit} className="flex-2 shadow-lg shadow-primary/20 bg-primary hover:bg-primary/90 h-10 rounded-lg">
                   {t('dialog.save_changes', T)}
                 </Button>
-                {initialData?.status === 'pending' && onComplete && (
+                {hasManageMedicalRecords && initialData?.status === 'pending' && onComplete && (
                   <Button
                     type="button"
                     onClick={() => {

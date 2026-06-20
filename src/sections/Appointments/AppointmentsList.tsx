@@ -1279,12 +1279,14 @@ const AppointmentsList = () => {
                                   </button>
                                   {app.status === 'completed' && (
                                     <>
-                                      <button
-                                        onClick={(e) => { e.stopPropagation(); handleOpenMedicalRecordModal(app, 'view'); }}
-                                        className="inline-flex items-center justify-center whitespace-nowrap font-medium transition-all duration-300 border bg-blue-600 text-white hover:bg-blue-700 rounded-md gap-1.5 px-3 flex-1 h-8 text-xs shadow-sm hover:shadow-blue-200/50 hover:-translate-y-0.5"
-                                      >
-                                        <FileText className={cn("size-3.5", isAr ? "ml-1" : "mr-1")} /> {isAr ? 'السجل الطبي' : 'Medical Record'}
-                                      </button>
+                                      {hasManageMedicalRecords && (
+                                        <button
+                                          onClick={(e) => { e.stopPropagation(); handleOpenMedicalRecordModal(app, 'view'); }}
+                                          className="inline-flex items-center justify-center whitespace-nowrap font-medium transition-all duration-300 border bg-blue-600 text-white hover:bg-blue-700 rounded-md gap-1.5 px-3 flex-1 h-8 text-xs shadow-sm hover:shadow-blue-200/50 hover:-translate-y-0.5"
+                                        >
+                                          <FileText className={cn("size-3.5", isAr ? "ml-1" : "mr-1")} /> {isAr ? 'السجل الطبي' : 'Medical Record'}
+                                        </button>
+                                      )}
                                       {hasManageMedicalRecords && (
                                         <button
                                           onClick={(e) => { e.stopPropagation(); handleOpenMedicalRecordModal(app, 'edit'); }}
@@ -1487,7 +1489,7 @@ const AppointmentsList = () => {
 
           <div className="space-y-2">
             <label className="text-sm font-bold text-foreground/80 px-1 block text-start">
-              {t('dialog.doctor_notes', T)}
+              {t('dialog.doctor_notes', T)} <span className="text-xs font-normal text-muted-foreground mx-1">{isAr ? "(اختياري)" : "(optional)"}</span>
             </label>
             <textarea
               value={completeData.doctorNotes}
@@ -1703,7 +1705,7 @@ const AppointmentsList = () => {
             {/* Note */}
             <div className="flex flex-col gap-2">
               <label className="text-sm font-semibold text-foreground/80 pr-1 pl-1">
-                {isAr ? 'ملاحظة إضافية' : 'Additional Note'}
+                {isAr ? 'ملاحظة إضافية' : 'Additional Note'} <span className="text-xs font-normal text-muted-foreground mx-1">{isAr ? "(اختياري)" : "(optional)"}</span>
               </label>
               <textarea
                 disabled={medicalRecordModalMode === 'view'}
@@ -1757,7 +1759,7 @@ const AppointmentsList = () => {
             {/* Transaction Note */}
             <div className="flex flex-col gap-2">
               <label className="text-sm font-semibold text-foreground/80 pr-1 pl-1">
-                {isAr ? 'ملاحظات المعاملة' : 'Transaction Note'}
+                {isAr ? 'ملاحظات المعاملة' : 'Transaction Note'} <span className="text-xs font-normal text-muted-foreground mx-1">{isAr ? "(اختياري)" : "(optional)"}</span>
               </label>
               <textarea
                 disabled={medicalRecordModalMode === 'view'}
