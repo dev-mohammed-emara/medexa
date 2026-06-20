@@ -4,7 +4,6 @@ import {
   DollarSign,
   FileText,
   LayoutDashboard,
-  ListChecks,
   Menu,
   User,
   UserCog,
@@ -13,6 +12,7 @@ import {
   X,
   Eye
 } from 'lucide-react'
+import { FaNotesMedical } from "react-icons/fa";
 import { useEffect, useRef } from 'react'
 import { FaCalendarAlt } from 'react-icons/fa'
 import { BiSupport } from 'react-icons/bi'
@@ -31,7 +31,7 @@ const navItems = [
   { icon: UserCog, label: 'secretary', href: '/secretary', requiredPermissions: ['MANAGE_SECRETARIES', 'ROLE_CLINIC_OWNER', 'ROLE_ADMIN'] },
   { icon: UsersRound, label: 'patients', href: '/patients', requiredPermissions: ['MANAGE_PATIENTS', 'ROLE_DOCTOR', 'ROLE_SECRETARY', 'ROLE_CLINIC_OWNER', 'ROLE_ADMIN'] },
   { icon: FaCalendarAlt, label: 'appointments', href: '/appointments', requiredPermissions: ['MANAGE_APPOINTMENTS', 'ROLE_DOCTOR', 'ROLE_SECRETARY', 'ROLE_CLINIC_OWNER', 'ROLE_ADMIN'] },
-  { icon: ListChecks, label: 'appointmentTypes', href: '/appointment-types', requiredPermissions: ['ROLE_DOCTOR', 'ROLE_SECRETARY', 'ROLE_CLINIC_OWNER', 'ROLE_ADMIN'] },
+  { icon: FaNotesMedical, label: 'appointmentTypes', href: '/appointment-types', requiredPermissions: ['ROLE_DOCTOR', 'ROLE_SECRETARY', 'ROLE_CLINIC_OWNER', 'ROLE_ADMIN'] },
   { icon: FileText, label: 'records', href: '/records', requiredPermissions: ['MANAGE_MEDICAL_RECORDS', 'MANAGE_PATIENTS', 'ROLE_DOCTOR', 'ROLE_CLINIC_OWNER', 'ROLE_ADMIN'] },
   { icon: DollarSign, label: 'finance', href: '/finance', requiredPermissions: ['MANAGE_TRANSACTIONS', 'MANAGE_CLINIC', 'ROLE_SECRETARY', 'ROLE_CLINIC_OWNER', 'ROLE_ADMIN'] },
   { icon: User, label: 'profile', href: '/profile' },
