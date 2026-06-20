@@ -1,16 +1,44 @@
-import React, { type InputHTMLAttributes, useState } from 'react'
+import React, { type InputHTMLAttributes, useState, useEffect } from 'react'
 import { cn } from '../../utils/cn'
 import { Eye, EyeOff } from 'lucide-react'
+import { useLanguage } from '../../contexts/LanguageContext'
+import { useFieldError } from '../../hooks/useFieldError'
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   icon?: React.ReactNode
   containerClassName?: string
+  error?: string | boolean
 }
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, type, icon, containerClassName, onChange, ...props }, ref) => {
     const [showPassword, setShowPassword] = useState(false);
+    const [errorMsg, setErrorMsg] = useState<string | null>(null);
     const isPassword = type === 'password';
+    
+    const { isAr } = useLanguage();
+    const { backendError, setBackendError } = useFieldError(props.name);
+
+    useEffect(() => {
+      if (backendError) setErrorMsg(backendError);
+    }, [backendError]);
+
+    const handleInvalid = (e: React.InvalidEvent<HTMLInputElement>) => {
+      e.preventDefault();
+      const target = e.target as HTMLInputElement;
+      
+      // Translate default HTML5 messages based on language
+      if (target.validity.valueMissing) {
+        setErrorMsg(isAr ? 'يرجى ملء هذا الحقل' : 'Please fill out this field.');
+      } else if (target.validity.typeMismatch && type === 'email') {
+        setErrorMsg(isAr ? 'يرجى إدخال عنوان بريد إلكتروني صحيح' : 'Please enter a valid email address.');
+      } else {
+        setErrorMsg(target.validationMessage);
+      }
+      
+      if (props.onInvalid) props.onInvalid(e);
+    };
+
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
       // Prevent negative sign and exponent 'e' in number inputs as per user request
       if (type === 'number' && (e.key === '-' || e.key === 'e' || e.key === 'E')) {
@@ -41,6 +69,8 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (errorMsg) setErrorMsg(null);
+      if (backendError) setBackendError(null);
       let value = e.target.value;
 
       // Always convert Arabic numerals to English numbers
@@ -75,45 +105,54 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     };
 
     return (
-      <div className={cn("relative w-full group", containerClassName)}>
-        {icon && (
-          <div className={cn(
-            "absolute top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none group-focus-within:text-primary transition-colors z-10",
-            props.dir === 'ltr' ? "left-4" : "right-4"
-          )}>
-            {icon}
-          </div>
-        )}
-        <input
-          type={type === 'tel' ? 'text' : (isPassword ? (showPassword ? 'text' : 'password') : type)}
-          inputMode={type === 'tel' || type === 'number' ? 'numeric' : undefined}
-          min={type === 'number' ? "0" : props.min}
-          className={cn(
-            "flex w-full rounded-xl border border-border bg-input-background h-12 px-4 py-2 text-base transition-all outline-none",
-            "placeholder:text-muted-foreground",
-            "focus:border-primary focus:ring-4 focus:ring-primary/10",
-            "disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
-            icon && (props.dir === 'ltr' ? "pl-12" : "pr-12"),
-            isPassword && (props.dir === 'ltr' ? "pr-12" : "pl-12"),
-            className
+      <div className={cn("w-full flex flex-col", containerClassName)} data-has-error={!!(errorMsg || props.error)}>
+        <div className="relative w-full group">
+          {icon && (
+            <div className={cn(
+              "absolute top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none group-focus-within:text-primary transition-colors z-10",
+              props.dir === 'ltr' ? "left-4" : "right-4"
+            )}>
+              {icon}
+            </div>
           )}
-          ref={ref}
-          onChange={handleChange}
-          onKeyDown={handleKeyDown}
-          onPaste={handlePaste}
-          {...props}
-        />
-        {isPassword && (
-          <button
-            type="button"
-            onClick={() => setShowPassword(prev => !prev)}
+          <input
+            type={type === 'tel' ? 'text' : (isPassword ? (showPassword ? 'text' : 'password') : type)}
+            inputMode={type === 'tel' || type === 'number' ? 'numeric' : undefined}
+            min={type === 'number' ? "0" : props.min}
             className={cn(
-              "absolute top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer z-10 p-1 rounded",
-              props.dir === 'ltr' ? "right-3" : "left-3"
+              "flex w-full rounded-xl border border-border bg-input-background h-12 px-4 py-2 text-base transition-all outline-none",
+              "placeholder:text-muted-foreground",
+              "focus:border-primary focus:ring-4 focus:ring-primary/10",
+              "disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
+              icon && (props.dir === 'ltr' ? "pl-12" : "pr-12"),
+              isPassword && (props.dir === 'ltr' ? "pr-12" : "pl-12"),
+              (errorMsg || props.error) && "border-destructive focus:border-destructive focus:ring-destructive/10 bg-destructive/5 text-destructive",
+              className
             )}
-          >
-            {showPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
-          </button>
+            ref={ref}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
+            onPaste={handlePaste}
+            onInvalid={handleInvalid}
+            {...props}
+          />
+          {isPassword && (
+            <button
+              type="button"
+              onClick={() => setShowPassword(prev => !prev)}
+              className={cn(
+                "absolute top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer z-10 p-1 rounded",
+                props.dir === 'ltr' ? "right-3" : "left-3"
+              )}
+            >
+              {showPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
+            </button>
+          )}
+        </div>
+        {(errorMsg || (typeof props.error === 'string' && props.error)) && (
+          <p className="text-[11px] text-destructive mt-1.5 font-bold animate-in fade-in slide-in-from-top-1 text-start">
+            {errorMsg || props.error}
+          </p>
         )}
       </div>
     )

@@ -7,6 +7,9 @@ import { cn } from "../../utils/cn"
 import { ChevronDownIcon, CheckIcon, Search } from "lucide-react"
 import ScrollLockWrapper from "./ScrollLockWrapper"
 import { useLanguage } from "../../contexts/LanguageContext"
+import { useFieldError } from "../../hooks/useFieldError"
+
+const SelectContext = React.createContext<{ error?: string | boolean | null }>({ error: null });
 
 const getElementText = (node: React.ReactNode): string => {
   if (node == null) return ""
@@ -17,9 +20,52 @@ const getElementText = (node: React.ReactNode): string => {
 }
 
 function Select({
+  containerClassName,
+  error,
   ...props
-}: React.ComponentProps<typeof SelectPrimitive.Root>) {
-  return <SelectPrimitive.Root data-slot="select" {...props} />
+}: React.ComponentProps<typeof SelectPrimitive.Root> & { containerClassName?: string, error?: string | boolean }) {
+  const { backendError, setBackendError } = useFieldError(props.name);
+  const [errorMsg, setErrorMsg] = React.useState<string | null>(null);
+  const { isAr } = useLanguage();
+
+  React.useEffect(() => {
+    if (backendError) setErrorMsg(backendError);
+  }, [backendError]);
+
+  const handleInvalid = React.useCallback((e: React.SyntheticEvent<HTMLSelectElement>) => {
+    e.preventDefault();
+    const selectEl = e.target as HTMLSelectElement;
+    if (selectEl.validity.valueMissing) {
+      setErrorMsg(isAr ? 'يرجى ملء هذا الحقل' : 'Please fill out this field.');
+    } else {
+      setErrorMsg(selectEl.validationMessage);
+    }
+  }, [isAr]);
+
+  const handleValueChange = (val: string) => {
+    if (errorMsg) setErrorMsg(null);
+    if (backendError) setBackendError(null);
+    if (props.onValueChange) props.onValueChange(val);
+  };
+
+  const currentError = errorMsg || error;
+
+  return (
+    <SelectContext.Provider value={{ error: currentError }}>
+      <div 
+        className={cn("w-full flex flex-col", containerClassName)} 
+        data-has-error={!!currentError}
+        onInvalidCapture={handleInvalid as unknown as React.ReactEventHandler<HTMLDivElement>}
+      >
+        <SelectPrimitive.Root data-slot="select" {...props} onValueChange={handleValueChange} />
+        {(typeof currentError === 'string' && currentError) && (
+          <p className="text-[11px] text-destructive mt-1.5 font-bold animate-in fade-in slide-in-from-top-1 text-start">
+            {currentError}
+          </p>
+        )}
+      </div>
+    </SelectContext.Provider>
+  )
 }
 
 function SelectGroup({
@@ -47,11 +93,15 @@ function SelectTrigger({
   children,
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Trigger>) {
+  const context = React.useContext(SelectContext);
+  const hasError = !!context?.error;
+
   return (
     <SelectPrimitive.Trigger
       data-slot="select-trigger"
       className={cn(
-        "flex w-full items-center justify-between gap-2 rounded-xl border border-border bg-input-background h-12 px-4 transition-all outline-none select-none focus:ring-4 focus:ring-primary/10 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive md:text-sm data-placeholder:text-muted-foreground dark:bg-input/30 dark:hover:bg-input/50",
+        "flex w-full items-center justify-between gap-2 rounded-xl border border-border bg-input-background h-12 px-4 transition-all outline-none select-none focus:ring-4 focus:ring-primary/10 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm data-placeholder:text-muted-foreground dark:bg-input/30 dark:hover:bg-input/50",
+        hasError && "border-destructive focus:border-destructive focus:ring-destructive/10 bg-destructive/5 text-destructive",
         className
       )}
       {...props}

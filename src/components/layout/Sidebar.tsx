@@ -10,7 +10,8 @@ import {
   UserCog,
   Users,
   UsersRound,
-  X
+  X,
+  Eye
 } from 'lucide-react'
 import { useEffect, useRef } from 'react'
 import { FaCalendarAlt } from 'react-icons/fa'
@@ -26,13 +27,13 @@ import { useAuth } from '../../contexts/AuthContext'
 
 const navItems = [
   { icon: LayoutDashboard, label: 'dashboard', href: '/', requiredPermissions: ['MANAGE_STATISTICS', 'ROLE_CLINIC_OWNER', 'ROLE_ADMIN'] },
-  { icon: Users, label: 'doctors', href: '/doctors', requiredPermissions: ['MANAGE_DOCTORS', 'ROLE_CLINIC_OWNER', 'ROLE_ADMIN'] },
+  { icon: Users, label: 'doctors', href: '/doctors', requiredPermissions: ['MANAGE_DOCTORS', 'ROLE_SECRETARY', 'ROLE_CLINIC_OWNER', 'ROLE_ADMIN'] },
   { icon: UserCog, label: 'secretary', href: '/secretary', requiredPermissions: ['MANAGE_SECRETARIES', 'ROLE_CLINIC_OWNER', 'ROLE_ADMIN'] },
-  { icon: UsersRound, label: 'patients', href: '/patients', requiredPermissions: ['MANAGE_PATIENTS', 'ROLE_CLINIC_OWNER', 'ROLE_ADMIN'] },
-  { icon: FaCalendarAlt, label: 'appointments', href: '/appointments', requiredPermissions: ['MANAGE_APPOINTMENTS', 'ROLE_CLINIC_OWNER', 'ROLE_ADMIN'] },
-  { icon: ListChecks, label: 'appointmentTypes', href: '/appointment-types' },
-  { icon: FileText, label: 'records', href: '/records', requiredPermissions: ['MANAGE_MEDICAL_RECORDS', 'MANAGE_PATIENTS', 'ROLE_CLINIC_OWNER', 'ROLE_ADMIN'] },
-  { icon: DollarSign, label: 'finance', href: '/finance', requiredPermissions: ['MANAGE_TRANSACTIONS', 'MANAGE_CLINIC', 'ROLE_CLINIC_OWNER', 'ROLE_ADMIN'] },
+  { icon: UsersRound, label: 'patients', href: '/patients', requiredPermissions: ['MANAGE_PATIENTS', 'ROLE_DOCTOR', 'ROLE_SECRETARY', 'ROLE_CLINIC_OWNER', 'ROLE_ADMIN'] },
+  { icon: FaCalendarAlt, label: 'appointments', href: '/appointments', requiredPermissions: ['MANAGE_APPOINTMENTS', 'ROLE_DOCTOR', 'ROLE_SECRETARY', 'ROLE_CLINIC_OWNER', 'ROLE_ADMIN'] },
+  { icon: ListChecks, label: 'appointmentTypes', href: '/appointment-types', requiredPermissions: ['ROLE_DOCTOR', 'ROLE_SECRETARY', 'ROLE_CLINIC_OWNER', 'ROLE_ADMIN'] },
+  { icon: FileText, label: 'records', href: '/records', requiredPermissions: ['MANAGE_MEDICAL_RECORDS', 'MANAGE_PATIENTS', 'ROLE_DOCTOR', 'ROLE_CLINIC_OWNER', 'ROLE_ADMIN'] },
+  { icon: DollarSign, label: 'finance', href: '/finance', requiredPermissions: ['MANAGE_TRANSACTIONS', 'MANAGE_CLINIC', 'ROLE_SECRETARY', 'ROLE_CLINIC_OWNER', 'ROLE_ADMIN'] },
   { icon: User, label: 'profile', href: '/profile' },
   { icon: BiSupport, label: 'supportTickets', href: '/support-tickets' },
 ]
@@ -134,7 +135,7 @@ const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
         <nav className="flex-1 py-6 px-3 whitespace-nowrap overflow-y-auto no-scrollbar" ref={navContainerRef}>
           <div className="space-y-1">
             {filteredNavItems.map((item, index) => {
-              const isActive = location.pathname === item.href
+              const isActive = location.pathname === item.href || (item.href === '/patients' && location.pathname.startsWith('/patients'))
               return (
                 <TransitionLink
                   key={index}
@@ -165,7 +166,10 @@ const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
                         )}>
                           {t(`nav.${item.label}`, T_PAGE)}
                         </span>
-                        {isActive && <ChevronLeft className={cn("size-4 shrink-0 transition-all duration-300 ", !isAr && "rotate-180")} />}
+                        {item.href === '/patients' && location.pathname.startsWith('/patients') && location.pathname !== '/patients' && (
+                          <Eye className="size-4 shrink-0 text-primary" />
+                        )}
+                        {isActive && !(item.href === '/patients' && location.pathname.startsWith('/patients') && location.pathname !== '/patients') && <ChevronLeft className={cn("size-4 shrink-0 transition-all duration-300 ", !isAr && "rotate-180")} />}
                       </>
                     )}
                   </div>

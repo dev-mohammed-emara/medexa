@@ -11,6 +11,7 @@ import {
   RotateCcw
 } from 'lucide-react'
 import { usePreloader } from '../../contexts/PreloaderContext'
+import { useAuth } from '../../contexts/AuthContext'
 import { cn } from '../../utils/cn'
 import SecretaryDialog from './SecretaryDialog'
 import Modal from '../../components/ui/Modal'
@@ -77,6 +78,7 @@ const SecretaryList = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [secretaryToDelete, setSecretaryToDelete] = useState<ApiSecretary | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const { user: currentUser } = useAuth();
 
   // Load secretaries from API
   const loadSecretaries = useCallback(async () => {
@@ -406,13 +408,23 @@ const SecretaryList = () => {
                               <SquarePen className={cn("size-4", isAr ? "ml-1" : "mr-1")} />
                               {t('edit', T)}
                             </button>
-                            <button
-                              onClick={() => handleDeleteClick(secretary)}
-                              disabled={fetchingSecretaryDetail || deleting}
-                              className="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-all duration-300 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md border bg-background dark:bg-input/30 dark:border-input dark:hover:bg-input/50 hover:border-primary/30 h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5 text-destructive hover:text-destructive hover:bg-destructive/10"
-                            >
-                              <Trash2 className="size-4" />
-                            </button>
+                            {secretary.user?.email === currentUser?.email ? (
+                              <button
+                                type="button"
+                                onClick={() => window.showToast?.(isAr ? 'هذا أنت، لا يمكنك إلغاء تعيين نفسك' : 'That is you, you cannot unassign yourself', 'error')}
+                                className="inline-flex items-center justify-center px-3 rounded-md bg-primary/10 text-primary text-xs font-bold whitespace-nowrap self-center h-8 hover:bg-primary/20 transition-colors"
+                              >
+                                {isAr ? "أنت" : "You"}
+                              </button>
+                            ) : secretary.user?.status !== 'INACTIVE' ? (
+                              <button
+                                onClick={() => handleDeleteClick(secretary)}
+                                disabled={fetchingSecretaryDetail || deleting}
+                                className="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-all duration-300 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md border bg-background dark:bg-input/30 dark:border-input dark:hover:bg-input/50 hover:border-primary/30 h-8 rounded-md gap-1.5 px-3 has-[>svg]:px-2.5 text-destructive hover:text-destructive hover:bg-destructive/10"
+                              >
+                                <Trash2 className="size-4" />
+                              </button>
+                            ) : null}
                           </div>
                         </div>
                       </div>

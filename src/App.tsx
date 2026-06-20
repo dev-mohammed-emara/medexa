@@ -22,6 +22,7 @@ import Doctors from './pages/Doctors'
 import Finance from './pages/Finance'
 import NotFound from './pages/NotFound'
 import Patients from './pages/Patients'
+import PatientDetails from './pages/PatientDetails'
 import Profile from './pages/Profile'
 import Records from './pages/Records'
 import Secretary from './pages/Secretary'
@@ -127,6 +128,7 @@ const AppRoutes = () => {
           </Route>
           <Route element={<RoleProtectedRoute requiredPermissions={['MANAGE_PATIENTS', 'ROLE_CLINIC_OWNER', 'ROLE_ADMIN']} />}>
             <Route path="/patients" element={<Patients />} />
+            <Route path="/patients/:name" element={<PatientDetails />} />
           </Route>
           <Route element={<RoleProtectedRoute requiredPermissions={['MANAGE_APPOINTMENTS', 'ROLE_CLINIC_OWNER', 'ROLE_ADMIN']} />}>
             <Route path="/appointments" element={<Appointments />} />

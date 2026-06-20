@@ -137,6 +137,7 @@ const EmailChangeDialog = ({ isOpen, onClose }: EmailChangeDialogProps) => {
               <Input
                 type="email"
                 required
+                icon={<Mail size={18} />}
                 disabled={loading}
                 placeholder="example@medexa.jo"
                 value={newEmail}

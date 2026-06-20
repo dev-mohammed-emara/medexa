@@ -1,10 +1,9 @@
 import Input from '@/components/ui/Input';
 import Portal from '@/components/ui/Portal';
 import { cn } from '@/utils/cn';
-import { Key, Shield, X as CloseIcon, Check, X, Loader2 } from 'lucide-react';
+import { Key, X as CloseIcon, Check, X, Loader2 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { FaLock } from 'react-icons/fa';
-import { FiEye, FiEyeOff } from 'react-icons/fi';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { profileTranslations } from '@/constants/profile';
 import { getCookie } from '@/utils/cookie';
@@ -25,10 +24,6 @@ const PasswordChangeDialog = ({ isOpen, onClose }: PasswordChangeDialogProps) =>
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
-
-  const [showCurrent, setShowCurrent] = useState(false);
-  const [showNew, setShowNew] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
 
   const passwordCriteria = [
     { label: isAr ? '8 أحرف على الأقل' : '8+ characters', met: newPassword.length >= 8 },
@@ -168,7 +163,7 @@ const PasswordChangeDialog = ({ isOpen, onClose }: PasswordChangeDialogProps) =>
               </label>
               <div className="relative">
                 <Input
-                  type={showCurrent ? "text" : "password"}
+                  type="password"
                   required
                   disabled={loading}
                   icon={<FaLock size={16} />}
@@ -177,13 +172,6 @@ const PasswordChangeDialog = ({ isOpen, onClose }: PasswordChangeDialogProps) =>
                   onChange={(e) => setCurrentPassword(e.target.value)}
                   className="h-11 bg-background border-border focus:border-primary focus:bg-white transition-all duration-300 font-bold"
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowCurrent(!showCurrent)}
-                  className={`absolute ${isAr ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus:outline-none`}
-                >
-                  {showCurrent ? <FiEyeOff size={18} /> : <FiEye size={18} />}
-                </button>
               </div>
             </div>
 
@@ -193,7 +181,7 @@ const PasswordChangeDialog = ({ isOpen, onClose }: PasswordChangeDialogProps) =>
               </label>
               <div className="relative">
                 <Input
-                  type={showNew ? "text" : "password"}
+                  type="password"
                   required
                   disabled={loading}
                   icon={<FaLock size={16} />}
@@ -202,13 +190,6 @@ const PasswordChangeDialog = ({ isOpen, onClose }: PasswordChangeDialogProps) =>
                   onChange={(e) => setNewPassword(e.target.value)}
                   className="h-11 bg-background border-border focus:border-primary focus:bg-white transition-all duration-300 font-bold"
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowNew(!showNew)}
-                  className={`absolute ${isAr ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus:outline-none`}
-                >
-                  {showNew ? <FiEyeOff size={18} /> : <FiEye size={18} />}
-                </button>
               </div>
               {newPassword.length > 0 && (
                 <div className="mt-4 animate-fade">
@@ -250,7 +231,7 @@ const PasswordChangeDialog = ({ isOpen, onClose }: PasswordChangeDialogProps) =>
               </label>
               <div className="relative">
                 <Input
-                  type={showConfirm ? "text" : "password"}
+                  type="password"
                   required
                   disabled={loading}
                   icon={<FaLock size={16} />}
@@ -259,25 +240,11 @@ const PasswordChangeDialog = ({ isOpen, onClose }: PasswordChangeDialogProps) =>
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   className="h-11 bg-background border-border focus:border-primary focus:bg-white transition-all duration-300 font-bold"
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirm(!showConfirm)}
-                  className={`absolute ${isAr ? 'left-3' : 'right-3'} top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus:outline-none`}
-                >
-                  {showConfirm ? <FiEyeOff size={18} /> : <FiEye size={18} />}
-                </button>
               </div>
               <p className="text-xs text-muted-foreground text-start mt-1">{t('profile.password_note', T_PAGE)}</p>
             </div>
 
-            <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-start">
-              <div className="flex gap-2">
-                <Shield size={16} className="text-amber-600 shrink-0" />
-                <p className="text-xs text-amber-800">
-                  {t('profile.security_note', T_PAGE)}
-                </p>
-              </div>
-            </div>
+
 
             <div className="flex gap-3 pt-4">
               <button

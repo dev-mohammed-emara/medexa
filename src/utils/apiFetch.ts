@@ -7,18 +7,48 @@ import { cacheData, getCachedData, broadcastUpdate } from './broadcastCache';
  * - For Mutations (POST, PUT, DELETE, PATCH): It attempts to hit the network, and on success
  *   broadcasts an event so other tabs can be notified of the change.
  */
-export const apiFetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+export const apiFetch = async (input: RequestInfo | URL, init?: RequestInit, enableLogoutOn401: boolean = true): Promise<Response> => {
   const method = (init?.method || 'GET').toUpperCase();
   const isGet = method === 'GET';
   const urlString = typeof input === 'string' ? input : input.toString();
 
   try {
+    if (!isGet) {
+      // Clear any previous backend form errors
+      window.dispatchEvent(new CustomEvent('CLEAR_BACKEND_ERRORS'));
+    }
+
     // Attempt network request
     const response = await fetch(input, init);
 
     // If server fails (5xx error) and it's a GET request, throw to trigger fallback
     if (!response.ok && response.status >= 500 && isGet) {
       throw new Error(`Server failed with status ${response.status}`);
+    }
+
+    // Intercept 401 Unauthorized to clear session and redirect to login
+    if (response.status === 401 && enableLogoutOn401) {
+      document.cookie = "token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=Strict";
+      document.cookie = "refreshToken=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=Strict";
+      localStorage.removeItem('token');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('medexa_user');
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
+      return response;
+    }
+
+    // Intercept 400 Bad Request to dispatch validation errors to UI components globally
+    if (!response.ok && response.status === 400) {
+      try {
+        const clone = response.clone();
+        const errorData = await clone.json();
+        // Fire custom event with the error data
+        window.dispatchEvent(new CustomEvent('BACKEND_VALIDATION_ERROR', { detail: errorData }));
+      } catch (e) {
+        // ignore JSON parse error
+      }
     }
 
     // If successful and it's a GET request, cache the JSON payload

@@ -46,7 +46,7 @@ import { useAuth } from '../../contexts/AuthContext';
 const AppointmentsList = () => {
   const { isAr, t } = useLanguage();
   const { user } = useAuth();
-  const hasManageMedicalRecords = user?.permissions?.includes('MANAGE_MEDICAL_RECORDS') || user?.role === 'ROLE_CLINIC_OWNER';
+  const hasManageMedicalRecords = user?.permissions?.includes('MANAGE_MEDICAL_RECORDS') || user?.role === 'ROLE_CLINIC_OWNER' || user?.role === 'ROLE_DOCTOR' || user?.roles?.includes('ROLE_DOCTOR');
   const T = appointmentsTranslations;
   const currentLocale = isAr ? ar : enUS;
   const { isLoaded, isExiting } = usePreloader();

@@ -6,7 +6,7 @@ import { Clock, DollarSign, Phone, Plus, Stethoscope, User, X, Check } from 'luc
 import { TbCancel } from 'react-icons/tb';
 import { FaCalendarAlt } from 'react-icons/fa';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import Flatpickr from "react-flatpickr";
+import { DatePicker } from '../../components/ui/DatePicker';
 import { Button } from '../../components/ui/Button';
 import ScrollLockWrapper from '../../components/ui/ScrollLockWrapper';
 import {
@@ -536,7 +536,7 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, onC
                   <div className="flex flex-col gap-2">
                     <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.date', T)} <span className="text-destructive">*</span></label>
                     <div className={cn("relative group flex items-center justify-between h-12 bg-input-background border border-border rounded-xl px-4 focus-within:ring-4 focus-within:ring-primary/10 transition-all", isAr ? "flex-row" : "flex-row-reverse")}>
-                      <Flatpickr
+                      <DatePicker
                         value={parseLocalDate(selectedDate)}
                         onChange={([date]) => setSelectedDate(date ? format(date, 'yyyy-MM-dd') : '')}
                         options={{
@@ -655,7 +655,7 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, onC
                   <div className="flex flex-col gap-2">
                     <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.date', T)}</label>
                     <div className={cn("relative group flex items-center justify-between h-12 bg-input-background border border-border rounded-xl px-4 focus-within:ring-4 focus-within:ring-primary/10 transition-all", isAr ? "flex-row" : "flex-row-reverse")}>
-                      <Flatpickr
+                      <DatePicker
                         value={parseLocalDate(selectedDate)}
                         onChange={([date]) => setSelectedDate(date ? format(date, 'yyyy-MM-dd') : '')}
                         options={{

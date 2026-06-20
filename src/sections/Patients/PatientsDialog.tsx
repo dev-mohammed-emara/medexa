@@ -2,10 +2,10 @@ import { format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import "flatpickr/dist/flatpickr.css";
 import { Arabic } from "flatpickr/dist/l10n/ar.js";
-import { FileText, MapPin, Phone, Plus, Printer, Save, User, X } from 'lucide-react';
+import { FileText, MapPin, Phone, Plus, Save, User, X } from 'lucide-react';
 import { FaCalendarAlt } from 'react-icons/fa';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import Flatpickr from "react-flatpickr";
+import { DatePicker } from '../../components/ui/DatePicker';
 import { Button } from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import ScrollLockWrapper from '../../components/ui/ScrollLockWrapper';
@@ -25,11 +25,13 @@ import { enUS } from 'date-fns/locale';
 import { createPatient, updatePatient } from '../../api/patientApi';
 import type { ApiPatient } from '../../api/patientApi';
 
+import { formatPhoneForPayload, formatPhoneForDisplay } from '../../utils/phone';
+
 interface PatientsDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: (data: ApiPatient) => void;
-  mode: 'add' | 'edit' | 'view';
+  mode: 'add' | 'edit';
   initialData?: ApiPatient | null;
 }
 
@@ -81,33 +83,18 @@ const PatientsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Patie
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (mode === 'view') {
-      handleClose();
-      return;
-    }
 
     setLoading(true);
     try {
       const formData = new FormData(e.target as HTMLFormElement);
       const formDataObj = Object.fromEntries(formData.entries());
 
-      const formatPhone = (phoneStr: string) => {
-        let cleaned = phoneStr.trim().replace(/[\s\-\(\)]/g, '');
-        if (cleaned.startsWith('00')) {
-          cleaned = '+' + cleaned.substring(2);
-        }
-        if (!cleaned.startsWith('+')) {
-          cleaned = '+' + cleaned;
-        }
-        return cleaned;
-      };
-
       // Construct API payload
       const bodyPayload = {
         firstName: String(formDataObj.firstName),
         surName: String(formDataObj.surName),
         lastName: String(formDataObj.lastName),
-        phoneNumber: formatPhone(String(formDataObj.phoneNumber)),
+        phoneNumber: formatPhoneForPayload(String(formDataObj.phoneNumber)),
         gender: selectedGender || 'MALE',
         dateOfBirth: selectedDob || '1990-01-01',
         address: String(formDataObj.address || ''),
@@ -143,13 +130,11 @@ const PatientsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Patie
 
   const titles = {
     add: t('dialog.title_add', T),
-    edit: t('dialog.title_edit', T),
-    view: t('dialog.title_view', T)
+    edit: t('dialog.title_edit', T)
   };
   const descriptions = {
     add: t('dialog.desc_add', T),
-    edit: t('dialog.desc_edit', T),
-    view: t('dialog.desc_view', T)
+    edit: t('dialog.desc_edit', T)
   };
 
   return (
@@ -189,150 +174,104 @@ const PatientsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Patie
           </header>
 
           <ScrollLockWrapper className="z-500 overflow-visible overflow-y-auto pr-1 no-scrollbar">
-            <form id="patientForm" onSubmit={handleSubmit} className="py-2" autoComplete="off">
-              <article className="space-y-6">
-                {/* Name Fields - Three Columns */}
-                <div className="grid grid-cols-1 md:grid-cols-2  lg:grid-cols-3 gap-4">
-                  <div className="flex flex-col gap-2">
-                    <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.first_name', T)}</label>
-                    <Input
-                      name="firstName"
-                      defaultValue={initialData?.firstName}
-                      required
-                      disabled={mode === 'view'}
-                      placeholder={t('dialog.first_name_placeholder', T)}
-                      icon={<User size={18} />}
-                      className="font-bold rounded-xl h-12"
-                      dir={isAr ? "rtl" : "ltr"}
-                    />
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.surname', T)}</label>
-                    <Input
-                      name="surName"
-                      defaultValue={initialData?.surName}
-                      required
-                      disabled={mode === 'view'}
-                      placeholder={t('dialog.surname_placeholder', T)}
-                      icon={<User size={18} />}
-                      className="font-bold rounded-xl h-12"
-                      dir={isAr ? "rtl" : "ltr"}
-                    />
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.last_name', T)}</label>
-                    <Input
-                      name="lastName"
-                      defaultValue={initialData?.lastName}
-                      required
-                      disabled={mode === 'view'}
-                      placeholder={t('dialog.last_name_placeholder', T)}
-                      icon={<User size={18} />}
-                      className="font-bold rounded-xl h-12"
-                      dir={isAr ? "rtl" : "ltr"}
-                    />
-                  </div>
+            <form id="patientForm" onSubmit={handleSubmit} className="flex flex-col gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Input
+                  name="firstName"
+                  defaultValue={initialData?.firstName}
+                  required
+                  placeholder={t('dialog.first_name_placeholder', T)}
+                  icon={<User size={18} />}
+                  className="font-bold rounded-xl h-12"
+                  dir={isAr ? "rtl" : "ltr"}
+                />
+                <Input
+                  name="surName"
+                  defaultValue={initialData?.surName}
+                  required
+                  placeholder={t('dialog.surname_placeholder', T)}
+                  icon={<User size={18} />}
+                  className="font-bold rounded-xl h-12"
+                  dir={isAr ? "rtl" : "ltr"}
+                />
+                <Input
+                  name="lastName"
+                  defaultValue={initialData?.lastName}
+                  required
+                  placeholder={t('dialog.last_name_placeholder', T)}
+                  icon={<User size={18} />}
+                  className="font-bold rounded-xl h-12"
+                  dir={isAr ? "rtl" : "ltr"}
+                />
+                <div className="relative">
+                  <Input
+                    name="phoneNumber"
+                    defaultValue={formatPhoneForDisplay(initialData?.phoneNumber || "")}
+                    required
+                    placeholder="9627XXXXXXXX"
+                    dir="ltr"
+                    icon={<Phone size={18} />}
+                    className="font-bold rounded-xl h-12"
+                  />
+                  <p className="text-[11px] text-[#0B5A8E] mt-0.5 leading-relaxed font-semibold">
+                    {isAr
+                      ? "* يرجى إدخال رقم هاتف أردني صحيح (مثال: 962791234567)"
+                      : "* Please enter a valid Jordanian phone number (e.g. 962791234567)"
+                    }
+                  </p>
                 </div>
-
-                <div className="flex flex-col xs:grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Phone */}
-                  <div className="flex flex-col gap-2">
-                    <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.phone', T)}</label>
-                    <Input
-                      name="phoneNumber"
-                      defaultValue={initialData?.phoneNumber || ""}
-                      required
-                      disabled={mode === 'view'}
-                      placeholder="9627XXXXXXXX"
-                      dir="ltr"
-                      icon={<Phone size={18} />}
-                      className="font-bold rounded-xl h-12"
-                    />
-                    {mode !== 'view' && (
-                      <p className="text-[11px] text-[#0B5A8E] mt-0.5 leading-relaxed font-semibold">
-                        {isAr
-                          ? "* يرجى إدخال رقم هاتف أردني صحيح (مثال: 962791234567)"
-                          : "* Please enter a valid Jordanian phone number (e.g. 962791234567)"
-                        }
-                      </p>
+                <Select value={selectedGender} onValueChange={setSelectedGender} >
+                  <SelectTrigger className={cn("rounded-xl h-12 bg-input-background transition-all focus:ring-4 focus:ring-primary/10", (selectedGender) && "text-foreground font-bold")}>
+                    <SelectValue placeholder={t('dialog.gender', T)} />
+                  </SelectTrigger>
+                  <SelectContent className={cn("rounded-xl z-600", isAr ? "text-right" : "text-left")}>
+                    <SelectItem value="MALE">{t('dialog.male', T)}</SelectItem>
+                    <SelectItem value="FEMALE">{t('dialog.female', T)}</SelectItem>
+                  </SelectContent>
+                </Select>
+                <DatePicker
+                  value={selectedDob}
+                  onChange={([date]) => setSelectedDob(date ? date.toISOString().split('T')[0] : '')}
+                  options={{
+                    locale: isAr ? Arabic : undefined,
+                    dateFormat: "d F Y",
+                    disableMobile: true,
+                    maxDate: "today",
+                    formatDate: (date: Date) => format(date, "d MMMM yyyy", { locale: currentLocale })
+                  }}
+                  placeholder={t('dialog.dob', T)}
+                  icon={<FaCalendarAlt size={18} />}
+                  className={cn(
+                    "w-full font-bold",
+                    isAr ? "text-right" : "text-left",
+                    loading && "opacity-50 cursor-not-allowed"
+                  )}
+                />
+                <div className="col-span-1 md:col-span-2">
+                  <Input
+                    name="address"
+                    defaultValue={initialData?.address}
+                    placeholder={t('dialog.address', T)}
+                    icon={<MapPin size={18} />}
+                    className="font-bold rounded-xl h-12"
+                    dir={isAr ? "rtl" : "ltr"}
+                  />
+                </div>
+                <div className="col-span-1 md:col-span-2 relative group">
+                  <textarea
+                    name="note"
+                    defaultValue={initialData?.note}
+                    className={cn(
+                      "w-full min-h-24 p-4 rounded-xl border border-border bg-input-background text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all resize-none disabled:opacity-50 placeholder:text-muted-foreground font-bold",
+                      isAr ? "pr-12" : "pl-12"
                     )}
-                  </div>
-
-                  {/* Gender */}
-                  <div className="flex flex-col gap-2">
-                    <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.gender', T)}</label>
-                    <Select value={selectedGender} onValueChange={setSelectedGender} disabled={mode === 'view'}>
-                      <SelectTrigger className={cn("rounded-xl h-12 bg-input-background transition-all focus:ring-4 focus:ring-primary/10", (selectedGender) && "text-foreground font-bold")}>
-                        <SelectValue placeholder={t('dialog.gender', T)} />
-                      </SelectTrigger>
-                      <SelectContent className={cn("rounded-xl z-600", isAr ? "text-right" : "text-left")}>
-                        <SelectItem value="MALE">{t('dialog.male', T)}</SelectItem>
-                        <SelectItem value="FEMALE">{t('dialog.female', T)}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* DOB */}
-                  <div className="flex flex-col gap-2">
-                    <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.dob', T)}</label>
-                    <div className={cn("relative group flex items-center justify-between h-12 bg-input-background border border-border rounded-xl px-4 transition-all focus-within:ring-4 focus-within:ring-primary/10", isAr ? "flex-row" : "flex-row-reverse")}>
-                      <Flatpickr
-                        value={selectedDob}
-                        onChange={([date]) => setSelectedDob(date ? date.toISOString().split('T')[0] : '')}
-                        disabled={mode === 'view'}
-                        options={{
-                          locale: isAr ? Arabic : undefined,
-                          dateFormat: "d F Y",
-                          disableMobile: true,
-                          maxDate: "today",
-                          formatDate: (date: Date) => format(date, "d MMMM yyyy", { locale: currentLocale })
-                        }}
-                        placeholder={t('dialog.dob', T)}
-                        className={cn(
-                          "flex-1 bg-transparent border-none outline-none font-bold h-full text-base md:text-sm",
-                          isAr ? "text-right" : "text-left",
-                          (mode === 'view' || loading) && "opacity-50 cursor-not-allowed"
-                        )}
-                      />
-                      <FaCalendarAlt className="text-muted-foreground pointer-events-none group-focus-within:text-primary transition-colors size-[18px]" />
-                    </div>
-                  </div>
-
-                  {/* Address */}
-                  <div className="flex flex-col gap-2">
-                    <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.address', T)}</label>
-                    <Input
-                      name="address"
-                      defaultValue={initialData?.address}
-                      disabled={mode === 'view'}
-                      placeholder={t('dialog.address', T)}
-                      icon={<MapPin size={18} />}
-                      className="font-bold rounded-xl h-12"
-                      dir={isAr ? "rtl" : "ltr"}
-                    />
-                  </div>
-
-                  {/* Notes */}
-                  <div className="flex flex-col gap-2 col-span-2">
-                    <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.notes', T)}</label>
-                    <div className="relative group">
-                      <textarea
-                        name="note"
-                        defaultValue={initialData?.note}
-                        disabled={mode === 'view'}
-                        className={cn(
-                          "w-full min-h-24 p-4 rounded-xl border border-border bg-input-background text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all resize-none disabled:opacity-50 placeholder:text-muted-foreground font-bold",
-                          isAr ? "pr-12" : "pl-12"
-                        )}
-                        placeholder={t('dialog.notes', T)}
-                        rows={3}
-                        dir={isAr ? "rtl" : "ltr"}
-                      />
-                      <FileText className={cn("absolute top-4 text-muted-foreground pointer-events-none group-focus-within:text-primary transition-colors size-[18px]", isAr ? "right-4" : "left-4")} />
-                    </div>
-                  </div>
+                    placeholder={t('dialog.notes', T)}
+                    rows={3}
+                    dir={isAr ? "rtl" : "ltr"}
+                  />
+                  <FileText className={cn("absolute top-4 text-muted-foreground pointer-events-none group-focus-within:text-primary transition-colors size-[18px]", isAr ? "right-4" : "left-4")} />
                 </div>
-              </article>
+              </div>
             </form>
           </ScrollLockWrapper>
 
@@ -366,21 +305,6 @@ const PatientsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Patie
                   className="flex-1 h-12 rounded-xl text-base"
                 >
                   {t('cancel', T)}
-                </Button>
-              </>
-            )}
-            {mode === 'view' && (
-              <>
-                <Button type="button" onClick={() => window.print()} className="flex-1 h-12 rounded-xl text-base shadow-lg shadow-primary/20">
-                  <Printer size={20} className={isAr ? "ml-2" : "mr-2"} /> {t('dialog.print', T) || 'طباعة'}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleClose}
-                  className="flex-1 h-12 rounded-xl text-base"
-                >
-                  {t('dialog.close', T)}
                 </Button>
               </>
             )}

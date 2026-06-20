@@ -14,7 +14,6 @@ import { navTranslations } from '../../constants/nav';
 import { Switch } from '../../components/ui/Switch';
 import { cn } from '../../utils/cn';
 import Modal from '../../components/ui/Modal';
-import TimePicker from '../../components/ui/TimePicker';
 import { getCookie } from '../../utils/cookie';
 import Input from '../../components/ui/Input';
 import {
@@ -76,6 +75,9 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
   const [appointmentPeriod, setAppointmentPeriod] = useState(30);
   const [days, setDays] = useState<WorkingDay[]>(INITIAL_DAYS);
 
+  const [isEditingSchedule, setIsEditingSchedule] = useState(false);
+  const [scheduleErrors, setScheduleErrors] = useState<Record<string, string[]>>({});
+
   const [savedCurrency, setSavedCurrency] = useState('JOD');
   const [savedLanguage, setSavedLanguage] = useState(language);
   const [savedAppointmentPeriod, setSavedAppointmentPeriod] = useState(30);
@@ -120,6 +122,8 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
   }, [activeTab]);
 
   useEffect(() => {
+    setIsEditingSchedule(false);
+    setScheduleErrors({});
     const loadSchedule = async () => {
       try {
         const token = getCookie('token');
@@ -170,6 +174,7 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
   // Animations are handled via Tailwind classes to match Appointments page style
 
   const toggleDay = (id: string) => {
+    setScheduleErrors({});
     setDays(prev => prev.map(day => {
       if (day.id === id) {
         const newState = !day.isActive;
@@ -184,6 +189,7 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
   };
 
   const addPeriod = (dayId: string) => {
+    setScheduleErrors({});
     setDays(prev => prev.map(day => {
       if (day.id === dayId) {
         const lastPeriod = day.periods[day.periods.length - 1];
@@ -208,6 +214,7 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
   };
 
   const removePeriod = (dayId: string, periodId: string) => {
+    setScheduleErrors({});
     setDays(prev => prev.map(day => {
       if (day.id === dayId) {
         return {
@@ -220,6 +227,7 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
   };
 
   const updatePeriod = (dayId: string, periodId: string, field: 'from' | 'to', value: string) => {
+    setScheduleErrors({});
     setDays(prev => prev.map(day => {
       if (day.id === dayId) {
         return {
@@ -272,30 +280,8 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
     }
   };
 
-  const handleSaveDaySchedule = async (dayId: string) => {
-    const day = days.find(d => d.id === dayId);
-    if (day) {
-      const seen = new Set<string>();
-      let hasDuplicates = false;
-      for (const p of day.periods) {
-        const key = `${p.from}-${p.to}`;
-        if (seen.has(key)) {
-          hasDuplicates = true;
-          break;
-        }
-        seen.add(key);
-      }
-      if (hasDuplicates) {
-        window.showToast(
-          isAr
-            ? 'لا يمكن إضافة فترات عمل متطابقة لنفس اليوم'
-            : 'Cannot have identical working periods on the same day',
-          'info'
-        );
-        return;
-      }
-    }
-
+  const handleSaveSchedule = async () => {
+    setScheduleErrors({});
     const token = getCookie('token');
     const headers = {
       'Content-Type': 'application/json',
@@ -325,23 +311,46 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
 
       if (response.ok) {
         const data = await response.json();
-        setDays(prev => prev.map(d => {
-          if (d.id === dayId) {
-            return {
-              ...d,
-              isEditing: false,
-              originalPeriods: JSON.parse(JSON.stringify(d.periods)),
-              originalActive: d.isActive
-            };
-          }
-          return d;
-        }));
+        setDays(prev => prev.map(d => ({
+          ...d,
+          originalPeriods: JSON.parse(JSON.stringify(d.periods)),
+          originalActive: d.isActive
+        })));
+        setIsEditingSchedule(false);
         window.showToast(data.message || t('common.settings_saved'), 'success');
       } else {
         let errMsg = 'Failed to assign clinic schedule';
         try {
           const errData = await response.json();
-          errMsg = errData.message || errData.error || errMsg;
+          if (errData.details && Array.isArray(errData.details)) {
+            const dayErrors: Record<string, string[]> = {};
+            const dayNames = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+            
+            errData.details.forEach((d: any) => {
+              if (d.message) {
+                const foundDay = dayNames.find(dayName => d.message.includes(dayName));
+                if (foundDay) {
+                  const dayId = Object.keys(ID_TO_SERVER_DAY).find(key => ID_TO_SERVER_DAY[key] === foundDay) || foundDay;
+                  if (!dayErrors[dayId]) dayErrors[dayId] = [];
+                  dayErrors[dayId].push(d.message);
+                } else {
+                  if (!dayErrors['GENERAL']) dayErrors['GENERAL'] = [];
+                  dayErrors['GENERAL'].push(d.message);
+                }
+              }
+            });
+
+            if (Object.keys(dayErrors).length > 0) {
+              setScheduleErrors(dayErrors);
+              errMsg = 'Validation failed. Please correct the highlighted days.';
+            } else {
+              errMsg = errData.message || errData.error || errMsg;
+            }
+          } else if (errData.message && errData.message !== "validation failed") {
+            errMsg = errData.message;
+          } else {
+            errMsg = errData.message || errData.error || errMsg;
+          }
         } catch (e) { }
         window.showToast(errMsg, 'error');
       }
@@ -351,18 +360,14 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
     }
   };
 
-  const handleCancelDaySchedule = (dayId: string) => {
-    setDays(prev => prev.map(d => {
-      if (d.id === dayId) {
-        return {
-          ...d,
-          isEditing: false,
-          periods: JSON.parse(JSON.stringify(d.originalPeriods || [])),
-          isActive: d.originalActive ?? false
-        };
-      }
-      return d;
-    }));
+  const handleCancelSchedule = () => {
+    setScheduleErrors({});
+    setDays(prev => prev.map(d => ({
+      ...d,
+      periods: JSON.parse(JSON.stringify(d.originalPeriods || [])),
+      isActive: d.originalActive ?? false
+    })));
+    setIsEditingSchedule(false);
     window.showToast(t('common.settings_canceled'), 'info');
   };
 
@@ -576,6 +581,9 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
                 )}
                 placeholder={isAr ? "بالدقائق" : "in minutes"}
               />
+              <p className={cn("text-[13px] text-muted-foreground font-medium", isAr ? "pr-1" : "pl-1")}>
+                {isAr ? 'متوسط مدة الموعد بالدقائق لحجز المواعيد' : 'Average appointment duration in minutes'}
+              </p>
             </div>
           </div>
 
@@ -590,29 +598,57 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
           "bg-white rounded-xl border border-border p-4 sm:p-8 shadow-sm hover:shadow-md transition-all duration-300 opacity-0",
           canAnimate && "animate-fadeUp animate-delay-400"
         )}>
-          <figure className="flex items-center gap-4 mb-8">
-            <div className="w-14 h-14 bg-accent/10 rounded-2xl flex items-center justify-center shrink-0">
-              <FaCalendarAlt className="size-7 text-accent" />
-            </div>
-            <figcaption>
-              <h3 className="text-xl font-bold">{t('common.working_hours')}</h3>
-              <p className="text-sm text-muted-foreground">{t('settings.working_hours_desc', T_PAGE)}</p>
-            </figcaption>
-          </figure>
+          <div className="flex items-center justify-between mb-8">
+            <figure className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-accent/10 rounded-2xl flex items-center justify-center shrink-0">
+                <FaCalendarAlt className="size-7 text-accent" />
+              </div>
+              <figcaption>
+                <h3 className="text-xl font-bold">{t('common.working_hours')}</h3>
+                <p className="text-sm text-muted-foreground">{t('settings.working_hours_desc', T_PAGE)}</p>
+              </figcaption>
+            </figure>
+            {!isEditingSchedule ? (
+              <button
+                onClick={() => setIsEditingSchedule(true)}
+                className="h-10 px-4 rounded-xl border border-primary/30 text-primary bg-primary/5 hover:bg-primary/10 transition-all font-bold flex items-center gap-2 text-sm shrink-0"
+              >
+                <Pen className="size-4" />
+                {isAr ? 'تعديل الجدول' : 'Modify Schedule'}
+              </button>
+            ) : (
+              <div className="flex gap-2 shrink-0">
+                <button
+                  onClick={handleCancelSchedule}
+                  className="h-10 px-4 rounded-xl border border-border text-foreground bg-white hover:bg-muted transition-all font-bold flex items-center gap-2 text-sm"
+                >
+                  <X className="size-4" />
+                  {t('settings.cancel_changes', T_PAGE)}
+                </button>
+                <button
+                  onClick={handleSaveSchedule}
+                  className="h-10 px-4 rounded-xl bg-primary text-white hover:bg-primary/90 transition-all font-bold flex items-center gap-2 text-sm shadow-lg shadow-primary/20"
+                >
+                  <Check className="size-4" />
+                  {t('settings.save_settings', T_PAGE)}
+                </button>
+              </div>
+            )}
+          </div>
 
-          <div className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {days.map((day) => (
               <div
                 key={day.id}
                 className={cn(
-                  "rounded-2xl border transition-all duration-300 overflow-hidden",
+                  "rounded-2xl border transition-all duration-300 flex flex-col justify-between min-h-[180px]",
                   day.isActive
                     ? "bg-primary/5 border-gray-200"
                     : "bg-destructive/5 border-destructive/20"
                 )}
               >
                 <div className="p-6 flex-wrap flex items-center justify-between gap-6 list-none outline-none">
-                  <div className="flex items-center gap-6">
+                  <div className="flex items-center justify-between w-full gap-6">
                     <div className="min-w-[100px]">
                       <p className="text-lg font-bold">{t(`nav.days.${day.id}`, T_NAV)}</p>
                     </div>
@@ -625,7 +661,7 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
                       >
                         {day.isActive ? t('settings.working_day', T_PAGE) : t('settings.holiday', T_PAGE)}
                       </p>
-                      {day.isEditing && (
+                      {isEditingSchedule && (
                         <Switch
                           checked={day.isActive}
                           onCheckedChange={() => toggleDay(day.id)}
@@ -633,38 +669,6 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
                       )}
                     </div>
                   </div>
-
-                  {!day.isEditing ? (
-                    <button
-                      onClick={() => {
-                        setDays(prev => prev.map(d => {
-                          if (d.id === day.id) {
-                            return {
-                              ...d,
-                              isEditing: true,
-                              originalPeriods: JSON.parse(JSON.stringify(d.periods)),
-                              originalActive: d.isActive
-                            };
-                          }
-                          return d;
-                        }));
-                      }}
-                      className="p-2 text-primary hover:bg-primary/10 rounded-xl transition-all"
-                      aria-label="Edit day schedule"
-                    >
-                      <Pen className="size-4" />
-                    </button>
-                  ) : (
-                    day.isActive && (
-                      <button
-                        onClick={() => addPeriod(day.id)}
-                        className="inline-flex items-center justify-center gap-2 h-9 px-4 rounded-xl border border-primary/30 bg-background text-primary hover:bg-primary/10 transition-all font-bold text-sm"
-                      >
-                        <Plus className="size-4" />
-                        {t('settings.add_period', T_PAGE)}
-                      </button>
-                    )
-                  )}
                 </div>
 
                 <div className="px-6 pb-6 space-y-3">
@@ -675,11 +679,12 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
                           <div className="flex flex-wrap justify-center special:justify-start items-center gap-6 flex-1 ">
                             <div className="flex items-center gap-3">
                               <label className="text-sm font-medium text-muted-foreground">{t('common.from')}</label>
-                              {day.isEditing ? (
-                                <TimePicker
+                              {isEditingSchedule ? (
+                                <input
+                                  type="time"
                                   value={period.from}
-                                  onChange={(val) => updatePeriod(day.id, period.id, 'from', val)}
-                                  className="h-10 xs:h-8 w-full xs:w-37 border-border"
+                                  onChange={(e) => updatePeriod(day.id, period.id, 'from', e.target.value)}
+                                  className="h-10 xs:h-8 w-full border border-muted bg-white shadow-none focus:ring-1 focus:ring-primary rounded-md text-sm outline-none px-2"
                                 />
                               ) : (
                                 <span className="font-bold text-sm text-foreground">{period.from}</span>
@@ -687,18 +692,19 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
                             </div>
                             <div className="flex items-center gap-3">
                               <label className="text-sm font-medium text-muted-foreground">{t('common.to')}</label>
-                              {day.isEditing ? (
-                                <TimePicker
+                              {isEditingSchedule ? (
+                                <input
+                                  type="time"
                                   value={period.to}
-                                  onChange={(val) => updatePeriod(day.id, period.id, 'to', val)}
-                                  className="h-10 xs:h-8 w-full xs:w-37  border-border"
+                                  onChange={(e) => updatePeriod(day.id, period.id, 'to', e.target.value)}
+                                  className="h-10 xs:h-8 w-full border border-muted bg-white shadow-none focus:ring-1 focus:ring-primary rounded-md text-sm outline-none px-2"
                                 />
                               ) : (
                                 <span className="font-bold text-sm text-foreground">{period.to}</span>
                               )}
                             </div>
                           </div>
-                          {day.isEditing && day.periods.length > 1 && (
+                          {isEditingSchedule && day.periods.length > 1 && (
                             <button
                               onClick={() => removePeriod(day.id, period.id)}
                               className="p-2 text-destructive hover:bg-destructive/10 rounded-xl transition-colors"
@@ -708,6 +714,15 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
                           )}
                         </div>
                       ))}
+                      {isEditingSchedule && (
+                        <button
+                          onClick={() => addPeriod(day.id)}
+                          className="w-full inline-flex items-center justify-center gap-2 h-9 px-4 rounded-xl border border-dashed border-primary/30 bg-transparent text-primary hover:bg-primary/5 transition-all font-bold text-sm mt-2"
+                        >
+                          <Plus className="size-4" />
+                          {t('settings.add_period', T_PAGE)}
+                        </button>
+                      )}
                     </>
                   ) : (
                     <div className="text-sm text-destructive italic p-2 bg-destructive/5 rounded-xl border border-dashed border-destructive/10 text-center font-bold">
@@ -715,28 +730,28 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
                     </div>
                   )}
 
-                  {day.isEditing && (
-                    <div className="flex gap-2 justify-end mt-4 pt-4 border-t border-gray-200">
-                      <button
-                        onClick={() => handleCancelDaySchedule(day.id)}
-                        className="h-9 px-4 rounded-xl border border-border font-bold text-xs text-foreground bg-white hover:bg-muted transition-all flex items-center gap-1.5 active:scale-95"
-                      >
-                        <X className="size-3.5" />
-                        {t('settings.cancel_changes', T_PAGE)}
-                      </button>
-                      <button
-                        onClick={() => handleSaveDaySchedule(day.id)}
-                        className="h-9 px-4 rounded-xl bg-primary text-white font-bold hover:bg-primary/90 transition-all flex items-center gap-1.5 active:scale-95 text-xs shadow-md shadow-primary/10"
-                      >
-                        <Check className="size-3.5" />
-                        {t('settings.save_settings', T_PAGE)}
-                      </button>
+                  {scheduleErrors[day.id] && scheduleErrors[day.id].length > 0 && (
+                    <div className="mt-2 flex flex-col gap-1 p-2 bg-destructive/10 border border-destructive/20 rounded-md">
+                      {scheduleErrors[day.id].map((err, i) => (
+                        <p key={i} className="text-xs text-destructive font-bold">{err}</p>
+                      ))}
                     </div>
                   )}
                 </div>
               </div>
             ))}
           </div>
+
+          {scheduleErrors['GENERAL'] && scheduleErrors['GENERAL'].length > 0 && (
+            <div className="col-span-full mt-4 p-4 bg-destructive/10 border border-destructive/20 rounded-xl">
+              <h4 className="text-sm font-bold text-destructive mb-2">Schedule Errors</h4>
+              <ul className="list-disc pl-5 flex flex-col gap-1">
+                {scheduleErrors['GENERAL'].map((err, i) => (
+                  <li key={i} className="text-sm text-destructive font-bold">{err}</li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           <figure className="mt-8 text-center xs:text-start text-pretty flex-wrap gap-4 p-4 xs:p-6 bg-white rounded-2xl border border-gray-200 flex items-center justify-between">
             <div className="flex items-center flex-col xs:flex-row gap-4">

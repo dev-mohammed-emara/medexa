@@ -5,11 +5,10 @@ import { Arabic } from "flatpickr/dist/l10n/ar.js"
 import { Check, Mail, Phone, Plus, Printer, Save, User, X } from 'lucide-react'
 import { FaCalendarAlt } from 'react-icons/fa'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import Flatpickr from "react-flatpickr"
+import { DatePicker } from '../../components/ui/DatePicker';
 import { Button } from '../../components/ui/Button'
 import Input from '../../components/ui/Input'
 import ScrollLockWrapper from '../../components/ui/ScrollLockWrapper'
-import PermissionsFieldset from '../../components/ui/PermissionsFieldset'
 import {
   Select,
   SelectContent,
@@ -24,6 +23,7 @@ import { doctorsTranslations } from '../../constants/translations/doctors'
 import { enUS } from 'date-fns/locale'
 import { createDoctor, updateDoctor } from '../../api/doctorApi'
 import type { ApiDoctor } from '../../api/doctorApi'
+import { formatPhoneForPayload, formatPhoneForDisplay } from '../../utils/phone'
 
 interface DoctorDialogProps {
   isOpen: boolean
@@ -43,7 +43,6 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
   const [selectedSpecialty, setSelectedSpecialty] = useState(initialData?.specialty || "")
   const [selectedGender, setSelectedGender] = useState(initialData?.user?.gender || "")
   const [selectedDob, setSelectedDob] = useState<string>(initialData?.user?.dateOfBirth || "")
-  const [selectedPermissions, setSelectedPermissions] = useState<string[]>(initialData?.user?.permissions || [])
   const [isClosing, setIsClosing] = useState(false)
   const [loading, setLoading] = useState(false)
 
@@ -55,12 +54,10 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
       setSelectedSpecialty(initialData.specialty || "")
       setSelectedGender(initialData.user?.gender || "")
       setSelectedDob(initialData.user?.dateOfBirth || "")
-      setSelectedPermissions(initialData.user?.permissions || [])
     } else {
       setSelectedSpecialty("")
       setSelectedGender("")
       setSelectedDob("")
-      setSelectedPermissions([])
       setPassword("")
     }
   }, [initialData, isOpen])
@@ -100,32 +97,24 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
       const formData = new FormData(e.target as HTMLFormElement)
       const rawData = Object.fromEntries(formData.entries())
 
-      const formatPhone = (phoneStr: string) => {
-        let cleaned = phoneStr.trim().replace(/[\s\-\(\)]/g, '');
-        if (cleaned.startsWith('00')) {
-          cleaned = '+' + cleaned.substring(2);
-        }
-        if (!cleaned.startsWith('+')) {
-          cleaned = '+' + cleaned;
-        }
-        return cleaned;
-      };
-
       // Construct API payload
       const userPayload: any = {
         firstName: String(rawData.firstName),
         surName: String(rawData.surName),
         lastName: String(rawData.lastName),
         email: String(rawData.email),
-        phoneNumber: formatPhone(String(rawData.phoneNumber)),
+        phoneNumber: formatPhoneForPayload(String(rawData.phoneNumber)),
         gender: selectedGender || 'MALE',
         dateOfBirth: selectedDob || '1990-01-01',
-        permissions: [...selectedPermissions]
+        permissions: []
       }
 
       // Password is required for adding new doctor
       if (mode === 'add') {
         userPayload.password = String(rawData.password)
+      } else if (mode === 'edit') {
+        // Do not update email in edit mode
+        delete userPayload.email;
       }
 
       const bodyPayload = {
@@ -252,11 +241,11 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="flex flex-col gap-2">
                   <label htmlFor={inputId('email')} className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.email', T)}</label>
-                  <Input id={inputId('email')} type="email" name="email" defaultValue={initialData?.user?.email} required disabled={mode === 'view'} placeholder={t('dialog.email_placeholder', T)} icon={<Mail size={18} />} className={inputClass} dir="ltr" />
+                  <Input id={inputId('email')} type="email" name="email" defaultValue={initialData?.user?.email} required disabled={mode === 'view' || mode === 'edit'} placeholder={t('dialog.email_placeholder', T)} icon={<Mail size={18} />} className={inputClass} dir="ltr" />
                 </div>
                 <div className="flex flex-col gap-2">
                   <label htmlFor={inputId('phone')} className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.phone', T)}</label>
-                  <Input id={inputId('phone')} name="phoneNumber" defaultValue={initialData?.user?.phoneNumber} required disabled={mode === 'view'} placeholder="9627XXXXXXXX" icon={<Phone size={18} />} className={inputClass} dir="ltr" />
+                  <Input id={inputId('phone')} name="phoneNumber" defaultValue={formatPhoneForDisplay(initialData?.user?.phoneNumber || '')} required disabled={mode === 'view'} placeholder="9627XXXXXXXX" icon={<Phone size={18} />} className={inputClass} dir="ltr" />
                   {mode !== 'view' && (
                     <p className="text-[11px] text-[#0B5A8E] mt-0.5 leading-relaxed font-semibold">
                       {isAr
@@ -327,15 +316,34 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
                         </div>
                       )}
                     </div>
-                  </div>
+                <div className="flex flex-col gap-2">
+                  <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.dob', T)}</label>
+                  <DatePicker
+                    name="dateOfBirth"
+                    required
+                    value={selectedDob}
+                    onChange={([date]) => setSelectedDob(date ? date.toISOString().split('T')[0] : '')}
+                    options={{
+                      locale: isAr ? Arabic : undefined,
+                      dateFormat: "d F Y",
+                      disableMobile: true,
+                      maxDate: "today",
+                      formatDate: (date: Date) => format(date, "d MMMM yyyy", { locale: currentLocale })
+                    }}
+                    placeholder={t('dialog.select_date', T)}
+                    icon={<FaCalendarAlt className="size-4" />}
+                    className={cn(isAr ? "text-right" : "text-left")}
+                  />
+                </div>
+              </div>
                 );
               })()}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="flex flex-col gap-2">
                   <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.specialty', T)}</label>
-                  <Select value={selectedSpecialty} onValueChange={setSelectedSpecialty} disabled={mode === 'view'}>
-                    <SelectTrigger className={cn("rounded-xl h-12 bg-input-background transition-all focus:ring-4 focus:ring-primary/10", (selectedSpecialty) && "text-foreground font-bold")}>
+                  <Select name="specialty" required value={selectedSpecialty} onValueChange={setSelectedSpecialty} disabled={mode === 'view'}>
+                    <SelectTrigger className={cn((selectedSpecialty) && "text-foreground font-bold")}>
                       <SelectValue placeholder={t('dialog.select_specialty', T)} />
                     </SelectTrigger>
                     <SelectContent className={cn("rounded-xl z-600", isAr ? "text-right" : "text-left")}>
@@ -352,8 +360,8 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
                 </div>
                 <div className="flex flex-col gap-2">
                   <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.gender', T)}</label>
-                  <Select value={selectedGender} onValueChange={setSelectedGender} disabled={mode === 'view'}>
-                    <SelectTrigger className={cn("rounded-xl h-12 bg-input-background transition-all focus:ring-4 focus:ring-primary/10", (selectedGender) && "text-foreground font-bold")}>
+                  <Select name="gender" required value={selectedGender} onValueChange={setSelectedGender} disabled={mode === 'view'}>
+                    <SelectTrigger className={cn((selectedGender) && "text-foreground font-bold")}>
                       <SelectValue placeholder={t('dialog.select_gender', T)} />
                     </SelectTrigger>
                     <SelectContent className={cn("rounded-xl z-600", isAr ? "text-right" : "text-left")}>
@@ -363,6 +371,9 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
                   </Select>
                 </div>
               </div>
+
+
+              
 
               <div className="flex flex-col gap-2">
                 <label htmlFor={inputId('description')} className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.description', T)}</label>
@@ -378,37 +389,7 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="flex flex-col gap-2">
-                  <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.dob', T)}</label>
-                  <div className={cn("relative group flex items-center justify-between h-12 bg-input-background border border-border rounded-xl px-4 transition-all focus-within:ring-4 focus-within:ring-primary/10", isAr ? "flex-row" : "flex-row-reverse")}>
-                    <Flatpickr
-                      value={selectedDob}
-                      onChange={([date]) => setSelectedDob(date ? date.toISOString().split('T')[0] : '')}
-                      disabled={mode === 'view'}
-                      options={{
-                        locale: isAr ? Arabic : undefined,
-                        dateFormat: "d F Y",
-                        disableMobile: true,
-                        maxDate: "today",
-                        formatDate: (date: Date) => format(date, "d MMMM yyyy", { locale: currentLocale })
-                      }}
-                      placeholder={t('dialog.select_date', T)}
-                      className={cn("flex-1 bg-transparent border-none outline-none font-bold text-base md:text-sm h-full", isAr ? "text-right" : "text-left", mode === "view" && "opacity-50 pointer-events-none")}
-                    />
-                    <FaCalendarAlt className="text-muted-foreground pointer-events-none group-focus-within:text-primary transition-colors size-4" />
-                  </div>
-                </div>
-              </div>
-
-              <PermissionsFieldset
-                selectedPermissions={selectedPermissions}
-                onChange={setSelectedPermissions}
-                disabled={mode === 'view'}
-                descriptionAr="حدد صلاحيات الوصول والمهمات الموكلة للطبيب/ة"
-                descriptionEn="Select access permissions and assigned tasks for the doctor"
-              />
-
+             
             </form>
           </ScrollLockWrapper>
 

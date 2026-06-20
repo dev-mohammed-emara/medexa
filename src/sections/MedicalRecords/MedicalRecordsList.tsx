@@ -309,7 +309,7 @@ const MedicalRecordsList = () => {
             toDate={tempToDate}
             onFromDateChange={setTempFromDate}
             onToDateChange={setTempToDate}
-            onApply={() => {}}
+            onApply={() => { }}
             showApply={false}
           />
 
@@ -479,13 +479,13 @@ const MedicalRecordsList = () => {
                         <div className="flex gap-2 pt-2">
                           <button
                             onClick={() => handlePrintRecord(record)}
-                            className="inline-flex items-center justify-center whitespace-nowrap text-sm font-bold transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md border bg-background text-foreground hover:bg-accent hover:text-accent-foreground hover:border-primary/30 h-8 rounded-md gap-1.5 px-3 flex-1"
+                            className="inline-flex items-center justify-center whitespace-nowrap text-sm font-bold transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md border bg-background text-foreground hover:bg-accent hover:text-accent-foreground hover:border-primary/30 h-8 rounded-md gap-1.5 px-3 flex-1 min-h-10"
                           >
                             {t('print_record', T)}
                           </button>
                           <button
                             onClick={() => handlePrintRecord(record)}
-                            className="inline-flex items-center justify-center whitespace-nowrap text-sm font-bold transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md border bg-background text-foreground hover:bg-accent hover:text-accent-foreground hover:border-primary/30 h-8 rounded-md gap-1.5 px-3 flex-1"
+                            className="inline-flex items-center justify-center whitespace-nowrap text-sm font-bold transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md border bg-background text-foreground hover:bg-accent hover:text-accent-foreground hover:border-primary/30 h-8 rounded-md gap-1.5 px-3 flex-1 min-h-10"
                           >
                             {t('export_pdf', T)}
                           </button>
@@ -506,6 +506,7 @@ const MedicalRecordsList = () => {
 
         {records.length > 0 && (
           <TableFooter
+            className='w-fit mx-auto'
             variant="list"
             totalItems={totalElements}
             itemsPerPage={itemsPerPage}

@@ -384,13 +384,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const allPermissions = Array.from(new Set([...tokenRoles, ...tokenAuthorities]))
 
         userProfile = {
-          firstName: savedUser?.firstName || "Ahmad",
-          surName: savedUser?.surName || "Mohammed",
-          lastName: savedUser?.lastName || "Almasri",
+          firstName: savedUser?.firstName || "",
+          surName: savedUser?.surName || "",
+          lastName: savedUser?.lastName || "",
           email: decodedToken?.username || email,
-          phoneNumber: savedUser?.phoneNumber || "0791234567",
+          phoneNumber: savedUser?.phoneNumber || "",
           gender: savedUser?.gender || "MALE",
-          dateOfBirth: savedUser?.dateOfBirth || "1985-06-09",
+          dateOfBirth: savedUser?.dateOfBirth || "",
           role: "ROLE_CLINIC_OWNER",
           username: decodedToken?.username,
           sub: decodedToken?.sub,

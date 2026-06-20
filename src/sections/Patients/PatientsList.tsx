@@ -7,6 +7,7 @@ import {
   RotateCcw
 } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
 import { patientsTranslations } from '../../constants/translations/patients';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -41,6 +42,7 @@ const PatientsList = () => {
   const T = patientsTranslations;
   const { isLoaded, isExiting } = usePreloader();
   const canAnimate = isLoaded && !isExiting;
+  const navigate = useNavigate();
 
   // State Management
   const [patients, setPatients] = useState<ApiPatient[]>([]);
@@ -63,7 +65,7 @@ const PatientsList = () => {
 
   // Dialog State
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [dialogMode, setDialogMode] = useState<'add' | 'edit' | 'view'>('add');
+  const [dialogMode, setDialogMode] = useState<'add' | 'edit'>('add');
   const [currentPatient, setCurrentPatient] = useState<ApiPatient | null>(null);
   const [fetchingPatientDetail, setFetchingPatientDetail] = useState(false);
 
@@ -106,7 +108,7 @@ const PatientsList = () => {
     setCurrentPage(1);
   };
 
-  const handleOpenDialog = async (mode: 'add' | 'edit' | 'view', patientUuid?: string) => {
+  const handleOpenDialog = async (mode: 'add' | 'edit', patientUuid?: string) => {
     if (mode === 'add') {
       setDialogMode('add');
       setCurrentPatient(null);
@@ -325,7 +327,7 @@ const PatientsList = () => {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => handleOpenDialog('view', patient.uuid)}
+                                onClick={() => navigate(`/patients/${patient.firstName}-${patient.surName}-${patient.lastName}`, { state: { uuid: patient.uuid } })}
                                 className="hover:bg-primary px-2 hover:text-white transition-all duration-300"
                                 disabled={fetchingPatientDetail}
                               >

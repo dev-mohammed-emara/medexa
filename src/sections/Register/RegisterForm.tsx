@@ -5,7 +5,7 @@ import { Check, X } from 'lucide-react'
 import "flatpickr/dist/flatpickr.css"
 import { Arabic } from "flatpickr/dist/l10n/ar.js"
 import React, { useOptimistic, useState, useTransition } from 'react'
-import Flatpickr from "react-flatpickr"
+import { DatePicker } from '../../components/ui/DatePicker';
 import { FaCalendarAlt } from "react-icons/fa"
 import { FiEye, FiEyeOff } from 'react-icons/fi'
 import { LuBuilding2, LuUser } from 'react-icons/lu'
@@ -22,12 +22,15 @@ import {
 } from "../../components/ui/select"
 
 import { useAuth } from '../../contexts/AuthContext'
+import { useLanguage } from '../../contexts/LanguageContext'
 import { RegisterSchema } from '../../utils/schemas'
 import { usePreloader } from '../../contexts/PreloaderContext'
 import { cn } from '../../utils/cn'
+import { formatPhoneForPayload } from '../../utils/phone'
 
 const RegisterForm = () => {
   const { register } = useAuth()
+  const { isAr } = useLanguage()
   const { isLoaded, isExiting } = usePreloader()
   const canAnimate = isLoaded && !isExiting
   const navigate = useNavigate()
@@ -108,17 +111,6 @@ const RegisterForm = () => {
       return;
     }
 
-    const formatPhone = (phoneStr: string) => {
-      let cleaned = phoneStr.trim().replace(/[\s\-\(\)]/g, '');
-      if (cleaned.startsWith('00')) {
-        cleaned = '+' + cleaned.substring(2);
-      }
-      if (!cleaned.startsWith('+')) {
-        cleaned = '+' + cleaned;
-      }
-      return cleaned;
-    };
-
     // Map fields to register schema structure
     const payload = {
       name: formData.clinicName,
@@ -126,7 +118,7 @@ const RegisterForm = () => {
       country: formData.country,
       city: formData.city,
       address: formData.address,
-      phoneNumber: formatPhone(formData.phone),
+      phoneNumber: formatPhoneForPayload(formData.phone),
       email: formData.clinicEmail,
       settings: {
         defaultCurrency: formData.currency,
@@ -139,7 +131,7 @@ const RegisterForm = () => {
           lastName: formData.lastName,
           email: formData.email,
           password: formData.password,
-          phoneNumber: formatPhone(formData.ownerPhone),
+          phoneNumber: formatPhoneForPayload(formData.ownerPhone),
           gender: (formData.gender === "male" ? "MALE" : "FEMALE") as any,
           dateOfBirth: formData.dob,
           // permissions: ['MANAGE_DOCTORS', 'MANAGE_SECRETARIES', 'MANAGE_TRANSACTIONS']
@@ -227,6 +219,7 @@ const RegisterForm = () => {
               <div>
                 <label className="text-sm font-semibold text-[#1a2b3c] pr-1 block mb-2">التخصص الطبي</label>
                 <Select
+                  name="specialty"
                   onValueChange={(val: string) => setFormData((prev: any) => ({ ...prev, specialty: val }))}
                   value={formData.specialty}
                   required
@@ -307,6 +300,7 @@ const RegisterForm = () => {
               <div>
                 <label className="text-sm font-semibold text-[#1a2b3c] pr-1 block mb-2">العملة الافتراضية</label>
                 <Select
+                  name="currency"
                   onValueChange={(val: string) => setFormData((prev: any) => ({ ...prev, currency: val }))}
                   value={formData.currency}
                   required
@@ -491,11 +485,12 @@ const RegisterForm = () => {
               <div>
                 <label className="text-sm font-semibold text-[#1a2b3c] pr-1 block mb-2">الجنس</label>
                 <Select
+                  name="gender"
                   onValueChange={(val: string) => setFormData((prev: any) => ({ ...prev, gender: val }))}
                   value={formData.gender}
                   required
                 >
-                  <SelectTrigger className="focus:ring-4 focus:ring-primary/10">
+                  <SelectTrigger name="gender" className="focus:ring-4 focus:ring-primary/10">
                     <SelectValue placeholder="اختر الجنس" />
                   </SelectTrigger>
                   <SelectContent className="text-right">
@@ -506,32 +501,33 @@ const RegisterForm = () => {
               </div>
 
               <div>
-                <label className="text-sm font-semibold text-[#1a2b3c] pr-1 block mb-2">تاريخ الميلاد</label>
-                <div className="relative group flex items-center justify-between h-12 bg-input-background border border-border rounded-xl px-4 transition-all focus-within:ring-4 focus-within:ring-primary/10">
-                  <Flatpickr
-                    value={formData.dob}
-                    onChange={([date]) => {
-                      setFormData((prev: any) => ({ ...prev, dob: date ? date.toISOString().split('T')[0] : '' }))
-                    }}
-                    options={{
-                      locale: Arabic,
-                      dateFormat: "d F Y",
-                      disableMobile: true,
-                      maxDate: "today",
-                      formatDate: (date: Date) => {
-                        return format(date, "yyyy-MMMM-dd", { locale: ar });
-                      }
-                    }}
-                    placeholder="dd/mm/yyyy"
-                    className="flex-1 bg-transparent border-none outline-none text-right font-bold h-full text-base md:text-sm"
-                  />
-                  <FaCalendarAlt className="text-muted-foreground pointer-events-none group-focus-within:text-primary transition-colors size-4" />
-                </div>
+                <label className="text-sm font-semibold text-[#1a2b3c] pr-1 block mb-2">{isAr ? "تاريخ الميلاد" : "Date of Birth"}</label>
+                <DatePicker
+                  name="dob"
+                  required
+                  value={formData.dob}
+                  onChange={([date]) => {
+                    setFormData((prev: any) => ({ ...prev, dob: date ? date.toISOString().split('T')[0] : '' }))
+                  }}
+                  options={{
+                    locale: isAr ? Arabic : undefined,
+                    dateFormat: "d F Y",
+                    disableMobile: true,
+                    maxDate: "today",
+                    formatDate: (date: Date) => {
+                      return format(date, "yyyy-MMMM-dd", { locale: isAr ? ar : undefined });
+                    }
+                  }}
+                  placeholder="dd/mm/yyyy"
+                  icon={<FaCalendarAlt className="size-4" />}
+                  className={isAr ? "text-right" : "text-left"}
+                />
               </div>
 
               <div>
                 <label className="text-sm font-semibold text-[#1a2b3c] pr-1 block mb-2">التخصص الطبي للمالك</label>
                 <Select
+                  name="ownerSpecialty"
                   onValueChange={(val: string) => setFormData((prev: any) => ({ ...prev, ownerSpecialty: val }))}
                   value={formData.ownerSpecialty}
                   required

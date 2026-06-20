@@ -5,12 +5,11 @@ import { Arabic } from "flatpickr/dist/l10n/ar.js"
 import { Check, Mail, Phone, Plus, Save, User, X } from 'lucide-react'
 import { FaCalendarAlt } from 'react-icons/fa'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import Flatpickr from "react-flatpickr"
+import { DatePicker } from '../../components/ui/DatePicker';
 import { cn } from '../../utils/cn'
 import { Button } from '../../components/ui/Button'
 import Input from '../../components/ui/Input'
 import ScrollLockWrapper from '../../components/ui/ScrollLockWrapper'
-import PermissionsFieldset from '../../components/ui/PermissionsFieldset'
 import {
   Select,
   SelectContent,
@@ -25,6 +24,7 @@ import { useBroadcast } from '../../hooks/useBroadcast'
 import { enUS } from 'date-fns/locale'
 import { createSecretary, updateSecretary } from '../../api/secretaryApi'
 import type { ApiSecretary } from '../../api/secretaryApi'
+import { formatPhoneForPayload, formatPhoneForDisplay } from '../../utils/phone'
 
 interface SecretaryDialogProps {
   isOpen: boolean;
@@ -44,7 +44,6 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
 
   const [selectedGender, setSelectedGender] = useState(initialData?.user?.gender || "");
   const [selectedDob, setSelectedDob] = useState<string>(initialData?.user?.dateOfBirth || "");
-  const [selectedPermissions, setSelectedPermissions] = useState<string[]>(initialData?.user?.permissions || []);
   const [isClosing, setIsClosing] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -55,11 +54,9 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
     if (initialData) {
       setSelectedGender(initialData.user?.gender || "");
       setSelectedDob(initialData.user?.dateOfBirth || "");
-      setSelectedPermissions(initialData.user?.permissions || []);
     } else {
       setSelectedGender("");
       setSelectedDob("");
-      setSelectedPermissions([]);
       setPassword("");
     }
   }, [initialData, isOpen]);
@@ -98,28 +95,17 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
       const formData = new FormData(e.target as HTMLFormElement);
       const formDataObj = Object.fromEntries(formData.entries());
 
-      const formatPhone = (phoneStr: string) => {
-        let cleaned = phoneStr.trim().replace(/[\s\-\(\)]/g, '');
-        if (cleaned.startsWith('00')) {
-          cleaned = '+' + cleaned.substring(2);
-        }
-        if (!cleaned.startsWith('+')) {
-          cleaned = '+' + cleaned;
-        }
-        return cleaned;
-      };
-
       // Construct API payload
       const userPayload: any = {
         firstName: String(formDataObj.firstName),
         surName: String(formDataObj.surName),
         lastName: String(formDataObj.lastName),
         email: String(formDataObj.email),
-        phoneNumber: formatPhone(String(formDataObj.phoneNumber)),
-        gender: selectedGender || 'FEMALE',
+        phoneNumber: formatPhoneForPayload(String(formDataObj.phoneNumber)),
+        gender: selectedGender || 'MALE',
         dateOfBirth: selectedDob || '1990-01-01',
-        permissions: [...selectedPermissions]
-      }
+        permissions: []
+      };
 
       // Password is required for adding new secretary
       if (mode === 'add') {
@@ -277,7 +263,7 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
                   <Input
                     id={inputId('phone')}
                     name="phoneNumber"
-                    defaultValue={initialData?.user?.phoneNumber}
+                    defaultValue={formatPhoneForDisplay(initialData?.user?.phoneNumber || '')}
                     required
                     disabled={mode === 'view'}
                     placeholder="9627XXXXXXXX"
@@ -364,8 +350,8 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
                 {/* Gender */}
                 <div className="flex flex-col gap-2 text-start">
                   <label className="text-sm font-semibold text-foreground/80 pr-1">{t('gender', T)}</label>
-                  <Select value={selectedGender} onValueChange={setSelectedGender} disabled={mode === 'view'}>
-                    <SelectTrigger className={cn("rounded-xl h-12 bg-input-background transition-all focus:ring-4 focus:ring-primary/10", (selectedGender) && "text-foreground font-bold")}>
+                  <Select name="gender" required value={selectedGender} onValueChange={setSelectedGender} disabled={mode === 'view'}>
+                    <SelectTrigger className={cn((selectedGender) && "text-foreground font-bold")}>
                       <SelectValue placeholder={t('choose_gender', T)} />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl z-[600]" dir={isAr ? "rtl" : "ltr"}>
@@ -377,35 +363,26 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
 
                 {/* DOB Pickr */}
                 <div className="flex flex-col gap-2 text-start">
-                  <label className="text-sm font-semibold text-foreground/80 pr-1">{t('dob', T)}</label>
-                  <div className={cn("relative group flex items-center justify-between h-12 bg-input-background border border-border rounded-xl px-4 transition-all focus-within:ring-4 focus-within:ring-primary/10", isAr ? "flex-row" : "flex-row-reverse")}>
-                    <Flatpickr
-                      value={selectedDob}
-                      onChange={([date]) => setSelectedDob(date ? date.toISOString().split('T')[0] : '')}
-                      disabled={mode === 'view'}
-                      options={{
-                        locale: isAr ? Arabic : undefined,
-                        dateFormat: "d F Y",
-                        disableMobile: true,
-                        maxDate: "today",
-                        formatDate: (date: Date) => format(date, "d MMMM yyyy", { locale: currentLocale })
-                      }}
-                      placeholder={t('select_date', T)}
-                      className={cn("flex-1 bg-transparent border-none outline-none font-bold text-base md:text-sm h-full", isAr ? "text-right" : "text-left", mode === "view" && "opacity-50 pointer-events-none")}
-                    />
-                    <FaCalendarAlt className="text-muted-foreground pointer-events-none group-focus-within:text-primary transition-colors size-4" />
-                  </div>
+                  <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dob', T)}</label>
+                  <DatePicker
+                    name="dateOfBirth"
+                    required
+                    value={selectedDob}
+                    onChange={([date]) => setSelectedDob(date ? date.toISOString().split('T')[0] : '')}
+                    disabled={mode === 'view'}
+                    options={{
+                      locale: isAr ? Arabic : undefined,
+                      dateFormat: "d F Y",
+                      disableMobile: true,
+                      maxDate: "today",
+                      formatDate: (date: Date) => format(date, "d MMMM yyyy", { locale: currentLocale })
+                    }}
+                    placeholder={t('select_date', T)}
+                    icon={<FaCalendarAlt className="size-4" />}
+                    className={cn(isAr ? "text-right" : "text-left", mode === "view" && "opacity-50 pointer-events-none")}
+                  />
                 </div>
               </div>
-
-              <PermissionsFieldset
-                selectedPermissions={selectedPermissions}
-                onChange={setSelectedPermissions}
-                disabled={mode === 'view'}
-                descriptionAr="حدد صلاحيات الوصول والمهمات الموكلة للسكرتيرة"
-                descriptionEn="Select access permissions and assigned tasks for the secretary"
-              />
-
             </form>
           </ScrollLockWrapper>
 

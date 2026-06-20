@@ -1,7 +1,7 @@
 import { useMemo } from "react"
 import "flatpickr/dist/flatpickr.css"
 import { Arabic } from "flatpickr/dist/l10n/ar.js"
-import Flatpickr from "react-flatpickr"
+import { DatePicker } from './DatePicker';
 import { FaCalendarAlt } from "react-icons/fa"
 import { useLanguage } from "../../contexts/LanguageContext"
 import { format } from 'date-fns'
@@ -72,7 +72,7 @@ export const DateFromTo = ({
           {isAr ? "من تاريخ" : "From Date"}
         </label>
         <div className="relative group flex items-center justify-between h-11 bg-white border border-border rounded-xl px-4 transition-all focus-within:ring-4 focus-within:ring-primary/10">
-          <Flatpickr
+          <DatePicker
             key={`from-date-${fromDate}`} // Forces re-render on value update to sync min/max boundaries
             id="from-date-flatpickr"
             value={fromDateObj}
@@ -97,7 +97,7 @@ export const DateFromTo = ({
           {isAr ? "إلى تاريخ" : "To Date"}
         </label>
         <div className="relative group flex items-center justify-between h-11 bg-white border border-border rounded-xl px-4 transition-all focus-within:ring-4 focus-within:ring-primary/10">
-          <Flatpickr
+          <DatePicker
             key={`to-date-${toDate}`} // Forces re-render on value update to sync min/max boundaries
             id="to-date-flatpickr"
             value={toDateObj}

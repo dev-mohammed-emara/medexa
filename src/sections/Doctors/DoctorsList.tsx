@@ -271,7 +271,7 @@ const DoctorsList = () => {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               icon={<Search size={18} />}
-              className="rounded-xl h-11"
+              className="rounded-xl h-11 placeholder:text-xs"
               dir={isAr ? "rtl" : "ltr"}
             />
           </div>
@@ -449,10 +449,14 @@ const DoctorsList = () => {
                               {t('edit', T)}
                             </button>
                             {doctor.user?.email === currentUser?.email ? (
-                              <span className="inline-flex items-center justify-center px-3 rounded-lg bg-primary/10 text-primary text-xs font-bold whitespace-nowrap self-center h-8">
+                              <button
+                                type="button"
+                                onClick={() => window.showToast?.(isAr ? 'هذا أنت، لا يمكنك إلغاء تعيين نفسك' : 'That is you, you cannot unassign yourself', 'error')}
+                                className="inline-flex items-center justify-center px-3 rounded-md bg-primary/10 text-primary text-xs font-bold whitespace-nowrap self-center h-8 hover:bg-primary/20 transition-colors"
+                              >
                                 {isAr ? "أنت" : "You"}
-                              </span>
-                            ) : (
+                              </button>
+                            ) : doctor.user?.status !== 'INACTIVE' ? (
                               <button
                                 onClick={() => handleDeleteClick(doctor)}
                                 disabled={fetchingDoctorDetail || deleting}
@@ -460,7 +464,7 @@ const DoctorsList = () => {
                               >
                                 <Trash2 className="size-4" />
                               </button>
-                            )}
+                            ) : null}
                           </div>
                         </div>
                       </div>

@@ -46,6 +46,7 @@ export const patientsTranslations = {
       other: "غير محدد",
       save: "حفظ التغييرات",
       add: "إضافة مريض",
+      print: "طباعة",
       close: "إغلاق"
     }
   },
@@ -95,6 +96,7 @@ export const patientsTranslations = {
       other: "Unspecified",
       save: "Save Changes",
       add: "Add Patient",
+      print: "Print",
       close: "Close"
     }
   }

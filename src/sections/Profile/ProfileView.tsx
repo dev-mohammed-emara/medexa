@@ -10,7 +10,6 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/Switch';
-import TimePicker from '@/components/ui/TimePicker';
 import { profileTranslations } from '@/constants/profile';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -34,7 +33,7 @@ import {
   X
 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
-import Flatpickr from "react-flatpickr";
+import { DatePicker } from '../../components/ui/DatePicker';
 import { FaCalendarAlt } from 'react-icons/fa';
 import { useSearchParams } from 'react-router-dom';
 import SettingsView from '../Settings/SettingsView';
@@ -42,6 +41,7 @@ import EmailChangeDialog from './EmailChangeDialog';
 import PasswordChangeDialog from './PasswordChangeDialog';
 import { getCookie } from '@/utils/cookie';
 import { format } from 'date-fns';
+import { formatPhoneForPayload, formatPhoneForDisplay } from '@/utils/phone';
 
 const DAY_MAPPING: { [key: string]: { labelKey: string, index: number } } = {
   SUNDAY: { labelKey: 'profile.sunday', index: 0 },
@@ -116,7 +116,7 @@ const ProfileView = () => {
           summary: (!isSecretary && data.summary) || '',
           defaultAppointmentPeriod: (!isSecretary && (data.defaultAppointmentPeriod || 30).toString()) || '30'
         });
-        setPersonalPhone(data.user.phoneNumber || '');
+        setPersonalPhone(formatPhoneForDisplay(data.user.phoneNumber || ''));
 
         updateUser({
           uuid: data.uuid || '',
@@ -149,7 +149,7 @@ const ProfileView = () => {
         gender: user.gender || 'MALE',
         dateOfBirth: user.dateOfBirth || ''
       }));
-      if (!personalPhone) setPersonalPhone(user.phoneNumber || '');
+      if (!personalPhone) setPersonalPhone(formatPhoneForDisplay(user.phoneNumber || ''));
     }
   }, [user]);
 
@@ -165,7 +165,7 @@ const ProfileView = () => {
             firstName: personalInfo.firstName,
             surName: personalInfo.surName,
             lastName: personalInfo.lastName,
-            phoneNumber: personalPhone,
+            phoneNumber: formatPhoneForPayload(personalPhone),
             gender: personalInfo.gender,
             dateOfBirth: personalInfo.dateOfBirth,
             permissions: user?.permissions || []
@@ -177,7 +177,7 @@ const ProfileView = () => {
             firstName: personalInfo.firstName,
             surName: personalInfo.surName,
             lastName: personalInfo.lastName,
-            phoneNumber: personalPhone,
+            phoneNumber: formatPhoneForPayload(personalPhone),
             gender: personalInfo.gender,
             dateOfBirth: personalInfo.dateOfBirth,
           },
@@ -189,7 +189,7 @@ const ProfileView = () => {
         firstName: personalInfo.firstName,
         surName: personalInfo.surName,
         lastName: personalInfo.lastName,
-        phoneNumber: personalPhone,
+        phoneNumber: formatPhoneForPayload(personalPhone),
         gender: personalInfo.gender as any,
         dateOfBirth: personalInfo.dateOfBirth
       });
@@ -219,22 +219,22 @@ const ProfileView = () => {
     window.showToast(t('profile.changes_canceled', T_PAGE), 'info');
   };
 
-  // Schedule / Working Hours State
+  const [isEditingSchedule, setIsEditingSchedule] = useState(false);
+  const [scheduleErrors, setScheduleErrors] = useState<Record<string, string[]>>({});
   const [workingHours, setWorkingHours] = useState<Array<{
     dayOfWeek: string;
     active: boolean;
     periods: Array<{ from: string; to: string }>;
-    isEditing: boolean;
     originalPeriods: Array<{ from: string; to: string }>;
     originalActive: boolean;
   }>>([
-    { dayOfWeek: 'SUNDAY', active: false, periods: [], isEditing: false, originalPeriods: [], originalActive: false },
-    { dayOfWeek: 'MONDAY', active: false, periods: [], isEditing: false, originalPeriods: [], originalActive: false },
-    { dayOfWeek: 'TUESDAY', active: false, periods: [], isEditing: false, originalPeriods: [], originalActive: false },
-    { dayOfWeek: 'WEDNESDAY', active: false, periods: [], isEditing: false, originalPeriods: [], originalActive: false },
-    { dayOfWeek: 'THURSDAY', active: false, periods: [], isEditing: false, originalPeriods: [], originalActive: false },
-    { dayOfWeek: 'FRIDAY', active: false, periods: [], isEditing: false, originalPeriods: [], originalActive: false },
-    { dayOfWeek: 'SATURDAY', active: false, periods: [], isEditing: false, originalPeriods: [], originalActive: false },
+    { dayOfWeek: 'SUNDAY', active: false, periods: [], originalPeriods: [], originalActive: false },
+    { dayOfWeek: 'MONDAY', active: false, periods: [], originalPeriods: [], originalActive: false },
+    { dayOfWeek: 'TUESDAY', active: false, periods: [], originalPeriods: [], originalActive: false },
+    { dayOfWeek: 'WEDNESDAY', active: false, periods: [], originalPeriods: [], originalActive: false },
+    { dayOfWeek: 'THURSDAY', active: false, periods: [], originalPeriods: [], originalActive: false },
+    { dayOfWeek: 'FRIDAY', active: false, periods: [], originalPeriods: [], originalActive: false },
+    { dayOfWeek: 'SATURDAY', active: false, periods: [], originalPeriods: [], originalActive: false },
   ]);
 
   // Clinic Info State
@@ -271,29 +271,19 @@ const ProfileView = () => {
 
         setWorkingHours(prev => prev.map(day => {
           const serverDay = schedules.find((s: any) => s.dayOfWeek === day.dayOfWeek);
-          if (serverDay && serverDay.timeSlots && serverDay.timeSlots.length > 0) {
-            const periods = serverDay.timeSlots.map((slot: any) => ({
-              from: slot.startTime.substring(0, 5), // "09:00:00" -> "09:00"
-              to: slot.endTime.substring(0, 5)
-            }));
-            return {
-              ...day,
-              active: true,
-              periods,
-              originalPeriods: [...periods],
-              originalActive: true,
-              isEditing: false
-            };
-          }
+          const parsedPeriods = serverDay?.timeSlots?.map((slot: any) => ({
+            from: slot.startTime.substring(0, 5),
+            to: slot.endTime.substring(0, 5)
+          })) || [];
           return {
-            ...day,
-            active: false,
-            periods: [],
-            originalPeriods: [],
-            originalActive: false,
-            isEditing: false
+            dayOfWeek: day.dayOfWeek,
+            active: !!serverDay,
+            periods: parsedPeriods,
+            originalPeriods: [...parsedPeriods],
+            originalActive: !!serverDay
           };
         }));
+        setIsEditingSchedule(false);
       }
     } catch (err) {
       console.error('Error fetching schedule:', err);
@@ -311,7 +301,7 @@ const ProfileView = () => {
         country: clinicData.country || '',
         city: clinicData.city || '',
         address: clinicData.address || '',
-        phoneNumber: clinicData.phoneNumber || '',
+        phoneNumber: formatPhoneForDisplay(clinicData.phoneNumber || ''),
         email: clinicData.email || '',
         status: clinicData.status || 'PENDING',
         settings: {
@@ -433,7 +423,7 @@ const ProfileView = () => {
         country: clinicInfo.country,
         city: clinicInfo.city,
         address: clinicInfo.address,
-        phoneNumber: clinicInfo.phoneNumber,
+        phoneNumber: formatPhoneForPayload(clinicInfo.phoneNumber),
         email: clinicInfo.email
       };
 
@@ -446,7 +436,7 @@ const ProfileView = () => {
         country: updatedClinic.country || '',
         city: updatedClinic.city || '',
         address: updatedClinic.address || '',
-        phoneNumber: updatedClinic.phoneNumber || '',
+        phoneNumber: formatPhoneForDisplay(updatedClinic.phoneNumber || ''),
         email: updatedClinic.email || '',
         status: updatedClinic.status || 'PENDING',
         settings: {
@@ -488,10 +478,13 @@ const ProfileView = () => {
   const handleTabChange = (tab: 'profile' | 'clinic') => {
     if (tab === activeTab) return;
     setActiveTab(tab);
+    setIsEditingSchedule(false);
+    setScheduleErrors({});
     window.history.replaceState(null, '', `?tab=${tab}`);
   };
 
   const toggleDay = (index: number) => {
+    setScheduleErrors({});
     setWorkingHours(prev => prev.map((day, idx) => {
       if (idx === index) {
         const nextActive = !day.active;
@@ -506,6 +499,7 @@ const ProfileView = () => {
   };
 
   const addPeriod = (dayIndex: number) => {
+    setScheduleErrors({});
     setWorkingHours(prev => prev.map((day, idx) => {
       if (idx === dayIndex) {
         return {
@@ -518,6 +512,7 @@ const ProfileView = () => {
   };
 
   const removePeriod = (dayIndex: number, periodIndex: number) => {
+    setScheduleErrors({});
     const newHours = [...workingHours];
     newHours[dayIndex].periods.splice(periodIndex, 1);
     setWorkingHours(newHours);
@@ -536,18 +531,16 @@ const ProfileView = () => {
   };
 
   const updatePeriod = (dayIndex: number, periodIndex: number, field: 'from' | 'to', value: string) => {
+    setScheduleErrors({});
     const newHours = [...workingHours];
     newHours[dayIndex].periods[periodIndex][field] = value;
     setWorkingHours(newHours);
   };
 
-  const handleSaveDaySchedule = async (dayIndex: number) => {
-    const day = workingHours[dayIndex];
-
+  const handleSaveSchedule = async () => {
+    setScheduleErrors({});
     // Construct the entire schedules list to send to the backend
-    const schedulesPayload = workingHours.map((d, idx) => {
-      const currentDay = idx === dayIndex ? day : d;
-
+    const schedulesPayload = workingHours.map(currentDay => {
       if (!currentDay.active || currentDay.periods.length === 0) {
         return null;
       }
@@ -571,44 +564,62 @@ const ProfileView = () => {
 
       if (response.ok) {
         const data = await response.json();
-        setWorkingHours(prev => prev.map((d, idx) => {
-          if (idx === dayIndex) {
-            return {
-              ...d,
-              isEditing: false,
-              originalPeriods: [...d.periods],
-              originalActive: d.active
-            };
-          }
-          return d;
-        }));
-        window.showToast(data.message || 'Clinic Schedule Assigned Successfully', 'success');
+        setWorkingHours(prev => prev.map(d => ({
+          ...d,
+          originalPeriods: [...d.periods],
+          originalActive: d.active
+        })));
+        setIsEditingSchedule(false);
+        window.showToast(data.message || 'Schedule Assigned Successfully', 'success');
       } else {
-        let errMsg = 'Failed to assign clinic schedule';
+        let errMsg = 'Failed to assign schedule';
         try {
           const errData = await response.json();
-          errMsg = errData.message || errData.error || errMsg;
+          if (errData.details && Array.isArray(errData.details)) {
+            const dayErrors: Record<string, string[]> = {};
+            const days = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+            
+            errData.details.forEach((d: any) => {
+              if (d.message) {
+                const foundDay = days.find(day => d.message.includes(day));
+                if (foundDay) {
+                  if (!dayErrors[foundDay]) dayErrors[foundDay] = [];
+                  dayErrors[foundDay].push(d.message);
+                } else {
+                  if (!dayErrors['GENERAL']) dayErrors['GENERAL'] = [];
+                  dayErrors['GENERAL'].push(d.message);
+                }
+              }
+            });
+
+            if (Object.keys(dayErrors).length > 0) {
+              setScheduleErrors(dayErrors);
+              errMsg = 'Validation failed. Please correct the highlighted days.';
+            } else {
+              errMsg = errData.message || errData.error || errMsg;
+            }
+          } else if (errData.message && errData.message !== "validation failed") {
+            errMsg = errData.message;
+          } else {
+            errMsg = errData.message || errData.error || errMsg;
+          }
         } catch (e) { }
         window.showToast(errMsg, 'error');
       }
     } catch (err: any) {
       console.error(err);
-      window.showToast(err.message || 'Error saving clinic schedule', 'error');
+      window.showToast(err.message || 'Error saving schedule', 'error');
     }
   };
 
-  const handleCancelDaySchedule = (dayIndex: number) => {
-    setWorkingHours(prev => prev.map((d, idx) => {
-      if (idx === dayIndex) {
-        return {
-          ...d,
-          isEditing: false,
-          periods: [...d.originalPeriods],
-          active: d.originalActive
-        };
-      }
-      return d;
-    }));
+  const handleCancelSchedule = () => {
+    setScheduleErrors({});
+    setWorkingHours(prev => prev.map(d => ({
+      ...d,
+      periods: [...d.originalPeriods],
+      active: d.originalActive
+    })));
+    setIsEditingSchedule(false);
   };
 
   return (
@@ -690,7 +701,7 @@ const ProfileView = () => {
                   </div>
                   <div className={cn("flex items-center justify-center text-muted-foreground", isAr ? "sm:justify-end" : "sm:justify-start")}>
                     <Phone size={16} className={isAr ? "ml-2" : "mr-2"} />
-                    <span dir="ltr">{user ? user.phoneNumber : "0789651800"}</span>
+                    <span dir="ltr">{user ? formatPhoneForDisplay(user.phoneNumber) : "0789651800"}</span>
                   </div>
                 </div>
               </div>
@@ -727,7 +738,17 @@ const ProfileView = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Personal Information */}
               <div data-slot="card" className="tab-pane flex flex-col bg-white rounded-xl border p-6 border-border shadow-lg hover:shadow-xl transition-all duration-300 h-full">
+              <div className="flex justify-between items-center gap-4 mb-4 flex-wrap">
                 <h3 className="text-xl mb-6 font-bold">{t('profile.personal_info', T_PAGE)}</h3>
+                  <button
+                        onClick={() => setIsPasswordModalOpen(true)}
+                        className="h-11 px-4 border border-primary/30 rounded-xl text-primary hover:bg-primary/5 transition-all flex items-center gap-2 text-sm font-medium"
+                      >
+                        <Key size={16} />
+                        {t('profile.change_password', T_PAGE)}
+                      </button>
+              </div>
+
                 <div className="space-y-5">
                   <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                     <div className="flex flex-col gap-2">
@@ -771,19 +792,7 @@ const ProfileView = () => {
                       </button>
                     </div>
                   </div>
-                  <div className="flex flex-col gap-2">
-                    <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('profile.password', T_PAGE) || 'Password'}</label>
-                    <div className="flex gap-2">
-                      <Input readOnly type="password" value="********" className="flex-1 h-11 bg-muted/50 border-border cursor-not-allowed text-muted-foreground" />
-                      <button
-                        onClick={() => setIsPasswordModalOpen(true)}
-                        className="h-11 px-4 border border-primary/30 rounded-xl text-primary hover:bg-primary/5 transition-all flex items-center gap-2 text-sm font-medium"
-                      >
-                        <Key size={16} />
-                        {t('common.change')}
-                      </button>
-                    </div>
-                  </div>
+                
                   <div className="flex flex-col gap-2">
                     <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('common.phone')}</label>
                     <Input
@@ -813,7 +822,7 @@ const ProfileView = () => {
                           size={16}
                           className={cn("absolute top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none z-10", isAr ? "left-5" : "right-5")}
                         />
-                        <Flatpickr
+                        <DatePicker
                           value={personalInfo.dateOfBirth}
                           onChange={([date]) => {
                             if (date) {
@@ -890,13 +899,13 @@ const ProfileView = () => {
                         <span className="text-base text-secondary font-bold">{t('common.active')}</span>
                       </div>
                     </div>
-                    <div className="p-4 bg-muted/30 rounded-xl border border-border">
+                    {/* <div className="p-4 bg-muted/30 rounded-xl border border-border">
                       <label className="text-xs text-muted-foreground mb-1 block">{t('common.last_login')}</label>
                       <div className="flex items-center gap-2">
                         <Clock size={18} className="text-muted-foreground" />
                         <span className="text-base font-bold text-foreground">{t('common.today')}, 10:30 {t('common.am')}</span>
                       </div>
-                    </div>
+                    </div> */}
                     <div className="p-4 bg-muted/30 rounded-xl border border-border">
                       <label className="text-xs text-muted-foreground mb-1 block">{t('common.join_date')}</label>
                       <div className="flex items-center justify-between">
@@ -926,6 +935,13 @@ const ProfileView = () => {
                           className={cn("h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold", isAr ? "text-right" : "text-left")}
                         />
                       </div>
+                      <div className="mt-8 flex-1 border-2 border-dashed border-primary/40 bg-primary/5 rounded-xl flex items-center justify-center p-6 text-center shadow-inner">
+                        <div className="flex flex-col items-center gap-2">
+                          <Clock size={24} className="text-primary/70" />
+                          <p className="text-primary font-bold text-sm md:text-base">
+{isAr ? 'تغييرات وقت موعد الطبيب' : 'Doctor Appointment Time Changes'}                          </p>
+                        </div>
+                      </div>
                     </div>
                     <div className="flex justify-end gap-3 mt-auto pt-6 ">
                       <button
@@ -949,7 +965,7 @@ const ProfileView = () => {
 
             {/* Working Hours */}
             {user?.role !== 'ROLE_SECRETARY' && (
-              <div data-slot="card" className="tab-pane  bg-white rounded-xl border p-6 border-border shadow-lg hover:shadow-xl transition-all duration-300">
+              <div data-slot="card" className="tab-pane bg-white rounded-xl border p-6 border-border shadow-lg hover:shadow-xl transition-all duration-300">
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
@@ -960,6 +976,32 @@ const ProfileView = () => {
                       <p className="text-sm text-muted-foreground">{t('common.working_days')}</p>
                     </div>
                   </div>
+                  {!isEditingSchedule ? (
+                    <button
+                      onClick={() => setIsEditingSchedule(true)}
+                      className="h-10 px-4 rounded-xl border border-primary/30 text-primary bg-primary/5 hover:bg-primary/10 transition-all font-semibold flex items-center gap-2 text-sm"
+                    >
+                      <Pen size={16} />
+                      {isAr ? 'تعديل الجدول' : 'Modify Schedule'}
+                    </button>
+                  ) : (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleCancelSchedule}
+                        className="h-10 px-4 rounded-xl border border-border text-foreground bg-white hover:bg-muted transition-all font-semibold flex items-center gap-2 text-sm"
+                      >
+                        <X size={16} />
+                        {t('common.cancel')}
+                      </button>
+                      <button
+                        onClick={handleSaveSchedule}
+                        className="h-10 px-4 rounded-xl bg-primary text-white hover:bg-primary/90 transition-all font-semibold flex items-center gap-2 text-sm shadow-lg shadow-primary/20"
+                      >
+                        <Check size={16} />
+                        {t('common.save_changes')}
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -982,27 +1024,7 @@ const ProfileView = () => {
                             </span>
                           </div>
 
-                          {!day.isEditing ? (
-                            <button
-                              onClick={() => {
-                                setWorkingHours(prev => prev.map((d, idx) => {
-                                  if (idx === dIdx) {
-                                    return {
-                                      ...d,
-                                      isEditing: true,
-                                      originalPeriods: [...d.periods],
-                                      originalActive: d.active
-                                    };
-                                  }
-                                  return d;
-                                }));
-                              }}
-                              className="p-1.5 text-primary hover:bg-primary/5 rounded-lg transition-all"
-                              aria-label="Edit day schedule"
-                            >
-                              <Pen size={14} />
-                            </button>
-                          ) : (
+                          {isEditingSchedule && (
                             <Switch
                               checked={day.active}
                               onCheckedChange={() => toggleDay(dIdx)}
@@ -1016,20 +1038,20 @@ const ProfileView = () => {
                             <>
                               {day.periods.map((period, pIdx) => (
                                 <div key={pIdx} className="flex items-center gap-2">
-                                  {day.isEditing ? (
+                                  {isEditingSchedule ? (
                                     <div className="flex items-center gap-1.5 w-full">
-                                      <TimePicker
-                                        noClock
+                                      <input
+                                        type="time"
                                         value={period.from}
-                                        onChange={(val) => updatePeriod(dIdx, pIdx, 'from', val)}
-                                        className="h-8 py-0 px-2 min-w-0 flex-1 border-muted bg-white shadow-none focus-within:ring-0"
+                                        onChange={(e) => updatePeriod(dIdx, pIdx, 'from', e.target.value)}
+                                        className="h-8 py-0 px-2 min-w-0 flex-1 border border-muted bg-white shadow-none focus:ring-1 focus:ring-primary rounded-md text-sm outline-none"
                                       />
-                                      <span className="text-muted-foreground text-xs">→</span>
-                                      <TimePicker
-                                        noClock
+                                      <span className="text-muted-foreground text-xs">—</span>
+                                      <input
+                                        type="time"
                                         value={period.to}
-                                        onChange={(val) => updatePeriod(dIdx, pIdx, 'to', val)}
-                                        className="h-8 py-0 px-2 min-w-0 flex-1 border-muted bg-white shadow-none focus-within:ring-0"
+                                        onChange={(e) => updatePeriod(dIdx, pIdx, 'to', e.target.value)}
+                                        className="h-8 py-0 px-2 min-w-0 flex-1 border border-muted bg-white shadow-none focus:ring-1 focus:ring-primary rounded-md text-sm outline-none"
                                       />
                                       <button
                                         onClick={() => removePeriod(dIdx, pIdx)}
@@ -1041,12 +1063,12 @@ const ProfileView = () => {
                                   ) : (
                                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                       <Clock size={14} />
-                                      <span>{period.from} → {period.to}</span>
+                                      <span>{period.from} — {period.to}</span>
                                     </div>
                                   )}
                                 </div>
                               ))}
-                              {day.isEditing && (
+                              {isEditingSchedule && (
                                 <button
                                   onClick={() => addPeriod(dIdx)}
                                   className="w-full h-8 mt-2 flex items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-transparent text-xs text-muted-foreground hover:bg-muted/50 transition-all"
@@ -1061,29 +1083,29 @@ const ProfileView = () => {
                               <span className="text-destructive/70 font-medium italic">{t('common.holiday')}</span>
                             </div>
                           )}
+                          
+                          {scheduleErrors[day.dayOfWeek] && scheduleErrors[day.dayOfWeek].length > 0 && (
+                            <div className="mt-2 flex flex-col gap-1 p-2 bg-destructive/10 border border-destructive/20 rounded-md">
+                              {scheduleErrors[day.dayOfWeek].map((err, i) => (
+                                <p key={i} className="text-xs text-destructive font-medium">{err}</p>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
-
-                      {day.isEditing && (
-                        <div className="flex gap-2 justify-end mt-4 pt-3 border-t border-gray-200">
-                          <button
-                            onClick={() => handleCancelDaySchedule(dIdx)}
-                            className="h-8 px-3 rounded-lg border border-border text-xs text-foreground bg-white hover:bg-muted transition-all font-semibold flex items-center gap-1"
-                          >
-                            <X size={12} />
-                            {t('common.cancel')}
-                          </button>
-                          <button
-                            onClick={() => handleSaveDaySchedule(dIdx)}
-                            className="h-8 px-3 rounded-lg bg-primary text-white text-xs hover:bg-primary/90 transition-all font-semibold flex items-center gap-1"
-                          >
-                            <Check size={12} />
-                            {t('common.save')}
-                          </button>
-                        </div>
-                      )}
                     </div>
                   ))}
+                  
+                  {scheduleErrors['GENERAL'] && scheduleErrors['GENERAL'].length > 0 && (
+                    <div className="col-span-full mt-4 p-4 bg-destructive/10 border border-destructive/20 rounded-xl">
+                      <h4 className="text-sm font-bold text-destructive mb-2">Schedule Errors</h4>
+                      <ul className="list-disc pl-5 flex flex-col gap-1">
+                        {scheduleErrors['GENERAL'].map((err, i) => (
+                          <li key={i} className="text-sm text-destructive">{err}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

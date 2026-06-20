@@ -118,6 +118,8 @@ const LoginForm = () => {
               
               if (permissions.includes('MANAGE_STATISTICS') || roles.includes('ROLE_CLINIC_OWNER') || roles.includes('ROLE_ADMIN')) {
                 destination = '/';
+              } else if (roles.includes('ROLE_DOCTOR') || roles.includes('ROLE_SECRETARY')) {
+                destination = '/appointments';
               } else if (permissions.includes('MANAGE_APPOINTMENTS')) {
                 destination = '/appointments';
               } else if (permissions.includes('MANAGE_PATIENTS')) {

@@ -14,7 +14,7 @@ import {
   SelectValue
 } from '../../components/ui/select';
 import Input from '../../components/ui/Input';
-import Flatpickr from 'react-flatpickr';
+import { DatePicker } from '../../components/ui/DatePicker';
 import { Arabic } from 'flatpickr/dist/l10n/ar.js';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { financeTranslations } from '../../constants/translations/finance';
@@ -329,7 +329,7 @@ const AddOperationModal = ({ isOpen, onClose, onSuccess, mode = 'add', transacti
                     {t('date_label', T)} <span className="text-destructive">*</span>
                   </label>
                   <div className="relative group flex items-center justify-between h-12 bg-muted/30 border border-border rounded-xl px-4 transition-all focus-within:ring-4 focus-within:ring-primary/10 focus-within:bg-white">
-                    <Flatpickr
+                    <DatePicker
                       disabled={mode === 'view'}
                       value={date}
                       onChange={([d]) => setDate(d)}
