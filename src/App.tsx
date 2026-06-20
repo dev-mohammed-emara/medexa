@@ -132,8 +132,11 @@ const AppRoutes = () => {
           </Route>
           <Route element={<RoleProtectedRoute requiredPermissions={['MANAGE_APPOINTMENTS']} />}>
             <Route path="/appointments" element={<Appointments />} />
-            <Route path="/appointment-types" element={<AppointmentTypes />} />
           </Route>
+                    <Route element={<RoleProtectedRoute requiredPermissions={['MANAGE_CLINIC']} />}>
+            <Route path="/appointment-types" element={<AppointmentTypes />} />
+                    </Route>
+
           <Route element={<RoleProtectedRoute requiredPermissions={['MANAGE_MEDICAL_RECORDS']} />}>
             <Route path="/records" element={<Records />} />
           </Route>

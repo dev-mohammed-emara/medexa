@@ -56,17 +56,22 @@ const ProfileView = () => {
   const { isLoaded, isExiting } = usePreloader();
   const { dir, isAr, t } = useLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
-  const initialTab = searchParams.get('tab') === 'clinic' ? 'clinic' : 'profile';
+  const initialTab = searchParams.get('tab') === 'clinic' && hasPermission('MANAGE_CLINIC') ? 'clinic' : 'profile';
   const [activeTab, setActiveTab] = useState<'profile' | 'clinic'>(initialTab);
 
   useEffect(() => {
     const tabParam = searchParams.get('tab');
     if (tabParam === 'clinic') {
-      setActiveTab('clinic');
+      if (hasPermission('MANAGE_CLINIC')) {
+        setActiveTab('clinic');
+      } else {
+        setSearchParams({ tab: 'profile' }, { replace: true });
+        setActiveTab('profile');
+      }
     } else {
       setActiveTab('profile');
     }
-  }, [searchParams]);
+  }, [searchParams, hasPermission, setSearchParams]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -649,7 +654,7 @@ const ProfileView = () => {
             {t('profile.profile', T_PAGE)}
           </span>
         </button>
-        {hasPermission('ROLE_CLINIC_OWNER') && (
+        {hasPermission('MANAGE_CLINIC') && (
           <button
             onClick={() => handleTabChange('clinic')}
             className={cn(

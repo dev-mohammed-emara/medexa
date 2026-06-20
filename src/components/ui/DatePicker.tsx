@@ -66,7 +66,7 @@ export const DatePicker = React.forwardRef<any, DatePickerProps>(
             }
           }}
         />
-        <div className={cn(`relative group flex items-center justify-between w-full h-12 ${hasBg ? 'bg-input-background border' : ''} border-border rounded-xl px-4 transition-all focus-within:ring-4 focus-within:ring-primary/10 data-[error=true]:border-destructive data-[error=true]:focus-within:border-destructive data-[error=true]:focus-within:ring-destructive/10 data-[error=true]:bg-destructive/5`, className)} data-error={!!currentError}>
+        <div className={cn(`relative group flex items-center justify-between w-full h-12 ${hasBg ? 'bg-input-background border' : ''} border-border rounded-xl px-4 transition-all  data-[error=true]:border-destructive data-[error=true]:focus-within:border-destructive data-[error=true]:focus-within:ring-destructive/10 data-[error=true]:bg-destructive/5`, className)} data-error={!!currentError}>
           <Flatpickr
             ref={ref}
             onChange={handleChange}

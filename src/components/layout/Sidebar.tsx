@@ -31,7 +31,7 @@ const navItems = [
   { icon: UserCog, label: 'secretary', href: '/secretary', requiredPermissions: ['MANAGE_SECRETARIES'] },
   { icon: UsersRound, label: 'patients', href: '/patients', requiredPermissions: ['MANAGE_PATIENTS'] },
   { icon: FaCalendarAlt, label: 'appointments', href: '/appointments', requiredPermissions: ['MANAGE_APPOINTMENTS'] },
-  { icon: FaNotesMedical, label: 'appointmentTypes', href: '/appointment-types', requiredPermissions: ['MANAGE_APPOINTMENTS'] },
+  { icon: FaNotesMedical, label: 'appointmentTypes', href: '/appointment-types', requiredPermissions: ['MANAGE_CLINIC'] },
   { icon: FileText, label: 'records', href: '/records', requiredPermissions: ['MANAGE_MEDICAL_RECORDS'] },
   { icon: DollarSign, label: 'finance', href: '/finance', requiredPermissions: ['MANAGE_TRANSACTIONS'] },
   { icon: User, label: 'profile', href: '/profile' },
