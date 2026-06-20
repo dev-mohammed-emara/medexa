@@ -26,14 +26,14 @@ import { TransitionLink } from '../transition/TransitionLink'
 import { useAuth } from '../../contexts/AuthContext'
 
 const navItems = [
-  { icon: LayoutDashboard, label: 'dashboard', href: '/', requiredPermissions: ['MANAGE_STATISTICS', 'ROLE_CLINIC_OWNER', 'ROLE_ADMIN'] },
-  { icon: Users, label: 'doctors', href: '/doctors', requiredPermissions: ['MANAGE_DOCTORS', 'ROLE_SECRETARY', 'ROLE_CLINIC_OWNER', 'ROLE_ADMIN'] },
-  { icon: UserCog, label: 'secretary', href: '/secretary', requiredPermissions: ['MANAGE_SECRETARIES', 'ROLE_CLINIC_OWNER', 'ROLE_ADMIN'] },
-  { icon: UsersRound, label: 'patients', href: '/patients', requiredPermissions: ['MANAGE_PATIENTS', 'ROLE_DOCTOR', 'ROLE_SECRETARY', 'ROLE_CLINIC_OWNER', 'ROLE_ADMIN'] },
-  { icon: FaCalendarAlt, label: 'appointments', href: '/appointments', requiredPermissions: ['MANAGE_APPOINTMENTS', 'ROLE_DOCTOR', 'ROLE_SECRETARY', 'ROLE_CLINIC_OWNER', 'ROLE_ADMIN'] },
-  { icon: FaNotesMedical, label: 'appointmentTypes', href: '/appointment-types', requiredPermissions: ['ROLE_DOCTOR', 'ROLE_SECRETARY', 'ROLE_CLINIC_OWNER', 'ROLE_ADMIN'] },
-  { icon: FileText, label: 'records', href: '/records', requiredPermissions: ['MANAGE_MEDICAL_RECORDS', 'MANAGE_PATIENTS', 'ROLE_DOCTOR', 'ROLE_CLINIC_OWNER', 'ROLE_ADMIN'] },
-  { icon: DollarSign, label: 'finance', href: '/finance', requiredPermissions: ['MANAGE_TRANSACTIONS', 'MANAGE_CLINIC', 'ROLE_SECRETARY', 'ROLE_CLINIC_OWNER', 'ROLE_ADMIN'] },
+  { icon: LayoutDashboard, label: 'dashboard', href: '/', requiredPermissions: ['MANAGE_STATISTICS'] },
+  { icon: Users, label: 'doctors', href: '/doctors', requiredPermissions: ['MANAGE_DOCTORS'] },
+  { icon: UserCog, label: 'secretary', href: '/secretary', requiredPermissions: ['MANAGE_SECRETARIES'] },
+  { icon: UsersRound, label: 'patients', href: '/patients', requiredPermissions: ['MANAGE_PATIENTS'] },
+  { icon: FaCalendarAlt, label: 'appointments', href: '/appointments', requiredPermissions: ['MANAGE_APPOINTMENTS'] },
+  { icon: FaNotesMedical, label: 'appointmentTypes', href: '/appointment-types', requiredPermissions: ['MANAGE_APPOINTMENTS'] },
+  { icon: FileText, label: 'records', href: '/records', requiredPermissions: ['MANAGE_MEDICAL_RECORDS'] },
+  { icon: DollarSign, label: 'finance', href: '/finance', requiredPermissions: ['MANAGE_TRANSACTIONS'] },
   { icon: User, label: 'profile', href: '/profile' },
   { icon: BiSupport, label: 'supportTickets', href: '/support-tickets' },
 ]

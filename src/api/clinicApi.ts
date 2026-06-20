@@ -95,7 +95,7 @@ export const fetchInsurances = async (): Promise<ApiInsurance[]> => {
 }
 
 export const updateClinicSettings = async (body: ClinicSettings): Promise<ApiClinic> => {
-  const response = await apiFetch('/api/clinic/settings', {
+  const response = await apiFetch('/api/clinic/setting', {
     method: 'PATCH',
     headers: getHeaders(),
     body: JSON.stringify(body)

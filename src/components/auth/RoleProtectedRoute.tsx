@@ -1,6 +1,7 @@
 import React from 'react'
 import { Navigate, Outlet } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
+import { BYPASS_AUTH_GUARDS } from '../../config/auth'
 
 interface RoleProtectedRouteProps {
   children?: React.ReactNode
@@ -28,7 +29,7 @@ const RoleProtectedRoute: React.FC<RoleProtectedRouteProps> = ({
     hasAccess = hasAccess && requiredRoles.some(role => hasRole(role))
   }
 
-  if (!hasAccess) {
+  if (!hasAccess && !BYPASS_AUTH_GUARDS) {
     return <Navigate to={fallbackPath} replace />
   }
 

@@ -7,9 +7,10 @@ import { useMediaQuery } from 'react-responsive';
 import { useLocation } from 'react-router-dom';
 
 // Derive a stable string key from location to use as a dependency
+// We omit location.search so that query param changes (like tabs) don't trigger the preloader
 const useLocationKey = () => {
   const location = useLocation();
-  return `${location.pathname}${location.search}`;
+  return `${location.pathname}`;
 };
 
 const Preloader = () => {

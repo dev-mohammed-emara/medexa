@@ -980,7 +980,7 @@ const AppointmentsList = () => {
           <p className="text-muted-foreground">{t('page_desc', T)}</p>
         </div>
 
-        <div className="flex items-center flex-wrap gap-3">
+        <div className="flex items-center max-sm:flex-wrap gap-3">
           <Select value={selectedDoctor} onValueChange={setSelectedDoctor}>
             <SelectTrigger className="w-56 h-10 bg-white border-border shadow-xs">
               <SelectValue placeholder={t('select_doctor', T)} />

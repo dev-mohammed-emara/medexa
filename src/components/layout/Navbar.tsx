@@ -211,7 +211,7 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
             className={cn("flex items-center flex-row-reverse gap-3 cursor-pointer hover:opacity-80 transition-opacity", isAr ? "border-r border-border pr-4" : "border-l border-border pl-4 flex-row-reverse")}
           >
             <div className={cn("hidden md:block", isAr ? "text-right" : "text-left")}>
-              <p className="text-sm font-bold">{user ? `د. ${user.firstName} ${user.lastName}` : t('nav.doctor_name', T_PAGE)}</p>
+              <p className="text-sm font-bold">{user ? `${isAr ? 'د.' : 'Dr.'} ${user.firstName} ${user.lastName}` : t('nav.doctor_name', T_PAGE)}</p>
               <p className="text-[10px] text-muted-foreground">{t('nav.clinic_owner', T_PAGE)}</p>
             </div>
             <div className="size-10 rounded-full border-2 border-primary bg-primary flex items-center justify-center text-white font-bold overflow-hidden shadow-md">
@@ -242,7 +242,7 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
                   )}
                 </div>
                 <div className={cn(isAr ? "text-right" : "text-left")}>
-                  <p className="text-sm font-bold mb-1">{user ? `د. ${user.firstName} ${user.lastName}` : t('nav.doctor_name', T_PAGE)}</p>
+                  <p className="text-sm font-bold mb-1">{user ? `${isAr ? 'د.' : 'Dr.'} ${user.firstName} ${user.lastName}` : t('nav.doctor_name', T_PAGE)}</p>
                   <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-1.5 text-muted-foreground">
                       <Mail className="size-3 shrink-0" />

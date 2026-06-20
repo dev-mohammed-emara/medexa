@@ -25,6 +25,7 @@ import { enUS } from 'date-fns/locale'
 import { createSecretary, updateSecretary } from '../../api/secretaryApi'
 import type { ApiSecretary } from '../../api/secretaryApi'
 import { formatPhoneForPayload, formatPhoneForDisplay } from '../../utils/phone'
+import PermissionsFieldset from '../../components/ui/PermissionsFieldset'
 
 interface SecretaryDialogProps {
   isOpen: boolean;
@@ -46,18 +47,22 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
   const [selectedDob, setSelectedDob] = useState<string>(initialData?.user?.dateOfBirth || "");
   const [isClosing, setIsClosing] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [selectedPermissions, setSelectedPermissions] = useState<string[]>(initialData?.user?.permissions || []);
 
-  const [password, setPassword] = useState("");
+  const [password, setPassword] = useState('');
+  const [passwordError, setPasswordError] = useState<string | null>(null);
 
   // Sync initialData values when dialog opens or changes
   useEffect(() => {
     if (initialData) {
       setSelectedGender(initialData.user?.gender || "");
       setSelectedDob(initialData.user?.dateOfBirth || "");
+      setSelectedPermissions(initialData.user?.permissions || []);
     } else {
       setSelectedGender("");
       setSelectedDob("");
       setPassword("");
+      setSelectedPermissions([]);
     }
   }, [initialData, isOpen]);
 
@@ -104,12 +109,15 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
         phoneNumber: formatPhoneForPayload(String(formDataObj.phoneNumber)),
         gender: selectedGender || 'MALE',
         dateOfBirth: selectedDob || '1990-01-01',
-        permissions: []
+        permissions: selectedPermissions
       };
 
       // Password is required for adding new secretary
       if (mode === 'add') {
         userPayload.password = String(formDataObj.password)
+      } else if (mode === 'edit') {
+        // Do not update email in edit mode
+        delete userPayload.email;
       }
 
       const bodyPayload = {
@@ -136,6 +144,9 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
       handleClose();
     } catch (error: any) {
       console.error(error)
+      if (error.message && error.message.toLowerCase().includes('password')) {
+        setPasswordError(error.message);
+      }
       window.showToast?.(error.message || t('error_save', T), 'error')
     } finally {
       setLoading(false);
@@ -250,7 +261,7 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
                     name="email"
                     defaultValue={initialData?.user?.email}
                     required
-                    disabled={mode === 'view'}
+                    disabled={mode === 'view' || mode === 'edit'}
                     placeholder={t('email_placeholder', T)}
                     icon={<Mail size={18} />}
                     className={inputClass}
@@ -310,7 +321,11 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
                         className={inputClass}
                         dir="ltr"
                         value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        error={passwordError || undefined}
+                        onChange={(e) => {
+                          if (passwordError) setPasswordError(null);
+                          setPassword(e.target.value);
+                        }}
                       />
                       {password.length > 0 && (
                         <div className="mt-2 animate-fade">
@@ -383,6 +398,17 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
                   />
                 </div>
               </div>
+
+              {/* Permissions Section */}
+              <PermissionsFieldset
+                selectedPermissions={selectedPermissions}
+                onChange={setSelectedPermissions}
+                disabled={mode === 'view'}
+                titleAr={t('permissions', T)}
+                titleEn={t('permissions', T)}
+                descriptionAr={t('permissions_desc', T)}
+                descriptionEn={t('permissions_desc', T)}
+              />
             </form>
           </ScrollLockWrapper>
 

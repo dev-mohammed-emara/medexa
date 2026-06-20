@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useLanguage } from '../../contexts/LanguageContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { fetchPatientByUuid } from '../../api/patientApi';
 import type { ApiPatient } from '../../api/patientApi';
 import { getCookie } from '../../utils/cookie';
@@ -28,6 +29,7 @@ const PatientDetailsView = () => {
   const uuid = location.state?.uuid as string | undefined;
 
   const { isAr, dir } = useLanguage();
+  const { hasPermission } = useAuth();
 
   const [patient, setPatient] = useState<ApiPatient | null>(null);
   const [records, setRecords] = useState<any[]>([]);
@@ -72,19 +74,25 @@ const PatientDetailsView = () => {
       if (fromDate) queryParams.append('fromDate', fromDate);
       if (toDate) queryParams.append('toDate', toDate);
 
-      const [patientRes, recordsRes] = await Promise.allSettled([
-        fetchPatientByUuid(uuid),
-        fetch(`/api/medical-records?${queryParams.toString()}`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${getCookie('token')}`
-          }
-        }).then(res => {
-          if (!res.ok) throw new Error('Failed to fetch records');
-          return res.json();
-        })
-      ]);
+      const promises: Promise<any>[] = [fetchPatientByUuid(uuid)];
+      
+      if (hasPermission('MANAGE_MEDICAL_RECORDS')) {
+        promises.push(
+          fetch(`/api/medical-records?${queryParams.toString()}`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${getCookie('token')}`
+            }
+          }).then(res => {
+            if (!res.ok) throw new Error('Failed to fetch records');
+            return res.json();
+          })
+        );
+      }
+
+      const results = await Promise.allSettled(promises);
+      const patientRes = results[0];
 
       if (patientRes.status === 'fulfilled') {
         setPatient(patientRes.value);
@@ -92,12 +100,15 @@ const PatientDetailsView = () => {
         window.showToast?.('Failed to load patient detail', 'error');
       }
 
-      if (recordsRes.status === 'fulfilled') {
-        setRecords(recordsRes.value.content || []);
-        setTotalElements(recordsRes.value.totalElements || 0);
-        setTotalPages(Math.ceil((recordsRes.value.totalElements || 0) / itemsPerPage) || 1);
-      } else {
-        console.error('Failed to load records:', recordsRes.reason);
+      if (hasPermission('MANAGE_MEDICAL_RECORDS') && results[1]) {
+        const recordsRes = results[1] as PromiseSettledResult<any>;
+        if (recordsRes.status === 'fulfilled') {
+          setRecords(recordsRes.value.content || []);
+          setTotalElements(recordsRes.value.totalElements || 0);
+          setTotalPages(Math.ceil((recordsRes.value.totalElements || 0) / itemsPerPage) || 1);
+        } else {
+          console.error('Failed to load records:', recordsRes.reason);
+        }
       }
     } catch (err) {
       console.error('Error fetching data:', err);
@@ -105,7 +116,7 @@ const PatientDetailsView = () => {
       setIsLoadingPatient(false);
       setIsLoadingRecords(false);
     }
-  }, [uuid, currentPage, itemsPerPage, sort, fromDate, toDate, navigate]);
+  }, [uuid, currentPage, itemsPerPage, sort, fromDate, toDate, navigate, hasPermission]);
 
   useEffect(() => {
     loadData();
@@ -393,60 +404,63 @@ const PatientDetailsView = () => {
       </div>
 
       {/* Filters Section */}
-      <div
-        className={cn("flex flex-wrap items-end gap-3 bg-white p-5 rounded-2xl border border-border w-full shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both")}
-        style={{ animationDelay: '200ms' }}
-      >
-        <DateFromTo
-          fromDate={tempFromDate}
-          toDate={tempToDate}
-          onFromDateChange={setTempFromDate}
-          onToDateChange={setTempToDate}
-          onApply={handleApplyFilters}
-          showApply={false}
-        />
-        {/* Sort Filter */}
-        <div className="space-y-1.5 flex-1 min-w-[180px] text-start">
-          <label className="flex items-center gap-2 font-bold select-none text-xs text-muted-foreground mr-1">
-            {isAr ? "ترتيب حسب" : "Sort By"}
-          </label>
-          <Select value={tempSort} onValueChange={setTempSort}>
-            <SelectTrigger className="rounded-xl h-11 bg-white border-border text-foreground font-bold">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="rounded-xl z-600 bg-white" dir={isAr ? "rtl" : "ltr"}>
-              <SelectItem value="createdAt,desc">{isAr ? "الأحدث أولاً" : "Newest First"}</SelectItem>
-              <SelectItem value="createdAt,asc">{isAr ? "الأقدم أولاً" : "Oldest First"}</SelectItem>
-            </SelectContent>
-          </Select>
+      {hasPermission('MANAGE_MEDICAL_RECORDS') && (
+        <div
+          className={cn("flex flex-wrap items-end gap-3 bg-white p-5 rounded-2xl border border-border w-full shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both")}
+          style={{ animationDelay: '200ms' }}
+        >
+          <DateFromTo
+            fromDate={tempFromDate}
+            toDate={tempToDate}
+            onFromDateChange={setTempFromDate}
+            onToDateChange={setTempToDate}
+            onApply={handleApplyFilters}
+            showApply={false}
+          />
+          {/* Sort Filter */}
+          <div className="space-y-1.5 flex-1 min-w-[180px] text-start">
+            <label className="flex items-center gap-2 font-bold select-none text-xs text-muted-foreground mr-1">
+              {isAr ? "ترتيب حسب" : "Sort By"}
+            </label>
+            <Select value={tempSort} onValueChange={setTempSort}>
+              <SelectTrigger className="rounded-xl h-11 bg-white border-border text-foreground font-bold">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl z-600 bg-white" dir={isAr ? "rtl" : "ltr"}>
+                <SelectItem value="createdAt,desc">{isAr ? "الأحدث أولاً" : "Newest First"}</SelectItem>
+                <SelectItem value="createdAt,asc">{isAr ? "الأقدم أولاً" : "Oldest First"}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center gap-3 w-full sm:w-auto mt-2 sm:mt-0">
+            <button
+              onClick={handleApplyFilters}
+              className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-bold transition-all duration-300 outline-none hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md text-primary-foreground hover:shadow-primary/20 px-6 h-11 bg-primary hover:bg-primary/90 min-w-[100px] flex-1 sm:flex-none"
+            >
+              {isAr ? "تطبيق الفلاتر" : "Apply Filters"}
+            </button>
+            <button
+              onClick={() => {
+                setTempFromDate('');
+                setTempToDate('');
+                setTempSort('createdAt,desc');
+                setFromDate('');
+                setToDate('');
+                setSort('createdAt,desc');
+                setCurrentPage(1);
+              }}
+              className="inline-flex items-center justify-center rounded-xl transition-all duration-300 outline-none hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md border border-border bg-background text-foreground hover:bg-accent px-3.5 h-11"
+              title={isAr ? "إعادة ضبط" : "Reset"}
+            >
+              <RotateCcw className="size-5" />
+            </button>
+          </div>
         </div>
-        <div className="flex items-center gap-3 w-full sm:w-auto mt-2 sm:mt-0">
-          <button
-            onClick={handleApplyFilters}
-            className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-bold transition-all duration-300 outline-none hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md text-primary-foreground hover:shadow-primary/20 px-6 h-11 bg-primary hover:bg-primary/90 min-w-[100px] flex-1 sm:flex-none"
-          >
-            {isAr ? "تطبيق الفلاتر" : "Apply Filters"}
-          </button>
-          <button
-            onClick={() => {
-              setTempFromDate('');
-              setTempToDate('');
-              setTempSort('createdAt,desc');
-              setFromDate('');
-              setToDate('');
-              setSort('createdAt,desc');
-              setCurrentPage(1);
-            }}
-            className="inline-flex items-center justify-center rounded-xl transition-all duration-300 outline-none hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md border border-border bg-background text-foreground hover:bg-accent px-3.5 h-11"
-            title={isAr ? "إعادة ضبط" : "Reset"}
-          >
-            <RotateCcw className="size-5" />
-          </button>
-        </div>
-      </div>
+      )}
 
       {/* Medical Records Section */}
-      <div
+      {hasPermission('MANAGE_MEDICAL_RECORDS') && (
+        <div
         className="bg-white rounded-2xl border border-border shadow-sm overflow-hidden flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both"
         style={{ animationDelay: '300ms' }}
       >
@@ -617,6 +631,7 @@ const PatientDetailsView = () => {
           />
         )}
       </div>
+      )}
     </div>
   );
 };

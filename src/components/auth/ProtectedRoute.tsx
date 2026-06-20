@@ -1,6 +1,7 @@
 import React from 'react'
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
+import { BYPASS_AUTH_GUARDS } from '../../config/auth'
 
 interface ProtectedRouteProps {
   children?: React.ReactNode
@@ -18,7 +19,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     )
   }
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated && !BYPASS_AUTH_GUARDS) {
     // Redirect to login, preserving the intended destination
     return <Navigate to="/login" state={{ from: location }} replace />
   }

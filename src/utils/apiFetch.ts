@@ -1,4 +1,5 @@
 import { cacheData, getCachedData, broadcastUpdate } from './broadcastCache';
+import { BYPASS_AUTH_GUARDS } from '../config/auth';
 
 /**
  * apiFetch is a drop-in replacement for the native fetch function.
@@ -7,7 +8,7 @@ import { cacheData, getCachedData, broadcastUpdate } from './broadcastCache';
  * - For Mutations (POST, PUT, DELETE, PATCH): It attempts to hit the network, and on success
  *   broadcasts an event so other tabs can be notified of the change.
  */
-export const apiFetch = async (input: RequestInfo | URL, init?: RequestInit, enableLogoutOn401: boolean = true): Promise<Response> => {
+export const apiFetch = async (input: RequestInfo | URL, init?: RequestInit, enableLogoutOn401: boolean = false): Promise<Response> => {
   const method = (init?.method || 'GET').toUpperCase();
   const isGet = method === 'GET';
   const urlString = typeof input === 'string' ? input : input.toString();
@@ -27,7 +28,7 @@ export const apiFetch = async (input: RequestInfo | URL, init?: RequestInit, ena
     }
 
     // Intercept 401 Unauthorized to clear session and redirect to login
-    if (response.status === 401 && enableLogoutOn401) {
+    if (response.status === 401 && enableLogoutOn401 && !BYPASS_AUTH_GUARDS) {
       document.cookie = "token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=Strict";
       document.cookie = "refreshToken=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=Strict";
       localStorage.removeItem('token');
@@ -39,8 +40,8 @@ export const apiFetch = async (input: RequestInfo | URL, init?: RequestInit, ena
       return response;
     }
 
-    // Intercept 400 Bad Request to dispatch validation errors to UI components globally
-    if (!response.ok && response.status === 400) {
+    // Intercept 400 Bad Request and 422 Unprocessable Entity to dispatch validation errors to UI components globally
+    if (!response.ok && (response.status === 400 || response.status === 422)) {
       try {
         const clone = response.clone();
         const errorData = await clone.json();

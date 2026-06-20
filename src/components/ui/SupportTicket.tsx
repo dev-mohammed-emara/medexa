@@ -4,6 +4,7 @@ import { MdFeedback } from 'react-icons/md';
 import Modal from './Modal';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { getCookie } from '../../utils/cookie';
+import { cn } from '../../utils/cn';
 import {
   Select,
   SelectContent,
@@ -100,11 +101,14 @@ const SupportTicket = () => {
 
   return (
     <>
-      {/* Floating Support Icon on the far left - Opens Modal directly now */}
+      {/* Floating Support Icon - positioned based on language */}
       <button
         type="button"
         onClick={handleOpen}
-        className="fixed bottom-6 left-6 z-40 p-3.5 rounded-full bg-yellow-400 hover:bg-yellow-500 text-black shadow-xl hover:scale-110 active:scale-95 transition-all duration-200 flex items-center justify-center cursor-pointer border border-yellow-300"
+        className={cn(
+          "fixed bottom-6 z-40 p-3.5 rounded-full bg-yellow-400 hover:bg-yellow-500 text-black shadow-xl hover:scale-110 active:scale-95 transition-all duration-200 flex items-center justify-center cursor-pointer border border-yellow-300",
+          isAr ? "left-6" : "right-6"
+        )}
         title={isAr ? 'الدعم الفني' : 'Support'}
       >
         <MdFeedback className="size-6 animate-pulse" />

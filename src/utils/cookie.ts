@@ -1,6 +1,7 @@
 /**
  * Light-weight utilities for managing browser cookies.
  */
+import { BYPASS_AUTH_GUARDS } from '../config/auth';
 
 // Helper function to parse JWT token
 export const parseJWT = (token: string): any => {
@@ -63,6 +64,8 @@ export const deleteCookie = (name: string): void => {
 };
 
 export const checkTokenOrRedirect = (): void => {
+  if (BYPASS_AUTH_GUARDS) return;
+
   const token = getCookie('token')
   if (!token || isTokenExpired(token)) {
     // Perform cleanup

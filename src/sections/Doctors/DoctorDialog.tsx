@@ -24,6 +24,7 @@ import { enUS } from 'date-fns/locale'
 import { createDoctor, updateDoctor } from '../../api/doctorApi'
 import type { ApiDoctor } from '../../api/doctorApi'
 import { formatPhoneForPayload, formatPhoneForDisplay } from '../../utils/phone'
+import PermissionsFieldset from '../../components/ui/PermissionsFieldset'
 
 interface DoctorDialogProps {
   isOpen: boolean
@@ -45,8 +46,10 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
   const [selectedDob, setSelectedDob] = useState<string>(initialData?.user?.dateOfBirth || "")
   const [isClosing, setIsClosing] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [selectedPermissions, setSelectedPermissions] = useState<string[]>(initialData?.user?.permissions || [])
 
-  const [password, setPassword] = useState("")
+  const [password, setPassword] = useState('')
+  const [passwordError, setPasswordError] = useState<string | null>(null)
 
   // Sync initialData values when dialog opens or changes
   useEffect(() => {
@@ -54,11 +57,13 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
       setSelectedSpecialty(initialData.specialty || "")
       setSelectedGender(initialData.user?.gender || "")
       setSelectedDob(initialData.user?.dateOfBirth || "")
+      setSelectedPermissions(initialData.user?.permissions || [])
     } else {
       setSelectedSpecialty("")
       setSelectedGender("")
       setSelectedDob("")
       setPassword("")
+      setSelectedPermissions([])
     }
   }, [initialData, isOpen])
 
@@ -106,7 +111,7 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
         phoneNumber: formatPhoneForPayload(String(rawData.phoneNumber)),
         gender: selectedGender || 'MALE',
         dateOfBirth: selectedDob || '1990-01-01',
-        permissions: []
+        permissions: selectedPermissions
       }
 
       // Password is required for adding new doctor
@@ -142,6 +147,9 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
       handleClose()
     } catch (error: any) {
       console.error(error)
+      if (error.message && error.message.toLowerCase().includes('password')) {
+        setPasswordError(error.message);
+      }
       window.showToast?.(error.message || t('error_save', T), 'error')
     } finally {
       setLoading(false)
@@ -284,7 +292,11 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
                         className={inputClass}
                         dir="ltr"
                         value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        error={passwordError || undefined}
+                        onChange={(e) => {
+                          if (passwordError) setPasswordError(null);
+                          setPassword(e.target.value);
+                        }}
                       />
                       {password.length > 0 && (
                         <div className="mt-2 animate-fade">
@@ -372,8 +384,16 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
                 </div>
               </div>
 
-
-              
+              {/* Permissions Section */}
+              <PermissionsFieldset
+                selectedPermissions={selectedPermissions}
+                onChange={setSelectedPermissions}
+                disabled={mode === 'view'}
+                titleAr={t('permissions', T)}
+                titleEn={t('permissions', T)}
+                descriptionAr={t('permissions_desc', T)}
+                descriptionEn={t('permissions_desc', T)}
+              />
 
               <div className="flex flex-col gap-2">
                 <label htmlFor={inputId('description')} className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.description', T)}</label>

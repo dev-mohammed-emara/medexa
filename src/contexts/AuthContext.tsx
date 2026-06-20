@@ -3,6 +3,8 @@ import React, { createContext, useContext, useEffect, useRef, useState, useCallb
 import { deleteCookie, getCookie, setCookie, isTokenExpired } from '../utils/cookie'
 import { jwtDecode } from 'jwt-decode'
 
+import { BYPASS_AUTH_GUARDS } from '../config/auth';
+
 export interface UserProfile {
   uuid?: string
   firstName: string
@@ -41,12 +43,27 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 // Helper function to parse JWT token
 const parseJWT = (token: string): any => {
   try {
-    const decoded = jwtDecode(token)
-    return decoded
+    return jwtDecode<any>(token)
   } catch (error) {
     console.error('Failed to parse JWT:', error)
     return null
   }
+}
+
+const extractPermissionsFromToken = (decoded: any): string[] => {
+  if (!decoded) return []
+  const tokenRoles = Array.isArray(decoded.roles) 
+    ? decoded.roles.map((r: any) => typeof r === 'object' ? r.authority || r.role : r) 
+    : (typeof decoded.roles === 'string' ? decoded.roles.split(',').map((s: string) => s.trim()).filter(Boolean) : [])
+  
+  const tokenAuthoritiesStr = decoded.authorities || ''
+  const tokenAuthorities = Array.isArray(tokenAuthoritiesStr)
+    ? tokenAuthoritiesStr.map((a: any) => typeof a === 'object' ? a.authority || a.role || a.name : a)
+    : (typeof tokenAuthoritiesStr === 'string'
+      ? tokenAuthoritiesStr.split(',').map((s: string) => s.trim()).filter(Boolean)
+      : [])
+  
+  return Array.from(new Set([...tokenRoles, ...tokenAuthorities]))
 }
 
 const getProfileEndpoint = (token: string): string => {
@@ -84,10 +101,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return saved ? JSON.parse(saved) : null
   })
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    if (BYPASS_AUTH_GUARDS) return true;
     const token = getCookie('token')
     return !!token && !isTokenExpired(token)
   })
   const [loading, setLoading] = useState<boolean>(() => {
+    if (BYPASS_AUTH_GUARDS) return false;
     const token = getCookie('token')
     return !!token && !isTokenExpired(token) && !!getCookie('refreshToken')
   })
@@ -160,7 +179,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Parse JWT to extract user data
     const decodedToken = parseJWT(newAccessToken)
-    const tokenRoles = decodedToken?.roles || []
+    const allPermissions = extractPermissionsFromToken(decodedToken)
 
     // Update access token (always)
     setCookie('token', newAccessToken, 7)
@@ -178,8 +197,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       username: decodedToken?.username,
       sub: decodedToken?.sub,
       clinicId: decodedToken?.clinicId,
-      permissions: tokenRoles,
-      roles: tokenRoles,
+      permissions: allPermissions,
+      roles: allPermissions,
       firstName: currentUser.firstName || decodedToken?.sub || 'User',
       surName: currentUser.surName || '',
       lastName: currentUser.lastName || '',
@@ -213,15 +232,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const performInitialRefresh = async () => {
       const token = getCookie('token')
-      if (token && isTokenExpired(token)) {
+      if (token && isTokenExpired(token) && !BYPASS_AUTH_GUARDS) {
         console.warn("Initial load token expired, logging out...")
         await logout()
         setLoading(false)
         return
       }
 
-      // If token is valid, schedule refresh for later and finish loading immediately
-      if (token && !isTokenExpired(token)) {
+      // If token is valid (or bypassed), schedule refresh for later and finish loading immediately
+      if (token && (!isTokenExpired(token) || BYPASS_AUTH_GUARDS)) {
         try {
           const decoded = parseJWT(token)
           if (decoded && decoded.exp) {
@@ -241,12 +260,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           })
           if (response.ok) {
             const data = await response.json()
-            const tokenRoles = decoded?.roles || []
-            const tokenAuthoritiesStr = decoded?.authorities || ''
-            const tokenAuthorities = typeof tokenAuthoritiesStr === 'string' 
-              ? tokenAuthoritiesStr.split(',').map(s => s.trim()).filter(Boolean)
-              : (Array.isArray(tokenAuthoritiesStr) ? tokenAuthoritiesStr : [])
-            const allPermissions = Array.from(new Set([...tokenRoles, ...tokenAuthorities]))
+            const allPermissions = extractPermissionsFromToken(decoded)
 
             const userProfile: UserProfile = {
               ...data.user,
@@ -333,7 +347,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Parse JWT to extract user data
     const decodedToken = parseJWT(token)
-    const tokenRoles = decodedToken?.roles || []
+    const allPermissions = extractPermissionsFromToken(decodedToken)
 
     // Save user data (prefer profile endpoint, fallback to JWT/response data, then defaults)
     let userProfile: UserProfile;
@@ -356,8 +370,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           username: decodedToken?.username,
           sub: decodedToken?.sub,
           clinicId: decodedToken?.clinicId,
-          permissions: tokenRoles,
-          roles: tokenRoles,
+          permissions: allPermissions,
+          roles: allPermissions,
         }
       } else {
         throw new Error("Failed to fetch doctor profile")
@@ -370,18 +384,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           username: decodedToken?.username,
           sub: decodedToken?.sub,
           clinicId: decodedToken?.clinicId,
-          permissions: tokenRoles,
-          roles: tokenRoles,
+          permissions: allPermissions,
+          roles: allPermissions,
         };
       } else {
         const savedUserStr = localStorage.getItem('medexa_user');
         const savedUser = savedUserStr ? JSON.parse(savedUserStr) : null;
-        const tokenRoles = decodedToken?.roles || [];
-        const tokenAuthoritiesStr = decodedToken?.authorities || '';
-        const tokenAuthorities = typeof tokenAuthoritiesStr === 'string' 
-          ? tokenAuthoritiesStr.split(',').map(s => s.trim()).filter(Boolean)
-          : (Array.isArray(tokenAuthoritiesStr) ? tokenAuthoritiesStr : [])
-        const allPermissions = Array.from(new Set([...tokenRoles, ...tokenAuthorities]))
 
         userProfile = {
           firstName: savedUser?.firstName || "",

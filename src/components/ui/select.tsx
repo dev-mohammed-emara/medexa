@@ -32,15 +32,6 @@ function Select({
     if (backendError) setErrorMsg(backendError);
   }, [backendError]);
 
-  const handleInvalid = React.useCallback((e: React.SyntheticEvent<HTMLSelectElement>) => {
-    e.preventDefault();
-    const selectEl = e.target as HTMLSelectElement;
-    if (selectEl.validity.valueMissing) {
-      setErrorMsg(isAr ? 'يرجى ملء هذا الحقل' : 'Please fill out this field.');
-    } else {
-      setErrorMsg(selectEl.validationMessage);
-    }
-  }, [isAr]);
 
   const handleValueChange = (val: string) => {
     if (errorMsg) setErrorMsg(null);
@@ -53,11 +44,30 @@ function Select({
   return (
     <SelectContext.Provider value={{ error: currentError }}>
       <div 
-        className={cn("w-full flex flex-col", containerClassName)} 
+        className={cn("w-full flex flex-col relative", containerClassName)} 
         data-has-error={!!currentError}
-        onInvalidCapture={handleInvalid as unknown as React.ReactEventHandler<HTMLDivElement>}
       >
-        <SelectPrimitive.Root data-slot="select" {...props} onValueChange={handleValueChange} />
+        <SelectPrimitive.Root data-slot="select" {...props} onValueChange={handleValueChange} name={undefined} />
+        {props.name && (
+          <input 
+            type="text"
+            tabIndex={-1}
+            name={props.name}
+            required={props.required}
+            value={props.value || props.defaultValue || ''}
+            onChange={() => {}}
+            className="absolute bottom-0 left-1/2 w-px h-px opacity-0 pointer-events-none -z-10"
+            onInvalid={(e) => {
+              e.preventDefault();
+              const inputEl = e.target as HTMLInputElement;
+              if (inputEl.validity.valueMissing) {
+                setErrorMsg(isAr ? 'يرجى ملء هذا الحقل' : 'Please fill out this field.');
+              } else {
+                setErrorMsg(inputEl.validationMessage);
+              }
+            }}
+          />
+        )}
         {(typeof currentError === 'string' && currentError) && (
           <p className="text-[11px] text-destructive mt-1.5 font-bold animate-in fade-in slide-in-from-top-1 text-start">
             {currentError}

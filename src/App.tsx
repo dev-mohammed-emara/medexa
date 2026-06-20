@@ -116,28 +116,28 @@ const AppRoutes = () => {
 
         {/* Guarded Application Routes */}
         <Route element={<ProtectedRoute />}>
-          <Route element={<RoleProtectedRoute requiredPermissions={['MANAGE_STATISTICS', 'ROLE_CLINIC_OWNER', 'ROLE_ADMIN']} fallbackPath="/profile" />}>
+          <Route element={<RoleProtectedRoute requiredPermissions={['MANAGE_STATISTICS']} fallbackPath="/profile" />}>
             <Route index element={<Dashboard />} />
             <Route path="/dashboard" element={<Dashboard />} />
           </Route>
-          <Route element={<RoleProtectedRoute requiredPermissions={['MANAGE_DOCTORS', 'ROLE_CLINIC_OWNER', 'ROLE_ADMIN']} fallbackPath="/profile" />}>
+          <Route element={<RoleProtectedRoute requiredPermissions={['MANAGE_DOCTORS']} fallbackPath="/profile" />}>
             <Route path="/doctors" element={<Doctors />} />
           </Route>
-          <Route element={<RoleProtectedRoute requiredPermissions={['MANAGE_SECRETARIES', 'ROLE_CLINIC_OWNER', 'ROLE_ADMIN']} />}>
+          <Route element={<RoleProtectedRoute requiredPermissions={['MANAGE_SECRETARIES']} />}>
             <Route path="/secretary" element={<Secretary />} />
           </Route>
-          <Route element={<RoleProtectedRoute requiredPermissions={['MANAGE_PATIENTS', 'ROLE_CLINIC_OWNER', 'ROLE_ADMIN']} />}>
+          <Route element={<RoleProtectedRoute requiredPermissions={['MANAGE_PATIENTS']} />}>
             <Route path="/patients" element={<Patients />} />
             <Route path="/patients/:name" element={<PatientDetails />} />
           </Route>
-          <Route element={<RoleProtectedRoute requiredPermissions={['MANAGE_APPOINTMENTS', 'ROLE_CLINIC_OWNER', 'ROLE_ADMIN']} />}>
+          <Route element={<RoleProtectedRoute requiredPermissions={['MANAGE_APPOINTMENTS']} />}>
             <Route path="/appointments" element={<Appointments />} />
+            <Route path="/appointment-types" element={<AppointmentTypes />} />
           </Route>
-          <Route path="/appointment-types" element={<AppointmentTypes />} />
-          <Route element={<RoleProtectedRoute requiredPermissions={['MANAGE_MEDICAL_RECORDS', 'MANAGE_PATIENTS', 'ROLE_CLINIC_OWNER', 'ROLE_ADMIN']} />}>
+          <Route element={<RoleProtectedRoute requiredPermissions={['MANAGE_MEDICAL_RECORDS']} />}>
             <Route path="/records" element={<Records />} />
           </Route>
-          <Route element={<RoleProtectedRoute requiredPermissions={['MANAGE_TRANSACTIONS', 'MANAGE_CLINIC', 'ROLE_CLINIC_OWNER', 'ROLE_ADMIN']} />}>
+          <Route element={<RoleProtectedRoute requiredPermissions={['MANAGE_TRANSACTIONS']} />}>
             <Route path="/finance" element={<Finance />} />
           </Route>
           <Route path="/profile" element={<Profile />} />

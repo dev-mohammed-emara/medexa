@@ -15,7 +15,9 @@ import { Switch } from '../../components/ui/Switch';
 import { cn } from '../../utils/cn';
 import Modal from '../../components/ui/Modal';
 import { getCookie } from '../../utils/cookie';
+import { apiFetch } from '../../utils/apiFetch';
 import Input from '../../components/ui/Input';
+import TimePicker from '../../components/ui/TimePicker';
 import {
   Settings as SettingsIcon,
   Globe,
@@ -73,6 +75,7 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
   // Form State
   const [currency, setCurrency] = useState('JOD');
   const [appointmentPeriod, setAppointmentPeriod] = useState(30);
+  const [appointmentPeriodError, setAppointmentPeriodError] = useState<string | null>(null);
   const [days, setDays] = useState<WorkingDay[]>(INITIAL_DAYS);
 
   const [isEditingSchedule, setIsEditingSchedule] = useState(false);
@@ -101,7 +104,7 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
           'Content-Type': 'application/json',
           ...(token ? { 'Authorization': `Bearer ${token}` } : {})
         };
-        const response = await fetch('/api/clinic/me', {
+        const response = await apiFetch('/api/clinic/me', {
           method: 'GET',
           headers
         });
@@ -131,7 +134,7 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
           'Content-Type': 'application/json',
           ...(token ? { 'Authorization': `Bearer ${token}` } : {})
         };
-        const response = await fetch('/api/clinicschedule/me', {
+        const response = await apiFetch('/api/clinicschedule/me', {
           method: 'GET',
           headers
         });
@@ -245,6 +248,7 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
   const [cancelingSection, setCancelingSection] = useState<'clinic' | 'general' | 'working' | null>(null);
 
   const handleSaveGeneralSettings = async () => {
+    setAppointmentPeriodError(null);
     try {
       const token = getCookie('token');
       const headers = {
@@ -252,7 +256,7 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
         ...(token ? { 'Authorization': `Bearer ${token}` } : {})
       };
 
-      const response = await fetch('/api/clinic/settings', {
+      const response = await apiFetch('/api/clinic/setting', {
         method: 'PATCH',
         headers,
         body: JSON.stringify({
@@ -272,10 +276,12 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
           const errData = await response.json();
           errMsg = errData.message || errData.error || errMsg;
         } catch (e) { }
+        setAppointmentPeriodError(errMsg);
         window.showToast(errMsg, 'error');
       }
     } catch (err: any) {
       console.error(err);
+      setAppointmentPeriodError(err.message || 'Error saving settings');
       window.showToast(err.message || 'Error saving settings', 'error');
     }
   };
@@ -303,7 +309,7 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
     }).filter(Boolean);
 
     try {
-      const response = await fetch('/api/clinicschedule/assignschedule', {
+      const response = await apiFetch('/api/clinicschedule/assignschedule', {
         method: 'PUT',
         headers,
         body: JSON.stringify({ schedules: schedulesPayload })
@@ -325,7 +331,7 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
           if (errData.details && Array.isArray(errData.details)) {
             const dayErrors: Record<string, string[]> = {};
             const dayNames = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
-            
+
             errData.details.forEach((d: any) => {
               if (d.message) {
                 const foundDay = dayNames.find(dayName => d.message.includes(dayName));
@@ -572,8 +578,14 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
               </label>
               <Input
                 type="tel"
+                error={appointmentPeriodError || undefined}
                 value={appointmentPeriod}
-                onChange={(e) => setAppointmentPeriod(Number(e.target.value.replace(/\D/g, '')))}
+                onChange={(e) => {
+                  let val = e.target.value.replace(/\D/g, '');
+                  if (parseInt(val) > 240) val = '240';
+                  if (appointmentPeriodError) setAppointmentPeriodError(null);
+                  setAppointmentPeriod(Number(val));
+                }}
                 dir="ltr"
                 className={cn(
                   "h-12 bg-muted/30 border-border focus:bg-white focus:border-primary transition-all duration-300 font-bold",
@@ -598,7 +610,7 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
           "bg-white rounded-xl border border-border p-4 sm:p-8 shadow-sm hover:shadow-md transition-all duration-300 opacity-0",
           canAnimate && "animate-fadeUp animate-delay-400"
         )}>
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
             <figure className="flex items-center gap-4">
               <div className="w-14 h-14 bg-accent/10 rounded-2xl flex items-center justify-center shrink-0">
                 <FaCalendarAlt className="size-7 text-accent" />
@@ -617,7 +629,7 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
                 {isAr ? 'تعديل الجدول' : 'Modify Schedule'}
               </button>
             ) : (
-              <div className="flex gap-2 shrink-0">
+              <div className="flex gap-2 shrink-0 flex-wrap">
                 <button
                   onClick={handleCancelSchedule}
                   className="h-10 px-4 rounded-xl border border-border text-foreground bg-white hover:bg-muted transition-all font-bold flex items-center gap-2 text-sm"
@@ -677,27 +689,27 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
                       {day.periods.map((period) => (
                         <div key={period.id} className="flex items-center gap-4 bg-white/60 p-3 rounded-xl border border-gray-200 animate-in fade-in slide-in-from-top-1">
                           <div className="flex flex-wrap justify-center special:justify-start items-center gap-6 flex-1 ">
-                            <div className="flex items-center gap-3">
-                              <label className="text-sm font-medium text-muted-foreground">{t('common.from')}</label>
+                            <div className="flex items-center gap-3 flex-1 w-full">
+                              <label className="text-sm font-medium text-muted-foreground whitespace-nowrap">{t('common.from')}</label>
                               {isEditingSchedule ? (
-                                <input
-                                  type="time"
+                                <TimePicker
                                   value={period.from}
-                                  onChange={(e) => updatePeriod(day.id, period.id, 'from', e.target.value)}
-                                  className="h-10 xs:h-8 w-full border border-muted bg-white shadow-none focus:ring-1 focus:ring-primary rounded-md text-sm outline-none px-2"
+                                  onChange={(val) => updatePeriod(day.id, period.id, 'from', val)}
+                                  className="h-10 xs:h-8 w-full flex-1 border border-muted bg-white shadow-none focus-within:ring-1 focus-within:ring-primary rounded-md text-sm min-w-[80px]"
+                                  noClock
                                 />
                               ) : (
                                 <span className="font-bold text-sm text-foreground">{period.from}</span>
                               )}
                             </div>
-                            <div className="flex items-center gap-3">
-                              <label className="text-sm font-medium text-muted-foreground">{t('common.to')}</label>
+                            <div className="flex items-center gap-3 flex-1 w-full">
+                              <label className="text-sm font-medium text-muted-foreground whitespace-nowrap">{t('common.to')}</label>
                               {isEditingSchedule ? (
-                                <input
-                                  type="time"
+                                <TimePicker
                                   value={period.to}
-                                  onChange={(e) => updatePeriod(day.id, period.id, 'to', e.target.value)}
-                                  className="h-10 xs:h-8 w-full border border-muted bg-white shadow-none focus:ring-1 focus:ring-primary rounded-md text-sm outline-none px-2"
+                                  onChange={(val) => updatePeriod(day.id, period.id, 'to', val)}
+                                  className="h-10 xs:h-8 w-full flex-1 border border-muted bg-white shadow-none focus-within:ring-1 focus-within:ring-primary rounded-md text-sm min-w-[80px]"
+                                  noClock
                                 />
                               ) : (
                                 <span className="font-bold text-sm text-foreground">{period.to}</span>
@@ -754,9 +766,9 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
           )}
 
           <figure className="mt-8 text-center xs:text-start text-pretty flex-wrap gap-4 p-4 xs:p-6 bg-white rounded-2xl border border-gray-200 flex items-center justify-between">
-            <div className="flex items-center flex-col xs:flex-row gap-4">
+            <div className="flex items-center flex-col  xs:flex-row gap-4">
               <Clock className="size-6 text-primary" />
-              <figcaption className={cn("text-muted-foreground", isAr ? "text-right" : "text-left")}>
+              <figcaption className={cn("text-muted-foreground max-xs:text-center", isAr ? "text-right" : "text-left")}>
                 {t('common.working_days')}: <span className="text-primary font-bold">{workingDaysCount} {t('common.days')}</span>
                 <span className="mx-2 opacity-30 text-muted-foreground">|</span>
                 {t('common.off_days')}: <span className="text-destructive font-bold">{offDaysCount} {t('common.days')}</span>
