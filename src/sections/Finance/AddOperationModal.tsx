@@ -160,12 +160,15 @@ const AddOperationModal = ({ isOpen, onClose, onSuccess, mode = 'add', transacti
         try {
           const errData = await response.json();
           errMsg = errData.message || errData.error || errMsg;
-        } catch (e) { }
+        } catch (e) { /* ignore */ }
         setError(errMsg);
+        window.showToast?.(errMsg, 'error');
       }
     } catch (error: any) {
       console.error('Error adding transaction:', error);
-      setError(error.message || 'Error communicating with server');
+      const msg = error.message || 'Error communicating with server';
+      setError(msg);
+      window.showToast?.(msg, 'error');
     }
   };
 
@@ -210,12 +213,15 @@ const AddOperationModal = ({ isOpen, onClose, onSuccess, mode = 'add', transacti
         try {
           const errData = await response.json();
           errMsg = errData.message || errData.error || errMsg;
-        } catch (e) { }
+        } catch (e) { /* ignore */ }
         setError(errMsg);
+        window.showToast?.(errMsg, 'error');
       }
     } catch (error: any) {
       console.error('Error editing transaction:', error);
-      setError(error.message || 'Error communicating with server');
+      const msg = error.message || 'Error communicating with server';
+      setError(msg);
+      window.showToast?.(msg, 'error');
     }
   };
 

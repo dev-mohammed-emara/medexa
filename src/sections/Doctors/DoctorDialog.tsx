@@ -153,7 +153,9 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
       if (error.message && error.message.toLowerCase().includes('password')) {
         setPasswordError(error.message);
       }
-      setError(error.message || t('error_save', T))
+      const msg = error.message || t('error_save', T);
+      setError(msg)
+      window.showToast?.(msg, 'error')
     } finally {
       setLoading(false)
     }

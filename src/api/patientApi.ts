@@ -33,6 +33,28 @@ interface FetchPatientsParams {
   sort?: string
 }
 
+export interface CreatePatientPayload {
+  firstName: string
+  surName: string
+  lastName: string
+  phoneNumber: string
+  gender: 'MALE' | 'FEMALE'
+  dateOfBirth: string
+  address: string
+  note?: string
+}
+
+export interface UpdatePatientPayload {
+  firstName?: string
+  surName?: string
+  lastName?: string
+  phoneNumber?: string
+  gender?: 'MALE' | 'FEMALE'
+  dateOfBirth?: string
+  address?: string
+  note?: string
+}
+
 const getHeaders = () => {
   checkTokenOrRedirect()
   const token = getCookie('token')
@@ -75,7 +97,7 @@ export const fetchPatientByUuid = async (uuid: string): Promise<ApiPatient> => {
   return response.json()
 }
 
-export const createPatient = async (body: any): Promise<ApiPatient> => {
+export const createPatient = async (body: CreatePatientPayload): Promise<ApiPatient> => {
   const response = await apiFetch('/api/patient', {
     method: 'POST',
     headers: getHeaders(),
@@ -96,7 +118,7 @@ export const createPatient = async (body: any): Promise<ApiPatient> => {
   return response.json()
 }
 
-export const updatePatient = async (uuid: string, body: any): Promise<ApiPatient> => {
+export const updatePatient = async (uuid: string, body: UpdatePatientPayload): Promise<ApiPatient> => {
   const response = await apiFetch(`/api/patient/${uuid}`, {
     method: 'PUT',
     headers: getHeaders(),

@@ -3,21 +3,21 @@ import { cacheData, getCachedData, broadcastUpdate, CHANNEL_NAME } from '../util
 
 interface BroadcastMessage {
   type: string;
-  payload: any;
+  payload: unknown;
   timestamp: number;
 }
 
 interface BroadcastContextType {
-  cacheData: (key: string, data: any) => Promise<void>;
-  getCachedData: (key: string) => Promise<any>;
-  broadcastUpdate: (type: string, payload: any) => void;
-  subscribe: (type: string, callback: (payload: any) => void) => () => void;
+  cacheData: (key: string, data: unknown) => Promise<void>;
+  getCachedData: (key: string) => Promise<unknown>;
+  broadcastUpdate: (type: string, payload: unknown) => void;
+  subscribe: (type: string, callback: (payload: unknown) => void) => () => void;
 }
 
 const BroadcastContext = createContext<BroadcastContextType | undefined>(undefined);
 
 export const BroadcastProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [, setListeners] = useState<Record<string, Array<(payload: any) => void>>>({});
+  const [, setListeners] = useState<Record<string, Array<(payload: unknown) => void>>>({});
 
   useEffect(() => {
     const bc = new BroadcastChannel(CHANNEL_NAME);
@@ -36,7 +36,7 @@ export const BroadcastProvider: React.FC<{ children: ReactNode }> = ({ children 
     };
   }, []);
 
-  const subscribe = useCallback((type: string, callback: (payload: any) => void) => {
+  const subscribe = useCallback((type: string, callback: (payload: unknown) => void) => {
     setListeners((prev) => {
       const newListeners = { ...prev };
       if (!newListeners[type]) {

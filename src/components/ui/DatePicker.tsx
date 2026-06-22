@@ -28,7 +28,7 @@ export const DatePicker = React.forwardRef<any, DatePickerProps>(
     }, [backendError]);
 
 
-    const handleChange = (dates: Date[], dateStr: string, instance: any) => {
+    const handleChange = (dates: Date[], dateStr: string, instance: import('flatpickr').default.Instance) => {
       if (errorMsg) setErrorMsg(null);
       if (backendError) setBackendError(null);
       if (onChange) {
@@ -43,9 +43,9 @@ export const DatePicker = React.forwardRef<any, DatePickerProps>(
     const currentError = errorMsg || error;
 
     return (
-      <div 
+      <div
         ref={containerRef}
-        className={cn("w-full flex flex-col relative", containerClassName)} 
+        className={cn("w-full flex flex-col relative", containerClassName)}
         data-has-error={!!currentError}
       >
         <input
@@ -54,7 +54,7 @@ export const DatePicker = React.forwardRef<any, DatePickerProps>(
           name={name}
           required={required}
           value={(props.value as string) || ''}
-          onChange={() => {}}
+          onChange={() => { }}
           className="absolute bottom-0 left-1/2 w-px h-px opacity-0 pointer-events-none -z-10"
           onInvalid={(e) => {
             e.preventDefault();

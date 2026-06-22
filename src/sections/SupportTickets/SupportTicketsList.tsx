@@ -4,7 +4,7 @@ import {
   RotateCcw
 } from 'lucide-react';
 import { DateFromTo } from '../../components/ui/DateFromTo';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '../../components/ui/Button';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { usePreloader } from '../../contexts/PreloaderContext';
@@ -75,7 +75,7 @@ const SupportTicketsList = () => {
 
 
   // Load support tickets from API
-  const loadTickets = async () => {
+  const loadTickets = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -97,7 +97,7 @@ const SupportTicketsList = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, pageSize, activeStatus, activePriority, activeFromDate, activeToDate, activeSort, isAr]);
 
   useBroadcast((event) => {
     if (event.type === 'DATA_UPDATE' && event.module === 'support-tickets') {
@@ -107,7 +107,7 @@ const SupportTicketsList = () => {
 
   useEffect(() => {
     loadTickets();
-  }, [currentPage, pageSize, activeStatus, activePriority, activeFromDate, activeToDate, activeSort, isAr]);
+  }, [currentPage, pageSize, activeStatus, activePriority, activeFromDate, activeToDate, activeSort, isAr, loadTickets]);
 
   const handleApplyFilters = () => {
     setActiveStatus(status);

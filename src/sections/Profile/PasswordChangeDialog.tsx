@@ -110,7 +110,7 @@ const PasswordChangeDialog = ({ isOpen, onClose }: PasswordChangeDialogProps) =>
         try {
           const errData = await response.json();
           errorMsg = errData.message || errData.error || errorMsg;
-        } catch (e) {}
+        } catch (e) { /* ignore */ }
         throw new Error(errorMsg);
       }
 

@@ -55,7 +55,7 @@ const ChartsOverview = ({
 
   const translatedAppointmentData = (dailyAppointments && dailyAppointments.length > 0)
     ? dailyAppointments.map(item => {
-      let name = item.dayOfWeek
+      const name = item.dayOfWeek
       let dayKey = ''
       const lowerDay = item.dayOfWeek.toLowerCase()
       if (lowerDay === 'sunday') dayKey = 'sun'

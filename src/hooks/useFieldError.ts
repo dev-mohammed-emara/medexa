@@ -8,11 +8,11 @@ export const useFieldError = (name?: string) => {
 
     const handleBackendError = (e: Event) => {
       const customEvent = e as CustomEvent;
-      const errorData = customEvent.detail;
+      const errorData = customEvent.detail as { details?: Array<{ field: string; message?: string }>; message?: string } | null;
       
       // Check if there are details and try to find the specific field
-      if (errorData.details && Array.isArray(errorData.details) && errorData.details.length > 0) {
-        const detail = errorData.details.find((d: any) => d.field === name);
+      if (errorData && errorData.details && Array.isArray(errorData.details) && errorData.details.length > 0) {
+        const detail = errorData.details.find((d) => d.field === name);
         if (detail) {
           setBackendError(detail.message || errorData.message || null);
         }

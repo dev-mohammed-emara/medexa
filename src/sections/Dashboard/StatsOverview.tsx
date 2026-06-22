@@ -1,5 +1,5 @@
 import { ArrowUp, DollarSign, TrendingUp, Users, Calendar } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { gsap } from 'gsap'
 import Counter from '../../components/ui/Counter'
 import { cn } from '../../utils/cn'
@@ -49,7 +49,7 @@ const StatsOverview = ({ clinicStats }: StatsOverviewProps) => {
     return parseFloat(cleaned) || defaultVal
   }
 
-  const dynamicStats: StatItem[] = [
+  const dynamicStats = React.useMemo<StatItem[]>(() => [
     {
       label: t('stats.total_patients', T),
       value: parseValue(clinicStats?.totalPatients?.value, 0),
@@ -100,7 +100,7 @@ const StatsOverview = ({ clinicStats }: StatsOverviewProps) => {
       isPercent: true,
       changePeriod: clinicStats?.growthRate?.changePeriod
     }
-  ]
+  ], [clinicStats, t, T]);
 
   useEffect(() => {
     if (!canAnimate || !sectionRef.current) return
@@ -161,8 +161,7 @@ const StatsOverview = ({ clinicStats }: StatsOverviewProps) => {
     }
 
     return () => observer.disconnect()
-  }, [canAnimate, dynamicStats.length, clinicStats])
-
+  }, [canAnimate, dynamicStats]);
   // Exit animation logic
   useEffect(() => {
     if (isExiting && cardsRef.current.length > 0) {

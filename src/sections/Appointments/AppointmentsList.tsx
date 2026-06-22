@@ -38,9 +38,45 @@ import { enUS } from 'date-fns/locale';
 import AppointmentsDialog, { type Appointment } from './AppointmentsDialog';
 import { statusConfig } from './constants';
 import { useBroadcast } from '../../hooks/useBroadcast';
-import { fetchDoctors } from '../../api/doctorApi';
+import { fetchDoctors, type ApiDoctor } from '../../api/doctorApi';
 import { getCookie } from '../../utils/cookie';
 import { useAuth } from '../../contexts/AuthContext';
+
+interface CalendarAppointment {
+  uuid: string;
+  appointmentStartTime: string;
+  appointmentEndTime: string;
+  patientName: string;
+  doctorName: string;
+  status: string;
+  patientUuid?: string;
+  doctorUuid?: string;
+}
+
+interface CalendarDay {
+  date: string;
+  appointments: CalendarAppointment[];
+}
+
+interface PendingAppointment {
+  uuid: string;
+  date: string;
+  time: string;
+  patientName: string;
+  doctorName: string;
+}
+
+interface MedicalRecordData {
+  patientUuid: string;
+  doctorUuid: string;
+  appointmentUuid: string;
+  caseDescription: string;
+  diagnosis: string;
+  treatmentPlan: string;
+  note: string;
+  amount: number;
+  transactionNote: string;
+}
 
 
 const AppointmentsList = () => {
@@ -63,7 +99,7 @@ const AppointmentsList = () => {
   const [lastSelectedDate, setLastSelectedDate] = useState<Date | null>(null);
 
   const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [doctorsList, setDoctorsList] = useState<any[]>([]);
+  const [doctorsList, setDoctorsList] = useState<Array<Partial<ApiDoctor>>>([]);
 
   // Load doctors for filter select
   useEffect(() => {
@@ -74,17 +110,17 @@ const AppointmentsList = () => {
           setDoctorsList(res.content);
         } else {
           setDoctorsList([
-            { uuid: '33c044ef-e69e-4dbb-839d-402f06ad0201', user: { firstName: 'Ahmad', lastName: 'Masri' } },
-            { uuid: 'doctor-sami-uuid', user: { firstName: 'Sami', lastName: 'Sami' } },
-            { uuid: 'doctor-layla-uuid', user: { firstName: 'Layla', lastName: 'Layla' } }
+            { uuid: '33c044ef-e69e-4dbb-839d-402f06ad0201', user: { firstName: 'Ahmad', surName: '', lastName: 'Masri', email: '', phoneNumber: '', gender: 'MALE', dateOfBirth: '1990-01-01', permissions: [] } },
+            { uuid: 'doctor-sami-uuid', user: { firstName: 'Sami', surName: '', lastName: 'Sami', email: '', phoneNumber: '', gender: 'MALE', dateOfBirth: '1990-01-01', permissions: [] } },
+            { uuid: 'doctor-layla-uuid', user: { firstName: 'Layla', surName: '', lastName: 'Layla', email: '', phoneNumber: '', gender: 'MALE', dateOfBirth: '1990-01-01', permissions: [] } }
           ]);
         }
       } catch (err) {
         console.error('Failed to load doctors in list:', err);
         setDoctorsList([
-          { uuid: '33c044ef-e69e-4dbb-839d-402f06ad0201', user: { firstName: 'Ahmad', lastName: 'Masri' } },
-          { uuid: 'doctor-sami-uuid', user: { firstName: 'Sami', lastName: 'Sami' } },
-          { uuid: 'doctor-layla-uuid', user: { firstName: 'Layla', lastName: 'Layla' } }
+          { uuid: '33c044ef-e69e-4dbb-839d-402f06ad0201', user: { firstName: 'Ahmad', surName: '', lastName: 'Masri', email: '', phoneNumber: '', gender: 'MALE', dateOfBirth: '1990-01-01', permissions: [] } },
+          { uuid: 'doctor-sami-uuid', user: { firstName: 'Sami', surName: '', lastName: 'Sami', email: '', phoneNumber: '', gender: 'MALE', dateOfBirth: '1990-01-01', permissions: [] } },
+          { uuid: 'doctor-layla-uuid', user: { firstName: 'Layla', surName: '', lastName: 'Layla', email: '', phoneNumber: '', gender: 'MALE', dateOfBirth: '1990-01-01', permissions: [] } }
         ]);
       }
     };
@@ -113,9 +149,9 @@ const AppointmentsList = () => {
       });
 
       if (response.ok) {
-        const data = await response.json();
-        const mapped = data.flatMap((dayData: any) => {
-          return dayData.appointments.map((app: any) => ({
+        const data = await response.json() as CalendarDay[];
+        const mapped = data.flatMap((dayData: CalendarDay) => {
+          return dayData.appointments.map((app: CalendarAppointment) => ({
             id: app.uuid,
             uuid: app.uuid,
             date: new Date(dayData.date),
@@ -188,11 +224,11 @@ const AppointmentsList = () => {
   const [isMedicalRecordModalOpen, setIsMedicalRecordModalOpen] = useState(false);
   const [medicalRecordModalMode, setMedicalRecordModalMode] = useState<'add' | 'edit' | 'view'>('add');
   const [medicalRecordUuid, setMedicalRecordUuid] = useState('');
-  const [pendingAppointments, setPendingAppointments] = useState<any[]>([]);
+  const [pendingAppointments, setPendingAppointments] = useState<PendingAppointment[]>([]);
   const [patientName, setPatientName] = useState('');
   const [doctorName, setDoctorName] = useState('');
   const [isSubmittingRecord, setIsSubmittingRecord] = useState(false);
-  const [medicalRecordData, setMedicalRecordData] = useState({
+  const [medicalRecordData, setMedicalRecordData] = useState<MedicalRecordData>({
     patientUuid: '',
     doctorUuid: '',
     appointmentUuid: '',
@@ -218,11 +254,11 @@ const AppointmentsList = () => {
         }
       });
       if (response.ok) {
-        const data = await response.json();
-        const pendingList = data.flatMap((dayData: any) => {
+        const data = await response.json() as CalendarDay[];
+        const pendingList = data.flatMap((dayData: CalendarDay) => {
           return dayData.appointments
-            .filter((app: any) => app.status === 'PENDING')
-            .map((app: any) => ({
+            .filter((app: CalendarAppointment) => app.status === 'PENDING')
+            .map((app: CalendarAppointment) => ({
               uuid: app.uuid,
               date: dayData.date,
               time: app.appointmentStartTime,
@@ -567,18 +603,18 @@ const AppointmentsList = () => {
       const url = '/api/medical-records';
       const method = isEdit ? 'PUT' : 'POST';
 
-      const payload = isEdit 
+      const payload = isEdit
         ? {
-            uuid: medicalRecordUuid,
-            caseDescription: medicalRecordData.caseDescription,
-            diagnosis: medicalRecordData.diagnosis,
-            treatmentPlan: medicalRecordData.treatmentPlan,
-            note: medicalRecordData.note
-          }
+          uuid: medicalRecordUuid,
+          caseDescription: medicalRecordData.caseDescription,
+          diagnosis: medicalRecordData.diagnosis,
+          treatmentPlan: medicalRecordData.treatmentPlan,
+          note: medicalRecordData.note
+        }
         : {
-            ...medicalRecordData,
-            amount: Number(medicalRecordData.amount)
-          };
+          ...medicalRecordData,
+          amount: Number(medicalRecordData.amount)
+        };
 
       const response = await fetch(url, {
         method: method,
@@ -591,7 +627,7 @@ const AppointmentsList = () => {
 
       if (response.ok) {
         window.showToast?.(
-          isEdit 
+          isEdit
             ? (isAr ? 'تم تحديث السجل الطبي بنجاح!' : 'Medical record updated successfully!')
             : (isAr ? 'تم إرسال السجل الطبي بنجاح والتحول لحالة مكتمل!' : 'Medical record submitted and appointment marked Completed!'),
           'success'
@@ -603,7 +639,7 @@ const AppointmentsList = () => {
         try {
           const errData = await response.json();
           errMsg = errData.message || errData.error || errMsg;
-        } catch (e) {}
+        } catch (e) { }
         window.showToast?.(errMsg, 'error');
       }
     } catch (err: any) {
@@ -732,7 +768,7 @@ const AppointmentsList = () => {
         try {
           const errData = await putRes.json();
           errMsg = errData.message || errData.error || errMsg;
-        } catch (e) {}
+        } catch (e) { }
         window.showToast?.(errMsg, 'error');
       }
     } catch (err) {
@@ -748,7 +784,7 @@ const AppointmentsList = () => {
 
     if (app) {
       if (isSameDay(app.date, newDate)) {
-         window.showToast?.(isAr ? 'الموعد موجود بالفعل في هذا اليوم' : 'Appointment is already on this day', 'error');
+        window.showToast?.(isAr ? 'الموعد موجود بالفعل في هذا اليوم' : 'Appointment is already on this day', 'error');
       } else {
         handleUpdateAppointmentDate(app, newDate);
       }
@@ -859,8 +895,8 @@ const AppointmentsList = () => {
 
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(monthStart);
-  const startDate = startOfWeek(monthStart, { locale: currentLocale });
-  const endDate = endOfWeek(monthEnd, { locale: currentLocale });
+  const startDate = startOfWeek(monthStart, { locale: currentLocale, weekStartsOn: 6 });
+  const endDate = endOfWeek(monthEnd, { locale: currentLocale, weekStartsOn: 6 });
 
   const calendarDays = eachDayOfInterval({
     start: startDate,
@@ -928,7 +964,7 @@ const AppointmentsList = () => {
             } else {
               errMsg = errData.message || errData.error || errMsg;
             }
-          } catch (e) {}
+          } catch (e) { }
           window.showToast?.(errMsg, 'error');
         }
       } catch (error: any) {
@@ -988,7 +1024,7 @@ const AppointmentsList = () => {
             <SelectContent smallZ={true}>
               <SelectItem value="all">{t('all_doctors', T)}</SelectItem>
               {doctorsList.map((doc) => (
-                <SelectItem key={doc.uuid} value={doc.uuid}>
+                <SelectItem key={doc.uuid} value={doc.uuid || ''}>
                   {doc.user ? `${doc.user.firstName} ${doc.user.lastName}` : doc.uuid}
                 </SelectItem>
               ))}
@@ -1076,7 +1112,7 @@ const AppointmentsList = () => {
             <div className="min-w-[800px] w-full lg:min-w-0">
               {/* Day Headers */}
               <figure className="grid grid-cols-7 gap-3 mb-2">
-                {[t('days.sun', T), t('days.mon', T), t('days.tue', T), t('days.wed', T), t('days.thu', T), t('days.fri', T), t('days.sat', T)].map((day) => (
+                {[t('days.sat', T), t('days.sun', T), t('days.mon', T), t('days.tue', T), t('days.wed', T), t('days.thu', T), t('days.fri', T)].map((day) => (
                   <div key={day} className="text-center py-3">
                     <span className="text-sm font-bold text-muted-foreground/80 tracking-wide uppercase">{day}</span>
                   </div>
@@ -1112,8 +1148,8 @@ const AppointmentsList = () => {
                       className={cn(
                         "min-h-[100px] p-2 rounded-xl border-2 transition-all duration-300 cursor-pointer group relative touch-pan-y",
                         isSelected ? "border-primary bg-primary/10 shadow-lg shadow-primary/20" :
-                        isToday ? "border-primary/50 bg-primary/5 shadow-md shadow-primary/5" :
-                        "border-border bg-muted/20 hover:border-primary/50 hover:bg-muted/40 hover:shadow-md",
+                          isToday ? "border-primary/50 bg-primary/5 shadow-md shadow-primary/5" :
+                            "border-border bg-muted/20 hover:border-primary/50 hover:bg-muted/40 hover:shadow-md",
                         dropTargetDate && isSameDay(date, dropTargetDate) && "border-dashed border-primary ring-4 ring-primary/10 scale-[1.02] z-30"
                       )}
                     >
@@ -1241,9 +1277,9 @@ const AppointmentsList = () => {
                                   )}>
                                     <div className={cn("size-1 rounded-full", isAr ? "ml-1" : "mr-1", config.dotColor)} />
                                     {app.status === 'pending' ? t('dialog.status_pending', T) :
-                                     app.status === 'completed' ? t('dialog.status_completed', T) :
-                                     app.status === 'canceled' ? t('dialog.status_canceled', T) :
-                                     app.status}
+                                      app.status === 'completed' ? t('dialog.status_completed', T) :
+                                        app.status === 'canceled' ? t('dialog.status_canceled', T) :
+                                          app.status}
                                   </span>
                                 </div>
 
@@ -1271,7 +1307,7 @@ const AppointmentsList = () => {
                                 </div>
 
                                 <div className={cn("flex flex-wrap gap-2 pt-2", isAr ? "flex-row" : "flex-row-reverse")}>
-                                                                  <button
+                                  <button
                                     onClick={(e) => { e.stopPropagation(); handleOpenDialog('view', app); }}
                                     className="inline-flex items-center justify-center whitespace-nowrap font-medium transition-all duration-300 border bg-background text-foreground hover:bg-accent hover:text-accent-foreground rounded-md gap-1.5 px-3 flex-1 h-8 text-xs hover:border-primary/30 hover:shadow-lg hover:-translate-y-0.5"
                                   >
@@ -1328,9 +1364,9 @@ const AppointmentsList = () => {
                                     <div className="flex items-center gap-1.5 text-[10px] font-bold text-rose-600">
                                       <X className="size-3" />
                                       {t('canceled_by', T)}: {app.canceledBy === 'doctor' ? t('cancelers.doctor', T) :
-                                                              app.canceledBy === 'patient' ? t('cancelers.patient', T) :
-                                                              app.canceledBy === 'secretary' ? t('cancelers.secretary', T) :
-                                                              (app.canceledBy || (isAr ? "غير محدد" : "Not specified"))}
+                                        app.canceledBy === 'patient' ? t('cancelers.patient', T) :
+                                          app.canceledBy === 'secretary' ? t('cancelers.secretary', T) :
+                                            (app.canceledBy || (isAr ? "غير محدد" : "Not specified"))}
                                     </div>
                                     <p className="text-[10px] text-rose-700 leading-relaxed italic bg-white/60 p-2 rounded-md border border-rose-100/50">
                                       {t(`cancel_reasons.${app.cancellationReason}`, T) || app.cancellationReason || (isAr ? "لا يوجد سبب محدد" : "No specific reason provided")}
@@ -1522,15 +1558,15 @@ const AppointmentsList = () => {
           medicalRecordModalMode === 'view'
             ? (isAr ? 'تفاصيل السجل الطبي' : 'Medical Record Details')
             : medicalRecordModalMode === 'edit'
-            ? (isAr ? 'تعديل السجل الطبي' : 'Edit Medical Record')
-            : (isAr ? 'تقديم السجل الطبي' : 'Submit Medical Record')
+              ? (isAr ? 'تعديل السجل الطبي' : 'Edit Medical Record')
+              : (isAr ? 'تقديم السجل الطبي' : 'Submit Medical Record')
         }
         message={
           medicalRecordModalMode === 'view'
             ? (isAr ? 'عرض تفاصيل السجل الطبي للمريض' : 'View patient medical record details')
             : medicalRecordModalMode === 'edit'
-            ? (isAr ? 'تعديل تفاصيل السجل الطبي للمريض' : 'Edit patient medical record details')
-            : (isAr ? 'أدخل تفاصيل السجل الطبي الجديد للمريض' : 'Enter the details of the new medical record for the patient')
+              ? (isAr ? 'تعديل تفاصيل السجل الطبي للمريض' : 'Edit patient medical record details')
+              : (isAr ? 'أدخل تفاصيل السجل الطبي الجديد للمريض' : 'Enter the details of the new medical record for the patient')
         }
         hideHeaderIcon={true}
         showCloseButton={true}

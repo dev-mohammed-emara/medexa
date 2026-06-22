@@ -43,7 +43,7 @@ const PatientsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Patie
   const overlayRef = useRef<HTMLDivElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
 
-  const [selectedGender, setSelectedGender] = useState(initialData?.gender || "");
+  const [selectedGender, setSelectedGender] = useState<'MALE' | 'FEMALE' | ''>(initialData?.gender || "");
   const [selectedDob, setSelectedDob] = useState<string>(initialData?.dateOfBirth || "");
   const [isClosing, setIsClosing] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -98,7 +98,7 @@ const PatientsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Patie
         surName: String(formDataObj.surName),
         lastName: String(formDataObj.lastName),
         phoneNumber: formatPhoneForPayload(String(formDataObj.phoneNumber)),
-        gender: selectedGender || 'MALE',
+        gender: (selectedGender || 'MALE') as 'MALE' | 'FEMALE',
         dateOfBirth: selectedDob || '1990-01-01',
         address: String(formDataObj.address || ''),
         note: String(formDataObj.note || '')
@@ -113,10 +113,7 @@ const PatientsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Patie
         if (!initialData?.uuid) {
           throw new Error('Missing patient UUID for update')
         }
-        responseData = await updatePatient(initialData.uuid, {
-          ...bodyPayload,
-          uuid: initialData.uuid
-        })
+        responseData = await updatePatient(initialData.uuid, bodyPayload)
         window.showToast?.(t('toast_update_success', T), 'success')
       }
 
@@ -124,8 +121,9 @@ const PatientsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Patie
       broadcast({ type: 'DATA_UPDATE', module: 'patients' });
       handleClose();
     } catch (error: any) {
-      console.error(error)
-      setError(error.message || t('error_save', T))
+      const msg = error.message || t('error_save', T);
+      setError(msg);
+      window.showToast?.(msg, 'error');
     } finally {
       setLoading(false);
     }
@@ -229,7 +227,7 @@ const PatientsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Patie
                     }
                   </p>
                 </div>
-                <Select value={selectedGender} onValueChange={setSelectedGender} >
+                <Select value={selectedGender} onValueChange={(val) => setSelectedGender(val as 'MALE' | 'FEMALE' | '')} >
                   <SelectTrigger className={cn("rounded-xl h-12 bg-input-background transition-all focus:ring-4 focus:ring-primary/10", (selectedGender) && "text-foreground font-bold")}>
                     <SelectValue placeholder={t('dialog.gender', T)} />
                   </SelectTrigger>

@@ -39,6 +39,32 @@ interface FetchSecretariesParams {
   status?: string
 }
 
+export interface CreateSecretaryPayload {
+  user: {
+    firstName: string
+    surName: string
+    lastName: string
+    email: string
+    phoneNumber: string
+    gender: 'MALE' | 'FEMALE'
+    dateOfBirth: string
+    permissions: string[]
+    password?: string
+  }
+}
+
+export interface UpdateSecretaryPayload {
+  user: {
+    firstName: string
+    surName: string
+    lastName: string
+    phoneNumber: string
+    gender: 'MALE' | 'FEMALE'
+    dateOfBirth: string
+    permissions: string[]
+  }
+}
+
 const getHeaders = () => {
   checkTokenOrRedirect()
   const token = getCookie('token')
@@ -82,7 +108,7 @@ export const fetchSecretaryByUuid = async (uuid: string): Promise<ApiSecretary> 
   return response.json()
 }
 
-export const createSecretary = async (body: any): Promise<ApiSecretary> => {
+export const createSecretary = async (body: CreateSecretaryPayload): Promise<ApiSecretary> => {
   const response = await apiFetch('/api/secretary', {
     method: 'POST',
     headers: getHeaders(),
@@ -103,7 +129,7 @@ export const createSecretary = async (body: any): Promise<ApiSecretary> => {
   return response.json()
 }
 
-export const updateSecretary = async (uuid: string, body: any): Promise<ApiSecretary> => {
+export const updateSecretary = async (uuid: string, body: UpdateSecretaryPayload): Promise<ApiSecretary> => {
   const response = await apiFetch(`/api/secretary/${uuid}`, {
     method: 'PUT',
     headers: getHeaders(),
@@ -148,7 +174,7 @@ export const fetchSecretaryMe = async (): Promise<ApiSecretary> => {
   return response.json()
 }
 
-export const updateSecretaryMe = async (body: any): Promise<ApiSecretary> => {
+export const updateSecretaryMe = async (body: Partial<UpdateSecretaryPayload>): Promise<ApiSecretary> => {
   const response = await apiFetch(`/api/secretary/me`, {
     method: 'PUT',
     headers: getHeaders(),

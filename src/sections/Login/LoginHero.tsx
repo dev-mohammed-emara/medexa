@@ -11,7 +11,38 @@ const LoginHero = () => {
 
   return (
     <div className="hidden lg:flex w-1/2 relative overflow-hidden ">
-      <div className="absolute inset-0 bg-linear-to-br from-primary via-secondary to-accent opacity-90"></div>
+      {/* Dynamic Keyframes for Background Gradient & Orbs */}
+      <style>{`
+        @keyframes gradient-move {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+        @keyframes float-slow {
+          0%, 100% { transform: translateY(0px) scale(1); }
+          50% { transform: translateY(-25px) scale(1.08); }
+        }
+        @keyframes float-medium {
+          0%, 100% { transform: translateY(0px) translateX(0px); }
+          50% { transform: translateY(20px) translateX(15px); }
+        }
+        @keyframes float-fast {
+          0%, 100% { transform: translateY(0px) scale(1); }
+          50% { transform: translateY(-18px) scale(0.92); }
+        }
+        .animate-gradient-bg {
+          background-size: 200% 200%;
+          animation: gradient-move 7s ease infinite;
+        }
+        .animate-bg-float-1 { animation: float-slow 4s ease-in-out infinite; }
+        .animate-bg-float-2 { animation: float-medium 5s ease-in-out infinite; }
+        .animate-bg-float-3 { animation: float-fast 6s ease-in-out infinite; }
+      `}</style>
+
+      {/* Main Animated Gradient Background */}
+      <div className="absolute inset-0 bg-linear-to-br from-primary via-secondary to-accent opacity-90 animate-gradient-bg"></div>
+      
+      {/* Foreground Content (Kept exactly the same) */}
       <div className="relative z-10 flex flex-col items-center justify-center text-white p-12 w-full">
         <div className={cn(
           "text-center opacity-0",
@@ -46,9 +77,11 @@ const LoginHero = () => {
           </p>
         </div>
       </div>
-      <div className="absolute top-10 left-10 w-20 h-20 bg-white/10 backdrop-blur-sm rounded-full"></div>
-      <div className="absolute bottom-20 right-20 w-32 h-32 bg-white/10 backdrop-blur-sm rounded-full"></div>
-      <div className="absolute top-1/2 left-20 w-16 h-16 bg-white/10 backdrop-blur-sm rounded-full"></div>
+
+      {/* Faster "Alive" Background Orbs */}
+      <div className="absolute top-10 left-10 w-20 h-20 bg-white/10 backdrop-blur-sm rounded-full animate-bg-float-1"></div>
+      <div className="absolute bottom-20 right-20 w-32 h-32 bg-white/10 backdrop-blur-sm rounded-full animate-bg-float-2"></div>
+      <div className="absolute top-1/2 left-20 w-16 h-16 bg-white/10 backdrop-blur-sm rounded-full animate-bg-float-3"></div>
     </div>
   )
 }

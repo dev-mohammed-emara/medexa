@@ -22,7 +22,7 @@ export const initDB = (): Promise<IDBDatabase> => {
   });
 };
 
-export const cacheData = async (key: string, data: any): Promise<void> => {
+export const cacheData = async (key: string, data: unknown): Promise<void> => {
   try {
     const db = await initDB();
     return new Promise<void>((resolve, reject) => {
@@ -38,10 +38,10 @@ export const cacheData = async (key: string, data: any): Promise<void> => {
   }
 };
 
-export const getCachedData = async (key: string): Promise<any> => {
+export const getCachedData = async (key: string): Promise<unknown> => {
   try {
     const db = await initDB();
-    return new Promise<any>((resolve, reject) => {
+    return new Promise<unknown>((resolve, reject) => {
       const transaction = db.transaction(STORE_NAME, 'readonly');
       const store = transaction.objectStore(STORE_NAME);
       const request = store.get(key);
@@ -55,6 +55,6 @@ export const getCachedData = async (key: string): Promise<any> => {
   }
 };
 
-export const broadcastUpdate = (type: string, payload: any) => {
+export const broadcastUpdate = (type: string, payload: unknown): void => {
   globalBroadcastChannel.postMessage({ type, payload, timestamp: Date.now() });
 };

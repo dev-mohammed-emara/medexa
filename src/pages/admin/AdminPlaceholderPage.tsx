@@ -131,7 +131,7 @@ const AdminPlaceholderPage = () => {
   // Render mock data dynamically
   const renderContent = () => {
     switch (path) {
-      case '/admin/users':
+      case '/admin/users': {
         const usersList = [
           { id: 'USR-890', name: 'د. رامي العتوم', email: 'rami@medexa.jo', role: 'طبيب', clinic: 'عيادة العتوم للعيون', status: 'نشط' },
           { id: 'USR-891', name: 'د. سارة المصري', email: 'sara@medexa.jo', role: 'طبيب', clinic: 'مركز الرعاية الشاملة', status: 'نشط' },
@@ -199,8 +199,9 @@ const AdminPlaceholderPage = () => {
             </div>
           </div>
         )
+      }
 
-      case '/admin/patients':
+      case '/admin/patients': {
         const patientsList = [
           { id: 'PAT-402', name: 'محمد عبد الله الشمري', fileNo: '109283', phone: '0798765432', lastVisit: '2026-05-20', gender: 'ذكر' },
           { id: 'PAT-403', name: 'ياسمين محمود الحويطات', fileNo: '108745', phone: '0781234567', lastVisit: '2026-05-18', gender: 'أنثى' },
@@ -257,8 +258,9 @@ const AdminPlaceholderPage = () => {
             </div>
           </div>
         )
+      }
 
-      case '/admin/clinics':
+      case '/admin/clinics': {
         const clinicsList = [
           { name: 'مجمع صحتي الطبي المتميز', doctors: 8, patients: 1240, plan: 'ذهبي', status: 'نشط', revenue: '45,200 د.أ', address: 'عمان، الأردن' },
           { name: 'عيادة د. سمير لتقويم الأسنان', doctors: 2, patients: 450, plan: 'فضي', status: 'نشط', revenue: '12,800 د.أ', address: 'إربد، الأردن' },
@@ -338,6 +340,7 @@ const AdminPlaceholderPage = () => {
             </div>
           </div>
         )
+      }
 
       case '/admin/approvals':
         return (
@@ -390,7 +393,7 @@ const AdminPlaceholderPage = () => {
           </div>
         )
 
-      case '/admin/tickets':
+      case '/admin/tickets': {
         const tickets = [
           { id: 'TCK-551', clinic: 'مركز الرعاية الشاملة', title: 'خطأ في طباعة التقارير المالية', priority: 'عالي', status: 'مفتوح', date: 'منذ ساعتين' },
           { id: 'TCK-552', clinic: 'عيادة الأسنان التخصصية', title: 'بطء في تحميل السجلات الطبية للمرضى', priority: 'متوسط', status: 'قيد المعالجة', date: 'منذ 5 ساعات' },
@@ -439,8 +442,9 @@ const AdminPlaceholderPage = () => {
             </div>
           </div>
         )
+      }
 
-      case '/admin/managers':
+      case '/admin/managers': {
         const managers = [
           { name: 'المدير العام', email: 'admin@medexa.jo', role: 'مدير خارق (Super Admin)', lastLogin: '2026-05-22 01:45', ip: '192.168.1.1' },
           { name: 'م. أحمد صالح', email: 'ahmed.it@medexa.jo', role: 'دعم فني وتدقيق الكود', lastLogin: '2026-05-21 18:20', ip: '192.168.1.5' },
@@ -485,6 +489,7 @@ const AdminPlaceholderPage = () => {
             </div>
           </div>
         )
+      }
 
       case '/admin/stats':
         return (
@@ -513,7 +518,7 @@ const AdminPlaceholderPage = () => {
           </div>
         )
 
-      case '/admin/audit-logs':
+      case '/admin/audit-logs': {
         const logs = [
           { time: '2026-05-22 01:52', user: 'admin@medexa.jo', action: 'تغيير اشتراك عيادة الرعاية الطبية', resource: 'عيادات / اشتراكات', status: 'ناجح' },
           { time: '2026-05-22 01:30', user: 'admin@medexa.jo', action: 'إنشاء حساب طبيب جديد (USR-890)', resource: 'مستخدمون', status: 'ناجح' },
@@ -559,6 +564,7 @@ const AdminPlaceholderPage = () => {
             </div>
           </div>
         )
+      }
 
       case '/admin/settings':
         return (

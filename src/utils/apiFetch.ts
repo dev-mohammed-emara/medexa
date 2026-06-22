@@ -47,7 +47,7 @@ export const apiFetch = async (input: RequestInfo | URL, init?: RequestInit, ena
         const errorData = await clone.json();
         // Fire custom event with the error data
         window.dispatchEvent(new CustomEvent('BACKEND_VALIDATION_ERROR', { detail: errorData }));
-      } catch (e) {
+      } catch (_e) {
         // ignore JSON parse error
       }
     }

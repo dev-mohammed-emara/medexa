@@ -35,11 +35,11 @@ const formatTo24h = (h: string, m: string, p: 'AM' | 'PM') => {
 const TimePicker: React.FC<TimePickerProps> = ({ value, onChange, className, noClock = false }) => {
   const { isAr } = useLanguage();
   const initial = parseTo12h(value || '08:00');
-  
+
   const [isOpen, setIsOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const [mode, setMode] = useState<'h' | 'm'>('h');
-  
+
   // Temporary state for the modal
   const [tempH, setTempH] = useState(initial.h);
   const [tempM, setTempM] = useState(initial.m);
@@ -75,7 +75,7 @@ const TimePicker: React.FC<TimePickerProps> = ({ value, onChange, className, noC
   }, [isOpen]);
 
   const handleOpen = () => setIsOpen(true);
-  
+
   const handleClose = () => {
     setIsClosing(true);
     setTimeout(() => {
@@ -83,7 +83,7 @@ const TimePicker: React.FC<TimePickerProps> = ({ value, onChange, className, noC
       setIsClosing(false);
     }, 200);
   };
-  
+
   const handleConfirm = () => {
     onChange(formatTo24h(tempH, tempM, tempP));
     handleClose();
@@ -93,7 +93,7 @@ const TimePicker: React.FC<TimePickerProps> = ({ value, onChange, className, noC
   const handleClockInteract = (e: React.MouseEvent | React.TouchEvent) => {
     if (!clockRef.current) return;
     const rect = clockRef.current.getBoundingClientRect();
-    
+
     // Get coordinates
     let clientX, clientY;
     if ('touches' in e) {
@@ -103,10 +103,10 @@ const TimePicker: React.FC<TimePickerProps> = ({ value, onChange, className, noC
       clientX = e.clientX;
       clientY = e.clientY;
     }
-    
+
     const x = clientX - rect.left - rect.width / 2;
     const y = clientY - rect.top - rect.height / 2;
-    
+
     let angle = Math.atan2(y, x) * (180 / Math.PI) + 90;
     if (angle < 0) angle += 360;
 
@@ -129,19 +129,19 @@ const TimePicker: React.FC<TimePickerProps> = ({ value, onChange, className, noC
   };
 
   const renderClockFace = () => {
-    const numbers = mode === 'h' 
+    const numbers = mode === 'h'
       ? [12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]
       : [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
-      
+
     const currentValue = mode === 'h' ? parseInt(tempH) : parseInt(tempM);
-    const pointerAngle = mode === 'h' 
-      ? (currentValue === 12 ? 0 : currentValue * 30) 
+    const pointerAngle = mode === 'h'
+      ? (currentValue === 12 ? 0 : currentValue * 30)
       : currentValue * 6;
 
     return (
-      <div 
+      <div
         ref={clockRef}
-        className="relative w-56 h-56 rounded-full bg-[#f0f0f0] mx-auto select-none touch-none"
+        className="relative w-56 h-56 rounded-full bg-white border border-secondary/40 mx-auto select-none touch-none"
         onMouseDown={(e) => {
           handleClockInteract(e);
           const handleMouseMove = (e: MouseEvent) => handleClockInteract(e as any);
@@ -158,20 +158,41 @@ const TimePicker: React.FC<TimePickerProps> = ({ value, onChange, className, noC
         onTouchEnd={handleClockMouseUp}
       >
         {/* Center dot */}
-        <div className="absolute top-1/2 left-1/2 w-2 h-2 -ml-1 -mt-1 bg-[#0277bd] rounded-full z-10" />
-        
+        <div className="absolute top-1/2 left-1/2 w-2 h-2 -ml-1 -mt-1 bg-secondary rounded-full z-10" />
+
         {/* Pointer Line */}
-        <div 
-          className="absolute top-1/2 left-1/2 w-[2px] cursor-grab active:cursor-grabbing h-[95px] bg-[#0277bd] origin-bottom -ml-[1px] -mt-[95px] z-0"
+        <div
+          className="absolute top-1/2 left-1/2 w-[2px] cursor-grab active:cursor-grabbing h-[95px] bg-secondary origin-bottom -ml-[1px] -mt-[95px] z-0"
           style={{ transform: `rotate(${pointerAngle}deg)` }}
         >
           {/* Pointer Circle */}
-          <div className="absolute -top-4 -left-[15px] w-8 h-8 rounded-full bg-[#0277bd] flex items-center justify-center shadow-md">
+          <div className="absolute -top-4 -left-[15px] w-8 h-8 rounded-full bg-secondary flex items-center justify-center shadow-md">
             {mode === 'm' && currentValue % 5 !== 0 && (
               <div className="w-1.5 h-1.5 bg-white rounded-full" />
             )}
           </div>
         </div>
+
+        {/* Minute Ticks (Outer Ring) */}
+        {Array.from({ length: 60 }).map((_, i) => {
+          const isFiveMin = i % 5 === 0;
+          const angle = i * 6;
+          return (
+            <div
+              key={`tick-${i}`}
+              className={cn(
+                "absolute w-[2px] rounded-full pointer-events-none transition-colors",
+                isFiveMin ? "h-[8px] bg-secondary/50" : "h-[4px] bg-secondary/20"
+              )}
+              style={{
+                left: 111,
+                top: 6,
+                transformOrigin: '1px 106px',
+                transform: `rotate(${angle}deg)`
+              }}
+            />
+          );
+        })}
 
         {/* Numbers */}
         {numbers.map((num, i) => {
@@ -180,7 +201,7 @@ const TimePicker: React.FC<TimePickerProps> = ({ value, onChange, className, noC
           const radius = 95; // distance from center
           const x = 112 + radius * Math.cos(rad);
           const y = 112 + radius * Math.sin(rad);
-          const isSelected = mode === 'h' 
+          const isSelected = mode === 'h'
             ? (num === 12 ? currentValue === 12 : currentValue === num)
             : currentValue === num;
 
@@ -219,14 +240,14 @@ const TimePicker: React.FC<TimePickerProps> = ({ value, onChange, className, noC
 
       {isOpen && (
         <Portal>
-          <div 
+          <div
             className={cn(
               "fixed inset-0 z-[600] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm",
               isClosing ? "animate-fadeOut" : "animate-fade"
             )}
             onClick={(e) => e.target === e.currentTarget && handleClose()}
           >
-            <div 
+            <div
               className={cn(
                 "bg-[#E2E2E2] rounded-[28px] w-full max-w-[340px] sm:max-w-[480px] shadow-2xl overflow-hidden flex flex-col",
                 isClosing ? "animate-scaleDownOut" : "animate-scaleUp"
@@ -242,7 +263,7 @@ const TimePicker: React.FC<TimePickerProps> = ({ value, onChange, className, noC
 
               {/* Body */}
               <div className="flex flex-col sm:flex-row items-center gap-6 p-6 pb-2">
-                
+
                 {/* Right Side in AR (Digital + AM/PM) */}
                 <div className="flex flex-col gap-4 order-1 sm:order-2 w-full sm:w-auto items-center">
                   <div className="flex items-center gap-2" dir="ltr">
@@ -250,7 +271,7 @@ const TimePicker: React.FC<TimePickerProps> = ({ value, onChange, className, noC
                       onClick={() => setMode('h')}
                       className={cn(
                         "w-20 h-20 rounded-2xl flex items-center justify-center text-5xl font-medium transition-colors",
-                        mode === 'h' ? "bg-[#0277bd] text-white" : "bg-white text-black hover:bg-gray-100"
+                        mode === 'h' ? "bg-secondary text-white" : "bg-white text-black hover:bg-gray-100"
                       )}
                     >
                       {tempH}
@@ -260,7 +281,7 @@ const TimePicker: React.FC<TimePickerProps> = ({ value, onChange, className, noC
                       onClick={() => setMode('m')}
                       className={cn(
                         "w-20 h-20 rounded-2xl flex items-center justify-center text-5xl font-medium transition-colors",
-                        mode === 'm' ? "bg-[#0277bd] text-white" : "bg-white text-black hover:bg-gray-100"
+                        mode === 'm' ? "bg-secondary text-white" : "bg-white text-black hover:bg-gray-100"
                       )}
                     >
                       {tempM}
@@ -272,7 +293,7 @@ const TimePicker: React.FC<TimePickerProps> = ({ value, onChange, className, noC
                       onClick={() => setTempP('AM')}
                       className={cn(
                         "flex-1 font-medium text-sm transition-colors",
-                        tempP === 'AM' ? "bg-[#0277bd] text-white" : "bg-transparent text-black hover:bg-black/5"
+                        tempP === 'AM' ? "bg-secondary text-white" : "bg-transparent text-black hover:bg-black/5"
                       )}
                     >
                       {isAr ? 'ص' : 'AM'}
@@ -282,7 +303,7 @@ const TimePicker: React.FC<TimePickerProps> = ({ value, onChange, className, noC
                       onClick={() => setTempP('PM')}
                       className={cn(
                         "flex-1 font-medium text-sm transition-colors",
-                        tempP === 'PM' ? "bg-[#0277bd] text-white" : "bg-transparent text-black hover:bg-black/5"
+                        tempP === 'PM' ? "bg-secondary text-white" : "bg-white text-black hover:bg-black/5"
                       )}
                     >
                       {isAr ? 'م' : 'PM'}
@@ -297,18 +318,18 @@ const TimePicker: React.FC<TimePickerProps> = ({ value, onChange, className, noC
               </div>
 
               {/* Footer */}
-              <div className="flex justify-start px-6 py-4 mt-2 gap-4">
-                <button
-                  onClick={handleConfirm}
-                  className="text-[#0277bd] font-medium text-sm px-4 py-2 hover:bg-[#0277bd]/10 rounded-lg transition-colors"
-                >
-                  {isAr ? 'حسناً' : 'OK'}
-                </button>
+              <div className="flex justify-start px-6 py-4 mt-2 gap-3 border-t border-border">
                 <button
                   onClick={handleClose}
-                  className="text-[#0277bd] font-medium text-sm px-4 py-2 hover:bg-[#0277bd]/10 rounded-lg transition-colors"
+                  className="inline-flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-bold transition-all duration-300 border bg-background text-foreground hover:bg-accent hover:text-white hover:border-accent h-11 px-6"
                 >
                   {isAr ? 'إلغاء' : 'Cancel'}
+                </button>
+                <button
+                  onClick={handleConfirm}
+                  className="inline-flex flex-1 items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-bold transition-all duration-300 text-white bg-secondary hover:bg-secondary/90 shadow-lg shadow-secondary/20 h-11 px-6"
+                >
+                  {isAr ? 'تأكيد' : 'Confirm'}
                 </button>
               </div>
             </div>

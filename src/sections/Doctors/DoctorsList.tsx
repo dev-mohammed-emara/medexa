@@ -103,7 +103,7 @@ const DoctorsList = () => {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, pageSize, activeSearch, activeSort, activeStatus, t]);
+  }, [currentPage, pageSize, activeSearch, activeSort, activeStatus, t, T]);
 
   useEffect(() => {
     loadDoctors();

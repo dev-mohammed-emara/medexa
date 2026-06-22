@@ -23,7 +23,6 @@ const SupportTicket = () => {
 
   // Hide the floating button on admin pages only
   const isAdminPage = location.pathname.includes('/admin');
-  if (isAdminPage) return null;
 
   const getSectionName = (path: string) => {
     const cleanPath = path.toLowerCase().replace(/^\/admin/, '').replace(/^\//, '').split('/')[0];
@@ -98,6 +97,8 @@ const SupportTicket = () => {
       setIsSubmitting(false);
     }
   };
+
+  if (isAdminPage) return null;
 
   return (
     <>

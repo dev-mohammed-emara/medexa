@@ -243,7 +243,10 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, onC
   }, [onClose]);
 
   const historyPushed = useRef(false);
-  const dialogId = useRef(Date.now());
+  const dialogId = useRef<number | null>(null);
+  if (dialogId.current === null) {
+    dialogId.current = Date.now();
+  }
 
   useEffect(() => {
     if (isOpen) {
@@ -346,12 +349,15 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, onC
           } else {
             errMsg = errData.message || errData.error || errMsg;
           }
-        } catch (err) {}
+        } catch (e) { }
         setError(errMsg);
+        window.showToast?.(errMsg, 'error');
       }
     } catch (error: any) {
-      console.error('Error saving appointment:', error);
-      setError(error.message || 'Error communicating with server');
+      console.error('Error adding/updating appointment:', error);
+      const msg = error.message || 'Error communicating with server';
+      setError(msg);
+      window.showToast?.(msg, 'error');
     }
   };
 

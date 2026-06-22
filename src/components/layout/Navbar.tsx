@@ -148,7 +148,7 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
             dir={isAr ? "rtl" : "ltr"}
           >
             {/* Arrow Pin */}
-            <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 rotate-45 bg-slate-50 border-t border-l border-border z-0"></div>
+            <div className="absolute  -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 rotate-45 bg-slate-50 border-t border-l border-border z-0"></div>
 
             <div className="p-4 border-b border-border bg-slate-50/50 rounded-t-2xl relative z-10">
               <h3 className={cn("font-bold text-sm", isAr ? "text-right" : "text-left")}>{t('nav.notifications', T_PAGE)}</h3>
@@ -230,7 +230,7 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
             dir={isAr ? "rtl" : "ltr"}
           >
             {/* Arrow Pin */}
-            <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 rotate-45 bg-slate-50 border-t border-l border-border z-0"></div>
+            <div className="absolute hidden xs:block -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 rotate-45 bg-slate-50 border-t border-l border-border z-0"></div>
 
             <div className="p-5 border-b border-border bg-linear-to-r from-primary/5 to-secondary/5 rounded-t-2xl relative z-10">
               <div className="flex items-center gap-3 mb-1">

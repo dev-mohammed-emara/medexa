@@ -91,7 +91,6 @@ function SelectGroup({
   )
 }
 
-// @ts-ignore
 function SelectValue({
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Value>) {

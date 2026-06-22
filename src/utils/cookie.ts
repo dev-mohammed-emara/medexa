@@ -3,8 +3,13 @@
  */
 import { BYPASS_AUTH_GUARDS } from '../config/auth';
 
+interface DecodedToken {
+  exp?: number
+  [key: string]: unknown
+}
+
 // Helper function to parse JWT token
-export const parseJWT = (token: string): any => {
+export const parseJWT = (token: string): DecodedToken | null => {
   try {
     const base64Url = token.split('.')[1]
     const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')

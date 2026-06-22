@@ -116,7 +116,7 @@ const LoginForm = () => {
               const permissions = savedUser.permissions || [];
               const roles = savedUser.roles || [];
               
-              if (permissions.includes('MANAGE_STATISTICS') || roles.includes('ROLE_CLINIC_OWNER') || roles.includes('ROLE_ADMIN')) {
+              if (permissions.includes('MANAGE_STATISTICS') || roles.includes('ROLE_CLINIC_OWNER')) {
                 destination = '/';
               } else if (roles.includes('ROLE_DOCTOR') || roles.includes('ROLE_SECRETARY')) {
                 destination = '/appointments';

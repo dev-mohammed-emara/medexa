@@ -87,7 +87,7 @@ const EmailChangeDialog = ({ isOpen, onClose }: EmailChangeDialogProps) => {
         try {
           const errData = await response.json();
           errorMsg = errData.message || errData.error || errorMsg;
-        } catch (e) {}
+        } catch (e) { /* ignore */ }
         throw new Error(errorMsg);
       }
 
@@ -131,20 +131,20 @@ const EmailChangeDialog = ({ isOpen, onClose }: EmailChangeDialogProps) => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4 py-4">            <div className="space-y-2 text-start">
-              <label className="flex items-center gap-2 font-medium text-sm text-foreground" style={{ fontWeight: 600 }}>
-                {t('profile.new_email', T_PAGE)}
-              </label>
-              <Input
-                type="email"
-                required
-                icon={<Mail size={18} />}
-                disabled={loading}
-                placeholder="example@medexa.jo"
-                value={newEmail}
-                onChange={(e) => setNewEmail(e.target.value)}
-                className="h-11 bg-background border-border focus:border-primary focus:bg-white transition-all duration-300 font-bold"
-              />
-            </div>
+            <label className="flex items-center gap-2 font-medium text-sm text-foreground" style={{ fontWeight: 600 }}>
+              {t('profile.new_email', T_PAGE)}
+            </label>
+            <Input
+              type="email"
+              required
+              icon={<Mail size={18} />}
+              disabled={loading}
+              placeholder="example@medexa.jo"
+              value={newEmail}
+              onChange={(e) => setNewEmail(e.target.value)}
+              className="h-11 bg-background border-border focus:border-primary focus:bg-white transition-all duration-300 font-bold"
+            />
+          </div>
             <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-start">
               <div className="flex gap-2">
                 <Shield size={16} className="text-amber-600 shrink-0" />

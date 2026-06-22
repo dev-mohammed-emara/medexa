@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react'
 import { deleteCookie, getCookie, setCookie, isTokenExpired } from '../utils/cookie'
 import { jwtDecode } from 'jwt-decode'
@@ -21,6 +20,8 @@ export interface UserProfile {
   clinicId?: number
   username?: string
   sub?: string
+  specialty?: string
+  summary?: string
 }
 
 interface AuthContextType {
@@ -29,7 +30,7 @@ interface AuthContextType {
   user: UserProfile | null
   profileImage: string | null
   login: (email: string, password: string) => Promise<void>
-  register: (payload: any) => Promise<void>
+  register: (payload: Record<string, any>) => Promise<void>
   logout: () => Promise<string | void>
   updateProfileImage: (image: string | null) => void
   updateUser: (updatedFields: Partial<UserProfile>) => void
@@ -40,30 +41,67 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+interface DecodedRole {
+  authority?: string
+  role?: string
+}
+
+interface DecodedAuthority {
+  authority?: string
+  role?: string
+  name?: string
+}
+
+interface DecodedToken {
+  username?: string
+  sub?: string
+  clinicId?: number
+  roles?: string | string[] | Array<DecodedRole>
+  authorities?: string | string[] | Array<DecodedAuthority>
+  role?: string
+  exp?: number
+}
+
+interface AuthResponse {
+  accessToken?: string
+  token?: string
+  refreshToken?: string
+  expiresIn?: number
+  data?: {
+    accessToken?: string
+    token?: string
+    refreshToken?: string
+    expiresIn?: number
+  }
+  user?: UserProfile
+  message?: string
+  details?: Array<{ message?: string }>
+}
+
 // Helper function to parse JWT token
-const parseJWT = (token: string): any => {
+const parseJWT = (token: string): DecodedToken | null => {
   try {
-    return jwtDecode<any>(token)
+    return jwtDecode<DecodedToken>(token)
   } catch (error) {
     console.error('Failed to parse JWT:', error)
     return null
   }
 }
 
-const extractPermissionsFromToken = (decoded: any): string[] => {
+const extractPermissionsFromToken = (decoded: DecodedToken | null): string[] => {
   if (!decoded) return []
   const tokenRoles = Array.isArray(decoded.roles) 
-    ? decoded.roles.map((r: any) => typeof r === 'object' ? r.authority || r.role : r) 
+    ? decoded.roles.map((r) => typeof r === 'object' && r !== null ? r.authority || r.role : String(r)) 
     : (typeof decoded.roles === 'string' ? decoded.roles.split(',').map((s: string) => s.trim()).filter(Boolean) : [])
   
   const tokenAuthoritiesStr = decoded.authorities || ''
   const tokenAuthorities = Array.isArray(tokenAuthoritiesStr)
-    ? tokenAuthoritiesStr.map((a: any) => typeof a === 'object' ? a.authority || a.role || a.name : a)
+    ? tokenAuthoritiesStr.map((a) => typeof a === 'object' && a !== null ? a.authority || a.role || a.name : String(a))
     : (typeof tokenAuthoritiesStr === 'string'
       ? tokenAuthoritiesStr.split(',').map((s: string) => s.trim()).filter(Boolean)
       : [])
   
-  return Array.from(new Set([...tokenRoles, ...tokenAuthorities]))
+  return Array.from(new Set([...tokenRoles, ...tokenAuthorities].filter((x): x is string => typeof x === 'string')))
 }
 
 const getProfileEndpoint = (token: string): string => {
@@ -80,13 +118,13 @@ const getProfileEndpoint = (token: string): string => {
   const decoded = parseJWT(token)
   if (!decoded) return '/api/doctor/me'
 
-  const authorities = decoded.authorities || ''
+  const authorities = typeof decoded.authorities === 'string' ? decoded.authorities : ''
   const roles = decoded.roles || []
   const role = decoded.role || ''
 
   const isSecretary =
     authorities.includes('ROLE_SECRETARY') ||
-    (Array.isArray(roles) && roles.includes('ROLE_SECRETARY')) ||
+    (Array.isArray(roles) && roles.some(r => typeof r === 'string' && r.includes('ROLE_SECRETARY'))) ||
     (typeof roles === 'string' && roles.includes('ROLE_SECRETARY')) ||
     role === 'ROLE_SECRETARY'
 
@@ -157,7 +195,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!response.ok) {
       let errorMessage = 'Failed to refresh token.'
       try {
-        const errorData = await response.json()
+        const errorData = await response.json() as { message?: string; error?: string }
         errorMessage = errorData.message || errorData.error || errorMessage
       } catch (e) {
         // Fallback
@@ -165,7 +203,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw new Error(errorMessage)
     }
 
-    const data = await response.json() as Record<string, any>
+    const data = await response.json() as AuthResponse
     const newAccessToken = data.accessToken || data.token || data.data?.accessToken || data.data?.token
     const newRefreshToken = data.refreshToken || data.data?.refreshToken
     let expiresIn: number = data.expiresIn || data.data?.expiresIn || 900
@@ -218,7 +256,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Cross-tab Synchronization
   useEffect(() => {
     const channel = new BroadcastChannel('medexa_sync');
-    channel.onmessage = (event) => {
+    channel.onmessage = (event: MessageEvent<{ type: string; isAuthenticated: boolean; user: UserProfile | null }>) => {
       if (event.data.type === 'AUTH_UPDATE') {
         setIsAuthenticated(event.data.isAuthenticated);
         setUser(event.data.user || null);
@@ -304,7 +342,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         clearTimeout(refreshTimeoutRef.current)
       }
     }
-  }, [])
+  }, [isAuthenticated, refresh, scheduleTokenRefresh, logout])
 
   const login = async (email: string, password: string) => {
     const response = await fetch('/api/auth/login', {
@@ -318,7 +356,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!response.ok) {
       let errorMessage = 'Failed to log in. Please check your credentials.'
       try {
-        const errorData = await response.json()
+        const errorData = await response.json() as { message?: string; error?: string }
         errorMessage = errorData.message || errorData.error || errorMessage
       } catch (e) {
         // Fallback to default
@@ -326,7 +364,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw new Error(errorMessage)
     }
 
-    const data = await response.json() as Record<string, any>
+    const data = await response.json() as AuthResponse
     const token = data.accessToken || data.token || data.data?.accessToken || data.data?.token
     const refreshToken = data.refreshToken || data.data?.refreshToken
     let expiresIn: number = data.expiresIn || 900
@@ -430,7 +468,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!response.ok) {
       let errorMessage = 'Failed to register.'
       try {
-        const errorData = await response.json()
+        const errorData = await response.json() as { message?: string; error?: string }
         errorMessage = errorData.message || errorData.error || errorMessage
       } catch (e) {
         // Fallback
@@ -438,7 +476,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw new Error(errorMessage)
     }
 
-    await response.json() as Record<string, any>
+    await response.json()
     const ownerUser = payload.owner?.user
     if (ownerUser) {
       const userProfile: UserProfile = {
@@ -463,7 +501,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   async function logout(): Promise<string | void> {
     // Clear scheduled timer
     if (refreshTimeoutRef.current) {
-      clearTimeout(refreshTimeoutRef.current as any)
+      clearTimeout(refreshTimeoutRef.current)
       refreshTimeoutRef.current = null
     }
 
@@ -479,7 +517,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             'Authorization': `Bearer ${token}`
           }
         })
-        const data = await res.json().catch(() => ({}));
+        const data = await res.json().catch(() => ({})) as { message?: string }
         if (data.message) {
           successMessage = data.message;
         }
@@ -530,7 +568,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const hasPermission = useCallback((permission: string): boolean => {
     if (!user) return false
-    if (user.roles?.includes('ROLE_ADMIN') || user.role === 'ROLE_ADMIN') return true
     if (user.roles?.includes('ROLE_CLINIC_OWNER') || user.role === 'ROLE_CLINIC_OWNER') return true
 
     return user.permissions?.includes(permission) || user.roles?.includes(permission) || false
@@ -538,7 +575,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const hasAnyPermission = useCallback((permissions: string[]): boolean => {
     if (!user) return false
-    if (user.roles?.includes('ROLE_ADMIN') || user.role === 'ROLE_ADMIN') return true
     if (user.roles?.includes('ROLE_CLINIC_OWNER') || user.role === 'ROLE_CLINIC_OWNER') return true
 
     return permissions.some(p => user.permissions?.includes(p) || user.roles?.includes(p))

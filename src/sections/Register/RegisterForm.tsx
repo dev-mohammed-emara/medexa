@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { format } from 'date-fns'
 import { ar } from 'date-fns/locale'
 import { Check, X } from 'lucide-react'
@@ -28,6 +27,29 @@ import { usePreloader } from '../../contexts/PreloaderContext'
 import { cn } from '../../utils/cn'
 import { formatPhoneForPayload } from '../../utils/phone'
 
+interface RegisterFormData {
+  clinicName: string
+  specialty: string
+  country: string
+  city: string
+  address: string
+  phone: string
+  clinicEmail: string
+  firstName: string
+  surname: string
+  lastName: string
+  email: string
+  ownerPhone: string
+  password: string
+  confirmPassword: string
+  gender: string
+  dob: string
+  ownerSpecialty: string
+  ownerSummary: string
+  currency: string
+  defaultAppointmentPeriod: string
+}
+
 const RegisterForm = () => {
   const { register } = useAuth()
   const { isAr } = useLanguage()
@@ -39,7 +61,7 @@ const RegisterForm = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
   // State for form data
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<RegisterFormData>({
     clinicName: '',
     specialty: '',
     country: '',
@@ -132,9 +154,8 @@ const RegisterForm = () => {
           email: formData.email,
           password: formData.password,
           phoneNumber: formatPhoneForPayload(formData.ownerPhone),
-          gender: (formData.gender === "male" ? "MALE" : "FEMALE") as any,
+          gender: (formData.gender === "male" ? "MALE" : "FEMALE") as "MALE" | "FEMALE",
           dateOfBirth: formData.dob,
-          // permissions: ['MANAGE_DOCTORS', 'MANAGE_SECRETARIES', 'MANAGE_TRANSACTIONS']
         },
         specialty: formData.ownerSpecialty,
         summary: formData.ownerSummary
@@ -171,7 +192,7 @@ const RegisterForm = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target
-    setFormData((prev: any) => ({ ...prev, [name]: value }))
+    setFormData((prev) => ({ ...prev, [name]: value }))
   }
 
   return (
@@ -220,7 +241,7 @@ const RegisterForm = () => {
                 <label className="text-sm font-semibold text-[#1a2b3c] pr-1 block mb-2">التخصص الطبي</label>
                 <Select
                   name="specialty"
-                  onValueChange={(val: string) => setFormData((prev: any) => ({ ...prev, specialty: val }))}
+                  onValueChange={(val: string) => setFormData((prev) => ({ ...prev, specialty: val }))}
                   value={formData.specialty}
                   required
                 >
@@ -301,7 +322,7 @@ const RegisterForm = () => {
                 <label className="text-sm font-semibold text-[#1a2b3c] pr-1 block mb-2">العملة الافتراضية</label>
                 <Select
                   name="currency"
-                  onValueChange={(val: string) => setFormData((prev: any) => ({ ...prev, currency: val }))}
+                  onValueChange={(val: string) => setFormData((prev) => ({ ...prev, currency: val }))}
                   value={formData.currency}
                   required
                 >
@@ -431,10 +452,10 @@ const RegisterForm = () => {
                         <div key={i} className="flex-1 flex flex-col gap-2">
                           {/* Segmented bar on top */}
                           <div
-                            className={cn(
-                              "h-1.5 rounded-full transition-all duration-500",
-                              criterion.met ? getStrengthColor() : "bg-slate-100"
-                            )}
+                              className={cn(
+                                "h-1.5 rounded-full transition-all duration-500",
+                                criterion.met ? getStrengthColor() : "bg-slate-100"
+                              )}
                           />
 
                           {/* Instruction + Icon below */}
@@ -486,7 +507,7 @@ const RegisterForm = () => {
                 <label className="text-sm font-semibold text-[#1a2b3c] pr-1 block mb-2">الجنس</label>
                 <Select
                   name="gender"
-                  onValueChange={(val: string) => setFormData((prev: any) => ({ ...prev, gender: val }))}
+                  onValueChange={(val: string) => setFormData((prev) => ({ ...prev, gender: val }))}
                   value={formData.gender}
                   required
                 >
@@ -507,7 +528,7 @@ const RegisterForm = () => {
                   required
                   value={formData.dob}
                   onChange={([date]) => {
-                    setFormData((prev: any) => ({ ...prev, dob: date ? date.toISOString().split('T')[0] : '' }))
+                    setFormData((prev) => ({ ...prev, dob: date ? date.toISOString().split('T')[0] : '' }))
                   }}
                   options={{
                     locale: isAr ? Arabic : undefined,
@@ -528,7 +549,7 @@ const RegisterForm = () => {
                 <label className="text-sm font-semibold text-[#1a2b3c] pr-1 block mb-2">التخصص الطبي للمالك</label>
                 <Select
                   name="ownerSpecialty"
-                  onValueChange={(val: string) => setFormData((prev: any) => ({ ...prev, ownerSpecialty: val }))}
+                  onValueChange={(val: string) => setFormData((prev) => ({ ...prev, ownerSpecialty: val }))}
                   value={formData.ownerSpecialty}
                   required
                 >
@@ -567,8 +588,8 @@ const RegisterForm = () => {
             >
               {isPending ? optimisticStatus.message || 'جاري الإرسال...' : 'إرسال الطلب'}
             </BtnPrimary>
-            <TransitionLink // Changed from Link to TransitionLink
-              href="/" // Changed from 'to' to 'href'
+            <TransitionLink
+              href="/"
               className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-300 disabled:pointer-events-none disabled:opacity-50 shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] hover:shadow-lg hover:-translate-y-1 active:translate-y-0 active:shadow-md border border-border bg-background text-foreground hover:bg-slate-50 hover:border-primary/30 px-8 h-12"
             >
               إلغاء

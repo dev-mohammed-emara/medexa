@@ -57,6 +57,16 @@ const INITIAL_DAYS: WorkingDay[] = [
   { id: 'sat', name: 'السبت', isActive: false, periods: [] },
 ];
 
+const ID_TO_SERVER_DAY: { [key: string]: string } = {
+  sun: 'SUNDAY',
+  mon: 'MONDAY',
+  tue: 'TUESDAY',
+  wed: 'WEDNESDAY',
+  thu: 'THURSDAY',
+  fri: 'FRIDAY',
+  sat: 'SATURDAY'
+};
+
 interface SettingsViewProps {
   hideHeader?: boolean;
   className?: string;
@@ -86,15 +96,7 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
   const [savedAppointmentPeriod, setSavedAppointmentPeriod] = useState(30);
   const [savedDays, setSavedDays] = useState<WorkingDay[]>(INITIAL_DAYS);
 
-  const ID_TO_SERVER_DAY: { [key: string]: string } = {
-    sun: 'SUNDAY',
-    mon: 'MONDAY',
-    tue: 'TUESDAY',
-    wed: 'WEDNESDAY',
-    thu: 'THURSDAY',
-    fri: 'FRIDAY',
-    sat: 'SATURDAY'
-  };
+
 
   useEffect(() => {
     const loadClinicMe = async () => {
@@ -275,7 +277,7 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
         try {
           const errData = await response.json();
           errMsg = errData.message || errData.error || errMsg;
-        } catch (e) { }
+        } catch (e) { /* ignore */ }
         setAppointmentPeriodError(errMsg);
         window.showToast(errMsg, 'error');
       }
@@ -357,7 +359,7 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
           } else {
             errMsg = errData.message || errData.error || errMsg;
           }
-        } catch (e) { }
+        } catch (e) { /* ignore */ }
         window.showToast(errMsg, 'error');
       }
     } catch (err: any) {
@@ -398,24 +400,6 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
     window.showToast(t('common.settings_canceled'), 'success');
   };
 
-  const SectionActions = ({ onSave, onCancel }: { onSave: () => void, onCancel: () => void }) => (
-    <div className="flex justify-center xs:justify-end flex-wrap gap-3 mt-8 pt-6 border-t border-gray-200">
-      <button
-        onClick={onCancel}
-        className="h-10 px-6 rounded-xl border border-border font-bold text-foreground hover:bg-accent hover:text-white transition-all active:scale-95 text-sm"
-      >
-        {t('settings.cancel_changes', T_PAGE)}
-      </button>
-      <button
-        onClick={onSave}
-        className="h-10 px-6 rounded-xl bg-primary text-white font-bold hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all active:scale-95 flex items-center gap-2 text-sm"
-      >
-        <Check className="size-4" />
-        {t('settings.save_settings', T_PAGE)}
-      </button>
-    </div>
-  );
-
   return (
     <section className={cn("space-y-8", className)} dir={dir}>
       {!hideHeader && (
@@ -429,102 +413,7 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
       )}
 
       <div className="grid grid-cols-1 gap-8">
-        {/* Clinic Information Card */}
-        {/* <article className={cn(
-          "bg-white rounded-3xl border border-border p-4 sm:p-8 shadow-sm hover:shadow-md transition-all duration-300 opacity-0",
-          canAnimate && "animate-fadeUp animate-delay-200"
-        )}>
-          <figure className="flex items-center gap-4 mb-8">
-            <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center shrink-0">
-              <Building2 className="size-7 text-primary" />
-            </div>
-            <figcaption>
-              <h3 className="text-xl font-bold">{t('settings.clinic_info', T_PAGE)}</h3>
-              <p className="text-sm text-muted-foreground">{t('settings.clinic_info_desc', T_PAGE)}</p>
-            </figcaption>
-          </figure>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2" ref={nameRef}>
-              <label className={cn("text-sm font-bold text-[#1a2b3c] flex items-center gap-2", isAr ? "mr-1" : "ml-1")}>
-                {t('common.clinic_name', T_COMMON)}
-              </label>
-              <Input
-                value={clinicName}
-                onChange={(e) => {
-                  setClinicName(e.target.value);
-                  if (nameError) setNameError(false);
-                }}
-                className={cn(
-                  "h-12 bg-muted/30 border-border focus:bg-white focus:border-primary transition-all duration-300",
-                  nameError && "border-destructive focus:border-destructive focus:ring-destructive/10"
-                )}
-              />
-              {nameError && (
-                <p className={cn("text-xs text-destructive font-bold", isAr ? "mr-1" : "ml-1")}>{t('common.required_field', T_COMMON)}</p>
-              )}
-            </div>
-            <div className="space-y-2" ref={phoneRef}>
-              <label className={cn("text-sm font-bold text-[#1a2b3c] flex items-center gap-2", isAr ? "mr-1" : "ml-1")}>
-                {t('common.phone_number', T_COMMON)}
-              </label>
-              <Input
-                type="tel"
-                value={phone}
-                onChange={(e) => {
-                  setPhone(e.target.value);
-                  if (phoneError) setPhoneError(false);
-                }}
-                dir="ltr"
-                className={cn(
-                  "h-12 bg-muted/30 border-border focus:bg-white focus:border-primary transition-all duration-300",
-                  isAr ? "text-right" : "text-left",
-                  phoneError && "border-destructive focus:border-destructive focus:ring-destructive/10"
-                )}
-              />
-              {phoneError && (
-                <p className={cn("text-xs text-destructive font-bold", isAr ? "mr-1" : "ml-1")}>{t('settings.phone_number_error', T_PAGE)}</p>
-              )}
-            </div>
-            <div className="space-y-2" ref={emailRef}>
-              <label className={cn("text-sm font-bold text-[#1a2b3c] flex items-center gap-2", isAr ? "mr-1" : "ml-1")}>
-                {t('common.email', T_COMMON)}
-              </label>
-              <Input
-                value={email}
-                type="email"
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  if (emailError) setEmailError(false);
-                }}
-                className={cn(
-                  "h-12 bg-muted/30 border-border focus:bg-white focus:border-primary transition-all duration-300",
-                  emailError && "border-destructive focus:border-destructive focus:ring-destructive/10"
-                )}
-                placeholder="example@email.com"
-              />
-              {emailError && (
-                <p className={cn("text-xs text-destructive font-bold", isAr ? "mr-1" : "ml-1")}>{t('settings.email_error', T_PAGE)}</p>
-              )}
-            </div>
-            <div className="space-y-2">
-              <label className={cn("text-sm font-bold text-[#1a2b3c] flex items-center gap-2", isAr ? "mr-1" : "ml-1")}>
-                {t('common.address', T_COMMON)}
-              </label>
-              <Input
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                className="h-12 bg-muted/30 border-border focus:bg-white focus:border-primary transition-all duration-300"
-              />
-            </div>
-          </div>
-
-          <SectionActions
-            onSave={handleSaveClinicInfo}
-            onCancel={() => handleCancelClick('clinic')}
-          />
-        </article> */}
-
+      
         {/* General Settings Card */}
         <article className={cn(
           "bg-white rounded-xl border border-border p-4 sm:p-8 shadow-sm hover:shadow-md transition-all duration-300 opacity-0",
@@ -602,6 +491,8 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
           <SectionActions
             onSave={handleSaveGeneralSettings}
             onCancel={() => handleCancelClick('general')}
+            cancelLabel={t('settings.cancel_changes', T_PAGE)}
+            saveLabel={t('settings.save_settings', T_PAGE)}
           />
         </article>
 
@@ -795,4 +686,29 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
 };
 
 export default SettingsView;
+
+interface SectionActionsProps {
+  onSave: () => void;
+  onCancel: () => void;
+  cancelLabel: string;
+  saveLabel: string;
+}
+
+const SectionActions = ({ onSave, onCancel, cancelLabel, saveLabel }: SectionActionsProps) => (
+  <div className="flex justify-center xs:justify-end flex-wrap gap-3 mt-8 pt-6 border-t border-gray-200">
+    <button
+      onClick={onCancel}
+      className="h-10 px-6 rounded-xl border border-border font-bold text-foreground hover:bg-accent hover:text-white transition-all active:scale-95 text-sm"
+    >
+      {cancelLabel}
+    </button>
+    <button
+      onClick={onSave}
+      className="h-10 px-6 rounded-xl bg-primary text-white font-bold hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all active:scale-95 flex items-center gap-2 text-sm"
+    >
+      <Check className="size-4" />
+      {saveLabel}
+    </button>
+  </div>
+);
 

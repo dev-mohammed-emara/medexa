@@ -28,6 +28,7 @@ import {
   Phone,
   Plus,
   Shield,
+  Stethoscope,
   User,
   X,
 } from 'lucide-react';
@@ -156,7 +157,7 @@ const ProfileView = () => {
       }));
       if (!personalPhone) setPersonalPhone(formatPhoneForDisplay(user.phoneNumber || ''));
     }
-  }, [user]);
+  }, [user, personalInfo.firstName, personalPhone]);
 
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
@@ -171,7 +172,7 @@ const ProfileView = () => {
             surName: personalInfo.surName,
             lastName: personalInfo.lastName,
             phoneNumber: formatPhoneForPayload(personalPhone),
-            gender: personalInfo.gender,
+            gender: personalInfo.gender as 'MALE' | 'FEMALE',
             dateOfBirth: personalInfo.dateOfBirth,
             permissions: user?.permissions || []
           }
@@ -183,7 +184,7 @@ const ProfileView = () => {
             surName: personalInfo.surName,
             lastName: personalInfo.lastName,
             phoneNumber: formatPhoneForPayload(personalPhone),
-            gender: personalInfo.gender,
+            gender: personalInfo.gender as 'MALE' | 'FEMALE',
             dateOfBirth: personalInfo.dateOfBirth,
           },
           specialty: personalInfo.specialty,
@@ -195,7 +196,7 @@ const ProfileView = () => {
         surName: personalInfo.surName,
         lastName: personalInfo.lastName,
         phoneNumber: formatPhoneForPayload(personalPhone),
-        gender: personalInfo.gender as any,
+        gender: personalInfo.gender,
         dateOfBirth: personalInfo.dateOfBirth
       });
       window.showToast(t('profile.general_saved', T_PAGE), 'success');
@@ -401,7 +402,7 @@ const ProfileView = () => {
         try {
           const errData = await response.json();
           errMsg = errData.message || errData.error || errMsg;
-        } catch (e) { }
+        } catch (e) { /* ignore */ }
         window.showToast(errMsg, 'error');
       }
     } catch (error: any) {
@@ -603,7 +604,7 @@ const ProfileView = () => {
           } else {
             errMsg = errData.message || errData.error || errMsg;
           }
-        } catch (e) { }
+        } catch (e) { /* ignore */ }
         window.showToast(errMsg, 'error');
       }
     } catch (err: any) {
@@ -687,12 +688,30 @@ const ProfileView = () => {
             {/* Profile Card */}
             <div data-slot="card" className="tab-pane text-card-foreground flex flex-col-reverse sm:flex-row items-center justify-between gap-6 rounded-xl border p-8 bg-white border-border shadow-lg hover:shadow-xl transition-all duration-300">
               <div className={cn("flex-1 text-center font-bold", isAr ? "sm:text-right" : "sm:text-left")}>
-                <h2 className="text-3xl mb-2 font-bold text-foreground">{user ? `${isAr ? 'د.' : 'Dr.'} ${user.firstName} ${user.lastName}` : t('profile.doctor_name_val', T_PAGE)}</h2>
+                <h2 className="text-3xl mb-2 font-bold text-foreground">
+                  {user
+                    ? `${(user.role === 'ROLE_SECRETARY' || user.roles?.includes('ROLE_SECRETARY')) ? '' : (isAr ? 'د. ' : 'Dr. ')}${user.firstName} ${user.lastName}`
+                    : t('profile.doctor_name_val', T_PAGE)}
+                </h2>
                 <div className="flex flex-col gap-2">
                   <div className={cn("flex items-center justify-center", isAr ? "sm:justify-end" : "sm:justify-start")}>
                     <span className="inline-flex items-center justify-center rounded-xl border text-xs font-medium bg-primary/10 text-primary border-gray-200 px-3 py-1 gap-1">
-                      <Shield size={14} className={isAr ? "ml-1" : "mr-1"} />
-                      {t('profile.clinic_owner', T_PAGE)}
+                      {user?.role === 'ROLE_CLINIC_OWNER' || user?.roles?.includes('ROLE_CLINIC_OWNER') ? (
+                        <>
+                          <Shield size={14} className={isAr ? "ml-1" : "mr-1"} />
+                          {t('profile.clinic_owner', T_PAGE)}
+                        </>
+                      ) : user?.role === 'ROLE_DOCTOR' || user?.roles?.includes('ROLE_DOCTOR') ? (
+                        <>
+                          <Stethoscope size={14} className={isAr ? "ml-1" : "mr-1"} />
+                          {isAr ? "طبيب" : "Doctor"}
+                        </>
+                      ) : (
+                        <>
+                          <User size={14} className={isAr ? "ml-1" : "mr-1"} />
+                          {isAr ? "سكرتير" : "Secretary"}
+                        </>
+                      )}
                     </span>
                   </div>
                   <div className={cn("flex items-center justify-center text-muted-foreground", isAr ? "sm:justify-end" : "sm:justify-start")}>
@@ -874,8 +893,22 @@ const ProfileView = () => {
                     <div className="p-4 bg-muted/30 rounded-xl border border-border">
                       <label className="text-xs text-muted-foreground mb-1 block">{t('common.role')}</label>
                       <div className="flex items-center gap-2">
-                        <Shield size={18} className="text-primary" />
-                        <span className="text-base font-bold text-foreground">{t('profile.clinic_owner', T_PAGE)}</span>
+                        {user?.role === 'ROLE_CLINIC_OWNER' || user?.roles?.includes('ROLE_CLINIC_OWNER') ? (
+                          <>
+                            <Shield size={18} className="text-primary" />
+                            <span className="text-base font-bold text-foreground">{t('profile.clinic_owner', T_PAGE)}</span>
+                          </>
+                        ) : user?.role === 'ROLE_DOCTOR' || user?.roles?.includes('ROLE_DOCTOR') ? (
+                          <>
+                            <Stethoscope size={18} className="text-primary" />
+                            <span className="text-base font-bold text-foreground">{isAr ? "طبيب" : "Doctor"}</span>
+                          </>
+                        ) : (
+                          <>
+                            <User size={18} className="text-primary" />
+                            <span className="text-base font-bold text-foreground">{isAr ? "سكرتير" : "Secretary"}</span>
+                          </>
+                        )}
                       </div>
                     </div>
                     <div className="p-4 bg-muted/30 rounded-xl border border-border">
@@ -907,7 +940,7 @@ const ProfileView = () => {
                 </div>
 
                 {/* Appointment Period Settings */}
-                {user?.role !== 'ROLE_SECRETARY' && (
+                {(user?.role === 'ROLE_DOCTOR' || user?.role === 'ROLE_CLINIC_OWNER' || user?.roles?.includes('ROLE_DOCTOR') || user?.roles?.includes('ROLE_CLINIC_OWNER')) && (
                   <div data-slot="card" className="tab-pane h-full flex flex-col bg-white rounded-xl border p-6 border-border shadow-lg hover:shadow-xl transition-all duration-300 h-fit">
                     <h3 className="text-xl mb-6 font-bold">{isAr ? 'إعدادات المواعيد' : 'Appointment Settings'}</h3>
                     <div className="space-y-5">
@@ -956,7 +989,7 @@ const ProfileView = () => {
             </div>
 
             {/* Working Hours */}
-            {user?.role !== 'ROLE_SECRETARY' && (
+            {(user?.role === 'ROLE_DOCTOR' || user?.role === 'ROLE_CLINIC_OWNER' || user?.roles?.includes('ROLE_DOCTOR') || user?.roles?.includes('ROLE_CLINIC_OWNER')) && (
               <div data-slot="card" className="tab-pane bg-white rounded-xl border p-6 border-border shadow-lg hover:shadow-xl transition-all duration-300">
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-3">

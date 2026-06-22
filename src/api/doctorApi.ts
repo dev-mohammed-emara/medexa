@@ -42,6 +42,36 @@ interface FetchDoctorsParams {
   status?: string
 }
 
+export interface CreateDoctorPayload {
+  user: {
+    firstName: string
+    surName: string
+    lastName: string
+    email: string
+    phoneNumber: string
+    gender: 'MALE' | 'FEMALE'
+    dateOfBirth: string
+    permissions: string[]
+    password?: string
+  }
+  specialty: string
+  summary: string
+}
+
+export interface UpdateDoctorPayload {
+  user: {
+    firstName: string
+    surName: string
+    lastName: string
+    phoneNumber: string
+    gender: 'MALE' | 'FEMALE'
+    dateOfBirth: string
+    permissions?: string[]
+  }
+  specialty: string
+  summary: string
+}
+
 const getHeaders = () => {
   checkTokenOrRedirect()
   const token = getCookie('token')
@@ -85,7 +115,7 @@ export const fetchDoctorByUuid = async (uuid: string): Promise<ApiDoctor> => {
   return response.json()
 }
 
-export const createDoctor = async (body: any): Promise<ApiDoctor> => {
+export const createDoctor = async (body: CreateDoctorPayload): Promise<ApiDoctor> => {
   const response = await apiFetch('/api/doctor', {
     method: 'POST',
     headers: getHeaders(),
@@ -106,7 +136,7 @@ export const createDoctor = async (body: any): Promise<ApiDoctor> => {
   return response.json()
 }
 
-export const updateDoctor = async (uuid: string, body: any): Promise<ApiDoctor> => {
+export const updateDoctor = async (uuid: string, body: UpdateDoctorPayload): Promise<ApiDoctor> => {
   const response = await apiFetch(`/api/doctor/${uuid}`, {
     method: 'PUT',
     headers: getHeaders(),
@@ -151,7 +181,7 @@ export const fetchDoctorMe = async (): Promise<ApiDoctor> => {
   return response.json()
 }
 
-export const updateDoctorMe = async (body: any): Promise<ApiDoctor> => {
+export const updateDoctorMe = async (body: Partial<UpdateDoctorPayload>): Promise<ApiDoctor> => {
   const response = await apiFetch(`/api/doctor/me`, {
     method: 'PUT',
     headers: getHeaders(),
@@ -192,4 +222,3 @@ export const updateDoctorAppointmentPeriod = async (period: number): Promise<{me
 
   return response.json()
 }
-

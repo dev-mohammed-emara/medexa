@@ -23,7 +23,7 @@ export default defineConfig(({ mode }) => {
       const parsed = new URL(proxyTarget);
       cspConnectTarget = `${parsed.protocol}//${parsed.host}`;
     }
-  } catch (e) {
+  } catch (_e) {
     // Fallback if parsing failed
   }
 

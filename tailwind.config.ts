@@ -150,7 +150,6 @@ const config: Config = {
   },
   plugins: [
     // Improved Animation Delay Plugin
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     function ({ addUtilities, matchUtilities, theme }: any) {
       // 1. Static utilities from the theme above
       const delays = theme('animationDelay');

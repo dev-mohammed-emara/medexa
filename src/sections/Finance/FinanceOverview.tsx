@@ -164,7 +164,7 @@ const FinanceOverview = () => {
     } catch (err) {
       console.error('Error fetching statistics:', err);
     }
-  }, [fromDate, toDate]);
+  }, [fromDate, toDate, defaultFromDate, defaultToDate]);
 
   useEffect(() => {
     loadTransactions();

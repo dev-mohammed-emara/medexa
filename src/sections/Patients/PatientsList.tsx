@@ -96,7 +96,7 @@ const PatientsList = () => {
     } finally {
       setLoading(false);
     }
-  }, [currentPage, pageSize, activeSearch, activeSort, t]);
+  }, [currentPage, pageSize, activeSearch, activeSort, t, T]);
 
   useEffect(() => {
     loadPatients();
