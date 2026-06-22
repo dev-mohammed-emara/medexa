@@ -28,6 +28,7 @@ import { fetchDoctors } from '../../api/doctorApi';
 import { fetchPatients } from '../../api/patientApi';
 import { getCookie } from '../../utils/cookie';
 import { useAuth } from '../../contexts/AuthContext';
+import { apiFetch } from '../../utils/apiFetch';
 
 export interface Appointment {
   id: number | string;
@@ -54,11 +55,12 @@ interface AppointmentsDialogProps {
   onConfirm: (data: Partial<Appointment>) => void;
   mode: 'add' | 'edit' | 'view';
   initialData?: Appointment | null;
+  doctorsList?: any[];
   onCancel?: (app: Appointment) => void;
   onComplete?: (app: Appointment) => void;
 }
 
-const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, onCancel, onComplete }: AppointmentsDialogProps) => {
+const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, doctorsList: doctorsListProp, onCancel, onComplete }: AppointmentsDialogProps) => {
   const { isAr, dir, t } = useLanguage();
   const { user } = useAuth();
   const hasManageMedicalRecords = user?.permissions?.includes('MANAGE_MEDICAL_RECORDS') || user?.role === 'ROLE_CLINIC_OWNER' || user?.role === 'ROLE_DOCTOR' || user?.roles?.includes('ROLE_DOCTOR');
@@ -94,22 +96,24 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, onC
   const [fetchedDetails, setFetchedDetails] = useState<any>(null);
 
   useEffect(() => {
+    let cancelled = false;
     const appointmentUuid = initialData?.uuid || initialData?.id;
     if (isOpen && appointmentUuid && (mode === 'view' || mode === 'edit')) {
       const loadDetails = async () => {
         try {
           const token = getCookie('token');
-          const res = await fetch(`/api/appointment/${appointmentUuid}`, {
+          const res = await apiFetch(`/api/appointment/${appointmentUuid}`, {
             headers: {
               ...(token ? { 'Authorization': `Bearer ${token}` } : {})
             }
           });
           if (res.ok) {
             const data = await res.json();
-            setFetchedDetails(data);
-            if (data.appointmentDate) {
-              setSelectedDate(data.appointmentDate);
-            }
+            if (!cancelled) {
+              setFetchedDetails(data);
+              if (data.appointmentDate) {
+                setSelectedDate(data.appointmentDate);
+              }
             if (data.appointmentStartTime) {
               setSelectedTime(data.appointmentStartTime);
             }
@@ -141,18 +145,23 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, onC
       };
       loadDetails();
     } else {
-      setFetchedDetails(null);
-      setSelectedDate(initialData?.date ? (typeof initialData.date === 'string' ? initialData.date : initialData.date.toISOString().split('T')[0]) : "");
-      setSelectedTime(initialData?.time || "");
-      setSelectedEndTime(initialData?.endTime || "");
-      setSelectedAppointmentType(initialData?.appointmentType || "");
-      setSelectedStatus(initialData?.status || 'pending');
-      setSelectedDoctor(initialData?.doctorId || "");
-      setSelectedPatient(initialData?.patientId || "");
-      setDoctorNotes(initialData?.doctorNotes || "");
-      setPatientNotes(initialData?.patientNotes || "");
+      if (!cancelled) {
+        setFetchedDetails(null);
+        setSelectedDate(initialData?.date ? (typeof initialData.date === 'string' ? initialData.date : initialData.date.toISOString().split('T')[0]) : "");
+        setSelectedTime(initialData?.time || "");
+        setSelectedEndTime(initialData?.endTime || "");
+        setSelectedAppointmentType(initialData?.appointmentType || "");
+        setSelectedStatus(initialData?.status || 'pending');
+        setSelectedDoctor(initialData?.doctorId || "");
+        setSelectedPatient(initialData?.patientId || "");
+        setDoctorNotes(initialData?.doctorNotes || "");
+        setPatientNotes(initialData?.patientNotes || "");
+      }
     }
-    setError(null);
+    if (!cancelled) setError(null);
+    return () => {
+      cancelled = true;
+    };
   }, [isOpen, initialData, mode]);
 
   // API Dropdown states
@@ -162,18 +171,25 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, onC
 
   // Fetch API dropdowns
   useEffect(() => {
+    let cancelled = false;
     if (isOpen) {
       const loadDropdownData = async () => {
         try {
-          const docData = await fetchDoctors({ size: 100 });
-          if (docData.content && docData.content.length > 0) {
-            setDoctorsList(docData.content);
+          if (doctorsListProp && doctorsListProp.length > 0) {
+            if (!cancelled) setDoctorsList(doctorsListProp);
           } else {
-            setDoctorsList([
-              { uuid: '33c044ef-e69e-4dbb-839d-402f06ad0201', user: { firstName: 'Ahmad', lastName: 'Masri' } },
-              { uuid: 'doctor-sami-uuid', user: { firstName: 'Sami', lastName: 'Sami' } },
-              { uuid: 'doctor-layla-uuid', user: { firstName: 'Layla', lastName: 'Layla' } }
-            ]);
+            const docData = await fetchDoctors({ size: 100 });
+            if (!cancelled) {
+              if (docData.content && docData.content.length > 0) {
+                setDoctorsList(docData.content);
+              } else {
+                setDoctorsList([
+                  { uuid: '33c044ef-e69e-4dbb-839d-402f06ad0201', user: { firstName: 'Ahmad', lastName: 'Masri' } },
+                  { uuid: 'doctor-sami-uuid', user: { firstName: 'Sami', lastName: 'Sami' } },
+                  { uuid: 'doctor-layla-uuid', user: { firstName: 'Layla', lastName: 'Layla' } }
+                ]);
+              }
+            }
           }
         } catch (e) {
           console.error('Failed to load doctors in modal:', e);
@@ -185,15 +201,19 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, onC
         }
 
         try {
-          const patData = await fetchPatients({ size: 100 });
-          if (patData.content && patData.content.length > 0) {
-            setPatientsList(patData.content);
-          } else {
-            setPatientsList([
-              { uuid: '4e14974e-9fa3-4261-907b-81c9cd9d334b', firstName: 'Ahmad', lastName: 'Almasri' },
-              { uuid: 'patient-sara-uuid', firstName: 'Sara', lastName: 'Sami' },
-              { uuid: 'patient-mahmoud-uuid', firstName: 'Mahmoud', lastName: 'Mahmoud' }
-            ]);
+          if (patientsList.length === 0) {
+            const patData = await fetchPatients({ size: 100 });
+            if (!cancelled) {
+              if (patData.content && patData.content.length > 0) {
+                setPatientsList(patData.content);
+              } else {
+                setPatientsList([
+                  { uuid: '4e14974e-9fa3-4261-907b-81c9cd9d334b', firstName: 'Ahmad', lastName: 'Almasri' },
+                  { uuid: 'patient-sara-uuid', firstName: 'Sara', lastName: 'Sami' },
+                  { uuid: 'patient-mahmoud-uuid', firstName: 'Mahmoud', lastName: 'Mahmoud' }
+                ]);
+              }
+            }
           }
         } catch (e) {
           console.error('Failed to load patients in modal:', e);
@@ -205,34 +225,43 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, onC
         }
 
         try {
-          const token = getCookie('token');
-          const res = await fetch('/api/appointment-type', {
-            headers: {
-              ...(token ? { 'Authorization': `Bearer ${token}` } : {})
-            }
-          });
+          if (appointmentTypesList.length === 0) {
+            const token = getCookie('token');
+            const res = await apiFetch('/api/appointment-type', {
+              headers: {
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+              }
+            });
           if (res.ok) {
             const data = await res.json();
-            setAppointmentTypesList(data || []);
+            if (!cancelled) setAppointmentTypesList(data || []);
           } else {
-            // Fallback default list
+            if (!cancelled) {
+              // Fallback default list
             setAppointmentTypesList([
               { uuid: '990563d1-53b0-4f0a-a98b-2ac3106e1bfc', name: isAr ? 'كشفية' : 'Consultation' },
               { uuid: 'followup-uuid', name: isAr ? 'مراجعة' : 'Followup' },
               { uuid: 'session-uuid', name: isAr ? 'جلسة' : 'Session' }
             ]);
           }
+            }
+          }
         } catch (err) {
-          setAppointmentTypesList([
-            { uuid: '990563d1-53b0-4f0a-a98b-2ac3106e1bfc', name: isAr ? 'كشفية' : 'Consultation' },
-            { uuid: 'followup-uuid', name: isAr ? 'مراجعة' : 'Followup' },
-            { uuid: 'session-uuid', name: isAr ? 'جلسة' : 'Session' }
-          ]);
+          if (!cancelled) {
+            setAppointmentTypesList([
+              { uuid: '990563d1-53b0-4f0a-a98b-2ac3106e1bfc', name: isAr ? 'كشفية' : 'Consultation' },
+              { uuid: 'followup-uuid', name: isAr ? 'مراجعة' : 'Followup' },
+              { uuid: 'session-uuid', name: isAr ? 'جلسة' : 'Session' }
+            ]);
+          }
         }
       };
       loadDropdownData();
     }
-  }, [isOpen, isAr]);
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, isAr, doctorsListProp, appointmentTypesList.length, patientsList.length]);
 
   const handleClose = useCallback(() => {
     setIsClosing(true);
@@ -326,7 +355,7 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, onC
 
     try {
       const token = getCookie('token');
-      const response = await fetch(url, {
+      const response = await apiFetch(url, {
         method: method,
         headers: {
           'Content-Type': 'application/json',

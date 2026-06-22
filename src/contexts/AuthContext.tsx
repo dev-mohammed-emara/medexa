@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react'
 import { deleteCookie, getCookie, setCookie, isTokenExpired } from '../utils/cookie'
 import { jwtDecode } from 'jwt-decode'
+import { apiFetch } from '../utils/apiFetch'
 
 import { BYPASS_AUTH_GUARDS } from '../config/auth';
 
@@ -173,6 +174,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         await refresh()
       } catch (err) {
         console.error("Silent token refresh failed, logging out:", err)
+        if (refreshTimeoutRef.current) {
+          clearTimeout(refreshTimeoutRef.current)
+          refreshTimeoutRef.current = null
+        }
         await logout()
       }
     }, delay)
@@ -184,7 +189,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw new Error('No refresh token available')
     }
 
-    const response = await fetch('/api/auth/refresh', {
+    const response = await apiFetch('/api/auth/refresh', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -266,14 +271,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   // Initial load silent refresh and cleanup
-
   useEffect(() => {
+    let cancelled = false;
+
     const performInitialRefresh = async () => {
       const token = getCookie('token')
       if (token && isTokenExpired(token) && !BYPASS_AUTH_GUARDS) {
         console.warn("Initial load token expired, logging out...")
-        await logout()
-        setLoading(false)
+        if (!cancelled) {
+          await logout()
+          setLoading(false)
+        }
         return
       }
 
@@ -290,7 +298,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
           // Fetch user data from correct endpoint depending on role
           const profileUrl = getProfileEndpoint(token);
-          const response = await fetch(profileUrl, {
+          const response = await apiFetch(profileUrl, {
             method: 'GET',
             headers: {
               'Authorization': `Bearer ${token}`
@@ -300,25 +308,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const data = await response.json()
             const allPermissions = extractPermissionsFromToken(decoded)
 
-            const userProfile: UserProfile = {
-              ...data.user,
-              specialty: data.specialty,
-              summary: data.summary,
-              uuid: data.uuid,
-              email: decoded?.username || data.user?.email || '',
-              username: decoded?.username,
-              sub: decoded?.sub,
-              clinicId: decoded?.clinicId,
-              permissions: allPermissions,
-              roles: allPermissions,
+            if (!cancelled) {
+              const userProfile: UserProfile = {
+                ...data.user,
+                specialty: data.specialty,
+                summary: data.summary,
+                uuid: data.uuid,
+                email: decoded?.username || data.user?.email || '',
+                username: decoded?.username,
+                sub: decoded?.sub,
+                clinicId: decoded?.clinicId,
+                permissions: allPermissions,
+                roles: allPermissions,
+              }
+              setUser(userProfile)
+              localStorage.setItem('medexa_user', JSON.stringify(userProfile))
             }
-            setUser(userProfile)
-            localStorage.setItem('medexa_user', JSON.stringify(userProfile))
           }
         } catch (e) {
           console.error("Failed to schedule refresh or fetch doctor profile from existing token:", e)
         }
-        setLoading(false)
+        if (!cancelled) {
+          setLoading(false)
+        }
         return
       }
 
@@ -327,25 +339,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           await refresh()
         } catch (err) {
           console.error("Initial load token refresh failed, logging out:", err)
-          await logout()
+          if (!cancelled) await logout()
         } finally {
-          setLoading(false)
+          if (!cancelled) setLoading(false)
         }
       } else {
-        setLoading(false)
+        if (!cancelled) setLoading(false)
       }
     }
     performInitialRefresh()
 
     return () => {
+      cancelled = true;
       if (refreshTimeoutRef.current) {
         clearTimeout(refreshTimeoutRef.current)
       }
     }
-  }, [isAuthenticated, refresh, scheduleTokenRefresh, logout])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const login = async (email: string, password: string) => {
-    const response = await fetch('/api/auth/login', {
+    const response = await apiFetch('/api/auth/login', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -391,7 +405,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let userProfile: UserProfile;
     try {
       const profileUrl = getProfileEndpoint(token);
-      const profileRes = await fetch(profileUrl, {
+      const profileRes = await apiFetch(profileUrl, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -457,7 +471,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }
 
   const register = async (payload: Record<string, any>) => {
-    const response = await fetch('/api/clinic', {
+    const response = await apiFetch('/api/clinic', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -510,7 +524,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const token = getCookie('token')
     if (token) {
       try {
-        const res = await fetch('/api/auth/logout', {
+        const res = await apiFetch('/api/auth/logout', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

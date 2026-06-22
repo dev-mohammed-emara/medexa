@@ -10,6 +10,7 @@ import { useLanguage } from '../../contexts/LanguageContext'
 import { usePreloader } from '../../contexts/PreloaderContext'
 import { cn } from '../../utils/cn'
 import { LoginSchema } from '../../utils/schemas'
+import { apiFetch } from '../../utils/apiFetch'
 
 const LoginForm = () => {
   const { isAr, t } = useLanguage()
@@ -65,7 +66,7 @@ const LoginForm = () => {
       }
       setIsLoading(true)
       try {
-        const resp = await fetch('/api/auth/password/request-reset', {
+        const resp = await apiFetch('/api/auth/password/request-reset', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email })

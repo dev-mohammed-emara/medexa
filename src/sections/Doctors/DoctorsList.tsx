@@ -83,7 +83,7 @@ const DoctorsList = () => {
   const [deleting, setDeleting] = useState(false);
 
   // Load doctors from API
-  const loadDoctors = useCallback(async () => {
+  const loadDoctors = useCallback(async (isCancelled?: () => boolean) => {
     setLoading(true);
     setError(null);
     try {
@@ -94,19 +94,25 @@ const DoctorsList = () => {
         sort: activeSort !== '--' ? activeSort : undefined,
         status: activeStatus !== 'all' ? activeStatus : undefined
       });
+      if (isCancelled?.()) return;
       setDoctors(data.content || []);
       setTotalPages(data.totalPages || 1);
       setTotalElements(data.totalElements || 0);
     } catch (err: any) {
+      if (isCancelled?.()) return;
       console.error(err);
       setError(t('error_fetch', T));
     } finally {
-      setLoading(false);
+      if (!isCancelled?.()) setLoading(false);
     }
   }, [currentPage, pageSize, activeSearch, activeSort, activeStatus, t, T]);
 
   useEffect(() => {
-    loadDoctors();
+    let cancelled = false;
+    loadDoctors(() => cancelled);
+    return () => {
+      cancelled = true;
+    };
   }, [loadDoctors]);
 
   const handleApplyFilters = () => {

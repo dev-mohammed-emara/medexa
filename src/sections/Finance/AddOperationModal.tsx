@@ -25,6 +25,7 @@ import { useBroadcast } from '../../hooks/useBroadcast';
 import { appointmentsTranslations } from '../../constants/translations/appointments';
 import { format } from 'date-fns';
 import { getCookie } from '../../utils/cookie';
+import { apiFetch } from '../../utils/apiFetch';
 
 interface AddOperationModalProps {
   isOpen: boolean;
@@ -76,6 +77,7 @@ const AddOperationModal = ({ isOpen, onClose, onSuccess, mode = 'add', transacti
 
   // Fetch transaction details in view or edit mode
   useEffect(() => {
+    let cancelled = false;
     if (isOpen) {
       if ((mode === 'view' || mode === 'edit') && transactionUuid) {
         const fetchTransaction = async () => {
@@ -85,10 +87,13 @@ const AddOperationModal = ({ isOpen, onClose, onSuccess, mode = 'add', transacti
               'Content-Type': 'application/json',
               ...(token ? { 'Authorization': `Bearer ${token}` } : {})
             };
-            const response = await fetch(`/api/transaction/${transactionUuid}`, {
+            const response = await apiFetch(`/api/transaction/${transactionUuid}`, {
               method: 'GET',
               headers
             });
+            
+            if (cancelled) return;
+
             if (response.ok) {
               const data = await response.json();
               setType(data.type === 'INCOME' ? 'دخل' : 'مصروف');
@@ -98,6 +103,7 @@ const AddOperationModal = ({ isOpen, onClose, onSuccess, mode = 'add', transacti
               setNotes(data.note || "");
             }
           } catch (error) {
+            if (cancelled) return;
             console.error('Error fetching transaction details:', error);
           }
         };
@@ -113,6 +119,9 @@ const AddOperationModal = ({ isOpen, onClose, onSuccess, mode = 'add', transacti
       }
       setError(null);
     }
+    return () => {
+      cancelled = true;
+    };
   }, [isOpen, mode, transactionUuid]);
 
   if (!isOpen) return null;
@@ -142,7 +151,7 @@ const AddOperationModal = ({ isOpen, onClose, onSuccess, mode = 'add', transacti
         ...(token ? { 'Authorization': `Bearer ${token}` } : {})
       };
 
-      const response = await fetch('/api/transaction', {
+      const response = await apiFetch('/api/transaction', {
         method: 'POST',
         headers,
         body: JSON.stringify(payload)
@@ -196,7 +205,7 @@ const AddOperationModal = ({ isOpen, onClose, onSuccess, mode = 'add', transacti
         ...(token ? { 'Authorization': `Bearer ${token}` } : {})
       };
 
-      const response = await fetch(`/api/transaction`, {
+      const response = await apiFetch(`/api/transaction`, {
         method: 'PUT',
         headers,
         body: JSON.stringify(payload)

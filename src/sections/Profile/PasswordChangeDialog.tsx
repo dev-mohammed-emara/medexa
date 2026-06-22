@@ -7,6 +7,7 @@ import { FaLock } from 'react-icons/fa';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { profileTranslations } from '@/constants/profile';
 import { getCookie } from '@/utils/cookie';
+import { apiFetch } from '@/utils/apiFetch';
 
 interface PasswordChangeDialogProps {
   isOpen: boolean;
@@ -92,7 +93,7 @@ const PasswordChangeDialog = ({ isOpen, onClose }: PasswordChangeDialogProps) =>
     setLoading(true);
     try {
       const token = getCookie('token');
-      const response = await fetch('/api/auth/password/change', {
+      const response = await apiFetch('/api/auth/password/change', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

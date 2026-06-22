@@ -8,6 +8,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { profileTranslations } from '@/constants/profile';
 
 import { getCookie } from '@/utils/cookie';
+import { apiFetch } from '@/utils/apiFetch';
 
 interface EmailChangeDialogProps {
   isOpen: boolean;
@@ -71,7 +72,7 @@ const EmailChangeDialog = ({ isOpen, onClose }: EmailChangeDialogProps) => {
     setLoading(true);
     try {
       const token = getCookie('token');
-      const response = await fetch('/api/auth/email/change', {
+      const response = await apiFetch('/api/auth/email/change', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

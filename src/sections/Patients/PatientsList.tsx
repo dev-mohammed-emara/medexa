@@ -77,7 +77,7 @@ const PatientsList = () => {
   });
 
   // Load patients from API
-  const loadPatients = useCallback(async () => {
+  const loadPatients = useCallback(async (isCancelled?: () => boolean) => {
     setLoading(true);
     setError(null);
     try {
@@ -87,19 +87,25 @@ const PatientsList = () => {
         search: activeSearch || undefined,
         sort: activeSort !== '--' ? activeSort : undefined
       });
+      if (isCancelled?.()) return;
       setPatients(data.content || []);
       setTotalPages(data.totalPages || 1);
       setTotalElements(data.totalElements || 0);
     } catch (err: any) {
+      if (isCancelled?.()) return;
       console.error(err);
       setError(t('error_fetch', T) || 'Failed to load patients');
     } finally {
-      setLoading(false);
+      if (!isCancelled?.()) setLoading(false);
     }
   }, [currentPage, pageSize, activeSearch, activeSort, t, T]);
 
   useEffect(() => {
-    loadPatients();
+    let cancelled = false;
+    loadPatients(() => cancelled);
+    return () => {
+      cancelled = true;
+    };
   }, [loadPatients]);
 
   const handleApplyFilters = () => {

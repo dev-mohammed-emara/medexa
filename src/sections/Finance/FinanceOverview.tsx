@@ -49,6 +49,7 @@ import {
 } from '../../components/ui/select';
 
 import { getCookie } from '../../utils/cookie';
+import { apiFetch } from '../../utils/apiFetch';
 
 
 const FinanceOverview = () => {
@@ -118,7 +119,7 @@ const FinanceOverview = () => {
     };
   };
 
-  const loadTransactions = useCallback(async () => {
+  const loadTransactions = useCallback(async (isCancelled?: () => boolean) => {
     if (!canManageTransactions) return;
     try {
       const queryParams = new URLSearchParams();
@@ -131,10 +132,12 @@ const FinanceOverview = () => {
       queryParams.append('size', String(itemsPerPage));
       queryParams.append('sort', sort);
 
-      const response = await fetch(`/api/transaction?${queryParams.toString()}`, {
+      const response = await apiFetch(`/api/transaction?${queryParams.toString()}`, {
         method: 'GET',
         headers: getHeaders()
       });
+
+      if (isCancelled?.()) return;
 
       if (response.ok) {
         const data = await response.json();
@@ -142,36 +145,44 @@ const FinanceOverview = () => {
         setTotalElements(data.totalElements || 0);
       }
     } catch (err) {
+      if (isCancelled?.()) return;
       console.error('Error fetching transactions:', err);
     }
   }, [fromDate, toDate, type, sort, currentPage, itemsPerPage, canManageTransactions]);
 
-  const loadStatistics = useCallback(async () => {
+  const loadStatistics = useCallback(async (isCancelled?: () => boolean) => {
     try {
       const queryParams = new URLSearchParams();
       queryParams.append('fromDate', fromDate || defaultFromDate);
       queryParams.append('toDate', toDate || defaultToDate);
 
-      const response = await fetch(`/api/statistics/transaction?${queryParams.toString()}`, {
+      const response = await apiFetch(`/api/statistics/transaction?${queryParams.toString()}`, {
         method: 'GET',
         headers: getHeaders()
       });
+
+      if (isCancelled?.()) return;
 
       if (response.ok) {
         const data = await response.json();
         setStats(data);
       }
     } catch (err) {
+      if (isCancelled?.()) return;
       console.error('Error fetching statistics:', err);
     }
   }, [fromDate, toDate, defaultFromDate, defaultToDate]);
 
   useEffect(() => {
-    loadTransactions();
+    let cancelled = false;
+    loadTransactions(() => cancelled);
+    return () => { cancelled = true; };
   }, [loadTransactions]);
 
   useEffect(() => {
-    loadStatistics();
+    let cancelled = false;
+    loadStatistics(() => cancelled);
+    return () => { cancelled = true; };
   }, [loadStatistics]);
 
   const handleApply = () => {

@@ -15,6 +15,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import { usePreloader } from '../../contexts/PreloaderContext';
 import { cn } from '../../utils/cn';
 import { getCookie } from '../../utils/cookie';
+import { apiFetch } from '../../utils/apiFetch';
 import DateFromTo from '../../components/ui/DateFromTo';
 import {
   Select,
@@ -66,7 +67,7 @@ const MedicalRecordsList = () => {
     setOpenId(openId === uuid ? null : uuid);
   };
 
-  const loadRecords = useCallback(async () => {
+  const loadRecords = useCallback(async (isCancelled?: () => boolean) => {
     setIsLoading(true);
     try {
       const queryParams = new URLSearchParams();
@@ -76,7 +77,7 @@ const MedicalRecordsList = () => {
       queryParams.append('size', String(itemsPerPage));
       queryParams.append('sort', sort);
 
-      const response = await fetch(`/api/medical-records?${queryParams.toString()}`, {
+      const response = await apiFetch(`/api/medical-records?${queryParams.toString()}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -84,20 +85,27 @@ const MedicalRecordsList = () => {
         }
       });
 
+      if (isCancelled?.()) return;
+
       if (response.ok) {
         const data = await response.json();
         setRecords(data.content || []);
         setTotalElements(data.totalElements || 0);
       }
     } catch (err) {
+      if (isCancelled?.()) return;
       console.error('Error fetching medical records:', err);
     } finally {
-      setIsLoading(false);
+      if (!isCancelled?.()) setIsLoading(false);
     }
   }, [fromDate, toDate, currentPage, itemsPerPage, sort]);
 
   useEffect(() => {
-    loadRecords();
+    let cancelled = false;
+    loadRecords(() => cancelled);
+    return () => {
+      cancelled = true;
+    };
   }, [loadRecords]);
 
   const handleApply = () => {

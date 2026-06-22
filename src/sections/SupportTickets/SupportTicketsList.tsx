@@ -75,7 +75,7 @@ const SupportTicketsList = () => {
 
 
   // Load support tickets from API
-  const loadTickets = useCallback(async () => {
+  const loadTickets = useCallback(async (isCancelled?: () => boolean) => {
     setLoading(true);
     setError(null);
     try {
@@ -88,14 +88,16 @@ const SupportTicketsList = () => {
         toDate: activeToDate || undefined,
         sort: activeSort !== '--' ? activeSort : undefined
       });
+      if (isCancelled?.()) return;
       setTickets(data.content || []);
       setTotalPages(data.totalPages || 1);
       setTotalElements(data.totalElements || 0);
     } catch (err: unknown) {
+      if (isCancelled?.()) return;
       console.error(err);
       setError(isAr ? 'فشل تحميل تذاكر الدعم' : 'Failed to load support tickets');
     } finally {
-      setLoading(false);
+      if (!isCancelled?.()) setLoading(false);
     }
   }, [currentPage, pageSize, activeStatus, activePriority, activeFromDate, activeToDate, activeSort, isAr]);
 
@@ -106,7 +108,11 @@ const SupportTicketsList = () => {
   });
 
   useEffect(() => {
-    loadTickets();
+    let cancelled = false;
+    loadTickets(() => cancelled);
+    return () => {
+      cancelled = true;
+    };
   }, [currentPage, pageSize, activeStatus, activePriority, activeFromDate, activeToDate, activeSort, isAr, loadTickets]);
 
   const handleApplyFilters = () => {

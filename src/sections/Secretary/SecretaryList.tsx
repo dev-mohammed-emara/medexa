@@ -81,7 +81,7 @@ const SecretaryList = () => {
   const { user: currentUser } = useAuth();
 
   // Load secretaries from API
-  const loadSecretaries = useCallback(async () => {
+  const loadSecretaries = useCallback(async (isCancelled?: () => boolean) => {
     setLoading(true);
     setError(null);
     try {
@@ -92,19 +92,23 @@ const SecretaryList = () => {
         sort: activeSort !== '--' ? activeSort : undefined,
         status: activeStatus !== 'all' ? activeStatus : undefined
       });
+      if (isCancelled?.()) return;
       setSecretaries(data.content || []);
       setTotalPages(data.totalPages || 1);
       setTotalElements(data.totalElements || 0);
     } catch (err: any) {
+      if (isCancelled?.()) return;
       console.error(err);
       setError(t('error_fetch', T));
     } finally {
-      setLoading(false);
+      if (!isCancelled?.()) setLoading(false);
     }
   }, [currentPage, pageSize, activeSearch, activeSort, activeStatus, t, T]);
 
   useEffect(() => {
-    loadSecretaries();
+    let cancelled = false;
+    loadSecretaries(() => cancelled);
+    return () => { cancelled = true; };
   }, [loadSecretaries]);
 
   const handleApplyFilters = () => {

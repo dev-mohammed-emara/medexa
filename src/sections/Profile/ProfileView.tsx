@@ -39,6 +39,7 @@ import SettingsView from '../Settings/SettingsView';
 import EmailChangeDialog from './EmailChangeDialog';
 import PasswordChangeDialog from './PasswordChangeDialog';
 import { getCookie } from '@/utils/cookie';
+import { apiFetch } from '@/utils/apiFetch';
 import { formatPhoneForPayload, formatPhoneForDisplay } from '@/utils/phone';
 import TimePicker from '@/components/ui/TimePicker';
 
@@ -103,10 +104,11 @@ const ProfileView = () => {
   });
   const [personalPhone, setPersonalPhone] = useState(user?.phoneNumber || '');
 
-  const loadDoctorData = async () => {
+  const loadDoctorData = async (isCancelled?: () => boolean) => {
     try {
       const isSecretary = user?.role === 'ROLE_SECRETARY';
       const data: any = isSecretary ? await fetchSecretaryMe() : await fetchDoctorMe();
+      if (isCancelled?.()) return;
       if (data && data.user) {
         setPersonalInfo({
           uuid: data.uuid || '',
@@ -268,15 +270,15 @@ const ProfileView = () => {
   const [originalInsuranceUuids, setOriginalInsuranceUuids] = useState<Set<string>>(new Set());
 
 
-  const loadSchedule = async () => {
+  const loadSchedule = async (isCancelled?: () => boolean) => {
     try {
-      const endpoint = activeTab === 'clinic' ? '/api/clinicschedule/me' : '/api/doctorschedule/me';
-      const response = await fetch(endpoint, {
+      const response = await apiFetch('/api/doctorschedule/me', {
         method: 'GET',
         headers: getHeaders()
       });
       if (response.ok) {
         const data = await response.json();
+        if (isCancelled?.()) return;
         const schedules = data.schedules || [];
 
         setWorkingHours(prev => prev.map(day => {
@@ -300,9 +302,10 @@ const ProfileView = () => {
     }
   };
 
-  const loadClinicData = async () => {
+  const loadClinicData = async (isCancelled?: () => boolean) => {
     try {
       const clinicData = await fetchClinicMe();
+      if (isCancelled?.()) return;
       console.log('Clinic data loaded:', clinicData);
       setClinicInfo({
         uuid: clinicData.uuid || '',
@@ -325,9 +328,10 @@ const ProfileView = () => {
     }
   };
 
-  const loadInsurances = async () => {
+  const loadInsurances = async (isCancelled?: () => boolean) => {
     try {
       const insuranceData = await fetchInsurances();
+      if (isCancelled?.()) return;
       setInsurances(insuranceData);
     } catch (error) {
       console.error('Failed to load insurances:', error);
@@ -335,14 +339,15 @@ const ProfileView = () => {
     }
   };
 
-  const loadClinicInsurances = async () => {
+  const loadClinicInsurances = async (isCancelled?: () => boolean) => {
     try {
-      const response = await fetch('/api/clinic/insurance', {
+      const response = await apiFetch('/api/clinic/insurance', {
         method: 'GET',
         headers: getHeaders()
       });
       if (response.ok) {
         const data = await response.json();
+        if (isCancelled?.()) return;
         const uuids = new Set<string>(data.map((ins: any) => ins.uuid));
         setClinicInsuranceUuids(uuids);
         setOriginalInsuranceUuids(uuids);
@@ -356,22 +361,30 @@ const ProfileView = () => {
 
   // Fetch clinic data, insurances, active clinic insurances, schedules, and doctor data when component mounts
   useEffect(() => {
+    let cancelled = false;
+    const isCancelled = () => cancelled;
+
     if (hasPermission('ROLE_CLINIC_OWNER')) {
-      loadClinicData();
-      loadInsurances();
-      loadClinicInsurances();
+      loadClinicData(isCancelled);
+      loadInsurances(isCancelled);
+      loadClinicInsurances(isCancelled);
     }
-    loadDoctorData();
+    loadDoctorData(isCancelled);
+
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Refetch schedule whenever activeTab changes to keep both tabs fully in sync
   useEffect(() => {
-    if (hasPermission('ROLE_CLINIC_OWNER')) {
-      loadSchedule();
-    }
+    let cancelled = false;
+    loadSchedule(() => cancelled);
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab]);
+  }, []);
 
   const handleToggleInsurance = (uuid: string) => {
     setClinicInsuranceUuids(prev => {
@@ -387,7 +400,7 @@ const ProfileView = () => {
 
   const handleSaveInsurances = async () => {
     try {
-      const response = await fetch('/api/insurance/clinic', {
+      const response = await apiFetch('/api/insurance/clinic', {
         method: 'POST',
         headers: getHeaders(),
         body: JSON.stringify({ insuranceUuids: Array.from(clinicInsuranceUuids) })
@@ -556,8 +569,7 @@ const ProfileView = () => {
     }).filter(Boolean);
 
     try {
-      const endpoint = activeTab === 'clinic' ? '/api/clinicschedule/assignschedule' : '/api/doctorschedule/assignschedule';
-      const response = await fetch(endpoint, {
+      const response = await apiFetch('/api/doctorschedule/assignschedule', {
         method: 'PUT',
         headers: getHeaders(),
         body: JSON.stringify({ schedules: schedulesPayload })

@@ -5,6 +5,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { fetchPatientByUuid } from '../../api/patientApi';
 import type { ApiPatient } from '../../api/patientApi';
 import { getCookie } from '../../utils/cookie';
+import { apiFetch } from '../../utils/apiFetch';
 import { Printer, ArrowLeft, ArrowRight, Phone, MapPin, Calendar, Activity, ChevronDown, Stethoscope, FileImage, Pill, FlaskConical, FileText, RotateCcw } from 'lucide-react';
 import { FaCalendarAlt, FaTransgender } from 'react-icons/fa';
 import { Button } from '../../components/ui/Button';
@@ -55,7 +56,7 @@ const PatientDetailsView = () => {
   const [tempToDate, setTempToDate] = useState<string>("");
   const [tempSort, setTempSort] = useState<string>("createdAt,desc");
 
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (isCancelled?: () => boolean) => {
     if (!uuid) {
       navigate('/patients');
       return;
@@ -78,7 +79,7 @@ const PatientDetailsView = () => {
       
       if (hasPermission('MANAGE_MEDICAL_RECORDS')) {
         promises.push(
-          fetch(`/api/medical-records?${queryParams.toString()}`, {
+          apiFetch(`/api/medical-records?${queryParams.toString()}`, {
             method: 'GET',
             headers: {
               'Content-Type': 'application/json',
@@ -92,6 +93,7 @@ const PatientDetailsView = () => {
       }
 
       const results = await Promise.allSettled(promises);
+      if (isCancelled?.()) return;
       const patientRes = results[0];
 
       if (patientRes.status === 'fulfilled') {
@@ -113,13 +115,19 @@ const PatientDetailsView = () => {
     } catch (err) {
       console.error('Error fetching data:', err);
     } finally {
-      setIsLoadingPatient(false);
-      setIsLoadingRecords(false);
+      if (!isCancelled?.()) {
+        setIsLoadingPatient(false);
+        setIsLoadingRecords(false);
+      }
     }
   }, [uuid, currentPage, itemsPerPage, sort, fromDate, toDate, navigate, hasPermission]);
 
   useEffect(() => {
-    loadData();
+    let cancelled = false;
+    loadData(() => cancelled);
+    return () => {
+      cancelled = true;
+    };
   }, [loadData]);
 
   const handleApplyFilters = () => {

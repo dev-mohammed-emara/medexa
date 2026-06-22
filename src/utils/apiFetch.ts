@@ -1,5 +1,6 @@
 import { cacheData, getCachedData, broadcastUpdate } from './broadcastCache';
 import { BYPASS_AUTH_GUARDS } from '../config/auth';
+import { deduplicatedFetch } from './requestDeduplicator';
 
 /**
  * apiFetch is a drop-in replacement for the native fetch function.
@@ -20,7 +21,7 @@ export const apiFetch = async (input: RequestInfo | URL, init?: RequestInit, ena
     }
 
     // Attempt network request
-    const response = await fetch(input, init);
+    const response = await deduplicatedFetch(input, init);
 
     // If server fails (5xx error) and it's a GET request, throw to trigger fallback
     if (!response.ok && response.status >= 500 && isGet) {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Select,
   SelectContent,
@@ -99,6 +99,8 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
 
 
   useEffect(() => {
+    let cancelled = false;
+
     const loadClinicMe = async () => {
       try {
         const token = getCookie('token');
@@ -112,7 +114,7 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
         });
         if (response.ok) {
           const data = await response.json();
-          if (data.settings) {
+          if (!cancelled && data.settings) {
             setCurrency(data.settings.defaultCurrency || 'JOD');
             setSavedCurrency(data.settings.defaultCurrency || 'JOD');
             setAppointmentPeriod(data.settings.defaultAppointmentPeriod || 30);
@@ -124,9 +126,15 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
       }
     };
     loadClinicMe();
-  }, [activeTab]);
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
+    let cancelled = false;
+
     setIsEditingSchedule(false);
     setScheduleErrors({});
     const loadSchedule = async () => {
@@ -166,15 +174,21 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
             };
           });
 
-          setDays(mappedDays);
-          setSavedDays(JSON.parse(JSON.stringify(mappedDays)));
+          if (!cancelled) {
+            setDays(mappedDays);
+            setSavedDays(JSON.parse(JSON.stringify(mappedDays)));
+          }
         }
       } catch (err) {
         console.error('Error fetching schedule in settings:', err);
       }
     };
     loadSchedule();
-  }, [activeTab]);
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Animations are handled via Tailwind classes to match Appointments page style
 
@@ -403,7 +417,7 @@ const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = 
   return (
     <section className={cn("space-y-8", className)} dir={dir}>
       {!hideHeader && (
-        <header className={cn(
+          <header className={cn(
           "flex flex-col gap-2  mb-6 ",
           canAnimate && "animate-fadeDown animate-delay-100"
         )}>

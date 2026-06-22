@@ -53,22 +53,26 @@ const AppointmentTypesList = () => {
     duration: 30
   });
 
-  const loadAppointmentTypes = async () => {
+  const loadAppointmentTypes = async (isCancelled?: () => boolean) => {
     try {
       setLoading(true);
       setError(null);
       const data = await fetchAppointmentTypes();
+      if (isCancelled?.()) return;
       setAppointmentTypes(data);
     } catch (err: any) {
+      if (isCancelled?.()) return;
       console.error('Failed to load appointment types:', err);
       setError(err.message || 'Failed to load appointment types');
     } finally {
-      setLoading(false);
+      if (!isCancelled?.()) setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadAppointmentTypes();
+    let cancelled = false;
+    loadAppointmentTypes(() => cancelled);
+    return () => { cancelled = true; };
   }, []);
 
   const handleOpenAddModal = () => {

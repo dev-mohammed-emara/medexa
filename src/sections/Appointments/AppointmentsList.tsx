@@ -19,6 +19,7 @@ import { ChevronRight, ChevronLeft, Plus, Clock, User, Stethoscope, Eye, SquareP
 import { FaCalendarAlt } from 'react-icons/fa';
 import { TbCancel } from 'react-icons/tb';
 import { useEffect, useRef, useState, useCallback } from 'react';
+import { apiFetch } from '../../utils/apiFetch';
 import { useMediaQuery } from 'react-responsive';
 import { Button } from '../../components/ui/Button';
 import Modal from '../../components/ui/Modal';
@@ -140,7 +141,7 @@ const AppointmentsList = () => {
       }
 
       const token = getCookie('token');
-      const response = await fetch(`/api/appointment/calendar?${queryParams.toString()}`, {
+      const response = await apiFetch(`/api/appointment/calendar?${queryParams.toString()}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -164,9 +165,13 @@ const AppointmentsList = () => {
             doctorId: app.doctorUuid || '',
           }));
         });
-        setAppointments(mapped);
+        if (!isCancelled?.()) {
+          setAppointments(mapped);
+        }
       } else {
-        setAppointments([]);
+        if (!isCancelled?.()) {
+          setAppointments([]);
+        }
       }
     } catch (error) {
       console.error('Error fetching calendar appointments:', error);
@@ -175,7 +180,12 @@ const AppointmentsList = () => {
   }, [currentDate, selectedDoctor]);
 
   useEffect(() => {
-    loadCalendarAppointments();
+    let cancelled = false;
+    const isCancelled = () => cancelled;
+    loadCalendarAppointments(isCancelled);
+    return () => {
+      cancelled = true;
+    };
   }, [loadCalendarAppointments]);
 
   // Cross-tab broadcast: serialize appointments for broadcasting
@@ -246,7 +256,7 @@ const AppointmentsList = () => {
       const month = getMonth(currentDate) + 1;
       const year = getYear(currentDate);
       const token = getCookie('token');
-      const response = await fetch(`/api/appointment/calendar?month=${month}&year=${year}`, {
+      const response = await apiFetch(`/api/appointment/calendar?month=${month}&year=${year}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -278,7 +288,7 @@ const AppointmentsList = () => {
     if (!appUuid) return;
     try {
       const token = getCookie('token');
-      const response = await fetch(`/api/appointment/${appUuid}`, {
+      const response = await apiFetch(`/api/appointment/${appUuid}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -306,7 +316,7 @@ const AppointmentsList = () => {
     try {
       const token = getCookie('token');
       // 1. Try fetching the appointment details first to see if it links to a medical record uuid
-      const appRes = await fetch(`/api/appointment/${appointmentUuid}`, {
+      const appRes = await apiFetch(`/api/appointment/${appointmentUuid}`, {
         headers: {
           'Content-Type': 'application/json',
           ...(token ? { 'Authorization': `Bearer ${token}` } : {})
@@ -316,7 +326,7 @@ const AppointmentsList = () => {
         const appData = await appRes.json();
         const recordUuid = appData.medicalRecordUuid || appData.medicalRecord?.uuid;
         if (recordUuid) {
-          const recRes = await fetch(`/api/medical-records/${recordUuid}`, {
+          const recRes = await apiFetch(`/api/medical-records/${recordUuid}`, {
             headers: {
               'Content-Type': 'application/json',
               ...(token ? { 'Authorization': `Bearer ${token}` } : {})
@@ -329,7 +339,7 @@ const AppointmentsList = () => {
       }
 
       // 2. Try searching in medical-records list
-      const listRes = await fetch(`/api/medical-records?size=100`, {
+      const listRes = await apiFetch(`/api/medical-records?size=100`, {
         headers: {
           'Content-Type': 'application/json',
           ...(token ? { 'Authorization': `Bearer ${token}` } : {})
@@ -340,7 +350,7 @@ const AppointmentsList = () => {
         const records = listData.content || [];
         const found = records.find((r: any) => r.appointmentUuid === appointmentUuid);
         if (found) {
-          const detailRes = await fetch(`/api/medical-records/${found.uuid}`, {
+          const detailRes = await apiFetch(`/api/medical-records/${found.uuid}`, {
             headers: {
               'Content-Type': 'application/json',
               ...(token ? { 'Authorization': `Bearer ${token}` } : {})
@@ -616,7 +626,7 @@ const AppointmentsList = () => {
           amount: Number(medicalRecordData.amount)
         };
 
-      const response = await fetch(url, {
+      const response = await apiFetch(url, {
         method: method,
         headers: {
           'Content-Type': 'application/json',
@@ -727,7 +737,7 @@ const AppointmentsList = () => {
   const handleUpdateAppointmentDate = async (app: Appointment, newDate: Date) => {
     try {
       const token = getCookie('token');
-      const res = await fetch(`/api/appointment/${app.uuid || app.id}`, {
+      const res = await apiFetch(`/api/appointment/${app.uuid || app.id}`, {
         headers: {
           ...(token ? { 'Authorization': `Bearer ${token}` } : {})
         }
@@ -751,7 +761,7 @@ const AppointmentsList = () => {
         doctorNote: currentDetails.doctorNote || app.doctorNotes || ""
       };
 
-      const putRes = await fetch(`/api/appointment/${app.uuid || app.id}`, {
+      const putRes = await apiFetch(`/api/appointment/${app.uuid || app.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -939,7 +949,7 @@ const AppointmentsList = () => {
     if (appointmentToDelete) {
       try {
         const token = getCookie('token');
-        const response = await fetch(`/api/appointment/${appointmentToDelete.uuid || appointmentToDelete.id}`, {
+        const response = await apiFetch(`/api/appointment/${appointmentToDelete.uuid || appointmentToDelete.id}`, {
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json',
@@ -1405,6 +1415,7 @@ const AppointmentsList = () => {
           setCancellationReason('');
           setIsDeleteModalOpen(true);
         }}
+        doctorsList={doctorsList}
       />
 
       <Modal

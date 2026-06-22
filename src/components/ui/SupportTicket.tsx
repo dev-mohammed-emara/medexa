@@ -4,6 +4,7 @@ import { MdFeedback } from 'react-icons/md';
 import Modal from './Modal';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { getCookie } from '../../utils/cookie';
+import { apiFetch } from '../../utils/apiFetch';
 import { cn } from '../../utils/cn';
 import {
   Select,
@@ -62,7 +63,7 @@ const SupportTicket = () => {
 
     try {
       const token = getCookie('token');
-      const response = await fetch('/api/support-ticket', {
+      const response = await apiFetch('/api/support-ticket', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
