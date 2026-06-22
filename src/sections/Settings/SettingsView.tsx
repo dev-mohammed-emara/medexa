@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Select,
   SelectContent,
@@ -73,7 +73,7 @@ interface SettingsViewProps {
   activeTab?: 'profile' | 'clinic';
 }
 
-const SettingsView = ({ hideHeader, className, activeTab }: SettingsViewProps = {}) => {
+const SettingsView = ({ hideHeader, className }: SettingsViewProps = {}) => {
   const { isLoaded, isExiting } = usePreloader();
   const canAnimate = isLoaded && !isExiting;
   const { language, setLanguage, isAr, t, dir } = useLanguage();

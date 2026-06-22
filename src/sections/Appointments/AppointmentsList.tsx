@@ -129,7 +129,7 @@ const AppointmentsList = () => {
   }, []);
 
   // Fetch calendar appointments
-  const loadCalendarAppointments = useCallback(async () => {
+  const loadCalendarAppointments = useCallback(async (isCancelled?: () => boolean) => {
     try {
       const month = getMonth(currentDate) + 1;
       const year = getYear(currentDate);

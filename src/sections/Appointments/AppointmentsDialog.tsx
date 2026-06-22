@@ -139,9 +139,10 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, doc
               setSelectedAppointmentType(data.appointmentTypeUuid);
             }
           }
-        } catch (e) {
-          console.error("Failed to load appointment details:", e);
         }
+      } catch (e) {
+        console.error("Failed to load appointment details:", e);
+      }
       };
       loadDetails();
     } else {
