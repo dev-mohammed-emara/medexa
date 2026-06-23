@@ -41,7 +41,11 @@ import PasswordChangeDialog from './PasswordChangeDialog';
 import { getCookie } from '@/utils/cookie';
 import { apiFetch } from '@/utils/apiFetch';
 import { formatPhoneForPayload, formatPhoneForDisplay } from '@/utils/phone';
+import { format } from 'date-fns';
+import { DatePicker } from '@/components/ui/DatePicker';
+import { Arabic } from 'flatpickr/dist/l10n/ar.js';
 import TimePicker from '@/components/ui/TimePicker';
+import { useExitAnimation } from '@/hooks/useExitAnimation';
 
 const DAY_MAPPING: { [key: string]: { labelKey: string, index: number } } = {
   SUNDAY: { labelKey: 'profile.sunday', index: 0 },
@@ -100,7 +104,8 @@ const ProfileView = () => {
     dateOfBirth: user?.dateOfBirth || '',
     specialty: '',
     summary: '',
-    defaultAppointmentPeriod: '30'
+    defaultAppointmentPeriod: '30',
+    joinedDate: ''
   });
   const [personalPhone, setPersonalPhone] = useState(user?.phoneNumber || '');
 
@@ -120,7 +125,10 @@ const ProfileView = () => {
           dateOfBirth: data.user.dateOfBirth || '',
           specialty: (!isSecretary && data.specialty) || '',
           summary: (!isSecretary && data.summary) || '',
-          defaultAppointmentPeriod: (!isSecretary && (data.defaultAppointmentPeriod || 30).toString()) || '30'
+          defaultAppointmentPeriod: (!isSecretary && (data.defaultAppointmentPeriod || 30).toString()) || '30',
+          joinedDate: (data.user?.user_created_at || data.user?.createdAt || data.user_created_at || data.createdAt) 
+            ? format(new Date(data.user?.user_created_at || data.user?.createdAt || data.user_created_at || data.createdAt), 'dd MMM yyyy') 
+            : ''
         });
         setPersonalPhone(formatPhoneForDisplay(data.user.phoneNumber || ''));
 
@@ -201,6 +209,7 @@ const ProfileView = () => {
         gender: personalInfo.gender,
         dateOfBirth: personalInfo.dateOfBirth
       });
+      setIsEditingProfile(false);
       window.showToast(t('profile.general_saved', T_PAGE), 'success');
     } catch (e: any) {
       window.showToast(e.message || 'Failed to update profile', 'error');
@@ -209,6 +218,7 @@ const ProfileView = () => {
 
   const handleCancelGeneral = () => {
     loadDoctorData();
+    setIsEditingProfile(false);
     window.showToast(t('profile.changes_canceled', T_PAGE), 'info');
   };
 
@@ -216,17 +226,22 @@ const ProfileView = () => {
     setAppointmentPeriodError(null);
     try {
       const res = await updateDoctorAppointmentPeriod(parseInt(personalInfo.defaultAppointmentPeriod) || 30);
+      setIsEditingAppointment(false);
       window.showToast(res.message || 'Appointment period updated successfully', 'success');
       loadDoctorData();
     } catch (e: any) {
       setAppointmentPeriodError(e.message || 'Failed to update appointment period');
       window.showToast(e.message || 'Failed to update appointment period', 'error');
+      setTimeout(() => {
+        document.getElementById('appointment-period-input')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
     }
   };
 
   const handleCancelAppointmentPeriod = () => {
     setAppointmentPeriodError(null);
     loadDoctorData();
+    setIsEditingAppointment(false);
     window.showToast(t('profile.changes_canceled', T_PAGE), 'info');
   };
 
@@ -269,6 +284,16 @@ const ProfileView = () => {
   const [clinicInsuranceUuids, setClinicInsuranceUuids] = useState<Set<string>>(new Set());
   const [originalInsuranceUuids, setOriginalInsuranceUuids] = useState<Set<string>>(new Set());
 
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [isEditingAppointment, setIsEditingAppointment] = useState(false);
+  const [isEditingClinicInfo, setIsEditingClinicInfo] = useState(false);
+  const [isEditingInsurance, setIsEditingInsurance] = useState(false);
+
+  const { shouldRender: showProfileActions, isExiting: isProfileExiting } = useExitAnimation(isEditingProfile, 300);
+  const { shouldRender: showAppointmentActions, isExiting: isAppointmentExiting } = useExitAnimation(isEditingAppointment, 300);
+  const { shouldRender: showClinicActions, isExiting: isClinicExiting } = useExitAnimation(isEditingClinicInfo, 300);
+  const { shouldRender: showInsuranceActions, isExiting: isInsuranceExiting } = useExitAnimation(isEditingInsurance, 300);
+  const { shouldRender: showScheduleActions, isExiting: isScheduleExiting } = useExitAnimation(isEditingSchedule, 300);
 
   const loadSchedule = async (isCancelled?: () => boolean) => {
     try {
@@ -306,7 +331,6 @@ const ProfileView = () => {
     try {
       const clinicData = await fetchClinicMe();
       if (isCancelled?.()) return;
-      console.log('Clinic data loaded:', clinicData);
       setClinicInfo({
         uuid: clinicData.uuid || '',
         name: clinicData.name || '',
@@ -409,6 +433,7 @@ const ProfileView = () => {
       if (response.ok) {
         const data = await response.json();
         setOriginalInsuranceUuids(new Set(clinicInsuranceUuids));
+        setIsEditingInsurance(false);
         window.showToast(data.message || 'Insurances assigned successfully', 'success');
       } else {
         let errMsg = 'Failed to assign insurances';
@@ -426,6 +451,7 @@ const ProfileView = () => {
 
   const handleCancelInsurances = () => {
     setClinicInsuranceUuids(new Set(originalInsuranceUuids));
+    setIsEditingInsurance(false);
     window.showToast(t('profile.changes_canceled', T_PAGE), 'info');
   };
 
@@ -442,7 +468,6 @@ const ProfileView = () => {
       };
 
       const updatedClinic = await updateClinicMe(payload);
-      console.log('Clinic data updated:', updatedClinic);
       setClinicInfo({
         uuid: updatedClinic.uuid || '',
         name: updatedClinic.name || '',
@@ -458,6 +483,7 @@ const ProfileView = () => {
           defaultAppointmentPeriod: updatedClinic.settings?.defaultAppointmentPeriod || 30
         }
       });
+      setIsEditingClinicInfo(false);
       window.showToast(t('profile.clinic_saved', T_PAGE), 'success');
     } catch (error: any) {
       console.error(error);
@@ -483,6 +509,7 @@ const ProfileView = () => {
           defaultAppointmentPeriod: clinicData.settings?.defaultAppointmentPeriod || 30
         }
       });
+      setIsEditingClinicInfo(false);
       window.showToast(t('profile.changes_canceled', T_PAGE), 'info');
     } catch (error) {
       console.error('Failed to reload clinic data on cancel:', error);
@@ -516,9 +543,21 @@ const ProfileView = () => {
     setScheduleErrors({});
     setWorkingHours(prev => prev.map((day, idx) => {
       if (idx === dayIndex) {
+        const lastPeriod = day.periods[day.periods.length - 1];
+        let newPeriod;
+        if (lastPeriod) {
+          const from = lastPeriod.to;
+          const [hStr, mStr] = from.split(':');
+          let h = parseInt(hStr) + 2;
+          if (h >= 24) h = h % 24;
+          const to = `${h.toString().padStart(2, '0')}:${mStr || '00'}`;
+          newPeriod = { from, to };
+        } else {
+          newPeriod = { from: '08:00', to: '18:00' };
+        }
         return {
           ...day,
-          periods: [...day.periods, { from: '08:00', to: '18:00' }]
+          periods: [...day.periods, newPeriod]
         };
       }
       return day;
@@ -553,6 +592,56 @@ const ProfileView = () => {
 
   const handleSaveSchedule = async () => {
     setScheduleErrors({});
+
+    let hasLocalErrors = false;
+    const localErrors: Record<string, string[]> = {};
+
+    const timeToMins = (time: string) => {
+      const [h, m] = time.split(':').map(Number);
+      return h * 60 + m;
+    };
+
+    workingHours.forEach(day => {
+      if (!day.active || day.periods.length === 0) return;
+      for (let i = 0; i < day.periods.length; i++) {
+        const p1 = day.periods[i];
+        const p1From = timeToMins(p1.from);
+        const p1To = timeToMins(p1.to);
+        
+        if (p1From >= p1To) {
+          if (!localErrors[day.dayOfWeek]) localErrors[day.dayOfWeek] = [];
+          if (!localErrors[day.dayOfWeek].includes("End time must be after start time.")) {
+            localErrors[day.dayOfWeek].push("End time must be after start time.");
+          }
+          hasLocalErrors = true;
+        }
+
+        for (let j = i + 1; j < day.periods.length; j++) {
+          const p2 = day.periods[j];
+          const p2From = timeToMins(p2.from);
+          const p2To = timeToMins(p2.to);
+
+          if (Math.max(p1From, p2From) < Math.min(p1To, p2To)) {
+            if (!localErrors[day.dayOfWeek]) localErrors[day.dayOfWeek] = [];
+            if (!localErrors[day.dayOfWeek].includes("Time periods cannot overlap or be identical.")) {
+              localErrors[day.dayOfWeek].push("Time periods cannot overlap or be identical.");
+            }
+            hasLocalErrors = true;
+          }
+        }
+      }
+    });
+
+    if (hasLocalErrors) {
+      setScheduleErrors(localErrors);
+      const firstDay = Object.keys(localErrors)[0];
+      setTimeout(() => {
+        document.getElementById(`schedule-error-${firstDay}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+      window.showToast("Validation failed. Please fix overlapping times.", "error");
+      return;
+    }
+
     // Construct the entire schedules list to send to the backend
     const schedulesPayload = workingHours.map(currentDay => {
       if (!currentDay.active || currentDay.periods.length === 0) {
@@ -608,6 +697,10 @@ const ProfileView = () => {
             if (Object.keys(dayErrors).length > 0) {
               setScheduleErrors(dayErrors);
               errMsg = 'Validation failed. Please correct the highlighted days.';
+              setTimeout(() => {
+                const firstDay = Object.keys(dayErrors)[0];
+                document.getElementById(`schedule-error-${firstDay}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }, 100);
             } else {
               errMsg = errData.message || errData.error || errMsg;
             }
@@ -768,16 +861,27 @@ const ProfileView = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Personal Information */}
-              <div data-slot="card" className="tab-pane flex flex-col bg-white rounded-xl border p-6 border-border shadow-lg hover:shadow-xl transition-all duration-300 h-full">
+              <div data-slot="card" className={cn("tab-pane flex flex-col rounded-xl border p-6 shadow-lg hover:shadow-xl transition-all duration-300 h-full", isEditingProfile ? "ring-2 ring-yellow-400 border-yellow-400 bg-yellow-50/20" : "bg-white border-border")}>
                 <div className="flex justify-between mb-8 items-center gap-4 mb-4 flex-wrap">
                   <h3 className="text-xl  font-bold">{t('profile.personal_info', T_PAGE)}</h3>
-                  <button
-                    onClick={() => setIsPasswordModalOpen(true)}
-                    className="h-11 px-4 border border-primary/30 rounded-xl text-primary hover:bg-primary/5 transition-all flex items-center gap-2 text-sm font-medium"
-                  >
-                    <Key size={16} />
-                    {t('profile.change_password', T_PAGE)}
-                  </button>
+                  <div className="flex gap-2 items-center">
+                    {!isEditingProfile && !showProfileActions && (
+                      <button
+                        onClick={() => setIsEditingProfile(true)}
+                        className="h-11 px-4 border border-primary/30 rounded-xl text-primary bg-primary/5 hover:bg-primary/10 transition-all flex items-center gap-2 text-sm font-bold animate-in fade-in duration-300"
+                      >
+                        <Pen size={16} />
+                        {isAr ? 'تعديل البيانات' : 'Modify Profile'}
+                      </button>
+                    )}
+                    <button
+                      onClick={() => setIsPasswordModalOpen(true)}
+                      className="h-11 px-4 border border-primary/30 rounded-xl text-primary hover:bg-primary/5 transition-all flex items-center gap-2 text-sm font-medium"
+                    >
+                      <Key size={16} />
+                      {t('profile.change_password', T_PAGE)}
+                    </button>
+                  </div>
                 </div>
 
                 <div className="space-y-5">
@@ -785,28 +889,43 @@ const ProfileView = () => {
                     <div className="flex flex-col gap-2">
                       <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('common.first_name')}</label>
                       <Input
+                        name="firstName"
                         value={personalInfo.firstName}
                         onChange={(e) => setPersonalInfo(p => ({ ...p, firstName: e.target.value }))}
                         icon={<User size={18} />}
-                        className="h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold"
+                        className={cn(
+                          "h-11 border-border transition-all font-bold",
+                          isEditingProfile ? "bg-muted/30 focus:border-primary focus:bg-white" : "bg-muted/50 cursor-not-allowed text-muted-foreground"
+                        )}
+                        readOnly={!isEditingProfile}
                       />
                     </div>
                     <div className="flex flex-col gap-2">
                       <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('common.surname')}</label>
                       <Input
+                        name="surName"
                         value={personalInfo.surName}
                         onChange={(e) => setPersonalInfo(p => ({ ...p, surName: e.target.value }))}
                         icon={<User size={18} />}
-                        className="h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold"
+                        className={cn(
+                          "h-11 border-border transition-all font-bold",
+                          isEditingProfile ? "bg-muted/30 focus:border-primary focus:bg-white" : "bg-muted/50 cursor-not-allowed text-muted-foreground"
+                        )}
+                        readOnly={!isEditingProfile}
                       />
                     </div>
                     <div className="flex flex-col gap-2">
                       <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('common.last_name')}</label>
                       <Input
+                        name="lastName"
                         value={personalInfo.lastName}
                         onChange={(e) => setPersonalInfo(p => ({ ...p, lastName: e.target.value }))}
                         icon={<User size={18} />}
-                        className="h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold"
+                        className={cn(
+                          "h-11 border-border transition-all font-bold",
+                          isEditingProfile ? "bg-muted/30 focus:border-primary focus:bg-white" : "bg-muted/50 cursor-not-allowed text-muted-foreground"
+                        )}
+                        readOnly={!isEditingProfile}
                       />
                     </div>
                   </div>
@@ -827,16 +946,23 @@ const ProfileView = () => {
                   <div className="flex flex-col gap-2">
                     <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('common.phone')}</label>
                     <Input
+                      name="phone"
+                      backendField="phoneNumber"
                       value={personalPhone}
                       onChange={(e) => setPersonalPhone(e.target.value.replace(/\D/g, ''))}
                       dir="ltr"
-                      className={cn("h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold", isAr ? "text-right" : "text-left")}
+                      className={cn(
+                        "h-11 border-border transition-all font-bold",
+                        isEditingProfile ? "bg-muted/30 focus:border-primary focus:bg-white" : "bg-muted/50 cursor-not-allowed text-muted-foreground",
+                        isAr ? "text-right" : "text-left"
+                      )}
+                      readOnly={!isEditingProfile}
                     />
                   </div>
                   <div className="flex flex-col gap-6">
                     <div className="flex flex-col gap-2">
                       <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('common.gender')}</label>
-                      <Select value={personalInfo.gender} onValueChange={(val) => setPersonalInfo(p => ({ ...p, gender: val }))}>
+                      <Select disabled={!isEditingProfile} name="gender" value={personalInfo.gender} onValueChange={(val) => setPersonalInfo(p => ({ ...p, gender: val }))}>
                         <SelectTrigger className="h-11 bg-muted/30 border-border font-bold">
                           <SelectValue placeholder={t('common.gender')} />
                         </SelectTrigger>
@@ -848,13 +974,30 @@ const ProfileView = () => {
                     </div>
                     <div className="flex flex-col gap-2">
                       <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('common.birth_date')}</label>
-                      <Input
-                        readOnly
-                        value={personalInfo.dateOfBirth || (isAr ? '[غير محدد]' : '[Not detected]')}
-                        icon={<FaCalendarAlt size={18} />}
-                        className="h-11 bg-muted/50 border-border cursor-not-allowed text-muted-foreground font-bold"
-                        dir="ltr"
-                      />
+                      {isEditingProfile ? (
+                        <div className="relative group flex items-center justify-between h-11 bg-white border border-border rounded-xl px-4 transition-all focus-within:ring-4 focus-within:ring-primary/10">
+                          <DatePicker
+                            value={personalInfo.dateOfBirth ? new Date(personalInfo.dateOfBirth) : new Date()}
+                            onChange={([d]: Date[]) => setPersonalInfo({ ...personalInfo, dateOfBirth: format(d, 'yyyy-MM-dd') })}
+                            options={{
+                              dateFormat: 'Y-m-d',
+                              locale: isAr ? Arabic : undefined,
+                              disableMobile: true
+                            }}
+                            placeholder={isAr ? "اختر التاريخ" : "Select date"}
+                            className={cn("flex-1 bg-transparent border-none outline-none text-sm font-bold h-full", isAr ? "text-right" : "text-left")}
+                          />
+                          <FaCalendarAlt className="size-4 text-muted-foreground pointer-events-none group-focus-within:text-primary transition-colors" />
+                        </div>
+                      ) : (
+                        <Input
+                          readOnly
+                          value={personalInfo.dateOfBirth || (isAr ? '[غير محدد]' : '[Not detected]')}
+                          icon={<FaCalendarAlt size={18} />}
+                          className="h-11 bg-muted/50 border-border cursor-not-allowed text-muted-foreground font-bold"
+                          dir="ltr"
+                        />
+                      )}
                     </div>
                   </div>
 
@@ -864,37 +1007,49 @@ const ProfileView = () => {
                       <div className="flex flex-col gap-2">
                         <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{isAr ? 'التخصص الطبي' : 'Specialty'}</label>
                         <Input
+                          name="specialty"
                           value={personalInfo.specialty}
                           onChange={(e) => setPersonalInfo(p => ({ ...p, specialty: e.target.value }))}
-                          className="h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold"
+                          className={cn(
+                            "h-11 border-border transition-all font-bold",
+                            isEditingProfile ? "bg-muted/30 focus:border-primary focus:bg-white" : "bg-muted/50 cursor-not-allowed text-muted-foreground"
+                          )}
+                          readOnly={!isEditingProfile}
                         />
                       </div>
                       <div className="flex flex-col gap-2">
                         <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{isAr ? 'نبذة تعريفية' : 'Summary'}</label>
                         <Input
+                          name="summary"
                           value={personalInfo.summary}
                           onChange={(e) => setPersonalInfo(p => ({ ...p, summary: e.target.value }))}
-                          className="h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold"
+                          className={cn(
+                            "h-11 border-border transition-all font-bold",
+                            isEditingProfile ? "bg-muted/30 focus:border-primary focus:bg-white" : "bg-muted/50 cursor-not-allowed text-muted-foreground"
+                          )}
+                          readOnly={!isEditingProfile}
                         />
                       </div>
                     </div>
                   )}
                 </div>
-                <div className="flex justify-end gap-3 mt-auto pt-6 ">
-                  <button
-                    onClick={handleCancelGeneral}
-                    className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-300 border bg-background text-foreground hover:bg-accent hover:text-white hover:border-accent h-10 px-6"
-                  >
-                    {t('common.cancel')}
-                  </button>
-                  <button
-                    onClick={handleSaveGeneral}
-                    className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-300 text-primary-foreground bg-primary hover:bg-primary/90 h-10 px-6 shadow-lg shadow-primary/20 hover:shadow-primary/30"
-                  >
-                    <Check size={16} className={isAr ? "ml-1" : "mr-1"} />
-                    {t('common.save_changes')}
-                  </button>
-                </div>
+                {showProfileActions && (
+                  <div className={cn("flex justify-end gap-3 mt-auto pt-6 duration-300", isProfileExiting ? "animate-out fade-out slide-out-to-bottom-2" : "animate-in fade-in slide-in-from-bottom-2")}>
+                    <button
+                      onClick={handleCancelGeneral}
+                      className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-300 border bg-background text-foreground hover:bg-accent hover:text-white hover:border-accent h-10 px-6"
+                    >
+                      {t('common.cancel')}
+                    </button>
+                    <button
+                      onClick={handleSaveGeneral}
+                      className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-300 text-primary-foreground bg-primary hover:bg-primary/90 h-10 px-6 shadow-lg shadow-primary/20 hover:shadow-primary/30"
+                    >
+                      <Check size={16} className={isAr ? "ml-1" : "mr-1"} />
+                      {t('common.save_changes')}
+                    </button>
+                  </div>
+                )}
               </div>
 
               <div className="flex flex-col gap-6">
@@ -940,7 +1095,7 @@ const ProfileView = () => {
                     <div className="p-4 bg-muted/30 rounded-xl border border-border">
                       <label className="text-xs text-muted-foreground mb-1 block">{t('common.join_date')}</label>
                       <div className="flex items-center justify-between">
-                        <span className="text-base font-bold text-foreground">15 Jan 2025</span>
+                        <span className="text-base font-bold text-foreground" dir="ltr">{personalInfo.joinedDate || '-'}</span>
                         <FaCalendarAlt size={16} className="text-muted-foreground" />
                       </div>
                     </div>
@@ -953,12 +1108,24 @@ const ProfileView = () => {
 
                 {/* Appointment Period Settings */}
                 {(user?.role === 'ROLE_DOCTOR' || user?.role === 'ROLE_CLINIC_OWNER' || user?.roles?.includes('ROLE_DOCTOR') || user?.roles?.includes('ROLE_CLINIC_OWNER')) && (
-                  <div data-slot="card" className="tab-pane h-full flex flex-col bg-white rounded-xl border p-6 border-border shadow-lg hover:shadow-xl transition-all duration-300 h-fit">
-                    <h3 className="text-xl mb-6 font-bold">{isAr ? 'إعدادات المواعيد' : 'Appointment Settings'}</h3>
+                  <div data-slot="card" className={cn("tab-pane h-full flex flex-col rounded-xl border p-6 shadow-lg hover:shadow-xl transition-all duration-300", isEditingAppointment ? "ring-2 ring-inset ring-yellow-400 border-yellow-400 bg-yellow-50/20" : "bg-white border-border")}>
+                    <div className="flex justify-between items-center mb-8 gap-4 flex-wrap">
+                      <h3 className="text-xl font-bold">{isAr ? 'إعدادات المواعيد' : 'Appointment Settings'}</h3>
+                      {!isEditingAppointment && !showAppointmentActions && (
+                        <button
+                          onClick={() => setIsEditingAppointment(true)}
+                          className="h-11 px-4 border border-primary/30 rounded-xl text-primary bg-primary/5 hover:bg-primary/10 transition-all flex items-center gap-2 text-sm font-bold animate-in fade-in duration-300"
+                        >
+                          <Pen size={16} />
+                          {isAr ? 'تعديل الإعدادات' : 'Modify Settings'}
+                        </button>
+                      )}
+                    </div>
                     <div className="space-y-5">
                       <div className="flex flex-col gap-2">
                         <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{isAr ? 'مدة الموعد الافتراضية (بالدقائق)' : 'Default Appointment Period (mins)'}</label>
                         <Input
+                          id="appointment-period-input"
                           type="tel"
                           error={appointmentPeriodError || undefined}
                           value={personalInfo.defaultAppointmentPeriod}
@@ -969,7 +1136,12 @@ const ProfileView = () => {
                             setPersonalInfo(p => ({ ...p, defaultAppointmentPeriod: val }))
                           }}
                           dir="ltr"
-                          className={cn("h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold", isAr ? "text-right" : "text-left")}
+                          className={cn(
+                            "h-11 border-border transition-all font-bold",
+                            isEditingAppointment ? "bg-muted/30 focus:border-primary focus:bg-white" : "bg-muted/50 cursor-not-allowed text-muted-foreground",
+                            isAr ? "text-right" : "text-left"
+                          )}
+                          readOnly={!isEditingAppointment}
                         />
                       </div>
                       <div className="mt-8 flex-1 border-2 border-dashed border-primary/40 bg-primary/5 rounded-xl flex items-center justify-center p-6 text-center shadow-inner">
@@ -980,21 +1152,23 @@ const ProfileView = () => {
                         </div>
                       </div>
                     </div>
-                    <div className="flex justify-end gap-3 mt-auto pt-6 ">
-                      <button
-                        onClick={handleCancelAppointmentPeriod}
-                        className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-300 border bg-background text-foreground hover:bg-accent hover:text-white hover:border-accent h-10 px-6"
-                      >
-                        {t('common.cancel')}
-                      </button>
-                      <button
-                        onClick={handleSaveAppointmentPeriod}
-                        className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-300 text-primary-foreground bg-primary hover:bg-primary/90 h-10 px-6 shadow-lg shadow-primary/20 hover:shadow-primary/30"
-                      >
-                        <Check size={16} className={isAr ? "ml-1" : "mr-1"} />
-                        {t('common.save_changes')}
-                      </button>
-                    </div>
+                    {showAppointmentActions && (
+                      <div className={cn("flex justify-end gap-3 mt-auto pt-6 duration-300", isAppointmentExiting ? "animate-out fade-out slide-out-to-bottom-2" : "animate-in fade-in slide-in-from-bottom-2")}>
+                        <button
+                          onClick={handleCancelAppointmentPeriod}
+                          className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-300 border bg-background text-foreground hover:bg-accent hover:text-white hover:border-accent h-10 px-6"
+                        >
+                          {t('common.cancel')}
+                        </button>
+                        <button
+                          onClick={handleSaveAppointmentPeriod}
+                          className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-300 text-primary-foreground bg-primary hover:bg-primary/90 h-10 px-6 shadow-lg shadow-primary/20 hover:shadow-primary/30"
+                        >
+                          <Check size={16} className={isAr ? "ml-1" : "mr-1"} />
+                          {t('common.save_changes')}
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -1002,7 +1176,7 @@ const ProfileView = () => {
 
             {/* Working Hours */}
             {(user?.role === 'ROLE_DOCTOR' || user?.role === 'ROLE_CLINIC_OWNER' || user?.roles?.includes('ROLE_DOCTOR') || user?.roles?.includes('ROLE_CLINIC_OWNER')) && (
-              <div data-slot="card" className="tab-pane bg-white rounded-xl border p-6 border-border shadow-lg hover:shadow-xl transition-all duration-300">
+              <div data-slot="card" className={cn("tab-pane rounded-xl border p-6 shadow-lg hover:shadow-xl transition-all duration-300", isEditingSchedule ? "ring-2 ring-inset ring-yellow-400 border-yellow-400 bg-yellow-50/20" : "bg-white border-border")}>
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
@@ -1013,16 +1187,17 @@ const ProfileView = () => {
                       <p className="text-sm text-muted-foreground">{t('common.working_days')}</p>
                     </div>
                   </div>
-                  {!isEditingSchedule ? (
+                  {!isEditingSchedule && !showScheduleActions ? (
                     <button
                       onClick={() => setIsEditingSchedule(true)}
-                      className="h-10 px-4 rounded-xl border border-primary/30 text-primary bg-primary/5 hover:bg-primary/10 transition-all font-semibold flex items-center gap-2 text-sm"
+                      className="h-10 px-4 rounded-xl border border-primary/30 text-primary bg-primary/5 hover:bg-primary/10 transition-all font-semibold flex items-center gap-2 text-sm animate-in fade-in duration-300"
                     >
                       <Pen size={16} />
                       {isAr ? 'تعديل الجدول' : 'Modify Schedule'}
                     </button>
-                  ) : (
-                    <div className="flex gap-2">
+                  ) : null}
+                  {showScheduleActions && (
+                    <div className={cn("flex gap-2 duration-300", isScheduleExiting ? "animate-out fade-out slide-out-to-top-2" : "animate-in fade-in slide-in-from-top-2")}>
                       <button
                         onClick={handleCancelSchedule}
                         className="h-10 px-4 rounded-xl border border-border text-foreground bg-white hover:bg-muted transition-all font-semibold flex items-center gap-2 text-sm"
@@ -1076,7 +1251,7 @@ const ProfileView = () => {
                               {day.periods.map((period, pIdx) => (
                                 <div key={pIdx} className="flex items-center gap-2">
                                   {isEditingSchedule ? (
-                                    <div className="flex items-center gap-1.5 w-full">
+                                    <div className="flex items-center gap-1.5 w-full animate-in fade-in slide-in-from-top-1 duration-300">
                                       <TimePicker
                                         value={period.from}
                                         onChange={(val) => updatePeriod(dIdx, pIdx, 'from', val)}
@@ -1122,7 +1297,7 @@ const ProfileView = () => {
                           )}
 
                           {scheduleErrors[day.dayOfWeek] && scheduleErrors[day.dayOfWeek].length > 0 && (
-                            <div className="mt-2 flex flex-col gap-1 p-2 bg-destructive/10 border border-destructive/20 rounded-md">
+                            <div id={`schedule-error-${day.dayOfWeek}`} className="mt-2 flex flex-col gap-1 p-2 bg-destructive/10 border border-destructive/20 rounded-md">
                               {scheduleErrors[day.dayOfWeek].map((err, i) => (
                                 <p key={i} className="text-xs text-destructive font-medium">{err}</p>
                               ))}
@@ -1134,7 +1309,7 @@ const ProfileView = () => {
                   ))}
 
                   {scheduleErrors['GENERAL'] && scheduleErrors['GENERAL'].length > 0 && (
-                    <div className="col-span-full mt-4 p-4 bg-destructive/10 border border-destructive/20 rounded-xl">
+                    <div id="schedule-error-GENERAL" className="col-span-full mt-4 p-4 bg-destructive/10 border border-destructive/20 rounded-xl">
                       <h4 className="text-sm font-bold text-destructive mb-2">Schedule Errors</h4>
                       <ul className="list-disc pl-5 flex flex-col gap-1">
                         {scheduleErrors['GENERAL'].map((err, i) => (
@@ -1193,15 +1368,30 @@ const ProfileView = () => {
               </div>
 
               {/* Clinic Info Form */}
-              <div data-slot="card" className="tab-pane  bg-white rounded-xl border p-6 border-border shadow-lg hover:shadow-xl transition-all duration-300">
-                <h3 className="text-xl mb-6 font-bold">{t('profile.clinic_info', T_PAGE)}</h3>
+              <div data-slot="card" className={cn("tab-pane rounded-xl border p-6 shadow-lg hover:shadow-xl transition-all duration-300", isEditingClinicInfo ? "ring-2 ring-yellow-400 border-yellow-400 bg-yellow-50/20" : "bg-white border-border")}>
+                <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
+                  <h3 className="text-xl font-bold">{t('profile.clinic_info', T_PAGE)}</h3>
+                  {!isEditingClinicInfo && !showClinicActions && (
+                    <button
+                      onClick={() => setIsEditingClinicInfo(true)}
+                      className="h-10 px-4 rounded-xl border border-primary/30 text-primary bg-primary/5 hover:bg-primary/10 transition-all font-bold flex items-center gap-2 text-sm shrink-0 animate-in fade-in duration-300"
+                    >
+                      <Pen className="size-4" />
+                      {isAr ? 'تعديل البيانات' : 'Modify Clinic Info'}
+                    </button>
+                  )}
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div className="flex flex-col gap-2">
                     <label className="text-sm font-semibold">{t('profile.clinic_name', T_PAGE)}</label>
                     <Input
                       value={clinicInfo.name}
                       onChange={(e) => setClinicInfo({ ...clinicInfo, name: e.target.value })}
-                      className="h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold"
+                      className={cn(
+                        "h-11 border-border transition-all duration-300 font-bold",
+                        isEditingClinicInfo ? "bg-muted/30 focus:bg-white focus:border-primary" : "bg-muted/50 cursor-not-allowed text-muted-foreground"
+                      )}
+                      readOnly={!isEditingClinicInfo}
                     />
                   </div>
                   <div className="flex flex-col gap-2">
@@ -1209,7 +1399,11 @@ const ProfileView = () => {
                     <Input
                       value={clinicInfo.medicalCategory}
                       onChange={(e) => setClinicInfo({ ...clinicInfo, medicalCategory: e.target.value })}
-                      className="h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold"
+                      className={cn(
+                        "h-11 border-border transition-all duration-300 font-bold",
+                        isEditingClinicInfo ? "bg-muted/30 focus:bg-white focus:border-primary" : "bg-muted/50 cursor-not-allowed text-muted-foreground"
+                      )}
+                      readOnly={!isEditingClinicInfo}
                     />
                   </div>
                   <div className="flex flex-col gap-2">
@@ -1218,7 +1412,12 @@ const ProfileView = () => {
                       value={clinicInfo.phoneNumber}
                       dir="ltr"
                       onChange={(e) => setClinicInfo({ ...clinicInfo, phoneNumber: e.target.value })}
-                      className={cn("h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold", isAr ? "text-right" : "text-left")}
+                      className={cn(
+                        "h-11 border-border transition-all duration-300 font-bold",
+                        isEditingClinicInfo ? "bg-muted/30 focus:bg-white focus:border-primary" : "bg-muted/50 cursor-not-allowed text-muted-foreground",
+                        isAr ? "text-right" : "text-left"
+                      )}
+                      readOnly={!isEditingClinicInfo}
                     />
                   </div>
                   <div className="flex flex-col gap-2">
@@ -1226,7 +1425,11 @@ const ProfileView = () => {
                     <Input
                       value={clinicInfo.email}
                       onChange={(e) => setClinicInfo({ ...clinicInfo, email: e.target.value })}
-                      className="h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold"
+                      className={cn(
+                        "h-11 border-border transition-all duration-300 font-bold",
+                        isEditingClinicInfo ? "bg-muted/30 focus:bg-white focus:border-primary" : "bg-muted/50 cursor-not-allowed text-muted-foreground"
+                      )}
+                      readOnly={!isEditingClinicInfo}
                     />
                   </div>
                   <div className="flex flex-col gap-2">
@@ -1234,7 +1437,11 @@ const ProfileView = () => {
                     <Input
                       value={clinicInfo.city}
                       onChange={(e) => setClinicInfo({ ...clinicInfo, city: e.target.value })}
-                      className="h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold"
+                      className={cn(
+                        "h-11 border-border transition-all duration-300 font-bold",
+                        isEditingClinicInfo ? "bg-muted/30 focus:bg-white focus:border-primary" : "bg-muted/50 cursor-not-allowed text-muted-foreground"
+                      )}
+                      readOnly={!isEditingClinicInfo}
                     />
                   </div>
                   <div className="flex flex-col gap-2">
@@ -1242,7 +1449,11 @@ const ProfileView = () => {
                     <Input
                       value={clinicInfo.country}
                       onChange={(e) => setClinicInfo({ ...clinicInfo, country: e.target.value })}
-                      className="h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold"
+                      className={cn(
+                        "h-11 border-border transition-all duration-300 font-bold",
+                        isEditingClinicInfo ? "bg-muted/30 focus:bg-white focus:border-primary" : "bg-muted/50 cursor-not-allowed text-muted-foreground"
+                      )}
+                      readOnly={!isEditingClinicInfo}
                     />
                   </div>
                   <div className="flex flex-col gap-2 md:col-span-2">
@@ -1250,38 +1461,55 @@ const ProfileView = () => {
                     <Input
                       value={clinicInfo.address}
                       onChange={(e) => setClinicInfo({ ...clinicInfo, address: e.target.value })}
-                      className="h-11 bg-muted/30 border-border focus:border-primary focus:bg-white transition-all font-bold"
+                      className={cn(
+                        "h-11 border-border transition-all duration-300 font-bold",
+                        isEditingClinicInfo ? "bg-muted/30 focus:bg-white focus:border-primary" : "bg-muted/50 cursor-not-allowed text-muted-foreground"
+                      )}
+                      readOnly={!isEditingClinicInfo}
                     />
                   </div>
                 </div>
 
-                <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-border">
-                  <button
-                    onClick={handleCancelClinic}
-                    className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-300 border bg-background text-foreground hover:bg-accent hover:text-white hover:border-accent h-10 px-6"
-                  >
-                    {t('common.cancel')}
-                  </button>
-                  <button
-                    onClick={handleSaveClinic}
-                    className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-300 text-primary-foreground bg-primary hover:bg-primary/90 h-10 px-6 shadow-lg shadow-primary/20 hover:shadow-primary/30"
-                  >
-                    <Check size={16} className={isAr ? "ml-1" : "mr-1"} />
-                    {t('common.save_changes')}
-                  </button>
-                </div>
+                {showClinicActions && (
+                  <div className={cn("flex justify-end gap-3 mt-6 pt-6 border-t border-border duration-300", isClinicExiting ? "animate-out fade-out slide-out-to-bottom-2" : "animate-in fade-in slide-in-from-bottom-2")}>
+                    <button
+                      onClick={handleCancelClinic}
+                      className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-300 border bg-background text-foreground hover:bg-accent hover:text-white hover:border-accent h-10 px-6"
+                    >
+                      {t('common.cancel')}
+                    </button>
+                    <button
+                      onClick={handleSaveClinic}
+                      className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-300 text-primary-foreground bg-primary hover:bg-primary/90 h-10 px-6 shadow-lg shadow-primary/20 hover:shadow-primary/30"
+                    >
+                      <Check size={16} className={isAr ? "ml-1" : "mr-1"} />
+                      {t('common.save_changes')}
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Insurance Section */}
-              <div data-slot="card" className="tab-pane bg-white rounded-xl border p-6 border-border shadow-lg hover:shadow-xl transition-all duration-300">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-12 h-12 bg-secondary/10 rounded-xl flex items-center justify-center">
-                    <Shield size={24} className="text-secondary" />
+              <div data-slot="card" className={cn("tab-pane rounded-xl border p-6 shadow-lg hover:shadow-xl transition-all duration-300", isEditingInsurance ? "ring-2 ring-yellow-400 border-yellow-400 bg-yellow-50/20" : "bg-white border-border")}>
+                <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-secondary/10 rounded-xl flex items-center justify-center">
+                      <Shield size={24} className="text-secondary" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold">{t('profile.insurance_section', T_PAGE)}</h3>
+                      <p className="text-sm text-muted-foreground">{t('profile.insurance_section_desc', T_PAGE)}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-xl font-bold">{t('profile.insurance_section', T_PAGE)}</h3>
-                    <p className="text-sm text-muted-foreground">{t('profile.insurance_section_desc', T_PAGE)}</p>
-                  </div>
+                  {!isEditingInsurance && !showInsuranceActions && (
+                    <button
+                      onClick={() => setIsEditingInsurance(true)}
+                      className="h-10 px-4 rounded-xl border border-secondary/30 text-secondary bg-secondary/5 hover:bg-secondary/10 transition-all font-bold flex items-center gap-2 text-sm shrink-0 animate-in fade-in duration-300"
+                    >
+                      <Pen className="size-4" />
+                      {isAr ? 'تعديل التأمين' : 'Modify Insurance'}
+                    </button>
+                  )}
                 </div>
 
                 {insurances.length > 0 ? (
@@ -1320,6 +1548,7 @@ const ProfileView = () => {
                               checked={isActive}
                               onCheckedChange={() => handleToggleInsurance(ins.uuid)}
                               className="scale-90"
+                              disabled={!isEditingInsurance}
                             />
                           </div>
                         </div>
@@ -1338,21 +1567,23 @@ const ProfileView = () => {
                   </div>
                 )}
 
-                <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-border">
-                  <button
-                    onClick={handleCancelInsurances}
-                    className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-300 border bg-background text-foreground hover:bg-accent hover:text-white hover:border-accent h-10 px-6"
-                  >
-                    {t('common.cancel')}
-                  </button>
-                  <button
-                    onClick={handleSaveInsurances}
-                    className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-300 text-primary-foreground bg-primary hover:bg-primary/90 h-10 px-6 shadow-lg shadow-primary/20 hover:shadow-primary/30"
-                  >
-                    <Check size={16} className={isAr ? "ml-1" : "mr-1"} />
-                    {t('common.save_changes')}
-                  </button>
-                </div>
+                {showInsuranceActions && (
+                  <div className={cn("flex justify-end gap-3 mt-6 pt-6 border-t border-border duration-300", isInsuranceExiting ? "animate-out fade-out slide-out-to-bottom-2" : "animate-in fade-in slide-in-from-bottom-2")}>
+                    <button
+                      onClick={handleCancelInsurances}
+                      className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-300 border bg-background text-foreground hover:bg-accent hover:text-white hover:border-accent h-10 px-6"
+                    >
+                      {t('common.cancel')}
+                    </button>
+                    <button
+                      onClick={handleSaveInsurances}
+                      className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-300 text-primary-foreground bg-primary hover:bg-primary/90 h-10 px-6 shadow-lg shadow-primary/20 hover:shadow-primary/30"
+                    >
+                      <Check size={16} className={isAr ? "ml-1" : "mr-1"} />
+                      {t('common.save_changes')}
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Settings View */}

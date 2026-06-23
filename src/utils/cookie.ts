@@ -1,7 +1,7 @@
 /**
  * Light-weight utilities for managing browser cookies.
  */
-import { BYPASS_AUTH_GUARDS } from '../config/auth';
+
 
 interface DecodedToken {
   exp?: number
@@ -69,7 +69,6 @@ export const deleteCookie = (name: string): void => {
 };
 
 export const checkTokenOrRedirect = (): void => {
-  if (BYPASS_AUTH_GUARDS) return;
 
   const token = getCookie('token')
   if (!token || isTokenExpired(token)) {

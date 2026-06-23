@@ -48,12 +48,25 @@ const PatientDetailsView = () => {
   const [isLoadingPatient, setIsLoadingPatient] = useState(true);
   const [isLoadingRecords, setIsLoadingRecords] = useState(true);
 
+  const getLocalDateString = (d: Date) => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const today = new Date();
+  const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+
+  const defaultToDate = getLocalDateString(today);
+  const defaultFromDate = getLocalDateString(firstDayOfMonth);
+
   // Filters
-  const [fromDate, setFromDate] = useState<string>("");
-  const [toDate, setToDate] = useState<string>("");
+  const [fromDate, setFromDate] = useState<string>(defaultFromDate);
+  const [toDate, setToDate] = useState<string>(defaultToDate);
   const [sort, setSort] = useState<string>("createdAt,desc");
-  const [tempFromDate, setTempFromDate] = useState<string>("");
-  const [tempToDate, setTempToDate] = useState<string>("");
+  const [tempFromDate, setTempFromDate] = useState<string>(defaultFromDate);
+  const [tempToDate, setTempToDate] = useState<string>(defaultToDate);
   const [tempSort, setTempSort] = useState<string>("createdAt,desc");
 
   const loadData = useCallback(async (isCancelled?: () => boolean) => {
@@ -449,11 +462,11 @@ const PatientDetailsView = () => {
             </button>
             <button
               onClick={() => {
-                setTempFromDate('');
-                setTempToDate('');
+                setTempFromDate(defaultFromDate);
+                setTempToDate(defaultToDate);
                 setTempSort('createdAt,desc');
-                setFromDate('');
-                setToDate('');
+                setFromDate(defaultFromDate);
+                setToDate(defaultToDate);
                 setSort('createdAt,desc');
                 setCurrentPage(1);
               }}

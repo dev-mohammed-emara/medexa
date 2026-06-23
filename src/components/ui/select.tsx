@@ -22,9 +22,17 @@ const getElementText = (node: React.ReactNode): string => {
 function Select({
   containerClassName,
   error,
+  backendField,
   ...props
-}: React.ComponentProps<typeof SelectPrimitive.Root> & { containerClassName?: string, error?: string | boolean }) {
-  const { backendError, setBackendError } = useFieldError(props.name);
+}: React.ComponentProps<typeof SelectPrimitive.Root> & { containerClassName?: string, error?: string | boolean, backendField?: string | string[] }) {
+  const fieldsToCheck = [];
+  if (props.name) fieldsToCheck.push(props.name);
+  if (backendField) {
+    if (Array.isArray(backendField)) fieldsToCheck.push(...backendField);
+    else fieldsToCheck.push(backendField);
+  }
+  
+  const { backendError, setBackendError } = useFieldError(fieldsToCheck.length > 0 ? fieldsToCheck : undefined);
   const [errorMsg, setErrorMsg] = React.useState<string | null>(null);
   const { isAr } = useLanguage();
 

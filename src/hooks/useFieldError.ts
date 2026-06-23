@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 
-export const useFieldError = (name?: string) => {
+export const useFieldError = (nameOrNames?: string | string[]) => {
   const [backendError, setBackendError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!name) return;
+    if (!nameOrNames) return;
+    const names = Array.isArray(nameOrNames) ? nameOrNames : [nameOrNames];
+    if (names.length === 0) return;
 
     const handleBackendError = (e: Event) => {
       const customEvent = e as CustomEvent;
@@ -12,7 +14,7 @@ export const useFieldError = (name?: string) => {
       
       // Check if there are details and try to find the specific field
       if (errorData && errorData.details && Array.isArray(errorData.details) && errorData.details.length > 0) {
-        const detail = errorData.details.find((d) => d.field === name);
+        const detail = errorData.details.find((d) => names.includes(d.field));
         if (detail) {
           setBackendError(detail.message || errorData.message || null);
         }

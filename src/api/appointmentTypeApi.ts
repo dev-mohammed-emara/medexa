@@ -31,9 +31,10 @@ const getHeaders = () => {
 }
 
 export const fetchAppointmentTypes = async (): Promise<ApiAppointmentType[]> => {
-  const response = await apiFetch('/api/appointment-type', {
+  const response = await apiFetch(`/api/appointment-type?t=${Date.now()}`, {
     method: 'GET',
-    headers: getHeaders()
+    headers: getHeaders(),
+    cache: 'no-store'
   })
 
   if (!response.ok) {

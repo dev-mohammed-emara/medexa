@@ -228,7 +228,7 @@ const TimePicker: React.FC<TimePickerProps> = ({ value, onChange, className, noC
         ref={containerRef}
         onClick={handleOpen}
         className={cn(
-          "time-picker-container flex items-center max-w-full text-center  bg-white border border-border rounded-xl px-3 py-1.5 transition-all hover:border-primary/50 cursor-pointer h-12 w-full",
+          "time-picker-container whitespace-nowrap flex items-center max-w-full text-center  bg-white border border-border rounded-xl px-3 py-1.5 transition-all hover:border-primary/50 cursor-pointer h-12 w-full",
           className
         )}
       >
@@ -293,7 +293,7 @@ const TimePicker: React.FC<TimePickerProps> = ({ value, onChange, className, noC
                       onClick={() => setTempP('AM')}
                       className={cn(
                         "flex-1 font-medium text-sm transition-colors",
-                        tempP === 'AM' ? "bg-secondary text-white" : "bg-transparent text-black hover:bg-black/5"
+                        tempP === 'AM' ? "bg-secondary text-white" : "bg-white text-black hover:bg-black/5"
                       )}
                     >
                       {isAr ? 'ص' : 'AM'}

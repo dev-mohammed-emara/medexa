@@ -8,16 +8,25 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   icon?: React.ReactNode
   containerClassName?: string
   error?: string | boolean
+  backendField?: string | string[]
 }
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ className, type, icon, containerClassName, onChange, ...props }, ref) => {
+  ({ className, type, icon, containerClassName, onChange, backendField, ...props }, ref) => {
     const [showPassword, setShowPassword] = useState(false);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
     const isPassword = type === 'password';
     
     const { isAr } = useLanguage();
-    const { backendError, setBackendError } = useFieldError(props.name);
+    
+    const fieldsToCheck = [];
+    if (props.name) fieldsToCheck.push(props.name);
+    if (backendField) {
+      if (Array.isArray(backendField)) fieldsToCheck.push(...backendField);
+      else fieldsToCheck.push(backendField);
+    }
+    
+    const { backendError, setBackendError } = useFieldError(fieldsToCheck.length > 0 ? fieldsToCheck : undefined);
 
     useEffect(() => {
       if (backendError) setErrorMsg(backendError);

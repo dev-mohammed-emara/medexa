@@ -3,6 +3,7 @@ export const navTranslations = {
   ar: {
     nav: {
       dashboard: "لوحة التحكم",
+      statistics: "الإحصائيات",
       doctors: "الأطباء",
       secretary: "السكرتارية",
       patients: "المرضى",
@@ -54,6 +55,7 @@ export const navTranslations = {
   en: {
     nav: {
       dashboard: "Dashboard",
+      statistics: "Statistics",
       doctors: "Doctors",
       secretary: "Secretary",
       patients: "Patients",

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { FiEye, FiEyeOff, FiLock, FiLogIn, FiMail } from 'react-icons/fi'
+import { FiLock, FiLogIn, FiMail } from 'react-icons/fi'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { TransitionLink } from '../../components/transition/TransitionLink'
 import BtnPrimary from '../../components/ui/BtnPrimary'
@@ -19,9 +19,9 @@ const LoginForm = () => {
   const canAnimate = isLoaded && !isExiting
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
   const [isForgot, setIsForgot] = useState(false)
   const [serverMessage, setServerMessage] = useState<string | null>(null)
+  const [loginError, setLoginError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const { login } = useAuth()
   const navigate = useNavigate()
@@ -110,37 +110,14 @@ const LoginForm = () => {
         
         let destination = from;
         if (destination === '/' || destination === '') {
-          const savedUserStr = localStorage.getItem('medexa_user');
-          if (savedUserStr) {
-            try {
-              const savedUser = JSON.parse(savedUserStr);
-              const permissions = savedUser.permissions || [];
-              const roles = savedUser.roles || [];
-              
-              if (permissions.includes('MANAGE_STATISTICS') || roles.includes('ROLE_CLINIC_OWNER')) {
-                destination = '/';
-              } else if (roles.includes('ROLE_DOCTOR') || roles.includes('ROLE_SECRETARY')) {
-                destination = '/appointments';
-              } else if (permissions.includes('MANAGE_APPOINTMENTS')) {
-                destination = '/appointments';
-              } else if (permissions.includes('MANAGE_PATIENTS')) {
-                destination = '/patients';
-              } else if (permissions.includes('MANAGE_SECRETARIES')) {
-                destination = '/secretary';
-              } else if (permissions.includes('MANAGE_DOCTORS')) {
-                destination = '/doctors';
-              } else {
-                destination = '/profile';
-              }
-            } catch (e) {
-              destination = '/profile';
-            }
-          }
+          destination = '/dashboard';
         }
 
         navigate(destination, { replace: true })
       } catch (err: any) {
-        window.showToast?.(err.message || 'Invalid email or password', 'error')
+        const errorMsg = err.message || 'Invalid email or password'
+        window.showToast?.(errorMsg, 'error')
+        setLoginError(errorMsg)
       } finally {
         setIsLoading(false)
       }
@@ -168,6 +145,19 @@ const LoginForm = () => {
             {isForgot ? t('reset_desc', T) : t('platform_name', T)}
           </p>
         </div>
+
+        {loginError && !isForgot && (
+          <div className={cn(
+            "mb-6 p-4 rounded-xl border flex items-start gap-3 bg-destructive/10 border-destructive/20 text-destructive animate-in fade-in slide-in-from-top-2",
+            isAr ? "text-right" : "text-left"
+          )}>
+            <div className="mt-0.5">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+            </div>
+            <p className="text-sm font-semibold">{loginError}</p>
+          </div>
+        )}
+
         <form className="space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-2">
             <div className="flex items-center justify-between">
@@ -186,7 +176,10 @@ const LoginForm = () => {
               required
               value={email}
               autoComplete="email"
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value)
+                if (loginError) setLoginError(null)
+              }}
               icon={<FiMail className="size-5" />}
               disabled={isLoading}
             />
@@ -213,26 +206,21 @@ const LoginForm = () => {
                 </label>
               <div className="relative group">
                 <Input
-                  type={showPassword ? 'text' : 'password'}
+                  type="password"
                   id="password"
                   name="password"
-                  placeholder={showPassword ? 'P@ssword1' : '••••••••'}
+                  placeholder="••••••••"
                   required
                   value={password}
                   autoComplete="current-password"
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value)
+                    if (loginError) setLoginError(null)
+                  }}
                   icon={<FiLock className="size-5" />}
                   className="pl-12"
                   disabled={isLoading}
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors outline-none z-10"
-                  aria-label={showPassword ? 'Hide password' : 'Show password'}
-                >
-                  {showPassword ? <FiEyeOff size={20} /> : <FiEye size={20} />}
-                </button>
               </div>
             </div>
           )}

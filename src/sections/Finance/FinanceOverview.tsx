@@ -74,21 +74,25 @@ const FinanceOverview = () => {
   };
 
   const today = new Date();
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
+  const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
   const defaultToDate = getLocalDateString(today);
-  const defaultFromDate = getLocalDateString(yesterday);
+  const defaultFromDate = getLocalDateString(firstDayOfMonth);
 
-  const [fromDate, setFromDate] = useState<string>("");
-  const [toDate, setToDate] = useState<string>("");
-  const [type, setType] = useState<string>("");
+  const [fromDate, setFromDate] = useState<string>(defaultFromDate);
+  const [toDate, setToDate] = useState<string>(defaultToDate);
+  const [type, setType] = useState<string>("DEFAULT");
   const [sort, setSort] = useState<string>("createdAt,desc");
 
-  const [tempFromDate, setTempFromDate] = useState<string>("");
-  const [tempToDate, setTempToDate] = useState<string>("");
-  const [tempType, setTempType] = useState<string>("");
+  const [tempFromDate, setTempFromDate] = useState<string>(defaultFromDate);
+  const [tempToDate, setTempToDate] = useState<string>(defaultToDate);
+  const [tempType, setTempType] = useState<string>("DEFAULT");
   const [tempSort, setTempSort] = useState<string>("createdAt,desc");
+
+  const [statsFromDate, setStatsFromDate] = useState<string>("");
+  const [statsToDate, setStatsToDate] = useState<string>("");
+  const [tempStatsFromDate, setTempStatsFromDate] = useState<string>("");
+  const [tempStatsToDate, setTempStatsToDate] = useState<string>("");
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'add' | 'edit' | 'view'>('add');
@@ -101,14 +105,14 @@ const FinanceOverview = () => {
 
   const [stats, setStats] = useState<{
     totalIncome: number;
-    totalExpense: number;
+    totalExpenses: number;
     netProfit: number;
-    monthlyData: Array<{ month: string; income: number; expense: number }>;
+    chartData: Array<{ label: string; income: number; expenses: number; fees?: number }>;
   }>({
     totalIncome: 0,
-    totalExpense: 0,
+    totalExpenses: 0,
     netProfit: 0,
-    monthlyData: []
+    chartData: []
   });
 
   const getHeaders = () => {
@@ -153,8 +157,8 @@ const FinanceOverview = () => {
   const loadStatistics = useCallback(async (isCancelled?: () => boolean) => {
     try {
       const queryParams = new URLSearchParams();
-      queryParams.append('fromDate', fromDate || defaultFromDate);
-      queryParams.append('toDate', toDate || defaultToDate);
+      queryParams.append('fromDate', statsFromDate || defaultFromDate);
+      queryParams.append('toDate', statsToDate || defaultToDate);
 
       const response = await apiFetch(`/api/statistics/transaction?${queryParams.toString()}`, {
         method: 'GET',
@@ -165,13 +169,18 @@ const FinanceOverview = () => {
 
       if (response.ok) {
         const data = await response.json();
-        setStats(data);
+        setStats({
+          totalIncome: data.totalIncome ?? 0,
+          totalExpenses: data.totalExpenses ?? data.totalExpense ?? 0,
+          netProfit: data.netProfit ?? 0,
+          chartData: data.chartData || []
+        });
       }
     } catch (err) {
       if (isCancelled?.()) return;
       console.error('Error fetching statistics:', err);
     }
-  }, [fromDate, toDate, defaultFromDate, defaultToDate]);
+  }, [statsFromDate, statsToDate, defaultFromDate, defaultToDate]);
 
   useEffect(() => {
     let cancelled = false;
@@ -193,43 +202,59 @@ const FinanceOverview = () => {
     setCurrentPage(1);
   };
 
-  const chartData = (stats?.monthlyData || []).map(item => ({
-    name: item.month,
-    income: item.income,
-    expenses: item.expense
+  const chartData = (stats?.chartData || []).map((item: any) => ({
+    name: item.label || item.month || '',
+    income: parseFloat(item.income ?? item.totalIncome ?? 0),
+    expenses: parseFloat(item.expenses ?? item.expense ?? item.totalExpenses ?? 0),
+    fees: parseFloat(item.fees ?? item.totalFees ?? 0)
   }));
 
   return (
     <section className="flex-1 space-y-6 overflow-auto" dir={dir}>
       {/* Header */}
       <header
-        className="flex items-center justify-between transition-all duration-500"
-        style={{ opacity: canAnimate ? 1 : 0, transform: canAnimate ? 'none' : 'translateY(10px)' }}
+        className={cn(
+          "flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4 mb-8 transition-all duration-500",
+          canAnimate ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+        )}
       >
         <div className={cn(isAr ? "text-right" : "text-left")}>
           <h1 className="text-3xl mb-1 font-bold">{t('page_title', T)}</h1>
           <p className="text-muted-foreground">{t('page_desc', T)}</p>
         </div>
-        {canManageTransactions && (
-          <button
-            onClick={() => {
-              setModalMode('add');
-              setSelectedTransactionUuid(null);
-              setIsModalOpen(true);
+        <div className="flex flex-wrap items-end gap-3">
+          <DateFromTo
+            fromDate={tempStatsFromDate}
+            toDate={tempStatsToDate}
+            onFromDateChange={setTempStatsFromDate}
+            onToDateChange={setTempStatsToDate}
+            onApply={() => {
+              setStatsFromDate(tempStatsFromDate);
+              setStatsToDate(tempStatsToDate);
             }}
-            className="inline-flex items-center justify-center gap-2 rounded-md text-sm font-bold transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md text-primary-foreground bg-primary hover:bg-primary/90 h-10 px-6 shadow-sm shadow-primary/20"
-          >
-            <Plus className={cn("size-5", isAr ? "ml-1" : "mr-1")} />
-            {t('add_operation', T)}
-          </button>
-        )}
+            showApply={true}
+          />
+          {canManageTransactions && (
+            <button
+              onClick={() => {
+                setModalMode('add');
+                setSelectedTransactionUuid(null);
+                setIsModalOpen(true);
+              }}
+              className="inline-flex items-center justify-center gap-2 rounded-xl text-sm font-bold transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md text-primary-foreground bg-primary hover:bg-primary/90 h-11 px-6 shadow-sm shadow-primary/20"
+            >
+              <Plus className={cn("size-5", isAr ? "ml-1" : "mr-1")} />
+              {t('add_operation', T)}
+            </button>
+          )}
+        </div>
       </header>
 
       {/* Stats Cards */}
       <section className="grid grid-cols-1 md:grid-cols-2  lg:grid-cols-3 gap-4">
         {[
           { label: t('total_income', T), valueNum: stats?.totalIncome || 0, icon: TrendingUp, color: 'text-secondary', bgColor: 'bg-secondary/10', delay: 100 },
-          { label: t('total_expenses', T), valueNum: stats?.totalExpense || 0, icon: TrendingDown, color: 'text-destructive', bgColor: 'bg-destructive/10', delay: 200 },
+          { label: t('total_expenses', T), valueNum: stats?.totalExpenses || 0, icon: TrendingDown, color: 'text-destructive', bgColor: 'bg-destructive/10', delay: 200 },
           { label: t('net_profit', T), valueNum: stats?.netProfit || 0, icon: DollarSign, color: 'text-primary', bgColor: 'bg-primary/10', delay: 300 }
         ].map((stat, idx) => (
           <article
@@ -248,7 +273,7 @@ const FinanceOverview = () => {
               </div>
             </figure>
             <h3 className="text-2xl font-bold flex items-center gap-1.5" dir="ltr">
-              <Counter value={stat.valueNum} fontSize={24} isInView={canAnimate} isCurrency />
+              <Counter value={stat.valueNum} fontSize={24} containerClass='px-1' isInView={canAnimate} isCurrency />
               <span className="text-lg">{t('jod', T)}</span>
             </h3>
           </article>
@@ -316,6 +341,18 @@ const FinanceOverview = () => {
                 type="monotone"
                 dataKey="expenses"
                 stroke="#d4183d"
+                strokeWidth={3}
+                dot={{ r: 3, strokeWidth: 3, fill: '#fff' }}
+                activeDot={{ r: 5, strokeWidth: 0 }}
+                isAnimationActive={true}
+                animationDuration={1500}
+                animationEasing="ease-in-out"
+              />
+              <Line
+                name={isAr ? "الرسوم" : "Fees"}
+                type="monotone"
+                dataKey="fees"
+                stroke="#F59E0B"
                 strokeWidth={3}
                 dot={{ r: 3, strokeWidth: 3, fill: '#fff' }}
                 activeDot={{ r: 5, strokeWidth: 0 }}
@@ -395,12 +432,12 @@ const FinanceOverview = () => {
                 </button>
                 <button
                   onClick={() => {
-                    setTempFromDate("");
-                    setTempToDate("");
+                    setTempFromDate(defaultFromDate);
+                    setTempToDate(defaultToDate);
                     setTempType("DEFAULT");
                     setTempSort("createdAt,desc");
-                    setFromDate("");
-                    setToDate("");
+                    setFromDate(defaultFromDate);
+                    setToDate(defaultToDate);
                     setType("DEFAULT");
                     setSort("createdAt,desc");
                     setCurrentPage(1);
@@ -429,7 +466,6 @@ const FinanceOverview = () => {
                   <TableHead className={cn("p-4", isAr ? "text-right" : "text-left")}>{t('table_amount', T)}</TableHead>
                   <TableHead className={cn("p-4", isAr ? "text-right" : "text-left")}>{t('table_currency', T)}</TableHead>
                   <TableHead className={cn("p-4", isAr ? "text-right" : "text-left")}>{t('table_date', T)}</TableHead>
-                  <TableHead className={cn("p-4", isAr ? "text-right" : "text-left")}>{t('table_related', T)}</TableHead>
                   <TableHead className={cn("p-4", isAr ? "text-right" : "text-left")}>{t('table_notes', T)}</TableHead>
                   <TableHead className={cn("p-4", isAr ? "text-right" : "text-left")}>{t('table_operations', T)}</TableHead>
                 </TableRow>
@@ -448,9 +484,6 @@ const FinanceOverview = () => {
                     <TableCell className="p-4 font-bold">{tx.amount}</TableCell>
                     <TableCell className="p-4">{t('jod', T)}</TableCell>
                     <TableCell className="p-4 font-medium text-muted-foreground">{tx.transactionDate}</TableCell>
-                    <TableCell className="p-4 text-muted-foreground">
-                      {tx.appointmentUuid ? `${isAr ? 'موعد' : 'Appointment'} #${tx.appointmentUuid.substring(0, 8)}` : '-'}
-                    </TableCell>
                     <TableCell className={cn("p-4 text-muted-foreground", isAr ? "text-right" : "text-left")}>{tx.note || '-'}</TableCell>
                     <TableCell className="p-4">
                       <div className="flex items-center gap-2">

@@ -11,9 +11,9 @@ import { useLanguage } from '../../contexts/LanguageContext';
 
 import { settingsTranslations } from '../../constants/settings';
 import { navTranslations } from '../../constants/nav';
+import { useExitAnimation } from '../../hooks/useExitAnimation';
 import { Switch } from '../../components/ui/Switch';
 import { cn } from '../../utils/cn';
-import Modal from '../../components/ui/Modal';
 import { getCookie } from '../../utils/cookie';
 import { apiFetch } from '../../utils/apiFetch';
 import Input from '../../components/ui/Input';
@@ -77,7 +77,7 @@ const SettingsView = ({ hideHeader, className }: SettingsViewProps = {}) => {
   const { isLoaded, isExiting } = usePreloader();
   const canAnimate = isLoaded && !isExiting;
   const { language, setLanguage, isAr, t, dir } = useLanguage();
-  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+
 
   const T_PAGE = settingsTranslations;
   const T_NAV = navTranslations;
@@ -86,6 +86,7 @@ const SettingsView = ({ hideHeader, className }: SettingsViewProps = {}) => {
   const [currency, setCurrency] = useState('JOD');
   const [appointmentPeriod, setAppointmentPeriod] = useState(30);
   const [appointmentPeriodError, setAppointmentPeriodError] = useState<string | null>(null);
+  const [isEditingGeneral, setIsEditingGeneral] = useState(false);
   const [days, setDays] = useState<WorkingDay[]>(INITIAL_DAYS);
 
   const [isEditingSchedule, setIsEditingSchedule] = useState(false);
@@ -95,6 +96,9 @@ const SettingsView = ({ hideHeader, className }: SettingsViewProps = {}) => {
   const [savedLanguage, setSavedLanguage] = useState(language);
   const [savedAppointmentPeriod, setSavedAppointmentPeriod] = useState(30);
   const [savedDays, setSavedDays] = useState<WorkingDay[]>(INITIAL_DAYS);
+
+  const { shouldRender: showGeneralActions, isExiting: isGeneralExiting } = useExitAnimation(isEditingGeneral, 300);
+  const { shouldRender: showScheduleActions, isExiting: isScheduleExiting } = useExitAnimation(isEditingSchedule, 300);
 
 
 
@@ -261,7 +265,7 @@ const SettingsView = ({ hideHeader, className }: SettingsViewProps = {}) => {
   const workingDaysCount = days.filter(d => d.isActive).length;
   const offDaysCount = days.length - workingDaysCount;
 
-  const [cancelingSection, setCancelingSection] = useState<'clinic' | 'general' | 'working' | null>(null);
+
 
   const handleSaveGeneralSettings = async () => {
     setAppointmentPeriodError(null);
@@ -285,6 +289,7 @@ const SettingsView = ({ hideHeader, className }: SettingsViewProps = {}) => {
         setSavedCurrency(currency);
         setSavedLanguage(language);
         setSavedAppointmentPeriod(appointmentPeriod);
+        setIsEditingGeneral(false);
         window.showToast(t('common.settings_saved'), 'success');
       } else {
         let errMsg = 'Failed to save settings';
@@ -294,6 +299,9 @@ const SettingsView = ({ hideHeader, className }: SettingsViewProps = {}) => {
         } catch (e) { /* ignore */ }
         setAppointmentPeriodError(errMsg);
         window.showToast(errMsg, 'error');
+        setTimeout(() => {
+          document.getElementById('appointment-period-input')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
       }
     } catch (err: any) {
       console.error(err);
@@ -304,6 +312,57 @@ const SettingsView = ({ hideHeader, className }: SettingsViewProps = {}) => {
 
   const handleSaveSchedule = async () => {
     setScheduleErrors({});
+
+    let hasLocalErrors = false;
+    const localErrors: Record<string, string[]> = {};
+
+    const timeToMins = (time: string) => {
+      const [h, m] = time.split(':').map(Number);
+      return h * 60 + m;
+    };
+
+    days.forEach(day => {
+      if (!day.isActive || day.periods.length === 0) return;
+      for (let i = 0; i < day.periods.length; i++) {
+        const p1 = day.periods[i];
+        const p1From = timeToMins(p1.from);
+        const p1To = timeToMins(p1.to);
+        
+        if (p1From >= p1To) {
+          if (!localErrors[day.id]) localErrors[day.id] = [];
+          if (!localErrors[day.id].includes("End time must be after start time.")) {
+            localErrors[day.id].push("End time must be after start time.");
+          }
+          hasLocalErrors = true;
+        }
+
+        for (let j = i + 1; j < day.periods.length; j++) {
+          const p2 = day.periods[j];
+          const p2From = timeToMins(p2.from);
+          const p2To = timeToMins(p2.to);
+
+          // Check overlap
+          if (Math.max(p1From, p2From) < Math.min(p1To, p2To)) {
+            if (!localErrors[day.id]) localErrors[day.id] = [];
+            if (!localErrors[day.id].includes("Time periods cannot overlap or be identical.")) {
+              localErrors[day.id].push("Time periods cannot overlap or be identical.");
+            }
+            hasLocalErrors = true;
+          }
+        }
+      }
+    });
+
+    if (hasLocalErrors) {
+      setScheduleErrors(localErrors);
+      const firstDay = Object.keys(localErrors)[0];
+      setTimeout(() => {
+        document.getElementById(`schedule-error-${firstDay}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+      window.showToast("Validation failed. Please fix overlapping times.", "error");
+      return;
+    }
+
     const token = getCookie('token');
     const headers = {
       'Content-Type': 'application/json',
@@ -365,6 +424,10 @@ const SettingsView = ({ hideHeader, className }: SettingsViewProps = {}) => {
             if (Object.keys(dayErrors).length > 0) {
               setScheduleErrors(dayErrors);
               errMsg = 'Validation failed. Please correct the highlighted days.';
+              setTimeout(() => {
+                const firstDay = Object.keys(dayErrors)[0];
+                document.getElementById(`schedule-error-${firstDay}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }, 100);
             } else {
               errMsg = errData.message || errData.error || errMsg;
             }
@@ -394,24 +457,17 @@ const SettingsView = ({ hideHeader, className }: SettingsViewProps = {}) => {
   };
 
   const handleCancelClick = (section: 'clinic' | 'general' | 'working') => {
-    setCancelingSection(section);
-    setIsCancelModalOpen(true);
-  };
-
-  const handleCancelConfirm = () => {
-    if (cancelingSection === 'clinic') {
-      // Section is currently disabled
-    } else if (cancelingSection === 'general') {
+    if (section === 'general') {
       setCurrency(savedCurrency);
       setLanguage(savedLanguage);
       setAppointmentPeriod(savedAppointmentPeriod);
-    } else if (cancelingSection === 'working') {
+      setIsEditingGeneral(false);
+      window.showToast(isAr ? 'تم إلغاء تغييرات الإعدادات العامة' : 'General Settings changes cancelled', 'info');
+    } else if (section === 'working') {
       setDays(JSON.parse(JSON.stringify(savedDays)));
+      setIsEditingSchedule(false);
+      window.showToast(isAr ? 'تم إلغاء تغييرات أوقات العمل' : 'Working Hours changes cancelled', 'info');
     }
-
-    setIsCancelModalOpen(false);
-    setCancelingSection(null);
-    window.showToast(t('common.settings_canceled'), 'success');
   };
 
   return (
@@ -430,18 +486,30 @@ const SettingsView = ({ hideHeader, className }: SettingsViewProps = {}) => {
       
         {/* General Settings Card */}
         <article className={cn(
-          "bg-white rounded-xl border border-border p-4 sm:p-8 shadow-sm hover:shadow-md transition-all duration-300 opacity-0",
-          canAnimate && "animate-fadeUp animate-delay-300"
+          "rounded-xl border p-4 sm:p-8 shadow-sm hover:shadow-md transition-all duration-300 opacity-0",
+          canAnimate && "animate-fadeUp animate-delay-300",
+          isEditingGeneral ? "ring-2 ring-inset ring-yellow-400 border-yellow-400 bg-yellow-50/20" : "bg-white border-border"
         )}>
-          <figure className="flex items-center gap-4 mb-8">
-            <div className="w-14 h-14 bg-secondary/10 rounded-2xl flex items-center justify-center shrink-0">
-              <SettingsIcon className="size-7 text-secondary" />
-            </div>
-            <figcaption>
-              <h3 className="text-xl font-bold">{t('settings.general_settings', T_PAGE)}</h3>
-              <p className="text-sm text-muted-foreground">{t('settings.general_settings_desc', T_PAGE)}</p>
-            </figcaption>
-          </figure>
+          <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
+            <figure className="flex items-center gap-4">
+              <div className="w-14 h-14 bg-secondary/10 rounded-2xl flex items-center justify-center shrink-0">
+                <SettingsIcon className="size-7 text-secondary" />
+              </div>
+              <figcaption>
+                <h3 className="text-xl font-bold">{t('settings.general_settings', T_PAGE)}</h3>
+                <p className="text-sm text-muted-foreground">{t('settings.general_settings_desc', T_PAGE)}</p>
+              </figcaption>
+            </figure>
+            {!isEditingGeneral && (
+              <button
+                onClick={() => setIsEditingGeneral(true)}
+                className="h-10 px-4 rounded-xl border border-primary/30 text-primary bg-primary/5 hover:bg-primary/10 transition-all font-bold flex items-center gap-2 text-sm shrink-0"
+              >
+                <Pen className="size-4" />
+                {isAr ? 'تعديل الإعدادات' : 'Modify Settings'}
+              </button>
+            )}
+          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2  lg:grid-cols-3 gap-6">
             <div className="space-y-2">
@@ -449,7 +517,7 @@ const SettingsView = ({ hideHeader, className }: SettingsViewProps = {}) => {
                 <Globe className="size-4 text-primary" />
                 {t('settings.language', T_PAGE)}
               </label>
-              <Select value={language} onValueChange={(val: 'ar' | 'en') => setLanguage(val)}>
+              <Select value={language} onValueChange={(val: 'ar' | 'en') => setLanguage(val)} disabled={!isEditingGeneral}>
                 <SelectTrigger className="h-12 rounded-xl bg-muted/30 border-border focus:bg-white transition-all">
                   <SelectValue placeholder={t('settings.select_language', T_PAGE)} />
                 </SelectTrigger>
@@ -464,7 +532,7 @@ const SettingsView = ({ hideHeader, className }: SettingsViewProps = {}) => {
                 <DollarSign className="size-4 text-secondary" />
                 {t('settings.default_currency', T_PAGE)}
               </label>
-              <Select value={currency} onValueChange={setCurrency}>
+              <Select value={currency} onValueChange={setCurrency} disabled={!isEditingGeneral}>
                 <SelectTrigger className="h-12 rounded-xl bg-muted/30 border-border focus:bg-white transition-all">
                   <SelectValue placeholder={t('settings.select_currency', T_PAGE)} />
                 </SelectTrigger>
@@ -480,21 +548,24 @@ const SettingsView = ({ hideHeader, className }: SettingsViewProps = {}) => {
                 {isAr ? 'مدة الموعد الافتراضية' : 'Default Appointment Period'}
               </label>
               <Input
+                id="appointment-period-input"
                 type="tel"
                 error={appointmentPeriodError || undefined}
                 value={appointmentPeriod}
                 onChange={(e) => {
                   let val = e.target.value.replace(/\D/g, '');
-                  if (parseInt(val) > 240) val = '240';
+                  if (parseInt(val) > 480) val = '480';
                   if (appointmentPeriodError) setAppointmentPeriodError(null);
                   setAppointmentPeriod(Number(val));
                 }}
                 dir="ltr"
                 className={cn(
-                  "h-12 bg-muted/30 border-border focus:bg-white focus:border-primary transition-all duration-300 font-bold",
+                  "h-12 border-border transition-all duration-300 font-bold",
+                  isEditingGeneral ? "bg-muted/30 focus:bg-white focus:border-primary" : "bg-muted/50 cursor-not-allowed text-muted-foreground",
                   isAr ? "text-right" : "text-left"
                 )}
                 placeholder={isAr ? "بالدقائق" : "in minutes"}
+                readOnly={!isEditingGeneral}
               />
               <p className={cn("text-[13px] text-muted-foreground font-medium", isAr ? "pr-1" : "pl-1")}>
                 {isAr ? 'متوسط مدة الموعد بالدقائق لحجز المواعيد' : 'Average appointment duration in minutes'}
@@ -502,18 +573,23 @@ const SettingsView = ({ hideHeader, className }: SettingsViewProps = {}) => {
             </div>
           </div>
 
-          <SectionActions
-            onSave={handleSaveGeneralSettings}
-            onCancel={() => handleCancelClick('general')}
-            cancelLabel={t('settings.cancel_changes', T_PAGE)}
-            saveLabel={t('settings.save_settings', T_PAGE)}
-          />
+          {showGeneralActions && (
+            <div className={cn("duration-300", isGeneralExiting ? "animate-out fade-out slide-out-to-bottom-2" : "animate-in fade-in slide-in-from-bottom-2")}>
+              <SectionActions
+                onSave={handleSaveGeneralSettings}
+                onCancel={() => handleCancelClick('general')}
+                cancelLabel={t('settings.cancel_changes', T_PAGE)}
+                saveLabel={t('settings.save_settings', T_PAGE)}
+              />
+            </div>
+          )}
         </article>
 
         {/* Working Hours Card */}
         <article className={cn(
-          "bg-white rounded-xl border border-border p-4 sm:p-8 shadow-sm hover:shadow-md transition-all duration-300 opacity-0",
-          canAnimate && "animate-fadeUp animate-delay-400"
+          "rounded-xl border p-4 sm:p-8 shadow-sm hover:shadow-md transition-all duration-300 opacity-0",
+          canAnimate && "animate-fadeUp animate-delay-400",
+          isEditingSchedule ? "ring-2 ring-inset ring-yellow-400 border-yellow-400 bg-yellow-50/20" : "bg-white border-border"
         )}>
           <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
             <figure className="flex items-center gap-4">
@@ -525,16 +601,17 @@ const SettingsView = ({ hideHeader, className }: SettingsViewProps = {}) => {
                 <p className="text-sm text-muted-foreground">{t('settings.working_hours_desc', T_PAGE)}</p>
               </figcaption>
             </figure>
-            {!isEditingSchedule ? (
+            {!isEditingSchedule && !showScheduleActions ? (
               <button
                 onClick={() => setIsEditingSchedule(true)}
-                className="h-10 px-4 rounded-xl border border-primary/30 text-primary bg-primary/5 hover:bg-primary/10 transition-all font-bold flex items-center gap-2 text-sm shrink-0"
+                className="h-10 px-4 rounded-xl border border-primary/30 text-primary bg-primary/5 hover:bg-primary/10 transition-all font-bold flex items-center gap-2 text-sm shrink-0 animate-in fade-in duration-300"
               >
                 <Pen className="size-4" />
                 {isAr ? 'تعديل الجدول' : 'Modify Schedule'}
               </button>
-            ) : (
-              <div className="flex gap-2 shrink-0 flex-wrap">
+            ) : null}
+            {showScheduleActions && (
+              <div className={cn("flex gap-2 shrink-0 flex-wrap duration-300", isScheduleExiting ? "animate-out fade-out slide-out-to-top-2" : "animate-in fade-in slide-in-from-top-2")}>
                 <button
                   onClick={handleCancelSchedule}
                   className="h-10 px-4 rounded-xl border border-border text-foreground bg-white hover:bg-muted transition-all font-bold flex items-center gap-2 text-sm"
@@ -592,7 +669,7 @@ const SettingsView = ({ hideHeader, className }: SettingsViewProps = {}) => {
                   {day.isActive ? (
                     <>
                       {day.periods.map((period) => (
-                        <div key={period.id} className="flex items-center gap-4 bg-white/60 p-3 rounded-xl border border-gray-200 animate-in fade-in slide-in-from-top-1">
+                        <div key={period.id} className="flex items-center  bg-white/60 p-3 rounded-xl border border-gray-200 animate-in fade-in slide-in-from-top-1">
                           <div className="flex flex-wrap justify-center special:justify-start items-center gap-6 flex-1 ">
                             <div className="flex items-center gap-3 flex-1 w-full">
                               <label className="text-sm font-medium text-muted-foreground whitespace-nowrap">{t('common.from')}</label>
@@ -648,7 +725,7 @@ const SettingsView = ({ hideHeader, className }: SettingsViewProps = {}) => {
                   )}
 
                   {scheduleErrors[day.id] && scheduleErrors[day.id].length > 0 && (
-                    <div className="mt-2 flex flex-col gap-1 p-2 bg-destructive/10 border border-destructive/20 rounded-md">
+                    <div id={`schedule-error-${day.id}`} className="mt-2 flex flex-col gap-1 p-2 bg-destructive/10 border border-destructive/20 rounded-md">
                       {scheduleErrors[day.id].map((err, i) => (
                         <p key={i} className="text-xs text-destructive font-bold">{err}</p>
                       ))}
@@ -660,7 +737,7 @@ const SettingsView = ({ hideHeader, className }: SettingsViewProps = {}) => {
           </div>
 
           {scheduleErrors['GENERAL'] && scheduleErrors['GENERAL'].length > 0 && (
-            <div className="col-span-full mt-4 p-4 bg-destructive/10 border border-destructive/20 rounded-xl">
+            <div id="schedule-error-GENERAL" className="col-span-full mt-4 p-4 bg-destructive/10 border border-destructive/20 rounded-xl">
               <h4 className="text-sm font-bold text-destructive mb-2">Schedule Errors</h4>
               <ul className="list-disc pl-5 flex flex-col gap-1">
                 {scheduleErrors['GENERAL'].map((err, i) => (
@@ -685,16 +762,6 @@ const SettingsView = ({ hideHeader, className }: SettingsViewProps = {}) => {
 
       </div>
 
-      <Modal
-        isOpen={isCancelModalOpen}
-        onClose={() => setIsCancelModalOpen(false)}
-        onConfirm={handleCancelConfirm}
-        title={t('settings.cancel_changes', T_PAGE)}
-        message={t('settings.cancel_confirm_msg', T_PAGE)}
-        confirmText={t('settings.cancel_btn', T_PAGE)}
-        cancelText={t('settings.back_btn', T_PAGE)}
-        variant="danger"
-      />
     </section>
   );
 };

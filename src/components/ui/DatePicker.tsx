@@ -14,11 +14,19 @@ export interface DatePickerProps extends React.ComponentProps<typeof Flatpickr> 
   icon?: React.ReactNode;
   required?: boolean;
   hasBg?: boolean;
+  backendField?: string | string[];
 }
 
 export const DatePicker = React.forwardRef<any, DatePickerProps>(
-  ({ className, containerClassName, name, error, icon, required, hasBg = true, onChange, ...props }, ref) => {
-    const { backendError, setBackendError } = useFieldError(name);
+  ({ className, containerClassName, name, error, icon, required, hasBg = true, backendField, onChange, ...props }, ref) => {
+    const fieldsToCheck = [];
+    if (name) fieldsToCheck.push(name);
+    if (backendField) {
+      if (Array.isArray(backendField)) fieldsToCheck.push(...backendField);
+      else fieldsToCheck.push(backendField);
+    }
+    
+    const { backendError, setBackendError } = useFieldError(fieldsToCheck.length > 0 ? fieldsToCheck : undefined);
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
     const { isAr } = useLanguage();
     const containerRef = useRef<HTMLDivElement>(null);
@@ -76,6 +84,7 @@ export const DatePicker = React.forwardRef<any, DatePickerProps>(
               className
             )}
             {...props}
+            value={props.value ? (typeof props.value === 'string' ? new Date(props.value) : props.value) : ''}
           />
           {icon && (
             <div className={cn("pointer-events-none group-focus-within:text-primary transition-colors", currentError ? "text-destructive" : "text-muted-foreground")}>

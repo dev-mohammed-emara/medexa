@@ -14,6 +14,7 @@ export interface ApiDoctorUser {
   status?: 'WAITING_VERIFICATION' | 'ACTIVE' | 'INACTIVE'
   role?: string
   permissions: string[]
+  user_created_at?: string
 }
 
 export interface ApiDoctor {

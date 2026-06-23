@@ -22,7 +22,7 @@ import { financeTranslations } from '../../constants/translations/finance';
 import { cn } from '../../utils/cn';
 import Portal from '../../components/ui/Portal';
 import { useBroadcast } from '../../hooks/useBroadcast';
-import { appointmentsTranslations } from '../../constants/translations/appointments';
+
 import { format } from 'date-fns';
 import { getCookie } from '../../utils/cookie';
 import { apiFetch } from '../../utils/apiFetch';
@@ -46,7 +46,6 @@ const AddOperationModal = ({ isOpen, onClose, onSuccess, mode = 'add', transacti
   const [amount, setAmount] = useState<string>("");
   const [currency, setCurrency] = useState<string>("د.أ");
   const [date, setDate] = useState<Date>(new Date());
-  const [appointment, setAppointment] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
   const [isClosing, setIsClosing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -99,7 +98,7 @@ const AddOperationModal = ({ isOpen, onClose, onSuccess, mode = 'add', transacti
               setType(data.type === 'INCOME' ? 'دخل' : 'مصروف');
               setAmount(String(data.amount));
               setDate(new Date(data.transactionDate));
-              setAppointment(data.appointmentUuid || "None");
+
               setNotes(data.note || "");
             }
           } catch (error) {
@@ -114,7 +113,7 @@ const AddOperationModal = ({ isOpen, onClose, onSuccess, mode = 'add', transacti
         setAmount("");
         setCurrency("د.أ");
         setDate(new Date());
-        setAppointment("");
+
         setNotes("");
       }
       setError(null);
@@ -134,13 +133,10 @@ const AddOperationModal = ({ isOpen, onClose, onSuccess, mode = 'add', transacti
     // Map fields
     const mappedType = type === 'دخل' || type === 'INCOME' ? 'INCOME' : 'EXPENSE';
     const formattedDate = format(date, 'yyyy-MM-dd');
-    const appointmentUuid = appointment && appointment !== 'None' ? appointment : null;
-
     const payload = {
       type: mappedType,
       amount: parseFloat(amount),
       transactionDate: formattedDate,
-      appointmentUuid,
       note: notes || ""
     };
 
@@ -187,14 +183,11 @@ const AddOperationModal = ({ isOpen, onClose, onSuccess, mode = 'add', transacti
 
     const mappedType = type === 'دخل' || type === 'INCOME' ? 'INCOME' : 'EXPENSE';
     const formattedDate = format(date, 'yyyy-MM-dd');
-    const appointmentUuid = appointment && appointment !== 'None' ? appointment : null;
-
     const payload = {
       uuid: transactionUuid,
       type: mappedType,
       amount: parseFloat(amount),
       transactionDate: formattedDate,
-      appointmentUuid,
       note: notes || ""
     };
 
@@ -373,20 +366,7 @@ const AddOperationModal = ({ isOpen, onClose, onSuccess, mode = 'add', transacti
                 </div>
               </div>
 
-              {/* Related Appointment */}
-              <div className="space-y-2">
-                <label className={cn("block text-sm font-bold text-[#1a2b3c]", isAr ? "mr-1" : "ml-1")}>{t('related_appt_label', T)}</label>
-                <Select disabled={mode === 'view'} value={appointment} onValueChange={setAppointment}>
-                  <SelectTrigger className="h-12 rounded-xl bg-muted/30 border-border border">
-                    <SelectValue placeholder={t('select_appt', T)} />
-                  </SelectTrigger>
-                  <SelectContent className="z-600">
-                    <SelectItem value="None">{t('no_appt', T)}</SelectItem>
-                    <SelectItem value="123">{t('appt_prefix', T)}123 - {t('dialog.patients.ahmed', appointmentsTranslations)}</SelectItem>
-                    <SelectItem value="124">{t('appt_prefix', T)}124 - {t('dialog.patients.sara', appointmentsTranslations)}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+
 
               {/* Notes */}
               <div className="space-y-2">

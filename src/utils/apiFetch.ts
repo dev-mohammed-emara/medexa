@@ -1,5 +1,5 @@
 import { cacheData, getCachedData, broadcastUpdate } from './broadcastCache';
-import { BYPASS_AUTH_GUARDS } from '../config/auth';
+
 import { deduplicatedFetch } from './requestDeduplicator';
 
 /**
@@ -9,7 +9,7 @@ import { deduplicatedFetch } from './requestDeduplicator';
  * - For Mutations (POST, PUT, DELETE, PATCH): It attempts to hit the network, and on success
  *   broadcasts an event so other tabs can be notified of the change.
  */
-export const apiFetch = async (input: RequestInfo | URL, init?: RequestInit, enableLogoutOn401: boolean = false): Promise<Response> => {
+export const apiFetch = async (input: RequestInfo | URL, init?: RequestInit, enableLogoutOn401: boolean = true): Promise<Response> => {
   const method = (init?.method || 'GET').toUpperCase();
   const isGet = method === 'GET';
   const urlString = typeof input === 'string' ? input : input.toString();
@@ -29,7 +29,7 @@ export const apiFetch = async (input: RequestInfo | URL, init?: RequestInit, ena
     }
 
     // Intercept 401 Unauthorized to clear session and redirect to login
-    if (response.status === 401 && enableLogoutOn401 && !BYPASS_AUTH_GUARDS) {
+    if (response.status === 401 && enableLogoutOn401) {
       document.cookie = "token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=Strict";
       document.cookie = "refreshToken=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=Strict";
       localStorage.removeItem('token');
@@ -46,8 +46,46 @@ export const apiFetch = async (input: RequestInfo | URL, init?: RequestInit, ena
       try {
         const clone = response.clone();
         const errorData = await clone.json();
+
+        if (typeof window !== 'undefined' && window.showToast) {
+          window.showToast(errorData, 'error');
+        }
+
         // Fire custom event with the error data
         window.dispatchEvent(new CustomEvent('BACKEND_VALIDATION_ERROR', { detail: errorData }));
+        
+        // Wait for React to render the error messages
+        setTimeout(() => {
+          // Find the first element with data-has-error="true"
+          const firstErrorElement = document.querySelector('[data-has-error="true"]');
+          if (firstErrorElement) {
+            const lenis = (window as any).lenis;
+            const isInsideDialog = !!firstErrorElement.closest('[role="dialog"]');
+            
+            if (lenis && !isInsideDialog) {
+              lenis.scrollTo(firstErrorElement, { offset: -100 });
+            } else {
+              firstErrorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            
+            // Try to find the focusable input inside the error container
+            const focusable = firstErrorElement.querySelector(
+              'button:not([disabled]), input:not([disabled]):not([tabindex="-1"]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+            ) as HTMLElement;
+            
+            if (focusable) {
+              focusable.focus({ preventScroll: true });
+            }
+          } else {
+            // Scroll to the top if it's a global error
+            const lenis = (window as any).lenis;
+            if (lenis) {
+              lenis.scrollTo(0, { immediate: false });
+            } else {
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+          }
+        }, 100);
       } catch (_e) {
         // ignore JSON parse error
       }

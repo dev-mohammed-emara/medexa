@@ -209,6 +209,13 @@ html[dir='ltr']{
   select {
     text-transform: none !important;
   }
+  
+  /* Hide native password reveal icon in Edge/IE */
+  input[type="password"]::-ms-reveal,
+  input[type="password"]::-ms-clear {
+    display: none;
+  }
+
   ::after,
   ::before {
     pointer-events: none;
@@ -291,8 +298,14 @@ span.flatpickr-weekday{
     scrollbar-color: var(--primary) transparent;
   }
 
+  html{
+    @apply bg-background;
+  }
+
   body {
     overflow-x: hidden;
+    /* max-width: 2180px; */
+    margin: 0 auto;
     @apply bg-background text-foreground;
   }
 

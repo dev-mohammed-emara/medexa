@@ -8,6 +8,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { profileTranslations } from '@/constants/profile';
 import { getCookie } from '@/utils/cookie';
 import { apiFetch } from '@/utils/apiFetch';
+import { getErrorMessage } from '@/utils/error';
 
 interface PasswordChangeDialogProps {
   isOpen: boolean;
@@ -110,7 +111,7 @@ const PasswordChangeDialog = ({ isOpen, onClose }: PasswordChangeDialogProps) =>
         let errorMsg = 'Failed to change password';
         try {
           const errData = await response.json();
-          errorMsg = errData.message || errData.error || errorMsg;
+          errorMsg = getErrorMessage(errData, errorMsg);
         } catch (e) { /* ignore */ }
         throw new Error(errorMsg);
       }
@@ -242,6 +243,33 @@ const PasswordChangeDialog = ({ isOpen, onClose }: PasswordChangeDialogProps) =>
                   className="h-11 bg-background border-border focus:border-primary focus:bg-white transition-all duration-300 font-bold"
                 />
               </div>
+              {confirmPassword.length > 0 && (
+                <div className="mt-4 animate-fade">
+                  <div className="flex gap-2">
+                    <div className="flex-1 flex flex-col gap-2">
+                      <div
+                        className={cn(
+                          "h-1.5 rounded-full transition-all duration-500",
+                          newPassword === confirmPassword ? "bg-emerald-500" : "bg-destructive"
+                        )}
+                      />
+                      <div className="flex items-center justify-center gap-1 px-0.5">
+                        {newPassword === confirmPassword ? (
+                          <Check className="size-3 text-emerald-500 stroke-[4px] shrink-0" />
+                        ) : (
+                          <X className="size-3 text-destructive stroke-[4px] shrink-0" />
+                        )}
+                        <span className={cn(
+                          "text-[9px] transition-colors leading-tight text-center font-bold",
+                          newPassword === confirmPassword ? "text-emerald-700" : "text-destructive"
+                        )}>
+                          {isAr ? 'كلمتا المرور متطابقتان' : 'Passwords Match'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
               <p className="text-xs text-muted-foreground text-start mt-1">{t('profile.password_note', T_PAGE)}</p>
             </div>
 

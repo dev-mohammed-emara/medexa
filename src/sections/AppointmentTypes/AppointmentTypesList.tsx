@@ -128,7 +128,7 @@ const AppointmentTypesList = () => {
         window.showToast?.(isAr ? 'تم تحديث نوع الموعد بنجاح' : 'Appointment type updated successfully', 'success');
       }
       setIsModalOpen(false);
-      loadAppointmentTypes();
+      await loadAppointmentTypes();
     } catch (err: any) {
       console.error(err);
       window.showToast?.(err.message || 'Failed to save appointment type', 'error');
@@ -144,7 +144,7 @@ const AppointmentTypesList = () => {
       await deleteAppointmentType(currentUuid);
       window.showToast?.(isAr ? 'تم الحذف بنجاح' : 'Deleted successfully', 'success');
       setIsDeleteModalOpen(false);
-      loadAppointmentTypes();
+      await loadAppointmentTypes();
     } catch (err: any) {
       console.error(err);
       window.showToast?.(err.message || 'Failed to delete appointment type', 'error');

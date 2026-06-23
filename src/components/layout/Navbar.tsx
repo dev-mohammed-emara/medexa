@@ -127,6 +127,7 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
         <span className={cn("text-sm text-muted-foreground hidden md:block border-border", isAr ? "border-l pl-4" : "border-r pr-4")}>{t('nav.clinic_name', T_PAGE)}</span>
 
         {/* Notifications */}
+        {false && (
         <div className="relative">
           <button
             ref={notifBtnRef}
@@ -202,6 +203,7 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
             )}
           </div>
         </div>
+        )}
 
         {/* User Profile */}
         <div className="relative">

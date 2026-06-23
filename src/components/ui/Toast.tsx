@@ -7,10 +7,11 @@ interface ToastProps {
   message: string;
   type?: ToastType;
   stackIndex: number;
+  expanded: boolean;
   onClose: () => void;
 }
 
-const Toast = ({ message, type = 'success', stackIndex, onClose }: ToastProps) => {
+const Toast = ({ message, type = 'success', stackIndex, expanded, onClose }: ToastProps) => {
   const [mounted, setMounted] = useState(false);
   const [isExiting, setIsExiting] = useState(false);
 
@@ -52,16 +53,23 @@ const Toast = ({ message, type = 'success', stackIndex, onClose }: ToastProps) =
     info: 'border-amber-500/20 bg-amber-50/90 text-amber-900'
   };
 
-  // Stack index 0 is top card, 1 is secondary, 2 is tertiary
-  const scale = Math.max(0.7, 1 - stackIndex * 0.05);
-  let opacity = Math.max(0, 1 - stackIndex * 0.15);
-  let transform = `translateY(${-stackIndex * 10}px) scale(${scale})`;
+  let transform = '';
+  let opacity = 1;
+
+  if (expanded) {
+    transform = `translateY(0) scale(1)`;
+    opacity = 1;
+  } else {
+    const scale = Math.max(0.7, 1 - stackIndex * 0.05);
+    opacity = Math.max(0, 1 - stackIndex * 0.15);
+    transform = `translateY(${-stackIndex * 10}px) scale(${scale})`;
+  }
 
   if (!mounted) {
-    transform = `translateY(40px) scale(0.9)`;
+    transform = `translateY(-20px) scale(0.9)`;
     opacity = 0;
   } else if (isExiting) {
-    transform = `translateY(-40px) scale(0.9)`;
+    transform = `translateY(-20px) scale(0.9)`;
     opacity = 0;
   }
 
@@ -69,14 +77,15 @@ const Toast = ({ message, type = 'success', stackIndex, onClose }: ToastProps) =
     transform,
     opacity,
     zIndex: 1000 - stackIndex,
-    pointerEvents: (stackIndex === 0 && !isExiting) ? 'auto' : 'none',
+    pointerEvents: (!isExiting && (expanded || stackIndex === 0)) ? 'auto' : 'none',
     transition: 'all 250ms cubic-bezier(0.16, 1, 0.3, 1)',
+    position: expanded ? 'relative' : 'absolute',
   };
 
   return (
     <div
       style={stackStyle}
-      className={`absolute w-full max-w-[450px] min-w-[300px] flex items-center gap-3 px-4 py-3 rounded-xl border shadow-lg backdrop-blur-md ${styles[type]}`}
+      className={`relative w-full max-w-[450px] min-w-[300px] flex items-center gap-3 px-4 py-3 rounded-xl border shadow-lg backdrop-blur-md ${styles[type]}`}
       dir="rtl"
     >
       {icons[type]}
@@ -92,7 +101,9 @@ const Toast = ({ message, type = 'success', stackIndex, onClose }: ToastProps) =
 };
 
 export const ToastContainer = () => {
-  const [toasts, setToasts] = useState<{ id: number; message: string; type: ToastType }[]>([]);
+  const [toasts, setToasts] = useState<{ id: number; message: string; type: ToastType; batchId: number }[]>([]);
+  const [isHovered, setIsHovered] = useState(false);
+  const [autoExpand, setAutoExpand] = useState(false);
 
   useEffect(() => {
     window.showToast = (message: any, type: ToastType = 'success') => {
@@ -121,25 +132,55 @@ export const ToastContainer = () => {
       }
 
       setToasts(prev => {
-        const id = Date.now() + Math.random();
-        return [...prev, { id, message: finalMessage, type }];
+        const now = Date.now();
+        const id = now + Math.random();
+        
+        let batchId = now;
+        if (prev.length > 0) {
+          const lastToast = prev[prev.length - 1];
+          // If fired within 100ms of the last toast, group them in the same batch
+          if (now - lastToast.id < 100) {
+            batchId = lastToast.batchId;
+          }
+        }
+        
+        return [...prev, { id, message: finalMessage, type, batchId }];
       });
     };
   }, []);
 
-  // Display only the last 3 toasts
-  const activeToasts = toasts;
+  // Check if multiple toasts in the same batch exist to trigger autoExpand
+  useEffect(() => {
+    if (toasts.length > 1) {
+      const last = toasts[toasts.length - 1];
+      const prev = toasts[toasts.length - 2];
+      if (last.batchId === prev.batchId) {
+        setAutoExpand(true);
+        const timer = setTimeout(() => setAutoExpand(false), 3000);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [toasts]);
+
+  const displayToasts = toasts.slice(-5);
+  
+  const expanded = isHovered || autoExpand || displayToasts.length === 1;
 
   return (
-    <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[999999] pointer-events-none w-full max-w-[470px] flex justify-center items-start h-24">
-      {activeToasts.map((toast, index) => {
-        const stackIndex = activeToasts.length - 1 - index;
+    <div 
+      className={`fixed top-6 left-1/2 -translate-x-1/2 z-[999999] pointer-events-none w-full max-w-[470px] flex flex-col justify-start items-center ${expanded ? 'gap-2' : ''} max-h-[90vh] overflow-visible`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {displayToasts.map((toast, index) => {
+        const stackIndex = displayToasts.length - 1 - index;
         return (
           <Toast
             key={toast.id}
             message={toast.message}
             type={toast.type}
             stackIndex={stackIndex}
+            expanded={expanded}
             onClose={() => setToasts(prev => prev.filter(t => t.id !== toast.id))}
           />
         );

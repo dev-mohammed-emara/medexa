@@ -12,6 +12,7 @@ import {
   X,
   Eye
 } from 'lucide-react'
+import { IoStatsChartSharp } from "react-icons/io5";
 import { FaNotesMedical } from "react-icons/fa";
 import { useEffect, useRef } from 'react'
 import { FaCalendarAlt } from 'react-icons/fa'
@@ -26,14 +27,15 @@ import { TransitionLink } from '../transition/TransitionLink'
 import { useAuth } from '../../contexts/AuthContext'
 
 const navItems = [
-  { icon: LayoutDashboard, label: 'dashboard', href: '/', requiredPermissions: ['MANAGE_STATISTICS'] },
+  { icon: LayoutDashboard, label: 'dashboard', href: '/dashboard' },
   { icon: Users, label: 'doctors', href: '/doctors', requiredPermissions: ['MANAGE_DOCTORS'] },
-  { icon: UserCog, label: 'secretary', href: '/secretary', requiredPermissions: ['MANAGE_SECRETARIES'] },
+  { icon: UserCog, label: 'secretary', href: '/secretaries', requiredPermissions: ['MANAGE_SECRETARIES'] },
   { icon: UsersRound, label: 'patients', href: '/patients', requiredPermissions: ['MANAGE_PATIENTS'] },
   { icon: FaCalendarAlt, label: 'appointments', href: '/appointments', requiredPermissions: ['MANAGE_APPOINTMENTS'] },
   { icon: FaNotesMedical, label: 'appointmentTypes', href: '/appointment-types', requiredPermissions: ['MANAGE_CLINIC'] },
   { icon: FileText, label: 'records', href: '/records', requiredPermissions: ['MANAGE_MEDICAL_RECORDS'] },
   { icon: DollarSign, label: 'finance', href: '/finance', requiredPermissions: ['MANAGE_TRANSACTIONS'] },
+  { icon: IoStatsChartSharp, label: 'statistics', href: '/statistics', requiredPermissions: ['MANAGE_STATISTICS'] },
   { icon: User, label: 'profile', href: '/profile' },
   { icon: BiSupport, label: 'supportTickets', href: '/support-tickets' },
 ]
@@ -108,7 +110,7 @@ const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
           isCollapsed
             ? (isAr ? "translate-x-[120%] invisible pointer-events-none" : "-translate-x-[120%] invisible pointer-events-none")
             : "translate-x-0 w-full max-w-full sm:max-w-[300px] visible pointer-events-auto",
-          "lg:sticky lg:top-0 lg:h-screen lg:shadow-none lg:z-40 lg:translate-x-0 lg:visible lg:pointer-events-auto lg:transform-none",
+          "lg:sticky lg:top-0 lg:h-[100dvh] lg:shadow-none lg:z-40 lg:translate-x-0 lg:visible lg:pointer-events-auto lg:transform-none",
           isCollapsed ? "lg:w-[80px]" : "lg:w-[280px]"
         )}
       >
@@ -132,7 +134,7 @@ const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
           )}
         </div>
 
-        <nav className="flex-1 py-6 px-3 whitespace-nowrap overflow-y-auto no-scrollbar" ref={navContainerRef}>
+        <nav className="flex-1 py-6 lg:pt-2 px-3 whitespace-nowrap overflow-y-auto no-scrollbar min-h-0" data-lenis-prevent="true" ref={navContainerRef}>
           <div className="space-y-1">
             {filteredNavItems.map((item, index) => {
               const isActive = location.pathname === item.href || (item.href === '/patients' && location.pathname.startsWith('/patients'))

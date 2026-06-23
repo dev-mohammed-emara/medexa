@@ -9,6 +9,7 @@ import { profileTranslations } from '@/constants/profile';
 
 import { getCookie } from '@/utils/cookie';
 import { apiFetch } from '@/utils/apiFetch';
+import { getErrorMessage } from '@/utils/error';
 
 interface EmailChangeDialogProps {
   isOpen: boolean;
@@ -87,7 +88,7 @@ const EmailChangeDialog = ({ isOpen, onClose }: EmailChangeDialogProps) => {
         let errorMsg = 'Failed to verify email';
         try {
           const errData = await response.json();
-          errorMsg = errData.message || errData.error || errorMsg;
+          errorMsg = getErrorMessage(errData, errorMsg);
         } catch (e) { /* ignore */ }
         throw new Error(errorMsg);
       }

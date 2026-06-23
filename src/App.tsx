@@ -18,6 +18,7 @@ import { PreloaderProvider, usePreloader } from './contexts/PreloaderContext'
 import AppointmentTypes from './pages/AppointmentTypes'
 import Appointments from './pages/Appointments'
 import Dashboard from './pages/Dashboard'
+import Statistics from './pages/Statistics'
 import Doctors from './pages/Doctors'
 import Finance from './pages/Finance'
 import NotFound from './pages/NotFound'
@@ -60,8 +61,32 @@ const GlobalBroadcastListener = () => {
       }
     });
 
+    const handleInvalid = (e: Event) => {
+      const target = e.target as HTMLElement;
+      if (target && 'validity' in target && (target as any).validity.valid === false) {
+        const lenis = (window as any).lenis;
+        if (lenis) {
+          lenis.scrollTo(target, { offset: -100, immediate: false });
+        }
+        
+        // Focus the first invalid element if not already focused
+        if (document.activeElement !== target && !target.contains(document.activeElement)) {
+          const form = target.closest('form');
+          if (form) {
+            const firstInvalid = form.querySelector(':invalid');
+            if (firstInvalid === target) {
+              target.focus();
+            }
+          }
+        }
+      }
+    };
+    
+    document.addEventListener('invalid', handleInvalid, true);
+
     return () => {
       unsubscribeOffline();
+      document.removeEventListener('invalid', handleInvalid, true);
     };
   }, [subscribe]);
 
@@ -116,15 +141,16 @@ const AppRoutes = () => {
 
         {/* Guarded Application Routes */}
         <Route element={<ProtectedRoute />}>
+          <Route index element={<Navigate to="/dashboard" replace />} />
+          <Route path="/dashboard" element={<Dashboard />} />
           <Route element={<RoleProtectedRoute requiredPermissions={['MANAGE_STATISTICS']} fallbackPath="/profile" />}>
-            <Route index element={<Dashboard />} />
-            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/statistics" element={<Statistics />} />
           </Route>
           <Route element={<RoleProtectedRoute requiredPermissions={['MANAGE_DOCTORS']} fallbackPath="/profile" />}>
             <Route path="/doctors" element={<Doctors />} />
           </Route>
           <Route element={<RoleProtectedRoute requiredPermissions={['MANAGE_SECRETARIES']} />}>
-            <Route path="/secretary" element={<Secretary />} />
+            <Route path="/secretaries" element={<Secretary />} />
           </Route>
           <Route element={<RoleProtectedRoute requiredPermissions={['MANAGE_PATIENTS']} />}>
             <Route path="/patients" element={<Patients />} />

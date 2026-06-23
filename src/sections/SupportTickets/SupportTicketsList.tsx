@@ -38,32 +38,31 @@ const SupportTicketsList = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // const getLocalDateString = (d: Date) => {
-  //   const year = d.getFullYear();
-  //   const month = String(d.getMonth() + 1).padStart(2, '0');
-  //   const day = String(d.getDate()).padStart(2, '0');
-  //   return `${year}-${month}-${day}`;
-  // };
+  const getLocalDateString = (d: Date) => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
 
-  // const today = new Date();
-  // const yesterday = new Date();
-  // yesterday.setDate(yesterday.getDate() - 1);
+  const today = new Date();
+  const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
-  // const defaultToDate = getLocalDateString(today);
-  // const defaultFromDate = getLocalDateString(yesterday);
+  const defaultToDate = getLocalDateString(today);
+  const defaultFromDate = getLocalDateString(firstDayOfMonth);
 
   // Local Filter Input States
   const [status, setStatus] = useState('');
   const [priority, setPriority] = useState('');
-  const [fromDate, setFromDate] = useState("");
-  const [toDate, setToDate] = useState("");
+  const [fromDate, setFromDate] = useState(defaultFromDate);
+  const [toDate, setToDate] = useState(defaultToDate);
   const [sort, setSort] = useState('createdAt,desc');
 
   // Active Filter States (applied on Confirm)
   const [activeStatus, setActiveStatus] = useState('');
   const [activePriority, setActivePriority] = useState('');
-  const [activeFromDate, setActiveFromDate] = useState("");
-  const [activeToDate, setActiveToDate] = useState("");
+  const [activeFromDate, setActiveFromDate] = useState(defaultFromDate);
+  const [activeToDate, setActiveToDate] = useState(defaultToDate);
   const [activeSort, setActiveSort] = useState('createdAt,desc');
 
   // Pagination State
@@ -127,13 +126,13 @@ const SupportTicketsList = () => {
   const handleResetFilters = () => {
     setStatus('');
     setPriority('');
-    setFromDate('');
-    setToDate('');
+    setFromDate(defaultFromDate);
+    setToDate(defaultToDate);
     setSort('createdAt,desc');
     setActiveStatus('');
     setActivePriority('');
-    setActiveFromDate('');
-    setActiveToDate('');
+    setActiveFromDate(defaultFromDate);
+    setActiveToDate(defaultToDate);
     setActiveSort('createdAt,desc');
     setCurrentPage(1);
   };

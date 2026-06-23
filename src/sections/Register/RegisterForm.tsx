@@ -6,7 +6,6 @@ import { Arabic } from "flatpickr/dist/l10n/ar.js"
 import React, { useOptimistic, useState, useTransition } from 'react'
 import { DatePicker } from '../../components/ui/DatePicker';
 import { FaCalendarAlt } from "react-icons/fa"
-import { FiEye, FiEyeOff } from 'react-icons/fi'
 import { LuBuilding2, LuUser } from 'react-icons/lu'
 import { useNavigate } from 'react-router-dom'
 import { TransitionLink } from '../../components/transition/TransitionLink'
@@ -57,8 +56,6 @@ const RegisterForm = () => {
   const canAnimate = isLoaded && !isExiting
   const navigate = useNavigate()
   const [isPending, startTransition] = useTransition()
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
   // State for form data
   const [formData, setFormData] = useState<RegisterFormData>({
@@ -244,6 +241,7 @@ const RegisterForm = () => {
                   onValueChange={(val: string) => setFormData((prev) => ({ ...prev, specialty: val }))}
                   value={formData.specialty}
                   required
+                  backendField="medicalCategory"
                 >
                   <SelectTrigger className="focus:ring-4 focus:ring-primary/10">
                     <SelectValue placeholder="اختر التخصص" />
@@ -300,6 +298,7 @@ const RegisterForm = () => {
                   placeholder="9627XXXXXXXX"
                   value={formData.phone}
                   onChange={handleChange}
+                  backendField="phoneNumber"
                 />
                 <p className="text-[11px] text-[#0B5A8E] mt-1.5 block pr-1 leading-relaxed font-semibold">
                   * يرجى إدخال رقم هاتف أردني صحيح (مثال: 962791234567)
@@ -315,6 +314,7 @@ const RegisterForm = () => {
                   placeholder="clinic@example.com"
                   value={formData.clinicEmail}
                   onChange={handleChange}
+                  backendField="email"
                 />
               </div>
 
@@ -416,6 +416,7 @@ const RegisterForm = () => {
                   placeholder="9627XXXXXXXX"
                   value={formData.ownerPhone}
                   onChange={handleChange}
+                  backendField="phoneNumber"
                 />
                 <p className="text-[11px] text-[#0B5A8E] mt-1.5 block pr-1 leading-relaxed font-semibold">
                   * يرجى إدخال رقم هاتف أردني صحيح (مثال: 962791234567)
@@ -424,27 +425,16 @@ const RegisterForm = () => {
 
               <div>
                 <label className="text-sm font-semibold text-[#1a2b3c] pr-1 block mb-2">كلمة المرور</label>
-                <div className="relative group">
                   <Input
-                    type={showPassword ? "text" : "password"}
+                    type="password"
                     name="password"
                     required
                     autoComplete="new-password"
-                    placeholder={showPassword ? "P@ssword1" : "••••••••"}
+                    placeholder="••••••••"
                     value={formData.password}
                     onChange={handleChange}
                     className="pl-12"
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors outline-none z-10"
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                  >
-                    {showPassword ? <FiEyeOff size={20} /> : <FiEye size={20} />}
-                  </button>
-                </div>
-
                 {formData.password.length > 0 && (
                   <div className="mt-4 animate-fade">
                     <div className="flex gap-2">
@@ -483,24 +473,43 @@ const RegisterForm = () => {
                 <label className="text-sm font-semibold text-[#1a2b3c] pr-1 block mb-2">تأكيد كلمة المرور</label>
                 <div className="relative group">
                   <Input
-                    type={showConfirmPassword ? "text" : "password"}
+                    type="password"
                     name="confirmPassword"
                     required
                     autoComplete="new-password"
-                    placeholder={showConfirmPassword ? "P@ssword1" : "••••••••"}
+                    placeholder="••••••••"
                     value={formData.confirmPassword}
                     onChange={handleChange}
                     className="pl-12"
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary transition-colors outline-none z-10"
-                    aria-label={showConfirmPassword ? "Hide password" : "Show password"}
-                  >
-                    {showConfirmPassword ? <FiEyeOff size={20} /> : <FiEye size={20} />}
-                  </button>
                 </div>
+                {formData.confirmPassword.length > 0 && (
+                  <div className="mt-4 animate-fade">
+                    <div className="flex gap-2">
+                      <div className="flex-1 flex flex-col gap-2">
+                        <div
+                          className={cn(
+                            "h-1.5 rounded-full transition-all duration-500",
+                            formData.password === formData.confirmPassword ? "bg-emerald-500" : "bg-destructive"
+                          )}
+                        />
+                        <div className="flex items-center justify-center gap-1 px-0.5">
+                          {formData.password === formData.confirmPassword ? (
+                            <Check className="size-3 text-emerald-500 stroke-[4px] shrink-0" />
+                          ) : (
+                            <X className="size-3 text-destructive stroke-[4px] shrink-0" />
+                          )}
+                          <span className={cn(
+                            "text-[9px] transition-colors leading-tight text-center font-bold",
+                            formData.password === formData.confirmPassword ? "text-emerald-700" : "text-destructive"
+                          )}>
+                            {isAr ? 'كلمتا المرور متطابقتان' : 'Passwords Match'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div>
@@ -525,6 +534,7 @@ const RegisterForm = () => {
                 <label className="text-sm font-semibold text-[#1a2b3c] pr-1 block mb-2">{isAr ? "تاريخ الميلاد" : "Date of Birth"}</label>
                 <DatePicker
                   name="dob"
+                  backendField="dateOfBirth"
                   required
                   value={formData.dob}
                   onChange={([date]) => {
@@ -552,6 +562,7 @@ const RegisterForm = () => {
                   onValueChange={(val: string) => setFormData((prev) => ({ ...prev, ownerSpecialty: val }))}
                   value={formData.ownerSpecialty}
                   required
+                  backendField="specialty"
                 >
                   <SelectTrigger className="focus:ring-4 focus:ring-primary/10">
                     <SelectValue placeholder="اختر التخصص" />
@@ -574,6 +585,7 @@ const RegisterForm = () => {
                   placeholder="أدخل نبذة تعريفية قصيرة وخبرات المالك..."
                   value={formData.ownerSummary}
                   onChange={handleChange}
+                  backendField="summary"
                 />
               </div>
             </div>

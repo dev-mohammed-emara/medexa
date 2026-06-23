@@ -2,8 +2,9 @@ import React, { createContext, useContext, useEffect, useRef, useState, useCallb
 import { deleteCookie, getCookie, setCookie, isTokenExpired } from '../utils/cookie'
 import { jwtDecode } from 'jwt-decode'
 import { apiFetch } from '../utils/apiFetch'
+import { getErrorMessage } from '../utils/error'
 
-import { BYPASS_AUTH_GUARDS } from '../config/auth';
+
 
 export interface UserProfile {
   uuid?: string
@@ -140,12 +141,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return saved ? JSON.parse(saved) : null
   })
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    if (BYPASS_AUTH_GUARDS) return true;
+
     const token = getCookie('token')
     return !!token && !isTokenExpired(token)
   })
   const [loading, setLoading] = useState<boolean>(() => {
-    if (BYPASS_AUTH_GUARDS) return false;
     const token = getCookie('token')
     return !!token && !isTokenExpired(token) && !!getCookie('refreshToken')
   })
@@ -173,7 +173,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         await refresh()
       } catch (err) {
-        console.error("Silent token refresh failed, logging out:", err)
+        console.warn("Session expired or token revoked. Logging out.")
+        if (typeof window !== 'undefined' && window.showToast) {
+          window.showToast('Your session has expired. Please log in again.', 'info')
+        }
         if (refreshTimeoutRef.current) {
           clearTimeout(refreshTimeoutRef.current)
           refreshTimeoutRef.current = null
@@ -276,7 +279,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const performInitialRefresh = async () => {
       const token = getCookie('token')
-      if (token && isTokenExpired(token) && !BYPASS_AUTH_GUARDS) {
+      if (token && isTokenExpired(token)) {
         console.warn("Initial load token expired, logging out...")
         if (!cancelled) {
           await logout()
@@ -285,8 +288,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return
       }
 
-      // If token is valid (or bypassed), schedule refresh for later and finish loading immediately
-      if (token && (!isTokenExpired(token) || BYPASS_AUTH_GUARDS)) {
+      if (token && !isTokenExpired(token)) {
         try {
           const decoded = parseJWT(token)
           if (decoded && decoded.exp) {
@@ -370,8 +372,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!response.ok) {
       let errorMessage = 'Failed to log in. Please check your credentials.'
       try {
-        const errorData = await response.json() as { message?: string; error?: string }
-        errorMessage = errorData.message || errorData.error || errorMessage
+        const errorData = await response.json()
+        errorMessage = getErrorMessage(errorData, errorMessage)
       } catch (e) {
         // Fallback to default
       }
@@ -482,8 +484,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!response.ok) {
       let errorMessage = 'Failed to register.'
       try {
-        const errorData = await response.json() as { message?: string; error?: string }
-        errorMessage = errorData.message || errorData.error || errorMessage
+        const errorData = await response.json()
+        errorMessage = getErrorMessage(errorData, errorMessage)
       } catch (e) {
         // Fallback
       }

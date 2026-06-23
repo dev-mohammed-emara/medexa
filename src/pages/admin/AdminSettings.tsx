@@ -1,12 +1,12 @@
 import AdminLayout from '@/components/layout/AdminLayout';
 import { Badge } from '@/components/ui/badge';
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from '@/components/ui/table';
 import { Plus, Shield, SquarePen, Stethoscope, Trash2 } from 'lucide-react';
 import { useState } from 'react';
@@ -75,7 +75,7 @@ const AdminSettings = () => {
 
   const handleConfirmAdd = () => {
     const contextName = activeTab === 'insurances' ? 'تأمين' : 'فئة طبية';
-    
+
     if (modalMode === 'add') {
       if (activeTab === 'categories') {
         const newId = categories.length > 0 ? Math.max(...categories.map(c => c.id)) + 1 : 1;
@@ -98,11 +98,11 @@ const AdminSettings = () => {
       window.showToast?.(`تم إضافة ${contextName} جديد بنجاح`, 'success');
     } else {
       if (activeTab === 'categories' && selectedId !== null) {
-        setCategories(prev => prev.map(cat => 
+        setCategories(prev => prev.map(cat =>
           cat.id === selectedId ? { ...cat, name: name } : cat
         ));
       } else if (activeTab === 'insurances' && selectedId !== null) {
-        setInsurances(prev => prev.map(ins => 
+        setInsurances(prev => prev.map(ins =>
           ins.id === selectedId ? { ...ins, name: name } : ins
         ));
       }
@@ -173,11 +173,10 @@ const AdminSettings = () => {
             <div className="flex gap-2 bg-gray-100 border border-gray-200 rounded-xl p-1 w-fit">
               <button
                 onClick={() => setActiveTab('insurances')}
-                className={`inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all cursor-pointer ${
-                  activeTab === 'insurances'
-                    ? 'bg-blue-500 text-white shadow-xs'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
+                className={`inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all cursor-pointer ${activeTab === 'insurances'
+                  ? 'bg-blue-500 text-white shadow-xs'
+                  : 'text-gray-600 hover:text-gray-900'
+                  }`}
               >
                 <Shield size={18} />
                 التأمينات
@@ -185,18 +184,17 @@ const AdminSettings = () => {
 
               <button
                 onClick={() => setActiveTab('categories')}
-                className={`inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all cursor-pointer ${
-                  activeTab === 'categories'
-                    ? 'bg-blue-500 text-white shadow-xs'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
+                className={`inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all cursor-pointer ${activeTab === 'categories'
+                  ? 'bg-blue-500 text-white shadow-xs'
+                  : 'text-gray-600 hover:text-gray-900'
+                  }`}
               >
                 <Stethoscope size={18} />
                 الفئات الطبية
               </button>
             </div>
 
-            <button 
+            <button
               onClick={handleOpenAddModal}
               className="inline-flex items-center justify-center gap-2 bg-linear-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white rounded-lg px-4 py-2 text-sm font-medium transition-all hover:shadow-lg cursor-pointer"
             >
@@ -227,27 +225,26 @@ const AdminSettings = () => {
                           <button
                             onClick={() => handleToggleStatus(insurance.id)}
                             data-slot="badge"
-                            className={`inline-flex items-center justify-center rounded-md px-2 py-0.5 text-xs font-medium w-fit whitespace-nowrap shrink-0 border cursor-pointer transition-colors ${
-                              insurance.isActive
-                                ? 'bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-100'
-                                : 'bg-rose-50 text-rose-600 border-rose-200 hover:bg-rose-100'
-                            }`}
+                            className={`inline-flex items-center justify-center rounded-md px-2 py-0.5 text-xs font-medium w-fit whitespace-nowrap shrink-0 border cursor-pointer transition-colors ${insurance.isActive
+                              ? 'bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-100'
+                              : 'bg-rose-50 text-rose-600 border-rose-200 hover:bg-rose-100'
+                              }`}
                           >
                             {insurance.isActive ? 'نشط' : 'معطّل'}
                           </button>
                         </td>
                         <td data-slot="table-cell" className="p-2 align-middle whitespace-nowrap">
                           <div className="flex justify-center gap-2">
-                            <button 
+                            <button
                               onClick={() => handleOpenEditModal(insurance)}
-                              data-slot="button" 
+                              data-slot="button"
                               className="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-all duration-300 h-8 rounded-md px-2.5 text-blue-500 hover:text-blue-600 hover:bg-blue-50"
                             >
                               <SquarePen size={16} />
                             </button>
-                            <button 
+                            <button
                               onClick={() => handleDelete(insurance.id, insurance.name)}
-                              data-slot="button" 
+                              data-slot="button"
                               className="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-all duration-300 h-8 rounded-md px-2.5 text-rose-500 hover:text-rose-600 hover:bg-rose-50"
                             >
                               <Trash2 size={16} />
@@ -299,11 +296,10 @@ const AdminSettings = () => {
                         <TableCell>
                           <button
                             onClick={() => handleToggleStatus(category.id)}
-                            className={`inline-flex items-center justify-center rounded-md px-2.5 py-1 text-xs font-medium border transition-all cursor-pointer ${
-                              category.isActive
-                                ? 'bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-100'
-                                : 'bg-rose-50 text-rose-600 border-rose-200 hover:bg-rose-100'
-                            }`}
+                            className={`inline-flex items-center justify-center rounded-md px-2.5 py-1 text-xs font-medium border transition-all cursor-pointer ${category.isActive
+                              ? 'bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-100'
+                              : 'bg-rose-50 text-rose-600 border-rose-200 hover:bg-rose-100'
+                              }`}
                           >
                             {category.isActive ? (
                               <>
@@ -320,9 +316,9 @@ const AdminSettings = () => {
                         </TableCell>
                         <TableCell>
                           <div className="flex justify-center gap-2">
-                            <button 
+                            <button
                               onClick={() => handleOpenEditModal(category)}
-                              className="inline-flex items-center justify-center h-8 w-8 rounded-md text-blue-500 hover:text-blue-600 hover:bg-blue-50 transition-all cursor-pointer"
+                              className="inline-flex items-center justify-center h-8 w-8 rounded-md text-blue-500 hover:text-blue-600 hover:bg-blue-500/20 transition-all cursor-pointer"
                             >
                               <SquarePen size={16} />
                             </button>
@@ -352,9 +348,9 @@ const AdminSettings = () => {
 
       {/* Backdrop overlay style synced with modal state */}
       {isAddModalOpen && (
-        <div 
-          data-state="open" 
-          data-slot="dialog-overlay" 
+        <div
+          data-state="open"
+          data-slot="dialog-overlay"
           className="fixed inset-0 z-50 bg-black/50 transition-all duration-300 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 pointer-events-auto block"
           aria-hidden="true"
           onClick={() => setIsAddModalOpen(false)}
@@ -363,16 +359,16 @@ const AdminSettings = () => {
 
       {/* Modal Content */}
       {isAddModalOpen && (
-        <div 
-          role="dialog" 
-          id="radix-:rce:" 
-          aria-describedby="radix-:rcg:" 
-          aria-labelledby="radix-:rcf:" 
-          data-state="open" 
-          data-slot="dialog-content" 
-          className="data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-lg duration-200 sm:max-w-lg bg-white border-gray-200" 
-          dir="rtl" 
-          tabIndex={-1} 
+        <div
+          role="dialog"
+          id="radix-:rce:"
+          aria-describedby="radix-:rcg:"
+          aria-labelledby="radix-:rcf:"
+          data-state="open"
+          data-slot="dialog-content"
+          className="data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-lg duration-200 sm:max-w-lg bg-white border-gray-200"
+          dir="rtl"
+          tabIndex={-1}
           style={{ pointerEvents: 'auto' }}
         >
           <div data-slot="dialog-header" className="flex flex-col gap-2 text-center sm:text-left">
@@ -387,9 +383,9 @@ const AdminSettings = () => {
           <div className="space-y-4 mt-4">
             <div>
               <label className="block text-sm text-gray-700 mb-2 text-right">الاسم</label>
-              <input 
-                data-slot="input" 
-                className="file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 flex h-9 w-full min-w-0 rounded-md border px-3 py-1 text-base transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive bg-gray-50 border-gray-200 text-right" 
+              <input
+                data-slot="input"
+                className="file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 flex h-9 w-full min-w-0 rounded-md border px-3 py-1 text-base transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive bg-gray-50 border-gray-200 text-right"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder={activeTab === 'insurances' ? 'أدخل اسم التأمين' : 'أدخل اسم الفئة الطبية'}
@@ -397,9 +393,9 @@ const AdminSettings = () => {
             </div>
 
             <div className="flex gap-3">
-              <button 
+              <button
                 onClick={handleConfirmAdd}
-                data-slot="button" 
+                data-slot="button"
                 className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-300 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md hover:bg-primary/90 hover:shadow-primary/20 h-9 px-4 py-2 has-[>svg]:px-3 flex-1 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white cursor-pointer"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-square-pen ml-2">
@@ -408,10 +404,10 @@ const AdminSettings = () => {
                 </svg>
                 {confirmButtonText}
               </button>
-              
-              <button 
+
+              <button
                 onClick={() => setIsAddModalOpen(false)}
-                data-slot="button" 
+                data-slot="button"
                 className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-all duration-300 h-9 px-4 py-2 flex-1 border border-gray-200 text-gray-600 hover:text-gray-900 cursor-pointer hover:bg-gray-50"
               >
                 إلغاء
