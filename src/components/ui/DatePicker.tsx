@@ -92,6 +92,7 @@ export const DatePicker = React.forwardRef<any, DatePickerProps>(
             const option = document.createElement("option");
             option.value = String(i);
             option.text = String(i);
+            option.style.color = "black";
             if (i === instance.currentYear) option.selected = true;
             yearSelect.appendChild(option);
           }
