@@ -238,6 +238,7 @@ const PatientsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Patie
                 </Select>
                 <DatePicker
                   value={selectedDob}
+                  useYearSelect={true}
                   onChange={([date]) => setSelectedDob(date ? date.toISOString().split('T')[0] : '')}
                   options={{
                     locale: isAr ? Arabic : undefined,

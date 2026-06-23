@@ -22,6 +22,31 @@ const ScrollLockWrapper = ({
     const scrollable = containerRef.current;
     if (!scrollable || !isActive) return;
 
+    // Global Modal Error Auto-Scroll
+    // Automatically scroll to top if an error element is added inside the modal
+    const observer = new MutationObserver((mutations) => {
+      let shouldScroll = false;
+      for (const mutation of mutations) {
+        if (mutation.addedNodes.length > 0) {
+          const hasError = Array.from(mutation.addedNodes).some(node => {
+            if (node instanceof HTMLElement) {
+              return node.classList.contains('text-destructive') || node.querySelector('.text-destructive');
+            }
+            return false;
+          });
+          if (hasError) {
+            shouldScroll = true;
+            break;
+          }
+        }
+      }
+      if (shouldScroll) {
+        scrollable.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    });
+
+    observer.observe(scrollable, { childList: true, subtree: true });
+
     const handleWheel = (e: WheelEvent) => {
       // Allow browser to handle native scrolling by stopping propagation only
       // if it would cause the parent to scroll (overscroll).
@@ -47,6 +72,7 @@ const ScrollLockWrapper = ({
     window.addEventListener('keydown', handleKeyDown);
 
     return () => {
+      observer.disconnect();
       scrollable.removeEventListener('wheel', handleWheel);
       window.removeEventListener('keydown', handleKeyDown);
     };

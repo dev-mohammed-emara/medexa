@@ -28,6 +28,7 @@ import { fetchDoctors } from '../../api/doctorApi';
 import { fetchPatients } from '../../api/patientApi';
 import { getCookie } from '../../utils/cookie';
 import { useAuth } from '../../contexts/AuthContext';
+import { getErrorMessage } from '../../utils/error';
 import { apiFetch } from '../../utils/apiFetch';
 
 export interface Appointment {
@@ -66,7 +67,7 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, doc
   const hasManageMedicalRecords = user?.permissions?.includes('MANAGE_MEDICAL_RECORDS') || user?.role === 'ROLE_CLINIC_OWNER' || user?.role === 'ROLE_DOCTOR' || user?.roles?.includes('ROLE_DOCTOR');
   const T = appointmentsTranslations;
   const currentLocale = isAr ? ar : enUS;
-  const overlayRef = useRef<HTMLDivElement>(null);
+  const overlayRef = useRef<HTMLDivElement>(null);  
   const [isClosing, setIsClosing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -165,6 +166,8 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, doc
     };
   }, [isOpen, initialData, mode]);
 
+
+
   // API Dropdown states
   const [doctorsList, setDoctorsList] = useState<any[]>([]);
   const [patientsList, setPatientsList] = useState<any[]>([]);
@@ -184,21 +187,13 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, doc
               if (docData.content && docData.content.length > 0) {
                 setDoctorsList(docData.content);
               } else {
-                setDoctorsList([
-                  { uuid: '33c044ef-e69e-4dbb-839d-402f06ad0201', user: { firstName: 'Ahmad', lastName: 'Masri' } },
-                  { uuid: 'doctor-sami-uuid', user: { firstName: 'Sami', lastName: 'Sami' } },
-                  { uuid: 'doctor-layla-uuid', user: { firstName: 'Layla', lastName: 'Layla' } }
-                ]);
+                setDoctorsList([]);
               }
             }
           }
         } catch (e) {
           console.error('Failed to load doctors in modal:', e);
-          setDoctorsList([
-            { uuid: '33c044ef-e69e-4dbb-839d-402f06ad0201', user: { firstName: 'Ahmad', lastName: 'Masri' } },
-            { uuid: 'doctor-sami-uuid', user: { firstName: 'Sami', lastName: 'Sami' } },
-            { uuid: 'doctor-layla-uuid', user: { firstName: 'Layla', lastName: 'Layla' } }
-          ]);
+          setDoctorsList([]);
         }
 
         try {
@@ -208,21 +203,13 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, doc
               if (patData.content && patData.content.length > 0) {
                 setPatientsList(patData.content);
               } else {
-                setPatientsList([
-                  { uuid: '4e14974e-9fa3-4261-907b-81c9cd9d334b', firstName: 'Ahmad', lastName: 'Almasri' },
-                  { uuid: 'patient-sara-uuid', firstName: 'Sara', lastName: 'Sami' },
-                  { uuid: 'patient-mahmoud-uuid', firstName: 'Mahmoud', lastName: 'Mahmoud' }
-                ]);
+                setPatientsList([]);
               }
             }
           }
         } catch (e) {
           console.error('Failed to load patients in modal:', e);
-          setPatientsList([
-            { uuid: '4e14974e-9fa3-4261-907b-81c9cd9d334b', firstName: 'Ahmad', lastName: 'Almasri' },
-            { uuid: 'patient-sara-uuid', firstName: 'Sara', lastName: 'Sami' },
-            { uuid: 'patient-mahmoud-uuid', firstName: 'Mahmoud', lastName: 'Mahmoud' }
-          ]);
+          setPatientsList([]);
         }
 
         try {
@@ -239,21 +226,13 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, doc
           } else {
             if (!cancelled) {
               // Fallback default list
-            setAppointmentTypesList([
-              { uuid: '990563d1-53b0-4f0a-a98b-2ac3106e1bfc', name: isAr ? 'كشفية' : 'Consultation' },
-              { uuid: 'followup-uuid', name: isAr ? 'مراجعة' : 'Followup' },
-              { uuid: 'session-uuid', name: isAr ? 'جلسة' : 'Session' }
-            ]);
+            setAppointmentTypesList([]);
           }
             }
           }
         } catch (err) {
           if (!cancelled) {
-            setAppointmentTypesList([
-              { uuid: '990563d1-53b0-4f0a-a98b-2ac3106e1bfc', name: isAr ? 'كشفية' : 'Consultation' },
-              { uuid: 'followup-uuid', name: isAr ? 'مراجعة' : 'Followup' },
-              { uuid: 'session-uuid', name: isAr ? 'جلسة' : 'Session' }
-            ]);
+            setAppointmentTypesList([]);
           }
         }
       };
@@ -337,22 +316,31 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, doc
       return time.length === 5 ? `${time}:00` : time;
     };
 
-    const payload = isEdit ? {
+    const payload: any = {
       appointmentDate: selectedDate,
       appointmentStartTime: formatTime(selectedTime),
-      appointmentEndTime: formatTime(selectedEndTime),
-      patientNote: patientNotes || "",
-      doctorNote: doctorNotes || ""
-    } : {
-      patientUuid: selectedPatient,
-      doctorUuid: selectedDoctor,
-      appointmentDate: selectedDate,
-      appointmentTypeUuid: selectedAppointmentType || "990563d1-53b0-4f0a-a98b-2ac3106e1bfc",
-      appointmentStartTime: formatTime(selectedTime),
-      appointmentEndTime: formatTime(selectedEndTime) || "08:45:00",
       patientNote: patientNotes || "",
       doctorNote: doctorNotes || ""
     };
+
+    if (!isEdit) {
+      payload.patientUuid = selectedPatient;
+      payload.doctorUuid = selectedDoctor;
+    }
+
+    if (selectedAppointmentType) {
+      payload.appointmentTypeUuid = selectedAppointmentType;
+      // When appointment type is sent, explicitly nullify end time to avoid ambiguity
+      if (isEdit) payload.appointmentEndTime = null;
+    } else {
+      // Explicitly nullify appointment type if not selected
+      if (isEdit) payload.appointmentTypeUuid = null;
+      if (selectedEndTime) {
+        payload.appointmentEndTime = formatTime(selectedEndTime);
+      } else if (isEdit) {
+        payload.appointmentEndTime = null;
+      }
+    }
 
     try {
       const token = getCookie('token');
@@ -374,11 +362,7 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, doc
         let errMsg = 'Failed to save appointment';
         try {
           const errData = await response.json();
-          if (errData.details && Array.isArray(errData.details) && errData.details.length > 0 && errData.details[0].message) {
-            errMsg = errData.details[0].message;
-          } else {
-            errMsg = errData.message || errData.error || errMsg;
-          }
+          errMsg = getErrorMessage(errData, errMsg);
         } catch (e) { }
         setError(errMsg);
         window.showToast?.(errMsg, 'error');
@@ -525,7 +509,7 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, doc
                     <label className="flex items-center gap-2 font-medium text-muted-foreground text-xs">{t('dialog.status', T)}</label>
                     {(() => {
                       const status = (fetchedDetails?.status || initialData?.status || 'pending').toLowerCase();
-                      const config = statusConfig[status] || statusConfig['pending'];
+                      const config = statusConfig[status?.toLowerCase()] || statusConfig['pending'];
                       return (
                         <span className={cn(
                            "inline-flex items-center justify-center rounded-lg px-3 py-1 text-xs font-bold w-fit border-2 shadow-sm transition-all animate-in fade-in zoom-in duration-300",
@@ -592,6 +576,7 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, doc
                     <div className={cn("relative group flex items-center justify-between h-12 bg-input-background border border-border rounded-xl px-4 focus-within:ring-4 focus-within:ring-primary/10 transition-all", isAr ? "flex-row" : "flex-row-reverse")}>
                       <DatePicker
                         value={parseLocalDate(selectedDate)}
+                        useYearSelect={true}
                         onChange={([date]) => setSelectedDate(date ? format(date, 'yyyy-MM-dd') : '')}
                         options={{
                           locale: isAr ? Arabic : undefined,
@@ -617,31 +602,57 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, doc
                     </div>
                   </div>
 
-                  <div className="flex flex-col gap-2">
-                    <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.end_time', T)} <span className="text-xs font-normal text-muted-foreground mx-1">{isAr ? "(اختياري)" : "(optional)"}</span></label>
-                    <div className="relative group">
-                      <TimePicker
-                        value={selectedEndTime}
-                        onChange={setSelectedEndTime}
-                        className={cn("w-full h-12 bg-input-background justify-center xs:justify-end border border-border rounded-xl transition-all outline-none focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10", isAr ? "text-right" : "text-left")}
-                      />
+                  {!selectedAppointmentType && (
+                    <div className="flex flex-col gap-2">
+                      <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.end_time', T)} <span className="text-xs font-normal text-muted-foreground mx-1">{isAr ? "(اختياري)" : "(optional)"}</span></label>
+                      <div className="relative group">
+                        <TimePicker
+                          value={selectedEndTime}
+                          onChange={setSelectedEndTime}
+                          className={cn("w-full h-12 bg-input-background justify-center xs:justify-end border border-border rounded-xl transition-all outline-none focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10", isAr ? "text-right" : "text-left")}
+                        />
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   <div className="flex flex-col gap-2 col-span-1 md:col-span-2">
                     <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.appointment_type', T)} <span className="text-xs font-normal text-muted-foreground mx-1">{isAr ? "(اختياري)" : "(optional)"}</span></label>
-                    <Select value={selectedAppointmentType} onValueChange={setSelectedAppointmentType}>
-                      <SelectTrigger className={cn("rounded-xl h-12 bg-input-background transition-all focus:ring-4 focus:ring-primary/10", (selectedAppointmentType) && "text-foreground font-bold")}>
-                        <SelectValue placeholder={t('dialog.select_type', T)} />
-                      </SelectTrigger>
-                      <SelectContent className={cn("rounded-xl z-600", isAr ? "text-right" : "text-left")} >
-                        {appointmentTypesList.map((type) => (
-                          <SelectItem key={type.uuid} value={type.uuid}>
-                            {type.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1">
+                        <Select value={selectedAppointmentType} onValueChange={setSelectedAppointmentType}>
+                          <SelectTrigger className={cn("rounded-xl h-12 bg-input-background transition-all focus:ring-4 focus:ring-primary/10 w-full", (selectedAppointmentType) && "text-foreground font-bold")}>
+                            <SelectValue placeholder={t('dialog.select_type', T)} />
+                          </SelectTrigger>
+                          <SelectContent className={cn("rounded-xl z-600", isAr ? "text-right" : "text-left")} >
+                            {appointmentTypesList.map((type) => (
+                              <SelectItem key={type.uuid} value={type.uuid}>
+                                {type.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      {selectedAppointmentType && (
+                        <button 
+                          type="button" 
+                          onClick={() => setSelectedAppointmentType("")}
+                          className="shrink-0 h-12 px-3 rounded-xl border border-destructive/20 text-destructive hover:bg-destructive/10 transition-colors flex items-center justify-center bg-input-background"
+                          title={isAr ? "إزالة نوع الموعد" : "Remove Appointment Type"}
+                        >
+                          <TbCancel className="size-5" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="mt-2 p-3 bg-blue-50/50 border border-blue-100 rounded-lg text-xs text-blue-800 space-y-1 col-span-1 md:col-span-2">
+                    <p className="font-semibold flex items-center gap-1"><AlertCircle className="size-3"/> {isAr ? 'كيفية حساب مدة الموعد:' : 'How appointment duration is calculated:'}</p>
+                    <ul className={cn("list-disc space-y-1 text-blue-700/80", isAr ? "pr-4" : "pl-4")}>
+                      <li>{isAr ? 'إذا تم اختيار نوع الموعد، يتم استخدام مدته (ويتم إخفاء وتجاهل وقت الانتهاء).' : 'If Appointment Type is selected, its duration is used (end time is ignored and hidden).'}</li>
+                      <li>{isAr ? 'إذا لم يتم اختيار نوع الموعد، يتم استخدام وقت الانتهاء.' : 'If no Appointment Type, End Time is used.'}</li>
+                      <li>{isAr ? 'إذا لم يتم تحديد وقت الانتهاء، يتم استخدام مدة كشفية الطبيب الافتراضية.' : 'If End Time is not set, Doctor Default Clinic Period is used.'}</li>
+                      <li>{isAr ? 'إذا لم يكن للطبيب مدة افتراضية، يتم استخدام المدة الافتراضية للعيادة.' : 'If no Doctor Default Period, Clinic Default Period is used.'}</li>
+                    </ul>
                   </div>
                 </div>
 
@@ -736,31 +747,57 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, doc
                     </div>
                   </div>
 
-                  <div className="flex flex-col gap-2">
-                    <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.end_time', T)} <span className="text-xs font-normal text-muted-foreground mx-1">{isAr ? "(اختياري)" : "(optional)"}</span></label>
-                    <div className="relative group">
-                      <TimePicker
-                        value={selectedEndTime}
-                        onChange={setSelectedEndTime}
-                        className={cn("w-full h-12 bg-input-background justify-center xs:justify-end border border-border rounded-xl transition-all outline-none focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10", isAr ? "text-right" : "text-left")}
-                      />
+                  {!selectedAppointmentType && (
+                    <div className="flex flex-col gap-2">
+                      <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.end_time', T)} <span className="text-xs font-normal text-muted-foreground mx-1">{isAr ? "(اختياري)" : "(optional)"}</span></label>
+                      <div className="relative group">
+                        <TimePicker
+                          value={selectedEndTime}
+                          onChange={setSelectedEndTime}
+                          className={cn("w-full h-12 bg-input-background justify-center xs:justify-end border border-border rounded-xl transition-all outline-none focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10", isAr ? "text-right" : "text-left")}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex flex-col gap-2 col-span-1 md:col-span-2">
+                    <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.appointment_type', T)} <span className="text-xs font-normal text-muted-foreground mx-1">{isAr ? "(اختياري)" : "(optional)"}</span></label>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1">
+                        <Select value={selectedAppointmentType} onValueChange={setSelectedAppointmentType}>
+                          <SelectTrigger className={cn("rounded-xl h-12 bg-input-background transition-all focus:ring-4 focus:ring-primary/10 w-full", (selectedAppointmentType) && "text-foreground font-bold")}>
+                            <SelectValue placeholder={t('dialog.select_type', T)} />
+                          </SelectTrigger>
+                          <SelectContent className={cn("rounded-xl z-600", isAr ? "text-right" : "text-left")} >
+                            {appointmentTypesList.map((type) => (
+                              <SelectItem key={type.uuid} value={type.uuid}>
+                                {type.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      {selectedAppointmentType && (
+                        <button 
+                          type="button" 
+                          onClick={() => setSelectedAppointmentType("")}
+                          className="shrink-0 h-12 px-3 rounded-xl border border-destructive/20 text-destructive hover:bg-destructive/10 transition-colors flex items-center justify-center bg-input-background"
+                          title={isAr ? "إزالة نوع الموعد" : "Remove Appointment Type"}
+                        >
+                          <TbCancel className="size-5" />
+                        </button>
+                      )}
                     </div>
                   </div>
 
-                  <div className="flex flex-col gap-2 col-span-1">
-                    <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.appointment_type', T)} <span className="text-xs font-normal text-muted-foreground mx-1">{isAr ? "(اختياري)" : "(optional)"}</span></label>
-                    <Select value={selectedAppointmentType} onValueChange={setSelectedAppointmentType}>
-                      <SelectTrigger className={cn("rounded-xl h-12 bg-input-background transition-all focus:ring-4 focus:ring-primary/10", (selectedAppointmentType) && "text-foreground font-bold")}>
-                        <SelectValue placeholder={t('dialog.select_type', T)} />
-                      </SelectTrigger>
-                      <SelectContent className={cn("rounded-xl z-600", isAr ? "text-right" : "text-left")} >
-                        {appointmentTypesList.map((type) => (
-                          <SelectItem key={type.uuid} value={type.uuid}>
-                            {type.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                  <div className="mt-2 p-3 bg-blue-50/50 border border-blue-100 rounded-lg text-xs text-blue-800 space-y-1 col-span-1 md:col-span-2">
+                    <p className="font-semibold flex items-center gap-1"><AlertCircle className="size-3"/> {isAr ? 'كيفية حساب مدة الموعد:' : 'How appointment duration is calculated:'}</p>
+                    <ul className={cn("list-disc space-y-1 text-blue-700/80", isAr ? "pr-4" : "pl-4")}>
+                      <li>{isAr ? 'إذا تم اختيار نوع الموعد، يتم استخدام مدته (ويتم إخفاء وتجاهل وقت الانتهاء).' : 'If Appointment Type is selected, its duration is used (end time is ignored and hidden).'}</li>
+                      <li>{isAr ? 'إذا لم يتم اختيار نوع الموعد، يتم استخدام وقت الانتهاء.' : 'If no Appointment Type, End Time is used.'}</li>
+                      <li>{isAr ? 'إذا لم يتم تحديد وقت الانتهاء، يتم استخدام مدة كشفية الطبيب الافتراضية.' : 'If End Time is not set, Doctor Default Clinic Period is used.'}</li>
+                      <li>{isAr ? 'إذا لم يكن للطبيب مدة افتراضية، يتم استخدام المدة الافتراضية للعيادة.' : 'If no Doctor Default Period, Clinic Default Period is used.'}</li>
+                    </ul>
                   </div>
 
                   {mode !== 'add' && (

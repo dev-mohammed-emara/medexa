@@ -26,6 +26,7 @@ import { useBroadcast } from '../../hooks/useBroadcast';
 import { format } from 'date-fns';
 import { getCookie } from '../../utils/cookie';
 import { apiFetch } from '../../utils/apiFetch';
+import { getErrorMessage } from '../../utils/error';
 
 interface AddOperationModalProps {
   isOpen: boolean;
@@ -164,7 +165,7 @@ const AddOperationModal = ({ isOpen, onClose, onSuccess, mode = 'add', transacti
         let errMsg = 'Failed to add transaction';
         try {
           const errData = await response.json();
-          errMsg = errData.message || errData.error || errMsg;
+          errMsg = getErrorMessage(errData, errMsg);
         } catch (e) { /* ignore */ }
         setError(errMsg);
         window.showToast?.(errMsg, 'error');
@@ -214,7 +215,7 @@ const AddOperationModal = ({ isOpen, onClose, onSuccess, mode = 'add', transacti
         let errMsg = 'Failed to edit transaction';
         try {
           const errData = await response.json();
-          errMsg = errData.message || errData.error || errMsg;
+          errMsg = getErrorMessage(errData, errMsg);
         } catch (e) { /* ignore */ }
         setError(errMsg);
         window.showToast?.(errMsg, 'error');

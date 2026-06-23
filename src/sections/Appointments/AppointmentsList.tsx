@@ -15,7 +15,8 @@ import {
   subMonths
 } from 'date-fns';
 import { ar } from 'date-fns/locale';
-import { ChevronRight, ChevronLeft, Plus, Clock, User, Stethoscope, Eye, SquarePen, X, Smartphone, MoveHorizontal, Check, FileText } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Plus, Clock, User, Stethoscope, Eye, SquarePen, X, Smartphone, MoveHorizontal, Check, FileText, AlertCircle } from 'lucide-react';
+import { getErrorMessage } from '../../utils/error';
 import { FaCalendarAlt } from 'react-icons/fa';
 import { TbCancel } from 'react-icons/tb';
 import { useEffect, useRef, useState, useCallback } from 'react';
@@ -76,7 +77,6 @@ interface MedicalRecordData {
   treatmentPlan: string;
   note: string;
   amount: number;
-  transactionNote: string;
 }
 
 
@@ -110,19 +110,11 @@ const AppointmentsList = () => {
         if (res.content && res.content.length > 0) {
           setDoctorsList(res.content);
         } else {
-          setDoctorsList([
-            { uuid: '33c044ef-e69e-4dbb-839d-402f06ad0201', user: { firstName: 'Ahmad', surName: '', lastName: 'Masri', email: '', phoneNumber: '', gender: 'MALE', dateOfBirth: '1990-01-01', permissions: [] } },
-            { uuid: 'doctor-sami-uuid', user: { firstName: 'Sami', surName: '', lastName: 'Sami', email: '', phoneNumber: '', gender: 'MALE', dateOfBirth: '1990-01-01', permissions: [] } },
-            { uuid: 'doctor-layla-uuid', user: { firstName: 'Layla', surName: '', lastName: 'Layla', email: '', phoneNumber: '', gender: 'MALE', dateOfBirth: '1990-01-01', permissions: [] } }
-          ]);
+          setDoctorsList([]);
         }
       } catch (err) {
         console.error('Failed to load doctors in list:', err);
-        setDoctorsList([
-          { uuid: '33c044ef-e69e-4dbb-839d-402f06ad0201', user: { firstName: 'Ahmad', surName: '', lastName: 'Masri', email: '', phoneNumber: '', gender: 'MALE', dateOfBirth: '1990-01-01', permissions: [] } },
-          { uuid: 'doctor-sami-uuid', user: { firstName: 'Sami', surName: '', lastName: 'Sami', email: '', phoneNumber: '', gender: 'MALE', dateOfBirth: '1990-01-01', permissions: [] } },
-          { uuid: 'doctor-layla-uuid', user: { firstName: 'Layla', surName: '', lastName: 'Layla', email: '', phoneNumber: '', gender: 'MALE', dateOfBirth: '1990-01-01', permissions: [] } }
-        ]);
+        setDoctorsList([]);
       }
     };
     loadDoctors();
@@ -209,6 +201,7 @@ const AppointmentsList = () => {
   };
 
   // Dialog States
+  const [dragError, setDragError] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [dialogMode, setDialogMode] = useState<'add' | 'edit' | 'view'>('add');
   const [currentAppointment, setCurrentAppointment] = useState<Appointment | null>(null);
@@ -246,8 +239,7 @@ const AppointmentsList = () => {
     diagnosis: '',
     treatmentPlan: '',
     note: '',
-    amount: 0,
-    transactionNote: ''
+    amount: 0
   });
 
   // Fetch pending appointments from calendar for dropdown list
@@ -544,8 +536,7 @@ const AppointmentsList = () => {
       diagnosis: '',
       treatmentPlan: '',
       note: '',
-      amount: 0,
-      transactionNote: ''
+      amount: 0
     });
     setPatientName('');
     setDoctorName('');
@@ -575,8 +566,7 @@ const AppointmentsList = () => {
             diagnosis: record.diagnosis || '',
             treatmentPlan: record.treatmentPlan || '',
             note: record.note || '',
-            amount: record.amount || 0,
-            transactionNote: record.transactionNote || ''
+            amount: record.amount || 0
           });
           setPatientName(record.patientName || app.patientName || '');
           setDoctorName(record.doctorName || app.doctorName || '');
@@ -648,7 +638,7 @@ const AppointmentsList = () => {
         let errMsg = isEdit ? 'Failed to update medical record' : 'Failed to submit medical record';
         try {
           const errData = await response.json();
-          errMsg = errData.message || errData.error || errMsg;
+          errMsg = getErrorMessage(errData, errMsg);
         } catch (e) { }
         window.showToast?.(errMsg, 'error');
       }
@@ -721,6 +711,7 @@ const AppointmentsList = () => {
     emptyImg.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
     e.dataTransfer.setDragImage(emptyImg, 0, 0);
 
+    setDragError(null);
     setDraggedApp(app);
     e.dataTransfer.setData('appId', app.id.toString());
     e.dataTransfer.effectAllowed = 'move';
@@ -777,13 +768,16 @@ const AppointmentsList = () => {
         let errMsg = 'Failed to move appointment';
         try {
           const errData = await putRes.json();
-          errMsg = errData.message || errData.error || errMsg;
+          errMsg = getErrorMessage(errData, errMsg);
         } catch (e) { }
         window.showToast?.(errMsg, 'error');
+        setDragError(errMsg);
       }
     } catch (err) {
       console.error('Error updating appointment date:', err);
-      window.showToast?.(isAr ? 'خطأ في الاتصال بالخادم' : 'Server connection error', 'error');
+      const msg = isAr ? 'خطأ في الاتصال بالخادم' : 'Server connection error';
+      window.showToast?.(msg, 'error');
+      setDragError(msg);
     }
   };
 
@@ -794,7 +788,9 @@ const AppointmentsList = () => {
 
     if (app) {
       if (isSameDay(app.date, newDate)) {
-        window.showToast?.(isAr ? 'الموعد موجود بالفعل في هذا اليوم' : 'Appointment is already on this day', 'error');
+        const msg = isAr ? 'الموعد موجود بالفعل في هذا اليوم' : 'Appointment is already on this day';
+        window.showToast?.(msg, 'error');
+        setDragError(msg);
       } else {
         handleUpdateAppointmentDate(app, newDate);
       }
@@ -810,6 +806,7 @@ const AppointmentsList = () => {
   };
 
   const handleTouchStart = (e: React.TouchEvent, app: Appointment) => {
+    setDragError(null);
     setDraggedApp(app);
     setMousePos({ x: e.touches[0].clientX, y: e.touches[0].clientY });
   };
@@ -840,7 +837,9 @@ const AppointmentsList = () => {
 
     if (dropTargetDate) {
       if (isSameDay(draggedApp.date, dropTargetDate)) {
-        window.showToast?.(isAr ? 'الموعد موجود بالفعل في هذا اليوم' : 'Appointment is already on this day', 'error');
+        const msg = isAr ? 'الموعد موجود بالفعل في هذا اليوم' : 'Appointment is already on this day';
+        window.showToast?.(msg, 'error');
+        setDragError(msg);
       } else {
         handleUpdateAppointmentDate(draggedApp, dropTargetDate);
       }
@@ -969,11 +968,7 @@ const AppointmentsList = () => {
           let errMsg = 'Failed to cancel appointment';
           try {
             const errData = await response.json();
-            if (errData.details && Array.isArray(errData.details) && errData.details.length > 0 && errData.details[0].message) {
-              errMsg = errData.details[0].message;
-            } else {
-              errMsg = errData.message || errData.error || errMsg;
-            }
+            errMsg = getErrorMessage(errData, errMsg);
           } catch (e) { }
           window.showToast?.(errMsg, 'error');
         }
@@ -1050,6 +1045,19 @@ const AppointmentsList = () => {
           </Button>
         </div>
       </header>
+
+      {/* Drag & Drop Error Alert */}
+      {dragError && (
+        <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded-xl flex items-center justify-between gap-3 animate-fadeDown">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="size-5 shrink-0" />
+            <p className="text-sm font-bold">{dragError}</p>
+          </div>
+          <button onClick={() => setDragError(null)} className="opacity-70 hover:opacity-100 transition-opacity">
+            <X className="size-4" />
+          </button>
+        </div>
+      )}
 
       {/* Calendar Grid Container */}
       <section className={cn("flex justify-between flex-col lg:flex-row items-start", selectedDate ? "gap-6" : "gap-0")}>
@@ -1173,7 +1181,7 @@ const AppointmentsList = () => {
 
                         <div className="space-y-1 flex-1">
                           {dayAppointments.slice(0, 2).map((app) => {
-                            const config = statusConfig[app.status] || statusConfig['pending'];
+                            const config = statusConfig[app.status?.toLowerCase()] || statusConfig['pending'];
                             return (
                               <div
                                 key={app.id}
@@ -1261,7 +1269,7 @@ const AppointmentsList = () => {
                       appointments
                         .filter(app => isSameDay(app.date, selectedDate || lastSelectedDate!))
                         .map((app) => {
-                          const config = statusConfig[app.status] || statusConfig['pending'];
+                          const config = statusConfig[app.status?.toLowerCase()] || statusConfig['pending'];
 
                           return (
                             <article
@@ -1786,7 +1794,7 @@ const AppointmentsList = () => {
             </div>
 
             {/* Treatment Plan */}
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2 col-span-1 md:col-span-2">
               <label className="text-sm font-semibold text-foreground/80 pr-1 pl-1">
                 {isAr ? 'خطة العلاج' : 'Treatment Plan'} <span className="text-destructive">*</span>
               </label>
@@ -1803,23 +1811,6 @@ const AppointmentsList = () => {
               />
             </div>
 
-            {/* Transaction Note */}
-            <div className="flex flex-col gap-2">
-              <label className="text-sm font-semibold text-foreground/80 pr-1 pl-1">
-                {isAr ? 'ملاحظات المعاملة' : 'Transaction Note'} <span className="text-xs font-normal text-muted-foreground mx-1">{isAr ? "(اختياري)" : "(optional)"}</span>
-              </label>
-              <textarea
-                disabled={medicalRecordModalMode === 'view'}
-                value={medicalRecordData.transactionNote}
-                onChange={(e) => setMedicalRecordData(prev => ({ ...prev, transactionNote: e.target.value }))}
-                placeholder={isAr ? 'ملاحظات المعاملة الماليّة...' : 'Financial transaction notes...'}
-                className={cn(
-                  "w-full min-h-[100px] p-4 rounded-xl border border-border bg-input-background focus:ring-4 focus:ring-primary/10 transition-all outline-none font-medium text-sm resize-none",
-                  medicalRecordModalMode === 'view' ? "bg-slate-100 cursor-not-allowed text-muted-foreground" : "",
-                  isAr ? "text-right" : "text-left"
-                )}
-              />
-            </div>
 
             {/* Attachments Placeholder */}
             <div className="flex flex-col gap-2 col-span-1 md:col-span-2 pt-2 border-t border-border">
@@ -1849,9 +1840,9 @@ const AppointmentsList = () => {
           <article
             className={cn(
               "text-xs p-3 rounded-xl border-2 shadow-2xl backdrop-blur-sm",
-              statusConfig[draggedApp.status]?.bg || "bg-white",
-              statusConfig[draggedApp.status]?.border || "border-gray-200",
-              statusConfig[draggedApp.status]?.text || "text-foreground"
+              statusConfig[draggedApp.status?.toLowerCase()]?.bg || "bg-white",
+              statusConfig[draggedApp.status?.toLowerCase()]?.border || "border-gray-200",
+              statusConfig[draggedApp.status?.toLowerCase()]?.text || "text-foreground"
             )}
           >
             <div className="flex items-center gap-2 mb-1">

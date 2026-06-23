@@ -535,6 +535,7 @@ const RegisterForm = () => {
                 <DatePicker
                   name="dob"
                   backendField="dateOfBirth"
+                  useYearSelect={true}
                   required
                   value={formData.dob}
                   onChange={([date]) => {

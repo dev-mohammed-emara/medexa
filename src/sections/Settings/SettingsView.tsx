@@ -13,6 +13,8 @@ import { settingsTranslations } from '../../constants/settings';
 import { navTranslations } from '../../constants/nav';
 import { useExitAnimation } from '../../hooks/useExitAnimation';
 import { Switch } from '../../components/ui/Switch';
+
+import { getErrorMessage } from '../../utils/error';
 import { cn } from '../../utils/cn';
 import { getCookie } from '../../utils/cookie';
 import { apiFetch } from '../../utils/apiFetch';
@@ -295,7 +297,7 @@ const SettingsView = ({ hideHeader, className }: SettingsViewProps = {}) => {
         let errMsg = 'Failed to save settings';
         try {
           const errData = await response.json();
-          errMsg = errData.message || errData.error || errMsg;
+          errMsg = getErrorMessage(errData, errMsg);
         } catch (e) { /* ignore */ }
         setAppointmentPeriodError(errMsg);
         window.showToast(errMsg, 'error');
@@ -429,12 +431,10 @@ const SettingsView = ({ hideHeader, className }: SettingsViewProps = {}) => {
                 document.getElementById(`schedule-error-${firstDay}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
               }, 100);
             } else {
-              errMsg = errData.message || errData.error || errMsg;
+              errMsg = getErrorMessage(errData, errMsg);
             }
-          } else if (errData.message && errData.message !== "validation failed") {
-            errMsg = errData.message;
           } else {
-            errMsg = errData.message || errData.error || errMsg;
+            errMsg = getErrorMessage(errData, errMsg);
           }
         } catch (e) { /* ignore */ }
         window.showToast(errMsg, 'error');

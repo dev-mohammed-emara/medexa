@@ -32,6 +32,8 @@ import {
   User,
   X,
 } from 'lucide-react';
+
+import { getErrorMessage } from '../../utils/error';
 import { useEffect, useRef, useState } from 'react';
 import { FaCalendarAlt } from 'react-icons/fa';
 import { useSearchParams } from 'react-router-dom';
@@ -439,7 +441,7 @@ const ProfileView = () => {
         let errMsg = 'Failed to assign insurances';
         try {
           const errData = await response.json();
-          errMsg = errData.message || errData.error || errMsg;
+          errMsg = getErrorMessage(errData, errMsg);
         } catch (e) { /* ignore */ }
         window.showToast(errMsg, 'error');
       }
@@ -702,12 +704,10 @@ const ProfileView = () => {
                 document.getElementById(`schedule-error-${firstDay}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
               }, 100);
             } else {
-              errMsg = errData.message || errData.error || errMsg;
+              errMsg = getErrorMessage(errData, errMsg);
             }
-          } else if (errData.message && errData.message !== "validation failed") {
-            errMsg = errData.message;
           } else {
-            errMsg = errData.message || errData.error || errMsg;
+            errMsg = getErrorMessage(errData, errMsg);
           }
         } catch (e) { /* ignore */ }
         window.showToast(errMsg, 'error');
@@ -978,6 +978,7 @@ const ProfileView = () => {
                         <div className="relative group flex items-center justify-between h-11 bg-white border border-border rounded-xl px-4 transition-all focus-within:ring-4 focus-within:ring-primary/10">
                           <DatePicker
                             value={personalInfo.dateOfBirth ? new Date(personalInfo.dateOfBirth) : new Date()}
+                            useYearSelect={true}
                             onChange={([d]: Date[]) => setPersonalInfo({ ...personalInfo, dateOfBirth: format(d, 'yyyy-MM-dd') })}
                             options={{
                               dateFormat: 'Y-m-d',

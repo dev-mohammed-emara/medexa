@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from './select';
+import { getErrorMessage } from '../../utils/error';
 
 const SupportTicket = () => {
   const { isAr } = useLanguage();
@@ -87,7 +88,7 @@ const SupportTicket = () => {
         let errMsg = 'Failed to submit support ticket';
         try {
           const errData = await response.json();
-          errMsg = errData.message || errData.error || errMsg;
+          errMsg = getErrorMessage(errData, errMsg);
         } catch (e) {}
         window.showToast?.(errMsg, 'error');
       }

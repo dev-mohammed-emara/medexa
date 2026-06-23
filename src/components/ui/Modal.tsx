@@ -109,7 +109,7 @@ const Modal = ({
         data-slot="dialog-overlay"
         aria-hidden="true"
         className={cn(
-          "fixed inset-0 z-600 flex items-center justify-center p-4 bg-black/50",
+          "fixed inset-0 z-600 flex items-center justify-center p-4 backdrop-blur-[4px] bg-black/50",
           isClosing ? "animate-fadeOut" : "animate-fade"
         )}
         dir="rtl"
@@ -183,7 +183,7 @@ const Modal = ({
           {footer && footer}
 
           {!hideFooter && (
-            <div className="p-6 pt-2 bg-white border-t border-border flex gap-3">
+            <div className="p-4 bg-white border-t border-border flex gap-3">
               <button
                 onClick={onConfirm}
                 disabled={isConfirmDisabled}

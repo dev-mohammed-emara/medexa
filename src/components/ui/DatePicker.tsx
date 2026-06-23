@@ -15,10 +15,11 @@ export interface DatePickerProps extends React.ComponentProps<typeof Flatpickr> 
   required?: boolean;
   hasBg?: boolean;
   backendField?: string | string[];
+  useYearSelect?: boolean;
 }
 
 export const DatePicker = React.forwardRef<any, DatePickerProps>(
-  ({ className, containerClassName, name, error, icon, required, hasBg = true, backendField, onChange, ...props }, ref) => {
+  ({ className, containerClassName, name, error, icon, required, hasBg = true, backendField, useYearSelect, onChange, ...props }, ref) => {
     const fieldsToCheck = [];
     if (name) fieldsToCheck.push(name);
     if (backendField) {
@@ -44,6 +45,75 @@ export const DatePicker = React.forwardRef<any, DatePickerProps>(
           onChange(dates, dateStr, instance);
         } else if (Array.isArray(onChange)) {
           onChange.forEach(fn => fn(dates, dateStr, instance));
+        }
+      }
+
+
+    };
+
+    const customOptions = {
+      ...props.options,
+      onReady: (selectedDates: Date[], dateStr: string, instance: any) => {
+        if (props.options?.onReady) {
+          if (Array.isArray(props.options.onReady)) {
+            props.options.onReady.forEach(fn => fn(selectedDates, dateStr, instance));
+          } else {
+            (props.options.onReady as any)(selectedDates, dateStr, instance);
+          }
+        }
+
+        if (useYearSelect) {
+          const yearContainer = instance.currentYearElement?.parentNode;
+          if (!yearContainer) return;
+
+          instance.currentYearElement.style.display = "none";
+          const arrows = yearContainer.querySelectorAll('.arrowUp, .arrowDown');
+          arrows.forEach((a: any) => a.style.display = "none");
+
+          const yearSelect = document.createElement("select");
+          yearSelect.className = "flatpickr-monthDropdown-months custom-year-select";
+          yearSelect.style.marginLeft = "10px";
+          yearSelect.style.marginRight = "10px";
+          yearSelect.style.width = "auto";
+          yearSelect.style.padding = "0 5px";
+          yearSelect.style.backgroundColor = "transparent";
+          yearSelect.style.cursor = "pointer";
+          yearSelect.style.fontWeight = "bold";
+
+          const currentYear = new Date().getFullYear();
+          let maxYear = currentYear;
+          let minYear = 1960;
+          
+          if (props.options?.maxDate !== "today") {
+            maxYear = currentYear + 10;
+          }
+          
+          for (let i = maxYear; i >= minYear; i--) {
+            const option = document.createElement("option");
+            option.value = String(i);
+            option.text = String(i);
+            if (i === instance.currentYear) option.selected = true;
+            yearSelect.appendChild(option);
+          }
+
+          yearSelect.addEventListener("change", (e) => {
+            instance.changeYear(Number((e.target as HTMLSelectElement).value));
+          });
+
+          instance.customYearSelect = yearSelect;
+          yearContainer.appendChild(yearSelect);
+        }
+      },
+      onYearChange: (selectedDates: Date[], dateStr: string, instance: any) => {
+        if (props.options?.onYearChange) {
+           if (Array.isArray(props.options.onYearChange)) {
+            props.options.onYearChange.forEach(fn => fn(selectedDates, dateStr, instance));
+          } else {
+            (props.options.onYearChange as any)(selectedDates, dateStr, instance);
+          }
+        }
+        if (instance.customYearSelect) {
+          instance.customYearSelect.value = String(instance.currentYear);
         }
       }
     };
@@ -84,6 +154,7 @@ export const DatePicker = React.forwardRef<any, DatePickerProps>(
               className
             )}
             {...props}
+            options={customOptions}
             value={props.value ? (typeof props.value === 'string' ? new Date(props.value) : props.value) : ''}
           />
           {icon && (

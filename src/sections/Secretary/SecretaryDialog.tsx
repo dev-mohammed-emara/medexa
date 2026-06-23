@@ -382,6 +382,7 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
                   <DatePicker
                     name="dateOfBirth"
                     required
+                    useYearSelect={true}
                     value={selectedDob}
                     onChange={([date]) => setSelectedDob(date ? date.toISOString().split('T')[0] : '')}
                     disabled={mode === 'view'}

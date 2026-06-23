@@ -1,5 +1,6 @@
+import React, { useEffect, useState } from 'react';
 import { AlertCircle, CheckCircle2, Info, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { getApiErrorMessages } from '../../utils/error';
 
 export type ToastType = 'success' | 'error' | 'info';
 
@@ -107,44 +108,30 @@ export const ToastContainer = () => {
 
   useEffect(() => {
     window.showToast = (message: any, type: ToastType = 'success') => {
-      let finalMessage = '';
-      if (typeof message === 'string') {
-        try {
-          const parsed = JSON.parse(message);
-          if (parsed && parsed.details && Array.isArray(parsed.details) && parsed.details.length > 0 && parsed.details[0].message) {
-            finalMessage = parsed.details[0].message;
-          } else if (parsed && (parsed.message || parsed.error)) {
-            finalMessage = parsed.message || parsed.error;
-          } else {
-            finalMessage = message;
+      const errorMessages = getApiErrorMessages(message);
+      
+      errorMessages.forEach(finalMessage => {
+        setToasts(prev => {
+          const now = Date.now();
+          const id = now + Math.random();
+          
+          let batchId = now;
+          if (prev.length > 0) {
+            const lastToast = prev[prev.length - 1];
+            // If fired within 100ms of the last toast, group them in the same batch
+            if (now - lastToast.id < 100) {
+              batchId = lastToast.batchId;
+            }
           }
-        } catch (e) {
-          finalMessage = message;
-        }
-      } else if (message && typeof message === 'object') {
-        if (message.details && Array.isArray(message.details) && message.details.length > 0 && message.details[0].message) {
-          finalMessage = message.details[0].message;
-        } else {
-          finalMessage = message.message || message.error || String(message);
-        }
-      } else {
-        finalMessage = String(message);
-      }
+          
+          // Prevent duplicate identical toasts fired very closely
+          const isDuplicate = prev.some(t => t.message === finalMessage && t.type === type && now - t.id < 1000);
+          if (isDuplicate) {
+            return prev;
+          }
 
-      setToasts(prev => {
-        const now = Date.now();
-        const id = now + Math.random();
-        
-        let batchId = now;
-        if (prev.length > 0) {
-          const lastToast = prev[prev.length - 1];
-          // If fired within 100ms of the last toast, group them in the same batch
-          if (now - lastToast.id < 100) {
-            batchId = lastToast.batchId;
-          }
-        }
-        
-        return [...prev, { id, message: finalMessage, type, batchId }];
+          return [...prev, { id, message: finalMessage, type, batchId }];
+        });
       });
     };
   }, []);

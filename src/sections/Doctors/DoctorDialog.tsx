@@ -339,26 +339,27 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
                         </div>
                       )}
                     </div>
-                <div className="flex flex-col gap-2">
-                  <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.dob', T)}</label>
-                  <DatePicker
-                    name="dateOfBirth"
-                    required
-                    value={selectedDob}
-                    onChange={([date]) => setSelectedDob(date ? date.toISOString().split('T')[0] : '')}
-                    options={{
-                      locale: isAr ? Arabic : undefined,
-                      dateFormat: "d F Y",
-                      disableMobile: true,
-                      maxDate: "today",
-                      formatDate: (date: Date) => format(date, "d MMMM yyyy", { locale: currentLocale })
-                    }}
-                    placeholder={t('dialog.select_date', T)}
-                    icon={<FaCalendarAlt className="size-4" />}
-                    className={cn(isAr ? "text-right" : "text-left")}
-                  />
-                </div>
-              </div>
+                    <div className="flex flex-col gap-2">
+                      <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.dob', T)}</label>
+                      <DatePicker
+                        name="dateOfBirth"
+                        required
+                        useYearSelect={true}
+                        value={selectedDob}
+                        onChange={([date]) => setSelectedDob(date ? date.toISOString().split('T')[0] : '')}
+                        options={{
+                          locale: isAr ? Arabic : undefined,
+                          dateFormat: "d F Y",
+                          disableMobile: true,
+                          maxDate: "today",
+                          formatDate: (date: Date) => format(date, "d MMMM yyyy", { locale: currentLocale })
+                        }}
+                        placeholder={t('dialog.select_date', T)}
+                        icon={<FaCalendarAlt className="size-4" />}
+                        className={cn(isAr ? "text-right" : "text-left")}
+                      />
+                    </div>
+                  </div>
                 );
               })()}
 
@@ -420,7 +421,7 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
                 />
               </div>
 
-             
+
             </form>
           </ScrollLockWrapper>
 
