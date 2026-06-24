@@ -1,7 +1,6 @@
-import { format } from 'date-fns'
-import { ar } from 'date-fns/locale'
-import "flatpickr/dist/flatpickr.css"
-import { Arabic } from "flatpickr/dist/l10n/ar.js"
+
+
+
 import { Check, Mail, Phone, Plus, Save, User, X } from 'lucide-react'
 import { FaCalendarAlt } from 'react-icons/fa'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -21,7 +20,7 @@ import Portal from '../../components/ui/Portal'
 import { useLanguage } from '../../contexts/LanguageContext'
 import { secretaryTranslations } from '../../constants/translations/secretary'
 import { useBroadcast } from '../../hooks/useBroadcast'
-import { enUS } from 'date-fns/locale'
+
 import { createSecretary, updateSecretary } from '../../api/secretaryApi'
 import type { ApiSecretary } from '../../api/secretaryApi'
 import { formatPhoneForPayload, formatPhoneForDisplay } from '../../utils/phone'
@@ -39,7 +38,7 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
   const { isAr, t } = useLanguage();
   const { broadcast } = useBroadcast();
   const T = secretaryTranslations;
-  const currentLocale = isAr ? ar : enUS;
+
   const overlayRef = useRef<HTMLDivElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -386,13 +385,7 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
                     value={selectedDob}
                     onChange={([date]) => setSelectedDob(date ? date.toISOString().split('T')[0] : '')}
                     disabled={mode === 'view'}
-                    options={{
-                      locale: isAr ? Arabic : undefined,
-                      dateFormat: "d F Y",
-                      disableMobile: true,
-                      maxDate: "today",
-                      formatDate: (date: Date) => format(date, "d MMMM yyyy", { locale: currentLocale })
-                    }}
+                    maxDate={new Date()}
                     placeholder={t('select_date', T)}
                     icon={<FaCalendarAlt className="size-4" />}
                     className={cn(isAr ? "text-right" : "text-left", mode === "view" && "opacity-50 pointer-events-none")}

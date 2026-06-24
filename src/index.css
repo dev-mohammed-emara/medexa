@@ -135,12 +135,7 @@ html[dir='rtl']{
   }
 }
 
-html[dir='ltr']{
-  .flatpickr-input{
-    text-align: right !important;
-  }
 
-}
 
 @layer base {
   html, body {
@@ -204,6 +199,18 @@ html[dir='ltr']{
     border-top-color: #3FB8AF !important;
     border-left-color: #3FB8AF !important;
   }
+
+  .css-kqo2sj-MuiPopper-root-MuiPickerPopper-root{
+    z-index: 1000 !important;
+  }
+  .MuiFormControl-root.MuiPickersTextField-root{
+        display: flex !important;
+        justify-content: center;
+  }
+  .css-1nugax4-MuiPickersInputBase-root-MuiPickersInput-root::before{
+    border: none !important;
+  }
+ 
   input,
   textarea,
   select {
@@ -234,9 +241,7 @@ html[dir='ltr']{
   .no-pb {
     padding-bottom: 0 !important;
   }
-span.flatpickr-weekday{
-  background: transparent !important;
-}
+
   input,
   textarea,
   select {
@@ -248,6 +253,14 @@ span.flatpickr-weekday{
    {
     transform-origin: left !important;
   }
+  
+html[dir='rtl']{
+
+  input:focus::placeholder
+  {
+    transform-origin: right !important;
+  }
+}
   :not(.timePicker)::placeholder {
     transform-origin: var(--dir);
     transition: var(--transition);
@@ -570,74 +583,7 @@ input[type='checkbox']{
   }
 }
 
-/* Custom Flatpickr Styling */
-.flatpickr-calendar {
-  border-radius: 12px !important;
-  border: 1px solid var(--color-border) !important;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1) !important;
-  overflow: hidden;
-  padding: 0 !important;
-}
 
-.flatpickr-months {
-  background: linear-gradient(135deg, #3fb8af 0%, #109AA7 100%) !important;
-  padding: 10px 0 0 0 !important;
-}
-
-.flatpickr-month {
-  background: transparent !important;
-  height: 48px !important;
-}
-
-.flatpickr-current-month {
-  color: white !important;
-  padding: 0 !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-}
-
-.flatpickr-monthDropdown-months,
-.numInput.cur-year {
-  font-weight: 700 !important;
-  color: white !important;
-  background: transparent !important;
-}
-
-.flatpickr-monthDropdown-month {
-  background: white !important;
-  color: var(--color-foreground) !important;
-}
-
-.flatpickr-next-month,
-.flatpickr-prev-month {
-  color: white !important;
-  fill: white !important;
-  padding: 14px !important;
-  top: 0 !important;
-}
-
-.flatpickr-next-month svg,
-.flatpickr-prev-month svg {
-  fill: white !important;
-}
-
-.flatpickr-weekdays {
-  padding: 4px 0 10px 0 !important;
-  background: linear-gradient(135deg, #3fb8af 0%, #109AA7 100%) !important;
-}
-
-span.flatpickr-weekday {
-  color: white !important;
-  font-weight: 600 !important;
-  opacity: 0.9;
-}
-
-.flatpickr-day.selected {
-  background: var(--color-secondary) !important;
-  border-color: var(--color-secondary) !important;
-  color: white !important;
-}
 
 @keyframes fadeRight {
   from { opacity: 0; transform: translateX(-30px); }

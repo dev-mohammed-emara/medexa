@@ -1,7 +1,6 @@
 import { format } from 'date-fns';
-import { ar } from 'date-fns/locale';
-import "flatpickr/dist/flatpickr.css";
-import { Arabic } from "flatpickr/dist/l10n/ar.js";
+
+
 import { Clock, DollarSign, Phone, Plus, Stethoscope, User, X, Check, AlertCircle } from 'lucide-react';
 import { TbCancel } from 'react-icons/tb';
 import { FaCalendarAlt } from 'react-icons/fa';
@@ -22,7 +21,7 @@ import TimePicker from '../../components/ui/TimePicker';
 import { cn } from '../../utils/cn';
 import { statusConfig } from './constants';
 import Portal from '../../components/ui/Portal';
-import { enUS } from 'date-fns/locale';
+
 
 import { fetchDoctors } from '../../api/doctorApi';
 import { fetchPatients } from '../../api/patientApi';
@@ -66,7 +65,7 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, doc
   const { user } = useAuth();
   const hasManageMedicalRecords = user?.permissions?.includes('MANAGE_MEDICAL_RECORDS') || user?.role === 'ROLE_CLINIC_OWNER' || user?.role === 'ROLE_DOCTOR' || user?.roles?.includes('ROLE_DOCTOR');
   const T = appointmentsTranslations;
-  const currentLocale = isAr ? ar : enUS;
+
   const overlayRef = useRef<HTMLDivElement>(null);  
   const [isClosing, setIsClosing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -578,12 +577,6 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, doc
                         value={parseLocalDate(selectedDate)}
                         useYearSelect={true}
                         onChange={([date]) => setSelectedDate(date ? format(date, 'yyyy-MM-dd') : '')}
-                        options={{
-                          locale: isAr ? Arabic : undefined,
-                          dateFormat: "d F Y",
-                          disableMobile: true,
-                          formatDate: (date: Date) => format(date, "d MMMM yyyy", { locale: currentLocale })
-                        }}
                         placeholder={t('dialog.select_date', T)}
                         className={cn("flex-1 bg-transparent border-none outline-none font-bold h-full text-base md:text-sm", isAr ? "text-right" : "text-left")}
                       />
@@ -723,12 +716,6 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, doc
                       <DatePicker
                         value={parseLocalDate(selectedDate)}
                         onChange={([date]) => setSelectedDate(date ? format(date, 'yyyy-MM-dd') : '')}
-                        options={{
-                          locale: isAr ? Arabic : undefined,
-                          dateFormat: "d F Y",
-                          disableMobile: true,
-                          formatDate: (date: Date) => format(date, "d MMMM yyyy", { locale: currentLocale })
-                        }}
                         placeholder={t('dialog.select_date', T)}
                         className={cn("flex-1 bg-transparent border-none outline-none font-bold h-full text-base md:text-sm", isAr ? "text-right" : "text-left")}
                       />

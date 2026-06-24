@@ -1,7 +1,6 @@
-import { format } from 'date-fns';
-import { ar } from 'date-fns/locale';
-import "flatpickr/dist/flatpickr.css";
-import { Arabic } from "flatpickr/dist/l10n/ar.js";
+
+
+
 import { FileText, MapPin, Phone, Plus, Save, User, X, AlertCircle } from 'lucide-react';
 import { FaCalendarAlt } from 'react-icons/fa';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -21,7 +20,7 @@ import { cn } from '../../utils/cn';
 import Portal from '../../components/ui/Portal';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { patientsTranslations } from '../../constants/translations/patients';
-import { enUS } from 'date-fns/locale';
+
 import { createPatient, updatePatient } from '../../api/patientApi';
 import type { ApiPatient } from '../../api/patientApi';
 
@@ -39,7 +38,7 @@ const PatientsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Patie
   const { t, isAr } = useLanguage();
   const { broadcast } = useBroadcast();
   const T = patientsTranslations;
-  const currentLocale = isAr ? ar : enUS;
+
   const overlayRef = useRef<HTMLDivElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -240,13 +239,7 @@ const PatientsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Patie
                   value={selectedDob}
                   useYearSelect={true}
                   onChange={([date]) => setSelectedDob(date ? date.toISOString().split('T')[0] : '')}
-                  options={{
-                    locale: isAr ? Arabic : undefined,
-                    dateFormat: "d F Y",
-                    disableMobile: true,
-                    maxDate: "today",
-                    formatDate: (date: Date) => format(date, "d MMMM yyyy", { locale: currentLocale })
-                  }}
+                  maxDate={new Date()}
                   placeholder={t('dialog.dob', T)}
                   icon={<FaCalendarAlt size={18} />}
                   className={cn(

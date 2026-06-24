@@ -1,11 +1,8 @@
-import { useMemo } from "react"
-import "flatpickr/dist/flatpickr.css"
-import { Arabic } from "flatpickr/dist/l10n/ar.js"
+
 import { DatePicker } from './DatePicker';
 import { FaCalendarAlt } from "react-icons/fa"
 import { useLanguage } from "../../contexts/LanguageContext"
 import { format } from 'date-fns'
-import { ar } from 'date-fns/locale'
 import { cn } from "../../utils/cn"
 
 interface DateFromToProps {
@@ -33,37 +30,15 @@ export const DateFromTo = ({
 
   // Safely parse yyyy-MM-dd string to local Date object to prevent timezone shifting
   const parseLocalDate = (dateStr: string) => {
-    if (!dateStr) return undefined
+    if (!dateStr) return null
     const parts = dateStr.split('-')
-    if (parts.length !== 3) return undefined
+    if (parts.length !== 3) return null
     const [year, month, day] = parts.map(Number)
     return new Date(year, month - 1, day)
   }
 
   const fromDateObj = parseLocalDate(fromDate)
   const toDateObj = parseLocalDate(toDate)
-
-  // Base configurations shared conceptually but returned as brand new objects
-  const sharedFormatters = useMemo(() => ({
-    locale: isAr ? Arabic : undefined,
-    dateFormat: "d F Y",
-    disableMobile: true,
-    formatDate: (date: Date) => {
-      return format(date, "d MMMM yyyy", { locale: isAr ? ar : undefined })
-    }
-  }), [isAr])
-
-  // Independent options for "From Date"
-  const fromDateOptions = useMemo(() => ({
-    ...sharedFormatters,
-    maxDate: toDateObj || "today" // Cannot select a start date later than the end date
-  }), [sharedFormatters, toDateObj])
-
-  // Independent options for "To Date"
-  const toDateOptions = useMemo(() => ({
-    ...sharedFormatters,
-    minDate: fromDateObj // Cannot select an end date earlier than the start date
-  }), [sharedFormatters, fromDateObj])
 
   return (
     <div className={cn("flex flex-wrap items-end gap-3", className)}>
@@ -74,14 +49,18 @@ export const DateFromTo = ({
         <div className="relative group flex items-center justify-between h-11 bg-white border border-border rounded-xl px-4 transition-all focus-within:ring-4 focus-within:ring-primary/10">
           <DatePicker
             key={`from-date-${fromDate}`} // Forces re-render on value update to sync min/max boundaries
-            id="from-date-flatpickr"
+            id="from-date-mui"
             value={fromDateObj}
-            onChange={([date]) => {
-              if (date) {
+            onChange={([date], dateStr) => {
+              if (dateStr) {
+                onFromDateChange(dateStr)
+              } else if (date) {
                 onFromDateChange(format(date, 'yyyy-MM-dd'))
+              } else {
+                onFromDateChange('')
               }
             }}
-            options={fromDateOptions}
+            maxDate={toDateObj || undefined}
             placeholder={isAr ? "اختر التاريخ" : "Select date"}
             className={cn(
               "flex-1 bg-transparent border-none outline-none text-sm font-bold h-full",
@@ -99,14 +78,18 @@ export const DateFromTo = ({
         <div className="relative group flex items-center justify-between h-11 bg-white border border-border rounded-xl px-4 transition-all focus-within:ring-4 focus-within:ring-primary/10">
           <DatePicker
             key={`to-date-${toDate}`} // Forces re-render on value update to sync min/max boundaries
-            id="to-date-flatpickr"
+            id="to-date-mui"
             value={toDateObj}
-            onChange={([date]) => {
-              if (date) {
+            onChange={([date], dateStr) => {
+              if (dateStr) {
+                onToDateChange(dateStr)
+              } else if (date) {
                 onToDateChange(format(date, 'yyyy-MM-dd'))
+              } else {
+                onToDateChange('')
               }
             }}
-            options={toDateOptions}
+            minDate={fromDateObj || undefined}
             placeholder={isAr ? "اختر التاريخ" : "Select date"}
             className={cn(
               "flex-1 bg-transparent border-none outline-none text-sm font-bold h-full",

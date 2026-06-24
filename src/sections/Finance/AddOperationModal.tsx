@@ -16,7 +16,7 @@ import {
 } from '../../components/ui/select';
 import Input from '../../components/ui/Input';
 import { DatePicker } from '../../components/ui/DatePicker';
-import { Arabic } from 'flatpickr/dist/l10n/ar.js';
+
 import { useLanguage } from '../../contexts/LanguageContext';
 import { financeTranslations } from '../../constants/translations/finance';
 import { cn } from '../../utils/cn';
@@ -353,12 +353,8 @@ const AddOperationModal = ({ isOpen, onClose, onSuccess, mode = 'add', transacti
                     <DatePicker
                       disabled={mode === 'view'}
                       value={date}
-                      onChange={([d]) => setDate(d)}
-                      options={{
-                        dateFormat: 'd F Y',
-                        locale: isAr ? Arabic : undefined,
-                        disableMobile: true
-                      }}
+                      onChange={([d]) => { if (d) setDate(d); }}
+                      maxDate={new Date()}
                       placeholder={isAr ? "اختر التاريخ" : "Select date"}
                       className={cn("flex-1 bg-transparent border-none outline-none text-sm font-bold h-full", isAr ? "text-right" : "text-left")}
                     />

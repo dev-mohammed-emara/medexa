@@ -15,6 +15,7 @@ import RoleProtectedRoute from './components/auth/RoleProtectedRoute'
 import Preloader from './components/transition/Preloader'
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext'
 import { PreloaderProvider, usePreloader } from './contexts/PreloaderContext'
+import { MuiProvider } from './contexts/MuiProvider'
 import AppointmentTypes from './pages/AppointmentTypes'
 import Appointments from './pages/Appointments'
 import Dashboard from './pages/Dashboard'
@@ -189,10 +190,12 @@ const App = () => {
       <PreloaderProvider>
         <SidebarProvider>
           <BroadcastProvider>
-            <AuthProvider>
-              <ToastContainer />
-              <AppRoutes />
-            </AuthProvider>
+            <MuiProvider>
+              <AuthProvider>
+                <ToastContainer />
+                <AppRoutes />
+              </AuthProvider>
+            </MuiProvider>
           </BroadcastProvider>
         </SidebarProvider>
       </PreloaderProvider>

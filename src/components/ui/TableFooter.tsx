@@ -115,7 +115,8 @@ const TableFooter = ({
             onValueChange={(value) => onPageChange(Number(value))}
             disabled={resolvedTotalPages <= 1}
           >
-            <SelectTrigger className="h-10 rounded-xl border-none bg-primary text-white px-4 shadow-lg shadow-primary/20 flex items-center justify-center gap-2 transition-transform active:scale-95 disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none font-bold">
+            {/* Added '[&_svg]:text-white' to force the dropdown chevron to be white */}
+            <SelectTrigger className="h-10 rounded-xl border-none bg-primary text-white px-4 shadow-lg shadow-primary/20 flex items-center justify-center gap-2 transition-transform active:scale-95 disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none font-bold [&_svg]:text-white">
               <SelectValue />
             </SelectTrigger>
             <SelectContent smallZ>

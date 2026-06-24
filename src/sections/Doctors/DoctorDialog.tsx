@@ -1,7 +1,6 @@
-import { format } from 'date-fns'
-import { ar } from 'date-fns/locale'
-import "flatpickr/dist/flatpickr.css"
-import { Arabic } from "flatpickr/dist/l10n/ar.js"
+
+
+
 import { Check, Mail, Phone, Plus, Printer, Save, User, X, AlertCircle } from 'lucide-react'
 import { FaCalendarAlt } from 'react-icons/fa'
 import { useCallback, useEffect, useRef, useState } from 'react'
@@ -20,7 +19,7 @@ import { cn } from '../../utils/cn'
 import Portal from '../../components/ui/Portal'
 import { useLanguage } from '../../contexts/LanguageContext'
 import { doctorsTranslations } from '../../constants/translations/doctors'
-import { enUS } from 'date-fns/locale'
+
 import { createDoctor, updateDoctor } from '../../api/doctorApi'
 import type { ApiDoctor } from '../../api/doctorApi'
 import { formatPhoneForPayload, formatPhoneForDisplay } from '../../utils/phone'
@@ -37,7 +36,7 @@ interface DoctorDialogProps {
 const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorDialogProps) => {
   const { isAr, t } = useLanguage();
   const T = doctorsTranslations;
-  const currentLocale = isAr ? ar : enUS;
+
   const overlayRef = useRef<HTMLDivElement>(null)
   const modalRef = useRef<HTMLDivElement>(null)
 
@@ -347,13 +346,7 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
                         useYearSelect={true}
                         value={selectedDob}
                         onChange={([date]) => setSelectedDob(date ? date.toISOString().split('T')[0] : '')}
-                        options={{
-                          locale: isAr ? Arabic : undefined,
-                          dateFormat: "d F Y",
-                          disableMobile: true,
-                          maxDate: "today",
-                          formatDate: (date: Date) => format(date, "d MMMM yyyy", { locale: currentLocale })
-                        }}
+                        maxDate={new Date()}
                         placeholder={t('dialog.select_date', T)}
                         icon={<FaCalendarAlt className="size-4" />}
                         className={cn(isAr ? "text-right" : "text-left")}
@@ -395,19 +388,7 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
                   </Select>
                 </div>
               </div>
-
-              {/* Permissions Section */}
-              <PermissionsFieldset
-                selectedPermissions={selectedPermissions}
-                onChange={setSelectedPermissions}
-                disabled={mode === 'view'}
-                titleAr={t('permissions', T)}
-                titleEn={t('permissions', T)}
-                descriptionAr={t('permissions_desc', T)}
-                descriptionEn={t('permissions_desc', T)}
-              />
-
-              <div className="flex flex-col gap-2">
+                  <div className="flex flex-col gap-2">
                 <label htmlFor={inputId('description')} className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.description', T)} <span className="text-xs font-normal text-muted-foreground mx-1">{isAr ? "(اختياري)" : "(optional)"}</span></label>
                 <textarea
                   id={inputId('description')}
@@ -420,6 +401,19 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
                   dir={isAr ? "rtl" : "ltr"}
                 />
               </div>
+
+              {/* Permissions Section */}
+              <PermissionsFieldset
+                selectedPermissions={selectedPermissions}
+                onChange={setSelectedPermissions}
+                disabled={mode === 'view'}
+                titleAr={t('permissions', T)}
+                titleEn={t('permissions', T)}
+                descriptionAr={t('permissions_desc', T)}
+                descriptionEn={t('permissions_desc', T)}
+              />
+
+          
 
 
             </form>

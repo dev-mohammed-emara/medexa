@@ -1,8 +1,5 @@
-import { format } from 'date-fns'
-import { ar } from 'date-fns/locale'
 import { Check, X } from 'lucide-react'
-import "flatpickr/dist/flatpickr.css"
-import { Arabic } from "flatpickr/dist/l10n/ar.js"
+
 import React, { useOptimistic, useState, useTransition } from 'react'
 import { DatePicker } from '../../components/ui/DatePicker';
 import { FaCalendarAlt } from "react-icons/fa"
@@ -541,15 +538,7 @@ const RegisterForm = () => {
                   onChange={([date]) => {
                     setFormData((prev) => ({ ...prev, dob: date ? date.toISOString().split('T')[0] : '' }))
                   }}
-                  options={{
-                    locale: isAr ? Arabic : undefined,
-                    dateFormat: "d F Y",
-                    disableMobile: true,
-                    maxDate: "today",
-                    formatDate: (date: Date) => {
-                      return format(date, "yyyy-MMMM-dd", { locale: isAr ? ar : undefined });
-                    }
-                  }}
+                  maxDate={new Date()}
                   placeholder="dd/mm/yyyy"
                   icon={<FaCalendarAlt className="size-4" />}
                   className={isAr ? "text-right" : "text-left"}

@@ -21,7 +21,7 @@ import {
   ResponsiveContainer,
   Legend
 } from 'recharts';
-import 'flatpickr/dist/themes/material_green.css';
+
 import { usePreloader } from '../../contexts/PreloaderContext';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAuth } from '../../contexts/AuthContext';

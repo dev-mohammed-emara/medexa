@@ -15,7 +15,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { usePreloader } from '@/contexts/PreloaderContext';
 import { cn } from '@/utils/cn';
-import "flatpickr/dist/themes/material_blue.css";
+
 import {
   Building2,
   Camera,
@@ -45,7 +45,7 @@ import { apiFetch } from '@/utils/apiFetch';
 import { formatPhoneForPayload, formatPhoneForDisplay } from '@/utils/phone';
 import { format } from 'date-fns';
 import { DatePicker } from '@/components/ui/DatePicker';
-import { Arabic } from 'flatpickr/dist/l10n/ar.js';
+
 import TimePicker from '@/components/ui/TimePicker';
 import { useExitAnimation } from '@/hooks/useExitAnimation';
 
@@ -979,12 +979,8 @@ const ProfileView = () => {
                           <DatePicker
                             value={personalInfo.dateOfBirth ? new Date(personalInfo.dateOfBirth) : new Date()}
                             useYearSelect={true}
-                            onChange={([d]: Date[]) => setPersonalInfo({ ...personalInfo, dateOfBirth: format(d, 'yyyy-MM-dd') })}
-                            options={{
-                              dateFormat: 'Y-m-d',
-                              locale: isAr ? Arabic : undefined,
-                              disableMobile: true
-                            }}
+                            onChange={([d]) => { if (d) setPersonalInfo({ ...personalInfo, dateOfBirth: format(d, 'yyyy-MM-dd') }) }}
+                            maxDate={new Date()}
                             placeholder={isAr ? "اختر التاريخ" : "Select date"}
                             className={cn("flex-1 bg-transparent border-none outline-none text-sm font-bold h-full", isAr ? "text-right" : "text-left")}
                           />
