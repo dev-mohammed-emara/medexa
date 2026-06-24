@@ -11,6 +11,7 @@ import { usePreloader } from '../../contexts/PreloaderContext';
 
 import { useBroadcast } from '../../hooks/useBroadcast';
 import { cn } from '../../utils/cn';
+import { formatDateApi, formatDateTimeDisplay } from '../../utils/date';
 import TableFooter from '../../components/ui/TableFooter';
 import EmptyShell from '../../components/ui/EmptyShell';
 import { Badge } from '../../components/ui/badge';
@@ -38,12 +39,7 @@ const SupportTicketsList = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const getLocalDateString = (d: Date) => {
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
+  const getLocalDateString = (d: Date) => formatDateApi(d) || '';
 
   const today = new Date();
   const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
@@ -387,18 +383,18 @@ const SupportTicketsList = () => {
                             </p>
                             <p className="text-xs text-muted-foreground flex items-center gap-1.5">
                               <span>{isAr ? "تم الإنشاء:" : "Created:"}</span>
-                              <span className="font-bold text-foreground">{new Date(ticket.createdAt).toLocaleString(isAr ? 'ar-EG' : 'en-US', { dateStyle: 'medium', timeStyle: 'short' })}</span>
+                              <span className="font-bold text-foreground">{formatDateTimeDisplay(ticket.createdAt)}</span>
                             </p>
                             {ticket.updatedAt && (
                               <p className="text-xs text-muted-foreground flex items-center gap-1.5">
                                 <span>{isAr ? "آخر تحديث:" : "Updated:"}</span>
-                                <span className="font-bold text-foreground">{new Date(ticket.updatedAt).toLocaleString(isAr ? 'ar-EG' : 'en-US', { dateStyle: 'medium', timeStyle: 'short' })}</span>
+                                <span className="font-bold text-foreground">{formatDateTimeDisplay(ticket.updatedAt)}</span>
                               </p>
                             )}
                             {ticket.resolvedAt && (
                               <p className="text-xs text-muted-foreground flex items-center gap-1.5">
                                 <span>{isAr ? "تم الحل في:" : "Resolved:"}</span>
-                                <span className="font-bold text-foreground">{new Date(ticket.resolvedAt).toLocaleString(isAr ? 'ar-EG' : 'en-US', { dateStyle: 'medium', timeStyle: 'short' })}</span>
+                                <span className="font-bold text-foreground">{formatDateTimeDisplay(ticket.resolvedAt)}</span>
                               </p>
                             )}
                           </div>

@@ -30,6 +30,7 @@ import { cn } from '../../utils/cn';
 import { useBroadcast } from '../../hooks/useBroadcast';
 import DateFromTo from '../../components/ui/DateFromTo';
 import AddOperationModal from './AddOperationModal';
+import { formatDateApi } from '../../utils/date';
 import Counter from '../../components/ui/Counter';
 import TableFooter from '../../components/ui/TableFooter';
 import {
@@ -66,12 +67,7 @@ const FinanceOverview = () => {
     }
   });
 
-  const getLocalDateString = (d: Date) => {
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
+  const getLocalDateString = (d: Date) => formatDateApi(d) || '';
 
   const today = new Date();
   const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);

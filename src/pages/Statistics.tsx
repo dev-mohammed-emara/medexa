@@ -5,13 +5,9 @@ import DashboardHeader from '../sections/Dashboard/DashboardHeader'
 import StatsOverview from '../sections/Dashboard/StatsOverview'
 import { fetchClinicStatistics } from '../api/statisticsApi'
 import type { ClinicStatisticsResponse } from '../api/statisticsApi'
+import { formatDateApi } from '../utils/date'
 
-const getLocalDateString = (d: Date) => {
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
+const getLocalDateString = (d: Date) => formatDateApi(d) || '';
 
 const Statistics = () => {
   const [fromDate, setFromDate] = useState<string>(() => {

@@ -2,6 +2,7 @@ import MainLayout from '../components/layout/MainLayout'
 import { useLanguage } from '../contexts/LanguageContext'
 import { usePreloader } from '../contexts/PreloaderContext'
 import { useAuth } from '../contexts/AuthContext'
+import { formatDateDisplay } from '../utils/date'
 import { cn } from '../utils/cn'
 import {
   Users,
@@ -86,7 +87,7 @@ const Dashboard = () => {
             <div className={cn("flex-1 space-y-3", isAr ? "text-right" : "text-left")}>
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm border border-white/30 text-sm font-medium mb-2">
                 <Clock size={16} />
-                <span>{new Date().toLocaleDateString(isAr ? 'ar-EG' : 'en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                <span>{formatDateDisplay(new Date())}</span>
               </div>
               <h1 className="text-3xl md:text-5xl font-bold tracking-tight">
                 {isAr ? "مرحباً بك، " : "Welcome back, "}

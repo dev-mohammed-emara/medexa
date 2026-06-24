@@ -14,6 +14,7 @@ import {
   startOfWeek,
   subMonths
 } from 'date-fns';
+import { formatDateDisplay } from '../../utils/date';
 import { ar } from 'date-fns/locale';
 import { ChevronRight, ChevronLeft, Plus, Clock, User, Stethoscope, Eye, SquarePen, X, Smartphone, MoveHorizontal, Check, FileText, AlertCircle } from 'lucide-react';
 import { getErrorMessage } from '../../utils/error';
@@ -123,7 +124,7 @@ const AppointmentsList = () => {
   // Fetch calendar appointments
   const loadCalendarAppointments = useCallback(async (isCancelled?: () => boolean) => {
     try {
-      const month = getMonth(currentDate) + 1;
+      const month = currentDate.getMonth() + 1;
       const year = getYear(currentDate);
       const queryParams = new URLSearchParams();
       queryParams.append('month', String(month));
@@ -245,7 +246,7 @@ const AppointmentsList = () => {
   // Fetch pending appointments from calendar for dropdown list
   const loadPendingAppointments = useCallback(async () => {
     try {
-      const month = getMonth(currentDate) + 1;
+      const month = currentDate.getMonth() + 1;
       const year = getYear(currentDate);
       const token = getCookie('token');
       const response = await apiFetch(`/api/appointment/calendar?month=${month}&year=${year}`, {
@@ -331,7 +332,7 @@ const AppointmentsList = () => {
       }
 
       // 2. Try searching in medical-records list
-      const listRes = await apiFetch(`/api/medical-records?size=100`, {
+      const listRes = await apiFetch(`/api/medical-records?appointmentUuid=${appointmentUuid}&size=1`, {
         headers: {
           'Content-Type': 'application/json',
           ...(token ? { 'Authorization': `Bearer ${token}` } : {})
@@ -340,8 +341,8 @@ const AppointmentsList = () => {
       if (listRes.ok) {
         const listData = await listRes.json();
         const records = listData.content || [];
-        const found = records.find((r: any) => r.appointmentUuid === appointmentUuid);
-        if (found) {
+        if (records.length > 0) {
+          const found = records[0];
           const detailRes = await apiFetch(`/api/medical-records/${found.uuid}`, {
             headers: {
               'Content-Type': 'application/json',
@@ -462,7 +463,7 @@ const AppointmentsList = () => {
           <div class="header">
             <div class="logo-text">MEDEXA</div>
             <div>
-              <strong>${isAr ? 'التاريخ:' : 'Date:'}</strong> ${new Date(record.createdAt || new Date()).toLocaleDateString(isAr ? 'ar-JO' : 'en-US')}
+              <strong>${isAr ? 'التاريخ:' : 'Date:'}</strong> ${formatDateDisplay(record.createdAt || new Date())}
             </div>
           </div>
           <div class="title">${isAr ? 'تقرير السجل الطبي' : 'Medical Record Report'}</div>
@@ -1231,7 +1232,7 @@ const AppointmentsList = () => {
         <section
           ref={detailSidebarRef}
           className={cn(
-            "lg:sticky lg:top-0 self-start z-20 h-fit",
+            "lg:sticky lg:top-6 self-start z-20",
             !selectedDate ? "w-0 opacity-0 pointer-events-none invisible" : "w-full lg:w-[33%] opacity-100 visible transition-all duration-700 ease-in-out",
             "max-lg:w-full"
           )}
@@ -1664,7 +1665,7 @@ const AppointmentsList = () => {
                     loadAppointmentDetails(val);
                   }}
                 >
-                  <SelectTrigger className="rounded-xl h-12 bg-input-background transition-all focus:ring-4 focus:ring-primary/10">
+                  <SelectTrigger className="rounded-xl h-12 bg-muted/30 focus:bg-white transition-all focus:ring-4 focus:ring-primary/10">
                     <SelectValue placeholder={isAr ? 'اختر موعداً معلقاً للبدء...' : 'Select a pending appointment to start...'} />
                   </SelectTrigger>
                   <SelectContent className="rounded-xl z-[2000] text-start">
@@ -1686,7 +1687,7 @@ const AppointmentsList = () => {
                   readOnly
                   disabled
                   value={medicalRecordData.appointmentUuid}
-                  className="w-full h-12 px-4 rounded-xl border border-border bg-slate-100 font-semibold text-sm outline-none text-muted-foreground cursor-not-allowed text-start"
+                  className="w-full h-12 px-4 rounded-xl border border-border bg-muted/50 font-semibold text-sm outline-none text-muted-foreground cursor-not-allowed text-start"
                 />
               </div>
             )}
@@ -1702,7 +1703,7 @@ const AppointmentsList = () => {
                 disabled
                 value={patientName}
                 placeholder={isAr ? 'سيتم ملء اسم المريض تلقائياً عند اختيار الموعد' : 'Patient name will be filled automatically when selecting an appointment'}
-                className="w-full h-12 px-4 rounded-xl border border-border bg-slate-100 font-semibold text-sm outline-none text-muted-foreground cursor-not-allowed text-start placeholder:text-[11px] placeholder:text-muted-foreground/60"
+                className="w-full h-12 px-4 rounded-xl border border-border bg-muted/50 font-semibold text-sm outline-none text-muted-foreground cursor-not-allowed text-start placeholder:text-[11px] placeholder:text-muted-foreground/60"
               />
             </div>
 
@@ -1717,7 +1718,7 @@ const AppointmentsList = () => {
                 disabled
                 value={doctorName}
                 placeholder={isAr ? 'سيتم ملء اسم الطبيب تلقائياً عند اختيار الموعد' : 'Doctor name will be filled automatically when selecting an appointment'}
-                className="w-full h-12 px-4 rounded-xl border border-border bg-slate-100 font-semibold text-sm outline-none text-muted-foreground cursor-not-allowed text-start placeholder:text-[11px] placeholder:text-muted-foreground/60"
+                className="w-full h-12 px-4 rounded-xl border border-border bg-muted/50 font-semibold text-sm outline-none text-muted-foreground cursor-not-allowed text-start placeholder:text-[11px] placeholder:text-muted-foreground/60"
               />
             </div>
 
@@ -1733,8 +1734,8 @@ const AppointmentsList = () => {
                 onChange={(e) => setMedicalRecordData(prev => ({ ...prev, amount: Number(e.target.value) }))}
                 placeholder={isAr ? 'المبلغ...' : 'Amount...'}
                 className={cn(
-                  "w-full h-12 px-4 rounded-xl border border-border focus:ring-4 focus:ring-primary/10 transition-all outline-none font-medium text-sm text-start",
-                  medicalRecordModalMode === 'view' ? "bg-slate-100 cursor-not-allowed text-muted-foreground" : "bg-muted/20"
+                  "w-full h-12 px-4 rounded-xl border border-border transition-all outline-none font-medium text-sm text-start",
+                  medicalRecordModalMode === 'view' ? "bg-muted/50 cursor-not-allowed text-muted-foreground" : "bg-muted/30 focus:bg-white focus:ring-4 focus:ring-primary/10"
                 )}
               />
             </div>
@@ -1751,8 +1752,8 @@ const AppointmentsList = () => {
                 onChange={(e) => setMedicalRecordData(prev => ({ ...prev, diagnosis: e.target.value }))}
                 placeholder={isAr ? 'التشخيص...' : 'Diagnosis...'}
                 className={cn(
-                  "w-full h-12 px-4 rounded-xl border border-border focus:ring-4 focus:ring-primary/10 transition-all outline-none font-medium text-sm text-start",
-                  medicalRecordModalMode === 'view' ? "bg-slate-100 cursor-not-allowed text-muted-foreground" : "bg-muted/20"
+                  "w-full h-12 px-4 rounded-xl border border-border transition-all outline-none font-medium text-sm text-start",
+                  medicalRecordModalMode === 'view' ? "bg-muted/50 cursor-not-allowed text-muted-foreground" : "bg-muted/30 focus:bg-white focus:ring-4 focus:ring-primary/10"
                 )}
               />
             </div>
@@ -1768,8 +1769,8 @@ const AppointmentsList = () => {
                 onChange={(e) => setMedicalRecordData(prev => ({ ...prev, note: e.target.value }))}
                 placeholder={isAr ? 'ملاحظات...' : 'Notes...'}
                 className={cn(
-                  "w-full min-h-[100px] p-4 rounded-xl border border-border bg-input-background focus:ring-4 focus:ring-primary/10 transition-all outline-none font-medium text-sm resize-none",
-                  medicalRecordModalMode === 'view' ? "bg-slate-100 cursor-not-allowed text-muted-foreground" : "",
+                  "w-full min-h-[100px] p-4 rounded-xl border border-border transition-all outline-none font-medium text-sm resize-none",
+                  medicalRecordModalMode === 'view' ? "bg-muted/50 cursor-not-allowed text-muted-foreground" : "bg-muted/30 focus:bg-white focus:ring-4 focus:ring-primary/10",
                   isAr ? "text-right" : "text-left"
                 )}
               />
@@ -1786,8 +1787,8 @@ const AppointmentsList = () => {
                 onChange={(e) => setMedicalRecordData(prev => ({ ...prev, caseDescription: e.target.value }))}
                 placeholder={isAr ? 'أدخل وصف الحالة...' : 'Enter case description...'}
                 className={cn(
-                  "w-full min-h-[100px] p-4 rounded-xl border border-border bg-input-background focus:ring-4 focus:ring-primary/10 transition-all outline-none font-medium text-sm resize-none",
-                  medicalRecordModalMode === 'view' ? "bg-slate-100 cursor-not-allowed text-muted-foreground" : "",
+                  "w-full min-h-[100px] p-4 rounded-xl border border-border transition-all outline-none font-medium text-sm resize-none",
+                  medicalRecordModalMode === 'view' ? "bg-muted/50 cursor-not-allowed text-muted-foreground" : "bg-muted/30 focus:bg-white focus:ring-4 focus:ring-primary/10",
                   isAr ? "text-right" : "text-left"
                 )}
               />
@@ -1804,8 +1805,8 @@ const AppointmentsList = () => {
                 onChange={(e) => setMedicalRecordData(prev => ({ ...prev, treatmentPlan: e.target.value }))}
                 placeholder={isAr ? 'أدخل خطة العلاج...' : 'Enter treatment plan...'}
                 className={cn(
-                  "w-full min-h-[100px] p-4 rounded-xl border border-border bg-input-background focus:ring-4 focus:ring-primary/10 transition-all outline-none font-medium text-sm resize-none",
-                  medicalRecordModalMode === 'view' ? "bg-slate-100 cursor-not-allowed text-muted-foreground" : "",
+                  "w-full min-h-[100px] p-4 rounded-xl border border-border transition-all outline-none font-medium text-sm resize-none",
+                  medicalRecordModalMode === 'view' ? "bg-muted/50 cursor-not-allowed text-muted-foreground" : "bg-muted/30 focus:bg-white focus:ring-4 focus:ring-primary/10",
                   isAr ? "text-right" : "text-left"
                 )}
               />

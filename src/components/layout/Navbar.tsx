@@ -210,7 +210,7 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
           <div
             ref={profileBtnRef}
             onClick={() => setShowProfile(!showProfile)}
-            className={cn("flex items-center flex-row-reverse gap-3 cursor-pointer hover:opacity-80 transition-opacity", isAr ? "border-r border-border pr-4" : "border-l border-border pl-4 flex-row-reverse")}
+            className={cn("flex items-center flex-row-reverse gap-3 cursor-pointer hover:opacity-80 md:border border-none! transition-opacity", isAr ? "border-r border-border pr-4" : "border-l border-border pl-4 flex-row-reverse")}
           >
             <div className={cn("hidden md:block", isAr ? "text-right" : "text-left")}>
               <p className="text-sm font-bold">{user ? `${isAr ? 'د.' : 'Dr.'} ${user.firstName} ${user.lastName}` : t('nav.doctor_name', T_PAGE)}</p>

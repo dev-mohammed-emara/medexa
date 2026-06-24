@@ -21,7 +21,7 @@ import {
 
 import EmptyShell from '../../components/ui/EmptyShell';
 import TableFooter from '../../components/ui/TableFooter';
-import { format } from 'date-fns';
+import { formatDateApi, formatDateDisplay } from '../../utils/date';
 
 const PatientDetailsView = () => {
   useParams<{ name: string }>();
@@ -48,12 +48,7 @@ const PatientDetailsView = () => {
   const [isLoadingPatient, setIsLoadingPatient] = useState(true);
   const [isLoadingRecords, setIsLoadingRecords] = useState(true);
 
-  const getLocalDateString = (d: Date) => {
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
+  const getLocalDateString = (d: Date) => formatDateApi(d) || '';
 
   const today = new Date();
   const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
@@ -225,7 +220,7 @@ const PatientDetailsView = () => {
             </div>
             <div class="info-item">
               <span class="label">${isAr ? 'تاريخ الميلاد' : 'Date of Birth'}</span>
-              <span class="value">${patient.dateOfBirth ? format(new Date(patient.dateOfBirth), 'dd/MM/yyyy') : '-'} (${calculateAge(patient.dateOfBirth)} ${isAr ? 'سنة' : 'years'})</span>
+              <span class="value">${formatDateDisplay(patient.dateOfBirth)} (${calculateAge(patient.dateOfBirth)} ${isAr ? 'سنة' : 'years'})</span>
             </div>
           </div>
           
@@ -293,14 +288,14 @@ const PatientDetailsView = () => {
         <body>
           <div class="header">
             <div class="logo-text">MEDEXA</div>
-            <div><strong>${isAr ? 'التاريخ:' : 'Date:'}</strong> ${new Date(record.createdAt).toLocaleDateString(isAr ? 'ar-JO' : 'en-US')}</div>
+            <div><strong>${isAr ? 'التاريخ:' : 'Date:'}</strong> ${formatDateDisplay(record.createdAt)}</div>
           </div>
           <div class="title">${isAr ? 'تقرير السجل الطبي' : 'Medical Record Report'}</div>
           
           <div class="info-grid">
             <div class="info-item"><span>${isAr ? 'اسم المريض:' : 'Patient Name:'}</span> ${patient?.firstName || ''} ${patient?.lastName || ''}</div>
             <div class="info-item"><span>${isAr ? 'الطبيب المعالج:' : 'Treating Doctor:'}</span> ${record.doctorName || '-'}</div>
-            <div class="info-item"><span>${isAr ? 'تاريخ السجل:' : 'Created At:'}</span> ${new Date(record.createdAt).toLocaleDateString(isAr ? 'ar-JO' : 'en-US')}</div>
+            <div class="info-item"><span>${isAr ? 'تاريخ السجل:' : 'Created At:'}</span> ${formatDateDisplay(record.createdAt)}</div>
           </div>
 
           <div class="section">
@@ -408,7 +403,7 @@ const PatientDetailsView = () => {
                   </div>
                   <div>
                     <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">{isAr ? 'تاريخ الميلاد' : 'Date of Birth'}</p>
-                    <p className="font-semibold text-sm">{patient.dateOfBirth ? format(new Date(patient.dateOfBirth), 'dd/MM/yyyy') : '-'}</p>
+                    <p className="font-semibold text-sm">{formatDateDisplay(patient.dateOfBirth)}</p>
                   </div>
                 </div>
               </div>
@@ -547,7 +542,7 @@ const PatientDetailsView = () => {
                                     </div>
                                     <div className="flex items-center gap-1.5">
                                       <FaCalendarAlt className="size-4" />
-                                      <span>{new Date(record.createdAt).toLocaleDateString(isAr ? 'ar-JO' : 'en-US')}</span>
+                                      <span>{formatDateDisplay(record.createdAt)}</span>
                                     </div>
                                   </div>
                                 </figcaption>

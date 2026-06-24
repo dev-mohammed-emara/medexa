@@ -42,7 +42,7 @@ export const DateFromTo = ({
 
   return (
     <div className={cn("flex flex-wrap items-end gap-3", className)}>
-      <div className="space-y-1.5 flex-1 min-w-[170px] text-start">
+      <div className="space-y-1.5 flex-1 min-w-[120px] text-start">
         <label className="flex items-center gap-2 font-bold select-none text-xs text-muted-foreground mr-1">
           {isAr ? "من تاريخ" : "From Date"}
         </label>
@@ -71,7 +71,7 @@ export const DateFromTo = ({
         </div>
       </div>
 
-      <div className="space-y-1.5 flex-1 min-w-[170px] text-start">
+      <div className="space-y-1.5 flex-1 min-w-[120px] text-start">
         <label className="flex items-center gap-2 font-bold select-none text-xs text-muted-foreground mr-1">
           {isAr ? "إلى تاريخ" : "To Date"}
         </label>

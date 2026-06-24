@@ -10,6 +10,7 @@ import {
 import { useState, useEffect, useCallback } from 'react';
 import { FaCalendarAlt } from 'react-icons/fa';
 import TableFooter from '../../components/ui/TableFooter';
+import { formatDateApi, formatDateDisplay } from '../../utils/date';
 import { recordsTranslations } from '../../constants/translations/records';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { usePreloader } from '../../contexts/PreloaderContext';
@@ -33,12 +34,7 @@ const MedicalRecordsList = () => {
 
   const [openId, setOpenId] = useState<string | null>(null);
 
-  const getLocalDateString = (d: Date) => {
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
+  const getLocalDateString = (d: Date) => formatDateApi(d) || '';
 
   const today = new Date();
   const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
@@ -216,7 +212,7 @@ const MedicalRecordsList = () => {
           <div class="header">
             <div class="logo-text">MEDEXA</div>
             <div>
-              <strong>${isAr ? 'التاريخ:' : 'Date:'}</strong> ${new Date(record.createdAt).toLocaleDateString(isAr ? 'ar-JO' : 'en-US')}
+              <strong>${isAr ? 'التاريخ:' : 'Date:'}</strong> ${formatDateDisplay(record.createdAt)}
             </div>
           </div>
           <div class="title">${isAr ? 'تقرير السجل الطبي' : 'Medical Record Report'}</div>
@@ -232,7 +228,7 @@ const MedicalRecordsList = () => {
               <span>${isAr ? 'رقم الموعد:' : 'Appointment ID:'}</span> #${record.appointmentUuid?.substring(0, 8) || '-'}
             </div>
             <div class="info-item">
-              <span>${isAr ? 'تاريخ الإنشاء:' : 'Created At:'}</span> ${new Date(record.createdAt).toLocaleDateString(isAr ? 'ar-JO' : 'en-US')}
+              <span>${isAr ? 'تاريخ الإنشاء:' : 'Created At:'}</span> ${formatDateDisplay(record.createdAt)}
             </div>
           </div>
 
@@ -408,7 +404,7 @@ const MedicalRecordsList = () => {
                                 </div>
                                 <div className="flex items-center gap-1.5">
                                   <FaCalendarAlt className="size-4" />
-                                  <span>{new Date(record.createdAt).toLocaleDateString(isAr ? 'ar-JO' : 'en-US')}</span>
+                                  <span>{formatDateDisplay(record.createdAt)}</span>
                                 </div>
                               </div>
                             </figcaption>

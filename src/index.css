@@ -210,6 +210,9 @@ html[dir='rtl']{
   .css-1nugax4-MuiPickersInputBase-root-MuiPickersInput-root::before{
     border: none !important;
   }
+  .css-kqo2sj-MuiPopper-root-MuiPickerPopper-root{
+    @apply border border-blue-500/30 rounded-2xl;
+  }
  
   input,
   textarea,

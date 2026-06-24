@@ -16,22 +16,8 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { usePreloader } from '@/contexts/PreloaderContext';
 import { cn } from '@/utils/cn';
 
-import {
-  Building2,
-  Camera,
-  Check,
-  Clock,
-  Key,
-  Mail,
-  MapPin,
-  Pen,
-  Phone,
-  Plus,
-  Shield,
-  Stethoscope,
-  User,
-  X,
-} from 'lucide-react';
+import { Mail, Phone, User, Camera, Building2, Clock, Key, MapPin, Pen, Plus, Shield, Stethoscope, X, Check } from 'lucide-react';
+import { formatDateDisplay, formatTimeDisplay } from '../../utils/date';
 
 import { getErrorMessage } from '../../utils/error';
 import { useEffect, useRef, useState } from 'react';
@@ -60,7 +46,7 @@ const DAY_MAPPING: { [key: string]: { labelKey: string, index: number } } = {
 };
 
 const ProfileView = () => {
-  const { profileImage, updateProfileImage, user, updateUser, hasPermission } = useAuth();
+  const { profileImage, updateProfileImage, user, updateUser, hasPermission, hasRole } = useAuth();
   const { isLoaded, isExiting } = usePreloader();
   const { dir, isAr, t } = useLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -113,7 +99,7 @@ const ProfileView = () => {
 
   const loadDoctorData = async (isCancelled?: () => boolean) => {
     try {
-      const isSecretary = user?.role === 'ROLE_SECRETARY';
+      const isSecretary = hasRole('ROLE_SECRETARY');
       const data: any = isSecretary ? await fetchSecretaryMe() : await fetchDoctorMe();
       if (isCancelled?.()) return;
       if (data && data.user) {
@@ -129,7 +115,7 @@ const ProfileView = () => {
           summary: (!isSecretary && data.summary) || '',
           defaultAppointmentPeriod: (!isSecretary && (data.defaultAppointmentPeriod || 30).toString()) || '30',
           joinedDate: (data.user?.user_created_at || data.user?.createdAt || data.user_created_at || data.createdAt) 
-            ? format(new Date(data.user?.user_created_at || data.user?.createdAt || data.user_created_at || data.createdAt), 'dd MMM yyyy') 
+            ? formatDateDisplay(data.user?.user_created_at || data.user?.createdAt || data.user_created_at || data.createdAt) 
             : ''
         });
         setPersonalPhone(formatPhoneForDisplay(data.user.phoneNumber || ''));
@@ -176,7 +162,7 @@ const ProfileView = () => {
 
   const handleSaveGeneral = async () => {
     try {
-      const isSecretary = user?.role === 'ROLE_SECRETARY';
+      const isSecretary = hasRole('ROLE_SECRETARY');
       if (isSecretary) {
         await updateSecretaryMe({
           user: {
@@ -298,6 +284,7 @@ const ProfileView = () => {
   const { shouldRender: showScheduleActions, isExiting: isScheduleExiting } = useExitAnimation(isEditingSchedule, 300);
 
   const loadSchedule = async (isCancelled?: () => boolean) => {
+    if (hasRole('ROLE_SECRETARY')) return;
     try {
       const response = await apiFetch('/api/doctorschedule/me', {
         method: 'GET',
@@ -311,8 +298,8 @@ const ProfileView = () => {
         setWorkingHours(prev => prev.map(day => {
           const serverDay = schedules.find((s: any) => s.dayOfWeek === day.dayOfWeek);
           const parsedPeriods = serverDay?.timeSlots?.map((slot: any) => ({
-            from: slot.startTime.substring(0, 5),
-            to: slot.endTime.substring(0, 5)
+            from: formatTimeDisplay(slot.startTime),
+            to: formatTimeDisplay(slot.endTime)
           })) || [];
           return {
             dayOfWeek: day.dayOfWeek,
@@ -795,7 +782,7 @@ const ProfileView = () => {
               <div className={cn("flex-1 text-center font-bold", isAr ? "sm:text-right" : "sm:text-left")}>
                 <h2 className="text-3xl mb-2 font-bold text-foreground">
                   {user
-                    ? `${(user.role === 'ROLE_SECRETARY' || user.roles?.includes('ROLE_SECRETARY')) ? '' : (isAr ? 'د. ' : 'Dr. ')}${user.firstName} ${user.lastName}`
+                    ? `${(hasRole('ROLE_SECRETARY')) ? '' : (isAr ? 'د. ' : 'Dr. ')}${user.firstName} ${user.lastName}`
                     : t('profile.doctor_name_val', T_PAGE)}
                 </h2>
                 <div className="flex flex-col gap-2">
@@ -876,7 +863,7 @@ const ProfileView = () => {
                     )}
                     <button
                       onClick={() => setIsPasswordModalOpen(true)}
-                      className="h-11 px-4 border border-primary/30 rounded-xl text-primary hover:bg-primary/5 transition-all flex items-center gap-2 text-sm font-medium"
+                        className="h-11 px-4 border border-primary/30 rounded-xl text-primary bg-primary/5 hover:bg-primary/10 transition-all flex items-center gap-2 text-sm font-bold animate-in fade-in duration-300"
                     >
                       <Key size={16} />
                       {t('profile.change_password', T_PAGE)}
@@ -935,7 +922,7 @@ const ProfileView = () => {
                       <Input readOnly value={personalInfo.email} className="flex-1 h-11 bg-muted/50 border-border cursor-not-allowed text-muted-foreground" />
                       <button
                         onClick={() => setIsEmailModalOpen(true)}
-                        className="h-11 px-4 border border-primary/30 rounded-xl text-primary hover:bg-primary/5 transition-all flex items-center gap-2 text-sm font-medium"
+                        className="h-11 px-4 border border-primary/30 rounded-xl text-primary bg-primary/5 hover:bg-primary/10 transition-all flex items-center gap-2 text-sm font-bold animate-in fade-in duration-300"
                       >
                         <Key size={16} />
                         {t('common.change')}
@@ -962,8 +949,11 @@ const ProfileView = () => {
                   <div className="flex flex-col gap-6">
                     <div className="flex flex-col gap-2">
                       <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('common.gender')}</label>
-                      <Select disabled={!isEditingProfile} name="gender" value={personalInfo.gender} onValueChange={(val) => setPersonalInfo(p => ({ ...p, gender: val }))}>
-                        <SelectTrigger className="h-11 bg-muted/30 border-border font-bold">
+                      <Select disabled={!isEditingProfile} name="gender"  value={personalInfo.gender} onValueChange={(val) => setPersonalInfo(p => ({ ...p, gender: val }))}>
+                        <SelectTrigger className={cn(
+                          "h-11 border-border font-bold",
+                          isEditingProfile ? "bg-muted/30 focus:border-primary focus:bg-white" : "bg-muted/50 cursor-not-allowed text-muted-foreground"
+                        )}>
                           <SelectValue placeholder={t('common.gender')} />
                         </SelectTrigger>
                         <SelectContent>
@@ -975,7 +965,7 @@ const ProfileView = () => {
                     <div className="flex flex-col gap-2">
                       <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('common.birth_date')}</label>
                       {isEditingProfile ? (
-                        <div className="relative group flex items-center justify-between h-11 bg-white border border-border rounded-xl px-4 transition-all focus-within:ring-4 focus-within:ring-primary/10">
+                        <div className="relative group flex items-center justify-between h-11 bg-muted/30 focus-within:bg-white border border-border rounded-xl px-4 transition-all focus-within:ring-4 focus-within:ring-primary/10">
                           <DatePicker
                             value={personalInfo.dateOfBirth ? new Date(personalInfo.dateOfBirth) : new Date()}
                             useYearSelect={true}
@@ -999,7 +989,7 @@ const ProfileView = () => {
                   </div>
 
                   {/* Doctor Info Fields (Specialty, Summary) */}
-                  {user?.role !== 'ROLE_SECRETARY' && (
+                  {!hasRole('ROLE_SECRETARY') && (
                     <div className="flex flex-col gap-6 pt-4 border-t border-border mt-2">
                       <div className="flex flex-col gap-2">
                         <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{isAr ? 'التخصص الطبي' : 'Specialty'}</label>
@@ -1172,7 +1162,7 @@ const ProfileView = () => {
             </div>
 
             {/* Working Hours */}
-            {(user?.role === 'ROLE_DOCTOR' || user?.role === 'ROLE_CLINIC_OWNER' || user?.roles?.includes('ROLE_DOCTOR') || user?.roles?.includes('ROLE_CLINIC_OWNER')) && (
+            {(hasRole('ROLE_DOCTOR') || hasRole('ROLE_CLINIC_OWNER')) && (
               <div data-slot="card" className={cn("tab-pane rounded-xl border p-6 shadow-lg hover:shadow-xl transition-all duration-300", isEditingSchedule ? "ring-2 ring-inset ring-yellow-400 border-yellow-400 bg-yellow-50/20" : "bg-white border-border")}>
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-3">

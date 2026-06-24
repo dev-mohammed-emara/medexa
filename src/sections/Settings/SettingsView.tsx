@@ -20,17 +20,8 @@ import { getCookie } from '../../utils/cookie';
 import { apiFetch } from '../../utils/apiFetch';
 import Input from '../../components/ui/Input';
 import TimePicker from '../../components/ui/TimePicker';
-import {
-  Settings as SettingsIcon,
-  Globe,
-  DollarSign,
-  Plus,
-  Trash2,
-  Check,
-  Clock,
-  Pen,
-  X
-} from 'lucide-react';
+import { Settings as SettingsIcon, Globe, Plus, X, Clock, Check, Pen, DollarSign, Trash2 } from 'lucide-react';
+import { formatTimeDisplay } from '../../utils/date';
 import { FaCalendarAlt } from 'react-icons/fa';
 
 interface WorkingPeriod {
@@ -164,8 +155,8 @@ const SettingsView = ({ hideHeader, className }: SettingsViewProps = {}) => {
             if (serverDay && serverDay.timeSlots && serverDay.timeSlots.length > 0) {
               const periods = serverDay.timeSlots.map((slot: any, idx: number) => ({
                 id: (idx + 1).toString(),
-                from: slot.startTime.substring(0, 5), // "09:00:00" -> "09:00"
-                to: slot.endTime.substring(0, 5)
+                from: formatTimeDisplay(slot.startTime), // "09:00:00" -> "09:00"
+                to: formatTimeDisplay(slot.endTime)
               }));
               return {
                 ...day,
