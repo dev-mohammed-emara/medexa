@@ -444,7 +444,7 @@ const AdminTickets = () => {
           <div className="flex flex-col lg:flex-row gap-4">
             {/* Priority Filter */}
             <div className="w-full lg:w-48">
-              <Select value={selectedPriority} onValueChange={setSelectedPriority}>
+              <Select name="selectedPriority" value={selectedPriority} onValueChange={setSelectedPriority}>
                 <SelectTrigger className="h-9 bg-gray-50 border-gray-200 text-sm rounded-md flex items-center justify-between px-3 text-[#0F172A] focus:ring-2 focus:ring-[#0EA5E9]/20 font-medium">
                   <div className="flex items-center">
                     <Filter className="size-4 ml-2 text-gray-500" />
@@ -463,7 +463,7 @@ const AdminTickets = () => {
 
             {/* Status Filter */}
             <div className="w-full lg:w-48">
-              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+              <Select name="selectedStatus" value={selectedStatus} onValueChange={setSelectedStatus}>
                 <SelectTrigger className="h-9 bg-gray-50 border-gray-200 text-sm rounded-md text-[#0F172A] focus:ring-2 focus:ring-[#0EA5E9]/20 font-medium">
                   <SelectValue placeholder="جميع الحالات" />
                 </SelectTrigger>
@@ -480,7 +480,7 @@ const AdminTickets = () => {
 
             {/* Assignee Filter */}
             <div className="w-full lg:w-48">
-              <Select value={selectedAssignee} onValueChange={setSelectedAssignee}>
+              <Select name="selectedAssignee" value={selectedAssignee} onValueChange={setSelectedAssignee}>
                 <SelectTrigger className="h-9 bg-gray-50 border-gray-200 text-sm rounded-md text-[#0F172A] focus:ring-2 focus:ring-[#0EA5E9]/20 font-medium">
                   <SelectValue placeholder="الجميع" />
                 </SelectTrigger>

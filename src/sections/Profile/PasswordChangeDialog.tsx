@@ -165,6 +165,7 @@ const PasswordChangeDialog = ({ isOpen, onClose }: PasswordChangeDialogProps) =>
               </label>
               <div className="relative">
                 <Input
+                  name="currentPassword"
                   type="password"
                   required
                   disabled={loading}
@@ -183,6 +184,7 @@ const PasswordChangeDialog = ({ isOpen, onClose }: PasswordChangeDialogProps) =>
               </label>
               <div className="relative">
                 <Input
+                  name="newPassword"
                   type="password"
                   required
                   disabled={loading}
@@ -233,6 +235,7 @@ const PasswordChangeDialog = ({ isOpen, onClose }: PasswordChangeDialogProps) =>
               </label>
               <div className="relative">
                 <Input
+                  name="confirmPassword"
                   type="password"
                   required
                   disabled={loading}

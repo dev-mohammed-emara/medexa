@@ -137,6 +137,7 @@ const EmailChangeDialog = ({ isOpen, onClose }: EmailChangeDialogProps) => {
               {t('profile.new_email', T_PAGE)}
             </label>
             <Input
+              name="newEmail"
               type="email"
               required
               icon={<Mail size={18} />}

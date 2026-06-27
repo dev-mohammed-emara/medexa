@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { matchFieldName } from '../utils/backendValidation';
 
 export const useFieldError = (nameOrNames?: string | string[]) => {
   const [backendError, setBackendError] = useState<string | null>(null);
@@ -14,7 +15,8 @@ export const useFieldError = (nameOrNames?: string | string[]) => {
       
       // Check if there are details and try to find the specific field
       if (errorData && errorData.details && Array.isArray(errorData.details) && errorData.details.length > 0) {
-        const detail = errorData.details.find((d) => names.includes(d.field));
+        // Use the new matchFieldName utility to support exact, last-segment, camelCase, and snake_case matching
+        const detail = errorData.details.find((d) => matchFieldName(d.field, names));
         if (detail) {
           setBackendError(detail.message || errorData.message || null);
         }
@@ -32,7 +34,7 @@ export const useFieldError = (nameOrNames?: string | string[]) => {
       window.removeEventListener('BACKEND_VALIDATION_ERROR', handleBackendError);
       window.removeEventListener('CLEAR_BACKEND_ERRORS', handleClear);
     };
-  }, [name]);
+  }, [JSON.stringify(nameOrNames)]);
 
   return { backendError, setBackendError };
 };

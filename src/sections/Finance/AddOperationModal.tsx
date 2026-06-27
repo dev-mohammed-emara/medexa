@@ -295,7 +295,7 @@ const AddOperationModal = ({ isOpen, onClose, onSuccess, mode = 'add', transacti
                   <label className={cn("block text-sm font-bold text-[#1a2b3c]", isAr ? "mr-1" : "ml-1")}>
                     {t('type_label', T)} <span className="text-destructive">*</span>
                   </label>
-                  <Select disabled={mode === 'view'} value={type} onValueChange={setType}>
+                  <Select name="type" disabled={mode === 'view'} value={type} onValueChange={setType}>
                     <SelectTrigger className="h-12 rounded-xl bg-muted/30 border-border border">
                       <SelectValue placeholder={t('select_type', T)} />
                     </SelectTrigger>
@@ -312,8 +312,7 @@ const AddOperationModal = ({ isOpen, onClose, onSuccess, mode = 'add', transacti
                     {t('amount_label', T)} <span className="text-destructive">*</span>
                   </label>
                   <div className="relative group">
-                    <Input
-                      disabled={mode === 'view'}
+                    <Input name="amount" disabled={mode === 'view'}
                       type="number"
                       placeholder="0.00"
                       min="0"
@@ -333,7 +332,7 @@ const AddOperationModal = ({ isOpen, onClose, onSuccess, mode = 'add', transacti
                 {/* Currency */}
                 <div className="space-y-2">
                   <label className={cn("block text-sm font-bold text-[#1a2b3c]", isAr ? "mr-1" : "ml-1")}>{t('table_currency', T)}</label>
-                  <Select disabled={mode === 'view'} value={currency} onValueChange={setCurrency}>
+                  <Select name="currency" disabled={mode === 'view'} value={currency} onValueChange={setCurrency}>
                     <SelectTrigger className="h-12 rounded-xl bg-muted/30 border-border border">
                       <SelectValue placeholder={t('jod', T)} />
                     </SelectTrigger>
@@ -350,8 +349,7 @@ const AddOperationModal = ({ isOpen, onClose, onSuccess, mode = 'add', transacti
                     {t('date_label', T)} <span className="text-destructive">*</span>
                   </label>
                   <div className="relative group flex items-center justify-between h-12 bg-muted/30 border border-border rounded-xl px-4 transition-all focus-within:ring-4 focus-within:ring-primary/10 focus-within:bg-white">
-                    <DatePicker
-                      disabled={mode === 'view'}
+                    <DatePicker name="date" disabled={mode === 'view'}
                       value={date}
                       onChange={([d]) => { if (d) setDate(d); }}
                       maxDate={new Date()}

@@ -1023,7 +1023,7 @@ const AppointmentsList = () => {
         </div>
 
         <div className="flex items-center max-sm:flex-wrap gap-3">
-          <Select value={selectedDoctor} onValueChange={setSelectedDoctor}>
+          <Select name="selectedDoctor" value={selectedDoctor} onValueChange={setSelectedDoctor}>
             <SelectTrigger className="w-56 h-10 bg-white border-border shadow-xs">
               <SelectValue placeholder={t('select_doctor', T)} />
             </SelectTrigger>
@@ -1093,7 +1093,7 @@ const AppointmentsList = () => {
             </div>
 
             <div className="flex items-center gap-2 order-2">
-              <Select value={getMonth(currentDate).toString()} onValueChange={handleMonthChange}>
+              <Select name="getMonth" value={getMonth(currentDate).toString()} onValueChange={handleMonthChange}>
                 <SelectTrigger className="w-36 h-10 bg-white border-border shadow-xs font-bold text-foreground">
                   <SelectValue />
                 </SelectTrigger>
@@ -1104,7 +1104,7 @@ const AppointmentsList = () => {
                 </SelectContent>
               </Select>
 
-              <Select value={getYear(currentDate).toString()} onValueChange={handleYearChange}>
+              <Select name="getYear" value={getYear(currentDate).toString()} onValueChange={handleYearChange}>
                 <SelectTrigger className="w-28 h-10 bg-white border-border shadow-xs font-bold text-foreground">
                   <SelectValue />
                 </SelectTrigger>
@@ -1447,7 +1447,7 @@ const AppointmentsList = () => {
             <label className="text-sm font-bold text-foreground/80 px-1 block text-start">
               {t('canceled_by', T)} <span className="text-destructive">*</span>
             </label>
-            <Select value={canceledBy} onValueChange={setCanceledBy}>
+            <Select name="canceledBy" value={canceledBy} onValueChange={setCanceledBy}>
               <SelectTrigger className="h-12 rounded-xl bg-muted/20 border-border">
                 <SelectValue placeholder={t('select_canceler', T)} />
               </SelectTrigger>
@@ -1501,7 +1501,7 @@ const AppointmentsList = () => {
             <label className="text-sm font-bold text-foreground/80 px-1 block text-start">
               {t('by_who', T)} <span className="text-destructive">*</span>
             </label>
-            <Select value={completeData.byWho} onValueChange={(val) => setCompleteData(prev => ({ ...prev, byWho: val }))}>
+            <Select name="byWho" value={completeData.byWho} onValueChange={(val) => setCompleteData(prev => ({ ...prev, byWho: val }))}>
               <SelectTrigger className="h-12 rounded-xl bg-muted/20 border-border shadow-xs">
                 <SelectValue placeholder={t('select_doctor', T)} />
               </SelectTrigger>
@@ -1658,8 +1658,7 @@ const AppointmentsList = () => {
                 <label className="text-sm font-semibold text-foreground/80 pr-1 pl-1">
                   {isAr ? 'اختيار الموعد المعلق' : 'Select Pending Appointment'} <span className="text-destructive">*</span>
                 </label>
-                <Select
-                  value={medicalRecordData.appointmentUuid}
+                <Select name="appointmentUuid" value={medicalRecordData.appointmentUuid}
                   onValueChange={(val) => {
                     setMedicalRecordData(prev => ({ ...prev, appointmentUuid: val }));
                     loadAppointmentDetails(val);

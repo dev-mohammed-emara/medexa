@@ -508,7 +508,7 @@ const SettingsView = ({ hideHeader, className }: SettingsViewProps = {}) => {
                 <Globe className="size-4 text-primary" />
                 {t('settings.language', T_PAGE)}
               </label>
-              <Select value={language} onValueChange={(val: 'ar' | 'en') => setLanguage(val)} disabled={!isEditingGeneral}>
+              <Select name="language" value={language} onValueChange={(val: 'ar' | 'en') => setLanguage(val)} disabled={!isEditingGeneral}>
                 <SelectTrigger className="h-12 rounded-xl bg-muted/30 border-border focus:bg-white transition-all">
                   <SelectValue placeholder={t('settings.select_language', T_PAGE)} />
                 </SelectTrigger>
@@ -523,7 +523,7 @@ const SettingsView = ({ hideHeader, className }: SettingsViewProps = {}) => {
                 <DollarSign className="size-4 text-secondary" />
                 {t('settings.default_currency', T_PAGE)}
               </label>
-              <Select value={currency} onValueChange={setCurrency} disabled={!isEditingGeneral}>
+              <Select name="defaultCurrency" value={currency} onValueChange={setCurrency} disabled={!isEditingGeneral}>
                 <SelectTrigger className="h-12 rounded-xl bg-muted/30 border-border focus:bg-white transition-all">
                   <SelectValue placeholder={t('settings.select_currency', T_PAGE)} />
                 </SelectTrigger>
@@ -540,6 +540,7 @@ const SettingsView = ({ hideHeader, className }: SettingsViewProps = {}) => {
               </label>
               <Input
                 id="appointment-period-input"
+                name="defaultAppointmentPeriod"
                 type="tel"
                 error={appointmentPeriodError || undefined}
                 value={appointmentPeriod}

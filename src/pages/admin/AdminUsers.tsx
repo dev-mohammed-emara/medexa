@@ -194,7 +194,7 @@ const AdminUsers = () => {
             {/* Clinic Filter */}
             <div>
               <label className="text-xs text-gray-600 mb-2 block font-medium">تصفية حسب العيادة</label>
-              <Select value={selectedClinic} onValueChange={setSelectedClinic}>
+              <Select name="selectedClinic" value={selectedClinic} onValueChange={setSelectedClinic}>
                 <SelectTrigger className="h-11 bg-gray-50 border-gray-200 focus:ring-2 focus:ring-[#0B5A8E]/20 text-[#1A2B3C] rounded-xl font-medium">
                   <SelectValue placeholder="جميع العيادات" />
                 </SelectTrigger>
@@ -209,7 +209,7 @@ const AdminUsers = () => {
             {/* Role Filter */}
             <div>
               <label className="text-xs text-gray-600 mb-2 block font-medium">تصفية حسب الدور</label>
-              <Select value={selectedRole} onValueChange={setSelectedRole}>
+              <Select name="selectedRole" value={selectedRole} onValueChange={setSelectedRole}>
                 <SelectTrigger className="h-11 bg-gray-50 border-gray-200 focus:ring-2 focus:ring-[#0B5A8E]/20 text-[#1A2B3C] rounded-xl font-medium">
                   <SelectValue placeholder="جميع الأدوار" />
                 </SelectTrigger>
@@ -225,7 +225,7 @@ const AdminUsers = () => {
             {/* Status Filter */}
             <div>
               <label className="text-xs text-gray-600 mb-2 block font-medium">تصفية حسب الحالة</label>
-              <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+              <Select name="selectedStatus" value={selectedStatus} onValueChange={setSelectedStatus}>
                 <SelectTrigger className="h-11 bg-gray-50 border-gray-200 focus:ring-2 focus:ring-[#0B5A8E]/20 text-[#1A2B3C] rounded-xl font-medium">
                   <SelectValue placeholder="جميع الحالات" />
                 </SelectTrigger>
@@ -357,8 +357,7 @@ const AdminUsers = () => {
         <div className="space-y-4 py-2">
           <div className="space-y-2">
             <label className="text-xs font-bold text-gray-600 block">الاسم كامل</label>
-            <Input
-              type="text"
+            <Input name="editName" type="text"
               placeholder="اسم المستخدم"
               value={editName}
               onChange={(e) => setEditName(e.target.value)}
@@ -369,7 +368,7 @@ const AdminUsers = () => {
 
           <div className="space-y-2">
             <label className="text-xs font-bold text-gray-600 block">العيادة</label>
-            <Select value={editClinic} onValueChange={setEditClinic}>
+            <Select name="editClinic" value={editClinic} onValueChange={setEditClinic}>
               <SelectTrigger className="h-11 bg-gray-50 border-gray-200 focus:ring-2 focus:ring-[#0B5A8E]/20 text-[#1A2B3C] rounded-xl font-medium">
                 <SelectValue placeholder="اختر العيادة" />
               </SelectTrigger>
@@ -382,7 +381,7 @@ const AdminUsers = () => {
 
           <div className="space-y-2">
             <label className="text-xs font-bold text-gray-600 block">الدور الوظيفي</label>
-            <Select value={editRole} onValueChange={setEditRole}>
+            <Select name="editRole" value={editRole} onValueChange={setEditRole}>
               <SelectTrigger className="h-11 bg-gray-50 border-gray-200 focus:ring-2 focus:ring-[#0B5A8E]/20 text-[#1A2B3C] rounded-xl font-medium">
                 <SelectValue placeholder="اختر الدور" />
               </SelectTrigger>
@@ -411,8 +410,7 @@ const AdminUsers = () => {
           <p className="text-sm text-gray-500 mb-2">إعادة تعيين كلمة مرور المستخدم "{selectedUser?.name}"</p>
           <div className="space-y-2">
             <label className="text-xs font-bold text-gray-600 block">كلمة المرور الجديدة</label>
-            <Input
-              type="password"
+            <Input name="newPassword" type="password"
               placeholder="أدخل كلمة المرور الجديدة للمستخدم"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}

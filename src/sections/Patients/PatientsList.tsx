@@ -230,7 +230,7 @@ const PatientsList = () => {
                 <label className="text-xs text-muted-foreground mb-2 block font-medium">
                   {t('sort_label', T) || 'Sort By'}
                 </label>
-                <Select value={sort} onValueChange={setSort}>
+                <Select name="sort" value={sort} onValueChange={setSort}>
                   <SelectTrigger className="h-10 rounded-xl">
                     <SelectValue placeholder={t('sort_label', T) || 'Sort By'} />
                   </SelectTrigger>

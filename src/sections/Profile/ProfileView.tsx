@@ -919,7 +919,7 @@ const ProfileView = () => {
                   <div className="flex flex-col gap-2">
                     <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('common.email')}</label>
                     <div className="flex gap-2">
-                      <Input readOnly value={personalInfo.email} className="flex-1 h-11 bg-muted/50 border-border cursor-not-allowed text-muted-foreground" />
+                      <Input name="email" readOnly value={personalInfo.email} className="flex-1 h-11 bg-muted/50 border-border cursor-not-allowed text-muted-foreground" />
                       <button
                         onClick={() => setIsEmailModalOpen(true)}
                         className="h-11 px-4 border border-primary/30 rounded-xl text-primary bg-primary/5 hover:bg-primary/10 transition-all flex items-center gap-2 text-sm font-bold animate-in fade-in duration-300"
@@ -967,6 +967,7 @@ const ProfileView = () => {
                       {isEditingProfile ? (
                         <div className="relative group flex items-center justify-between h-11 bg-muted/30 focus-within:bg-white border border-border rounded-xl px-4 transition-all focus-within:ring-4 focus-within:ring-primary/10">
                           <DatePicker
+                            name="dateOfBirth"
                             value={personalInfo.dateOfBirth ? new Date(personalInfo.dateOfBirth) : new Date()}
                             useYearSelect={true}
                             onChange={([d]) => { if (d) setPersonalInfo({ ...personalInfo, dateOfBirth: format(d, 'yyyy-MM-dd') }) }}
@@ -978,6 +979,7 @@ const ProfileView = () => {
                         </div>
                       ) : (
                         <Input
+                          name="dateOfBirth"
                           readOnly
                           value={personalInfo.dateOfBirth || (isAr ? '[غير محدد]' : '[Not detected]')}
                           icon={<FaCalendarAlt size={18} />}
@@ -1113,6 +1115,7 @@ const ProfileView = () => {
                         <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{isAr ? 'مدة الموعد الافتراضية (بالدقائق)' : 'Default Appointment Period (mins)'}</label>
                         <Input
                           id="appointment-period-input"
+                          name="defaultAppointmentPeriod"
                           type="tel"
                           error={appointmentPeriodError || undefined}
                           value={personalInfo.defaultAppointmentPeriod}
@@ -1372,6 +1375,7 @@ const ProfileView = () => {
                   <div className="flex flex-col gap-2">
                     <label className="text-sm font-semibold">{t('profile.clinic_name', T_PAGE)}</label>
                     <Input
+                      name="name"
                       value={clinicInfo.name}
                       onChange={(e) => setClinicInfo({ ...clinicInfo, name: e.target.value })}
                       className={cn(
@@ -1384,6 +1388,7 @@ const ProfileView = () => {
                   <div className="flex flex-col gap-2">
                     <label className="text-sm font-semibold">{t('profile.specialty', T_PAGE)}</label>
                     <Input
+                      name="medicalCategory"
                       value={clinicInfo.medicalCategory}
                       onChange={(e) => setClinicInfo({ ...clinicInfo, medicalCategory: e.target.value })}
                       className={cn(
@@ -1396,6 +1401,7 @@ const ProfileView = () => {
                   <div className="flex flex-col gap-2">
                     <label className="text-sm font-semibold">{t('common.phone')}</label>
                     <Input
+                      name="phoneNumber"
                       value={clinicInfo.phoneNumber}
                       dir="ltr"
                       onChange={(e) => setClinicInfo({ ...clinicInfo, phoneNumber: e.target.value })}
@@ -1410,6 +1416,7 @@ const ProfileView = () => {
                   <div className="flex flex-col gap-2">
                     <label className="text-sm font-semibold">{t('common.email')}</label>
                     <Input
+                      name="email"
                       value={clinicInfo.email}
                       onChange={(e) => setClinicInfo({ ...clinicInfo, email: e.target.value })}
                       className={cn(
@@ -1422,6 +1429,7 @@ const ProfileView = () => {
                   <div className="flex flex-col gap-2">
                     <label className="text-sm font-semibold">{t('profile.city', T_PAGE)}</label>
                     <Input
+                      name="city"
                       value={clinicInfo.city}
                       onChange={(e) => setClinicInfo({ ...clinicInfo, city: e.target.value })}
                       className={cn(
@@ -1434,6 +1442,7 @@ const ProfileView = () => {
                   <div className="flex flex-col gap-2">
                     <label className="text-sm font-semibold">{t('profile.country', T_PAGE)}</label>
                     <Input
+                      name="country"
                       value={clinicInfo.country}
                       onChange={(e) => setClinicInfo({ ...clinicInfo, country: e.target.value })}
                       className={cn(
@@ -1446,6 +1455,7 @@ const ProfileView = () => {
                   <div className="flex flex-col gap-2 md:col-span-2">
                     <label className="text-sm font-semibold">{t('profile.full_address', T_PAGE)}</label>
                     <Input
+                      name="address"
                       value={clinicInfo.address}
                       onChange={(e) => setClinicInfo({ ...clinicInfo, address: e.target.value })}
                       className={cn(

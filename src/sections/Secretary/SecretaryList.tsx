@@ -249,8 +249,7 @@ const SecretaryList = () => {
             <label className="text-xs text-muted-foreground mb-2 block font-medium">
               {isAr ? "البحث" : "Search"}
             </label>
-            <Input
-              type="text"
+            <Input name="search" type="text"
               placeholder={t('search_placeholder', T)}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -265,7 +264,7 @@ const SecretaryList = () => {
             <label className="text-xs text-muted-foreground mb-2 block font-medium">
               {t('status_label', T)}
             </label>
-            <Select value={status} onValueChange={setStatus}>
+            <Select name="status" value={status} onValueChange={setStatus}>
               <SelectTrigger className="h-11 rounded-xl">
                 <SelectValue placeholder={t('all_statuses', T)} />
               </SelectTrigger>
@@ -283,7 +282,7 @@ const SecretaryList = () => {
             <label className="text-xs text-muted-foreground mb-2 block font-medium">
               {t('sort_label', T)}
             </label>
-            <Select value={sort} onValueChange={setSort}>
+            <Select name="sort" value={sort} onValueChange={setSort}>
               <SelectTrigger className="h-11 rounded-xl">
                 <SelectValue />
               </SelectTrigger>

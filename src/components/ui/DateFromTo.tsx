@@ -47,8 +47,7 @@ export const DateFromTo = ({
           {isAr ? "من تاريخ" : "From Date"}
         </label>
         <div className="relative group flex items-center justify-between h-11 bg-white border border-border rounded-xl px-4 transition-all focus-within:ring-4 focus-within:ring-primary/10">
-          <DatePicker
-            key={`from-date-${fromDate}`} // Forces re-render on value update to sync min/max boundaries
+          <DatePicker name="fromDateObj" key={`from-date-${fromDate}`} // Forces re-render on value update to sync min/max boundaries
             id="from-date-mui"
             value={fromDateObj}
             onChange={([date], dateStr) => {
@@ -76,8 +75,7 @@ export const DateFromTo = ({
           {isAr ? "إلى تاريخ" : "To Date"}
         </label>
         <div className="relative group flex items-center justify-between h-11 bg-white border border-border rounded-xl px-4 transition-all focus-within:ring-4 focus-within:ring-primary/10">
-          <DatePicker
-            key={`to-date-${toDate}`} // Forces re-render on value update to sync min/max boundaries
+          <DatePicker name="toDateObj" key={`to-date-${toDate}`} // Forces re-render on value update to sync min/max boundaries
             id="to-date-mui"
             value={toDateObj}
             onChange={([date], dateStr) => {

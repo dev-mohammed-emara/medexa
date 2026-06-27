@@ -137,7 +137,7 @@ const SupportTicket = () => {
             <label className="text-xs font-bold text-foreground/70 block">
               {isAr ? 'الصفحة المعنية' : 'Related Page'} <span className="text-destructive">*</span>
             </label>
-            <Select value={section} onValueChange={setSection}>
+            <Select name="section" value={section} onValueChange={setSection}>
               <SelectTrigger className="w-full h-12 rounded-xl bg-white border border-border text-start">
                 <SelectValue placeholder={isAr ? 'الصفحة المعنية' : 'Related Page'} />
               </SelectTrigger>

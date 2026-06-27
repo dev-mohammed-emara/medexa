@@ -200,7 +200,7 @@ const SupportTicketsList = () => {
                   <label className="text-xs text-muted-foreground mb-2 block font-medium">
                     {isAr ? "الحالة" : "Status"}
                   </label>
-                  <Select value={status} onValueChange={setStatus}>
+                  <Select name="status" value={status} onValueChange={setStatus}>
                     <SelectTrigger className="h-10 rounded-xl">
                       <SelectValue placeholder={isAr ? "كل الحالات" : "All Statuses"} />
                     </SelectTrigger>
@@ -219,7 +219,7 @@ const SupportTicketsList = () => {
                   <label className="text-xs text-muted-foreground mb-2 block font-medium">
                     {isAr ? "الأولوية" : "Priority"}
                   </label>
-                  <Select value={priority} onValueChange={setPriority}>
+                  <Select name="priority" value={priority} onValueChange={setPriority}>
                     <SelectTrigger className="h-10 rounded-xl">
                       <SelectValue placeholder={isAr ? "كل الأولويات" : "All Priorities"} />
                     </SelectTrigger>
@@ -238,7 +238,7 @@ const SupportTicketsList = () => {
                   <label className="text-xs text-muted-foreground mb-2 block font-medium">
                     {isAr ? "ترتيب حسب" : "Sort By"}
                   </label>
-                  <Select value={sort} onValueChange={setSort}>
+                  <Select name="sort" value={sort} onValueChange={setSort}>
                     <SelectTrigger className="h-10 rounded-xl">
                       <SelectValue placeholder={isAr ? "ترتيب حسب" : "Sort By"} />
                     </SelectTrigger>

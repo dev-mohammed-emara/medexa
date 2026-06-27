@@ -348,8 +348,7 @@ const AdminClinics = () => {
 
             {/* Medical Category Filter */}
             <div className="w-full lg:w-48">
-              <Select
-                value={selectedCategory}
+              <Select name="selectedCategory" value={selectedCategory}
                 onValueChange={(val) => {
                   setSelectedCategory(val)
                   setCurrentPage(1)
@@ -374,8 +373,7 @@ const AdminClinics = () => {
 
             {/* Status Filter */}
             <div className="w-full lg:w-48">
-              <Select
-                value={selectedStatus}
+              <Select name="selectedStatus" value={selectedStatus}
                 onValueChange={(val) => {
                   setSelectedStatus(val)
                   setCurrentPage(1)
@@ -394,8 +392,7 @@ const AdminClinics = () => {
 
             {/* City Filter */}
             <div className="w-full lg:w-48">
-              <Select
-                value={selectedCity}
+              <Select name="selectedCity" value={selectedCity}
                 onValueChange={(val) => {
                   setSelectedCity(val)
                   setCurrentPage(1)

@@ -215,8 +215,7 @@ const AdminLogs = () => {
 
             {/* Search Input */}
             <div className="flex-1 w-full">
-              <Input
-                placeholder="بحث في السجلات..."
+              <Input name="searchTerm" placeholder="بحث في السجلات..."
                 value={searchTerm}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleFilterChange(() => setSearchTerm(e.target.value))}
                 icon={<Search size={18} />}
@@ -227,7 +226,7 @@ const AdminLogs = () => {
             <div className="flex gap-4 w-full lg:w-auto">
 
               {/* Type Select */}
-              <Select value={typeFilter} onValueChange={(value) => handleFilterChange(() => setTypeFilter(value))}>
+              <Select name="typeFilter" value={typeFilter} onValueChange={(value) => handleFilterChange(() => setTypeFilter(value))}>
                 <SelectTrigger className="w-full lg:w-40">
                   <SelectValue placeholder="جميع الأنواع" />
                 </SelectTrigger>
@@ -241,7 +240,7 @@ const AdminLogs = () => {
               </Select>
 
               {/* Severity Select */}
-              <Select value={severityFilter} onValueChange={(value) => handleFilterChange(() => setSeverityFilter(value))}>
+              <Select name="severityFilter" value={severityFilter} onValueChange={(value) => handleFilterChange(() => setSeverityFilter(value))}>
                 <SelectTrigger className="w-full lg:w-40">
                   <SelectValue placeholder="جميع المستويات" />
                 </SelectTrigger>

@@ -75,8 +75,7 @@ const TableFooter = ({
                 {isAr ? "حجم الصفحة:" : "Page Size:"}
               </span>
               <div className="min-w-[70px]">
-                <Select
-                  value={String(activePageSize)}
+                <Select name="String" value={String(activePageSize)}
                   onValueChange={onItemsPerPageChange}
                 >
                   <SelectTrigger className="h-9 rounded-xl border border-border bg-white text-foreground px-3 flex items-center justify-center gap-2 font-bold">
@@ -110,8 +109,7 @@ const TableFooter = ({
         </button>
 
         <div className="min-w-[70px]">
-          <Select
-            value={String(currentPage)}
+          <Select name="String" value={String(currentPage)}
             onValueChange={(value) => onPageChange(Number(value))}
             disabled={resolvedTotalPages <= 1}
           >

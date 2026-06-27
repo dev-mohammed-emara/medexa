@@ -226,7 +226,7 @@ const PatientsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Patie
                     }
                   </p>
                 </div>
-                <Select value={selectedGender} onValueChange={(val) => setSelectedGender(val as 'MALE' | 'FEMALE' | '')} >
+                <Select name="selectedGender" value={selectedGender} onValueChange={(val) => setSelectedGender(val as 'MALE' | 'FEMALE' | '')} >
                   <SelectTrigger className={cn("rounded-xl h-12 bg-input-background transition-all focus:ring-4 focus:ring-primary/10", (selectedGender) && "text-foreground font-bold")}>
                     <SelectValue placeholder={t('dialog.gender', T)} />
                   </SelectTrigger>
@@ -235,8 +235,7 @@ const PatientsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Patie
                     <SelectItem value="FEMALE">{t('dialog.female', T)}</SelectItem>
                   </SelectContent>
                 </Select>
-                <DatePicker
-                  value={selectedDob}
+                <DatePicker name="selectedDob" value={selectedDob}
                   useYearSelect={true}
                   onChange={([date]) => setSelectedDob(date ? date.toISOString().split('T')[0] : '')}
                   maxDate={new Date()}

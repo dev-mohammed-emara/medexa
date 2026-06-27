@@ -234,7 +234,7 @@ const AdminStats = () => {
             <p className="text-gray-500">تحليلات شاملة لأداء النظام ونموه</p>
           </div>
 
-          <Select value={period} onValueChange={setPeriod}>
+          <Select name="period" value={period} onValueChange={setPeriod}>
             <SelectTrigger className="w-48 bg-gray-50 border-gray-200">
               <SelectValue placeholder="آخر 6 أشهر" />
             </SelectTrigger>

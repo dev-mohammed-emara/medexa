@@ -573,8 +573,7 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, doc
                   <div className="flex flex-col gap-2">
                     <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.date', T)} <span className="text-destructive">*</span></label>
                     <div className={cn("relative group flex items-center justify-between h-12 bg-input-background border border-border rounded-xl px-4 focus-within:ring-4 focus-within:ring-primary/10 transition-all", isAr ? "flex-row" : "flex-row-reverse")}>
-                      <DatePicker
-                        value={parseLocalDate(selectedDate)}
+                      <DatePicker name="parseLocalDate" value={parseLocalDate(selectedDate)}
                         useYearSelect={true}
                         onChange={([date]) => setSelectedDate(date ? format(date, 'yyyy-MM-dd') : '')}
                         placeholder={t('dialog.select_date', T)}
@@ -612,7 +611,7 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, doc
                     <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.appointment_type', T)} <span className="text-xs font-normal text-muted-foreground mx-1">{isAr ? "(اختياري)" : "(optional)"}</span></label>
                     <div className="flex items-center gap-2">
                       <div className="flex-1">
-                        <Select value={selectedAppointmentType} onValueChange={setSelectedAppointmentType}>
+                        <Select name="selectedAppointmentType" value={selectedAppointmentType} onValueChange={setSelectedAppointmentType}>
                           <SelectTrigger className={cn("rounded-xl h-12 bg-input-background transition-all focus:ring-4 focus:ring-primary/10 w-full", (selectedAppointmentType) && "text-foreground font-bold")}>
                             <SelectValue placeholder={t('dialog.select_type', T)} />
                           </SelectTrigger>
@@ -680,7 +679,7 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, doc
                 <div className="md:grid flex flex-col md:grid-cols-2 gap-6">
                   <div className="flex flex-col gap-2">
                     <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.patient', T)}</label>
-                    <Select value={selectedPatient} onValueChange={setSelectedPatient}>
+                    <Select name="selectedPatient" value={selectedPatient} onValueChange={setSelectedPatient}>
                       <SelectTrigger className={cn("rounded-xl h-12 bg-input-background transition-all focus:ring-4 focus:ring-primary/10", (selectedPatient) && "text-foreground font-bold")}>
                         <SelectValue placeholder={t('dialog.select_patient', T)} />
                       </SelectTrigger>
@@ -696,7 +695,7 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, doc
 
                   <div className="flex flex-col gap-2">
                     <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.doctor', T)}</label>
-                    <Select value={selectedDoctor} onValueChange={setSelectedDoctor}>
+                    <Select name="selectedDoctor" value={selectedDoctor} onValueChange={setSelectedDoctor}>
                       <SelectTrigger className={cn("rounded-xl h-12 bg-input-background transition-all focus:ring-4 focus:ring-primary/10", (selectedDoctor) && "text-foreground font-bold")}>
                         <SelectValue placeholder={t('dialog.select_doctor', T)} />
                       </SelectTrigger>
@@ -713,8 +712,7 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, doc
                   <div className="flex flex-col gap-2">
                     <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.date', T)}</label>
                     <div className={cn("relative group flex items-center justify-between h-12 bg-input-background border border-border rounded-xl px-4 focus-within:ring-4 focus-within:ring-primary/10 transition-all", isAr ? "flex-row" : "flex-row-reverse")}>
-                      <DatePicker
-                        value={parseLocalDate(selectedDate)}
+                      <DatePicker name="parseLocalDate" value={parseLocalDate(selectedDate)}
                         onChange={([date]) => setSelectedDate(date ? format(date, 'yyyy-MM-dd') : '')}
                         placeholder={t('dialog.select_date', T)}
                         className={cn("flex-1 bg-transparent border-none outline-none font-bold h-full text-base md:text-sm", isAr ? "text-right" : "text-left")}
@@ -751,7 +749,7 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, doc
                     <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.appointment_type', T)} <span className="text-xs font-normal text-muted-foreground mx-1">{isAr ? "(اختياري)" : "(optional)"}</span></label>
                     <div className="flex items-center gap-2">
                       <div className="flex-1">
-                        <Select value={selectedAppointmentType} onValueChange={setSelectedAppointmentType}>
+                        <Select name="selectedAppointmentType" value={selectedAppointmentType} onValueChange={setSelectedAppointmentType}>
                           <SelectTrigger className={cn("rounded-xl h-12 bg-input-background transition-all focus:ring-4 focus:ring-primary/10 w-full", (selectedAppointmentType) && "text-foreground font-bold")}>
                             <SelectValue placeholder={t('dialog.select_type', T)} />
                           </SelectTrigger>
@@ -790,7 +788,7 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, doc
                   {mode !== 'add' && (
                     <div className="flex flex-col gap-2 col-span-1 md:col-span-2">
                       <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.status', T)}</label>
-                      <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                      <Select name="selectedStatus" value={selectedStatus} onValueChange={setSelectedStatus}>
                         <SelectTrigger className={cn("rounded-xl h-12 bg-input-background transition-all focus:ring-4 focus:ring-primary/10", (selectedStatus) && "text-foreground font-bold")}>
                           <SelectValue placeholder={t('dialog.status', T)} />
                         </SelectTrigger>

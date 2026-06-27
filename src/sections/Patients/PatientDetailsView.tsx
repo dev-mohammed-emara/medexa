@@ -438,7 +438,7 @@ const PatientDetailsView = () => {
             <label className="flex items-center gap-2 font-bold select-none text-xs text-muted-foreground mr-1">
               {isAr ? "ترتيب حسب" : "Sort By"}
             </label>
-            <Select value={tempSort} onValueChange={setTempSort}>
+            <Select name="tempSort" value={tempSort} onValueChange={setTempSort}>
               <SelectTrigger className="rounded-xl h-11 bg-white border-border text-foreground font-bold">
                 <SelectValue />
               </SelectTrigger>
