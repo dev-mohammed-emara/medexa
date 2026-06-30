@@ -150,7 +150,7 @@ function SelectContent({
     const traverse = (node: React.ReactNode) => {
       React.Children.forEach(node, (child) => {
         if (React.isValidElement(child)) {
-          if ((child.props as any)["data-slot"] === "select-item") {
+          if (child.type === SelectItem || (child.type as any)?.name === "SelectItem" || (child.props as any)["data-slot"] === "select-item") {
             count++
           } else if ((child.props as any).children) {
             traverse((child.props as any).children)
@@ -181,7 +181,7 @@ function SelectContent({
       return React.Children.map(node, (child) => {
         if (!React.isValidElement(child)) return child
 
-        if ((child.props as any)["data-slot"] === "select-item") {
+        if (child.type === SelectItem || (child.type as any)?.name === "SelectItem" || (child.props as any)["data-slot"] === "select-item") {
           const text = getElementText((child.props as any).children).toLowerCase()
           return text.includes(search.toLowerCase().trim()) ? child : null
         }

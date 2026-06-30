@@ -28,27 +28,32 @@ export interface BackendErrorResponse {
 export const matchFieldName = (backendField: string, frontendNames: string[]): boolean => {
   if (!backendField || !frontendNames || frontendNames.length === 0) return false;
 
-  // 1. Exact match
-  if (frontendNames.includes(backendField)) return true;
+  const bfLower = backendField.toLowerCase();
+  const namesLower = frontendNames.map(n => n.toLowerCase());
+
+  // 1. Exact match (case-insensitive)
+  if (namesLower.includes(bfLower)) return true;
 
   const backendSegments = backendField.split('.');
-  const lastSegment = backendSegments[backendSegments.length - 1];
+  const lastSegment = backendSegments[backendSegments.length - 1].toLowerCase();
 
   for (const name of frontendNames) {
+    const nameLower = name.toLowerCase();
+
     // 2. Last segment match: 'owner.summary' === 'summary'
-    if (name === lastSegment) return true;
+    if (nameLower === lastSegment) return true;
 
     // 3. camelCase conversion: 'owner.summary' === 'ownerSummary'
     const camelCaseBackend = backendSegments.reduce((acc, part, index) => {
       if (index === 0) return part;
       return acc + part.charAt(0).toUpperCase() + part.slice(1);
-    }, '');
+    }, '').toLowerCase();
     
-    if (name === camelCaseBackend) return true;
+    if (nameLower === camelCaseBackend) return true;
 
     // 4. snake_case conversion: 'owner.summary' === 'owner_summary'
-    const snakeCaseBackend = backendSegments.join('_');
-    if (name === snakeCaseBackend) return true;
+    const snakeCaseBackend = backendSegments.join('_').toLowerCase();
+    if (nameLower === snakeCaseBackend) return true;
   }
 
   return false;
@@ -86,9 +91,16 @@ export const parseBackendValidationErrors = (
         const message = d.message || errorData.message || 'Invalid field';
 
         errors[d.field] = message;
+        errors[d.field.toLowerCase()] = message;
+        
         if (!errors[lastSegment]) errors[lastSegment] = message;
+        if (!errors[lastSegment.toLowerCase()]) errors[lastSegment.toLowerCase()] = message;
+        
         if (!errors[camelCase]) errors[camelCase] = message;
+        if (!errors[camelCase.toLowerCase()]) errors[camelCase.toLowerCase()] = message;
+        
         if (!errors[snakeCase]) errors[snakeCase] = message;
+        if (!errors[snakeCase.toLowerCase()]) errors[snakeCase.toLowerCase()] = message;
       }
     });
   }

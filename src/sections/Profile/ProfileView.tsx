@@ -1121,7 +1121,6 @@ const ProfileView = () => {
                           value={personalInfo.defaultAppointmentPeriod}
                           onChange={(e) => {
                             let val = e.target.value.replace(/\D/g, '');
-                            if (parseInt(val) > 240) val = '240';
                             if (appointmentPeriodError) setAppointmentPeriodError(null);
                             setPersonalInfo(p => ({ ...p, defaultAppointmentPeriod: val }))
                           }}

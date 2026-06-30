@@ -79,6 +79,7 @@ const SecretaryList = () => {
   const [secretaryToDelete, setSecretaryToDelete] = useState<ApiSecretary | null>(null);
   const [deleting, setDeleting] = useState(false);
   const { user: currentUser } = useAuth();
+  const canManageClinic = currentUser?.permissions?.includes('MANAGE_CLINIC') || currentUser?.role === 'ROLE_CLINIC_OWNER';
 
   // Load secretaries from API
   const loadSecretaries = useCallback(async (isCancelled?: () => boolean) => {
@@ -419,7 +420,7 @@ const SecretaryList = () => {
                               >
                                 {isAr ? "أنت" : "You"}
                               </button>
-                            ) : secretary.user?.status !== 'INACTIVE' ? (
+                            ) : secretary.user?.status !== 'INACTIVE' && canManageClinic ? (
                               <button
                                 onClick={() => handleDeleteClick(secretary)}
                                 disabled={fetchingSecretaryDetail || deleting}

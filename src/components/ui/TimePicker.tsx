@@ -3,12 +3,16 @@ import { Clock } from 'lucide-react';
 import { cn } from '../../utils/cn';
 import { useLanguage } from '../../contexts/LanguageContext';
 import Portal from './Portal';
+import { useFieldError } from '../../hooks/useFieldError';
 
 interface TimePickerProps {
   value: string; // "HH:MM" (24h format internally)
   onChange: (value: string) => void;
   className?: string;
   noClock?: boolean;
+  name?: string;
+  error?: string | boolean;
+  backendField?: string | string[];
 }
 
 const parseTo12h = (val: string) => {
@@ -32,9 +36,33 @@ const formatTo24h = (h: string, m: string, p: 'AM' | 'PM') => {
   return `${hInt.toString().padStart(2, '0')}:${(m || '00').padStart(2, '0')}`;
 };
 
-const TimePicker: React.FC<TimePickerProps> = ({ value, onChange, className, noClock = false }) => {
+const TimePicker: React.FC<TimePickerProps> = ({
+  value,
+  onChange,
+  className,
+  noClock = false,
+  name,
+  error,
+  backendField
+}) => {
   const { isAr } = useLanguage();
   const initial = parseTo12h(value || '08:00');
+
+  const fieldsToCheck = [];
+  if (name) fieldsToCheck.push(name);
+  if (backendField) {
+    if (Array.isArray(backendField)) fieldsToCheck.push(...backendField);
+    else fieldsToCheck.push(backendField);
+  }
+
+  const { backendError, setBackendError } = useFieldError(
+    fieldsToCheck.length > 0 ? fieldsToCheck : undefined
+  );
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (backendError) setErrorMsg(backendError);
+  }, [backendError]);
 
   const [isOpen, setIsOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
@@ -74,7 +102,11 @@ const TimePicker: React.FC<TimePickerProps> = ({ value, onChange, className, noC
     return () => window.removeEventListener('popstate', handlePopState);
   }, [isOpen]);
 
-  const handleOpen = () => setIsOpen(true);
+  const handleOpen = () => {
+    if (errorMsg) setErrorMsg(null);
+    if (backendError) setBackendError(null);
+    setIsOpen(true);
+  };
 
   const handleClose = () => {
     setIsClosing(true);
@@ -85,6 +117,8 @@ const TimePicker: React.FC<TimePickerProps> = ({ value, onChange, className, noC
   };
 
   const handleConfirm = () => {
+    if (errorMsg) setErrorMsg(null);
+    if (backendError) setBackendError(null);
     onChange(formatTo24h(tempH, tempM, tempP));
     handleClose();
   };
@@ -222,21 +256,29 @@ const TimePicker: React.FC<TimePickerProps> = ({ value, onChange, className, noC
     );
   };
 
+  const currentError = errorMsg || error;
+
   return (
-    <>
+    <div className="w-full flex flex-col" data-has-error={!!currentError}>
       <div
         ref={containerRef}
         onClick={handleOpen}
         className={cn(
-          "time-picker-container whitespace-nowrap flex items-center max-w-full text-center  bg-white border border-border rounded-xl px-3 py-1.5 transition-all hover:border-primary/50 cursor-pointer h-12 w-full",
+          "time-picker-container whitespace-nowrap flex items-center max-w-full text-center bg-white border border-border rounded-xl px-3 py-1.5 transition-all hover:border-primary/50 cursor-pointer h-12 w-full",
+          currentError && "border-destructive hover:border-destructive bg-destructive/5 text-destructive",
           className
         )}
       >
-        {!noClock && <Clock className="size-4 text-muted-foreground mr-2 ml-2" />}
-        <div className="flex-1 font-bold text-foreground w-full" dir="ltr">
+        {!noClock && <Clock className={cn("size-4 mr-2 ml-2", currentError ? "text-destructive" : "text-muted-foreground")} />}
+        <div className={cn("flex-1 font-bold w-full", currentError ? "text-destructive" : "text-foreground")} dir="ltr">
           {initial.h}:{initial.m} {initial.p === 'AM' ? (isAr ? 'ص' : 'AM') : (isAr ? 'م' : 'PM')}
         </div>
       </div>
+      {typeof currentError === 'string' && currentError && (
+        <p className="text-[11px] text-destructive mt-1.5 font-bold animate-in fade-in slide-in-from-top-1 text-start">
+          {currentError}
+        </p>
+      )}
 
       {isOpen && (
         <Portal>
@@ -336,7 +378,7 @@ const TimePicker: React.FC<TimePickerProps> = ({ value, onChange, className, noC
           </div>
         </Portal>
       )}
-    </>
+    </div>
   );
 };
 

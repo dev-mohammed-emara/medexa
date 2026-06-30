@@ -546,7 +546,6 @@ const SettingsView = ({ hideHeader, className }: SettingsViewProps = {}) => {
                 value={appointmentPeriod}
                 onChange={(e) => {
                   let val = e.target.value.replace(/\D/g, '');
-                  if (parseInt(val) > 480) val = '480';
                   if (appointmentPeriodError) setAppointmentPeriodError(null);
                   setAppointmentPeriod(Number(val));
                 }}

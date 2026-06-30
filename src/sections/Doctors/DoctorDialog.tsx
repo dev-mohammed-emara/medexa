@@ -50,6 +50,8 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
 
   const [password, setPassword] = useState('')
   const [passwordError, setPasswordError] = useState<string | null>(null)
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [confirmPasswordError, setConfirmPasswordError] = useState<string | null>(null)
 
   // Sync initialData values when dialog opens or changes
   useEffect(() => {
@@ -63,6 +65,8 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
       setSelectedGender("")
       setSelectedDob("")
       setPassword("")
+      setConfirmPassword("")
+      setConfirmPasswordError(null)
       setSelectedPermissions([])
     }
     setError(null)
@@ -103,6 +107,16 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
     try {
       const formData = new FormData(e.target as HTMLFormElement)
       const rawData = Object.fromEntries(formData.entries())
+
+      if (mode === 'add') {
+        const pass = String(rawData.password)
+        const confirmPass = String(rawData.confirmPassword)
+        if (pass !== confirmPass) {
+          setConfirmPasswordError(isAr ? "كلمتا المرور غير متطابقتين" : "Passwords do not match")
+          setLoading(false)
+          return
+        }
+      }
 
       // Construct API payload
       const userPayload: any = {
@@ -339,6 +353,53 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
                       )}
                     </div>
                     <div className="flex flex-col gap-2">
+                      <label htmlFor={inputId('confirm_password')} className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>
+                        {isAr ? 'تأكيد كلمة المرور' : 'Confirm Password'}
+                      </label>
+                      <Input
+                        id={inputId('confirm_password')}
+                        type="password"
+                        name="confirmPassword"
+                        required
+                        placeholder="••••••••"
+                        className={inputClass}
+                        dir="ltr"
+                        value={confirmPassword}
+                        error={confirmPasswordError || undefined}
+                        onChange={(e) => {
+                          if (confirmPasswordError) setConfirmPasswordError(null);
+                          setConfirmPassword(e.target.value);
+                        }}
+                      />
+                      {confirmPassword.length > 0 && (
+                        <div className="mt-2 animate-fade">
+                          <div className="flex gap-2">
+                            <div className="flex-1 flex flex-col gap-1.5">
+                              <div
+                                className={cn(
+                                  "h-1 rounded-full transition-all duration-500",
+                                  password === confirmPassword ? "bg-emerald-500" : "bg-destructive"
+                                )}
+                              />
+                              <div className="flex items-center justify-center gap-0.5 px-0.5">
+                                {password === confirmPassword ? (
+                                  <Check className="size-2.5 text-emerald-500 stroke-[4px] shrink-0" />
+                                ) : (
+                                  <X className="size-2.5 text-destructive stroke-[4px] shrink-0" />
+                                )}
+                                <span className={cn(
+                                  "text-[8px] transition-colors leading-tight text-center font-semibold",
+                                  password === confirmPassword ? "text-emerald-700 font-bold" : "text-destructive"
+                                )}>
+                                  {isAr ? 'كلمتا المرور متطابقتين' : 'Passwords Match'}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex flex-col gap-2 col-span-1 md:col-span-2">
                       <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.dob', T)}</label>
                       <DatePicker
                         name="dateOfBirth"

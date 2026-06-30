@@ -50,6 +50,8 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
 
   const [password, setPassword] = useState('');
   const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [confirmPasswordError, setConfirmPasswordError] = useState<string | null>(null);
 
   // Sync initialData values when dialog opens or changes
   useEffect(() => {
@@ -61,6 +63,8 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
       setSelectedGender("");
       setSelectedDob("");
       setPassword("");
+      setConfirmPassword("");
+      setConfirmPasswordError(null);
       setSelectedPermissions([]);
     }
   }, [initialData, isOpen]);
@@ -98,6 +102,16 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
     try {
       const formData = new FormData(e.target as HTMLFormElement);
       const formDataObj = Object.fromEntries(formData.entries());
+
+      if (mode === 'add') {
+        const pass = String(formDataObj.password)
+        const confirmPass = String(formDataObj.confirmPassword)
+        if (pass !== confirmPass) {
+          setConfirmPasswordError(isAr ? "كلمتا المرور غير متطابقتين" : "Passwords do not match")
+          setLoading(false)
+          return
+        }
+      }
 
       // Construct API payload
       const userPayload: any = {
@@ -352,6 +366,53 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
                                 </div>
                               </div>
                             ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex flex-col gap-2 text-start">
+                      <label htmlFor={inputId('confirm_password')} className="text-sm font-semibold text-foreground/80 pr-1">
+                        {isAr ? 'تأكيد كلمة المرور' : 'Confirm Password'}
+                      </label>
+                      <Input
+                        id={inputId('confirm_password')}
+                        type="password"
+                        name="confirmPassword"
+                        required
+                        placeholder="••••••••"
+                        className={inputClass}
+                        dir="ltr"
+                        value={confirmPassword}
+                        error={confirmPasswordError || undefined}
+                        onChange={(e) => {
+                          if (confirmPasswordError) setConfirmPasswordError(null);
+                          setConfirmPassword(e.target.value);
+                        }}
+                      />
+                      {confirmPassword.length > 0 && (
+                        <div className="mt-2 animate-fade">
+                          <div className="flex gap-2">
+                            <div className="flex-1 flex flex-col gap-1.5">
+                              <div
+                                className={cn(
+                                  "h-1 rounded-full transition-all duration-500",
+                                  password === confirmPassword ? "bg-emerald-500" : "bg-destructive"
+                                )}
+                              />
+                              <div className="flex items-center justify-center gap-0.5 px-0.5">
+                                {password === confirmPassword ? (
+                                  <Check className="size-2.5 text-emerald-500 stroke-[4px] shrink-0" />
+                                ) : (
+                                  <X className="size-2.5 text-destructive stroke-[4px] shrink-0" />
+                                )}
+                                <span className={cn(
+                                  "text-[8px] transition-colors leading-tight text-center font-semibold",
+                                  password === confirmPassword ? "text-emerald-700 font-bold" : "text-destructive"
+                                )}>
+                                  {isAr ? 'كلمتا المرور متطابقتين' : 'Passwords Match'}
+                                </span>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       )}

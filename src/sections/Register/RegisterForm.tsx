@@ -53,6 +53,7 @@ const RegisterForm = () => {
   const canAnimate = isLoaded && !isExiting
   const navigate = useNavigate()
   const [isPending, startTransition] = useTransition()
+  const [periodError, setPeriodError] = useState<string | null>(null)
 
   // State for form data
   const [formData, setFormData] = useState<RegisterFormData>({
@@ -124,6 +125,13 @@ const RegisterForm = () => {
 
     if (formData.password !== formData.confirmPassword) {
       window.showToast('كلمتا المرور غير متطابقتين', 'error');
+      return;
+    }
+
+    const period = parseInt(formData.defaultAppointmentPeriod) || 0;
+    if (period > 240) {
+      setPeriodError(isAr ? 'لا يمكن تجاوز 240' : 'cant exceed 240');
+      window.showToast(isAr ? 'لا يمكن تجاوز 240' : 'cant exceed 240', 'error');
       return;
     }
 
@@ -341,7 +349,11 @@ const RegisterForm = () => {
                   required
                   placeholder="مثال: 30"
                   value={formData.defaultAppointmentPeriod}
-                  onChange={handleChange}
+                  onChange={(e) => {
+                    setPeriodError(null);
+                    handleChange(e);
+                  }}
+                  error={periodError || undefined}
                 />
               </div>
             </div>
@@ -377,6 +389,7 @@ const RegisterForm = () => {
                   value={formData.surname}
                   onChange={handleChange}
                   icon={<LuUser size={18} />}
+                  backendField="owner.user.surName"
                 />
               </div>
               <div>

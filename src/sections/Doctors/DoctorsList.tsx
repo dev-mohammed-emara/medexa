@@ -43,6 +43,7 @@ const DoctorsList = () => {
   const { isLoaded, isExiting } = usePreloader()
   const canAnimate = isLoaded && !isExiting
   const { user: currentUser } = useAuth()
+  const canManageClinic = currentUser?.permissions?.includes('MANAGE_CLINIC') || currentUser?.role === 'ROLE_CLINIC_OWNER';
 
   const { broadcast } = useBroadcast((event) => {
     if (event.type === 'DATA_UPDATE' && event.module === 'doctors') {
@@ -461,7 +462,7 @@ const DoctorsList = () => {
                               >
                                 {isAr ? "أنت" : "You"}
                               </button>
-                            ) : doctor.user?.status !== 'INACTIVE' ? (
+                            ) : doctor.user?.status !== 'INACTIVE' && canManageClinic ? (
                               <button
                                 onClick={() => handleDeleteClick(doctor)}
                                 disabled={fetchingDoctorDetail || deleting}

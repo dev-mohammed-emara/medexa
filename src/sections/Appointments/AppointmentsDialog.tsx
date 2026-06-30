@@ -1,7 +1,7 @@
 import { format } from 'date-fns';
 
 
-import { Clock, DollarSign, Phone, Plus, Stethoscope, User, X, Check, AlertCircle } from 'lucide-react';
+import { Clock, DollarSign, Phone, Plus, Stethoscope, User, X, AlertCircle, FileText } from 'lucide-react';
 import { TbCancel } from 'react-icons/tb';
 import { FaCalendarAlt } from 'react-icons/fa';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -29,6 +29,7 @@ import { getCookie } from '../../utils/cookie';
 import { useAuth } from '../../contexts/AuthContext';
 import { getErrorMessage } from '../../utils/error';
 import { apiFetch } from '../../utils/apiFetch';
+import { useFieldError } from '../../hooks/useFieldError';
 
 export interface Appointment {
   id: number | string;
@@ -60,7 +61,7 @@ interface AppointmentsDialogProps {
   onComplete?: (app: Appointment) => void;
 }
 
-const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, doctorsList: doctorsListProp, onCancel, onComplete }: AppointmentsDialogProps) => {
+const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, doctorsList: doctorsListProp, onComplete, onCancel }: AppointmentsDialogProps) => {
   const { isAr, dir, t } = useLanguage();
   const { user } = useAuth();
   const hasManageMedicalRecords = user?.permissions?.includes('MANAGE_MEDICAL_RECORDS') || user?.role === 'ROLE_CLINIC_OWNER' || user?.role === 'ROLE_DOCTOR' || user?.roles?.includes('ROLE_DOCTOR');
@@ -69,6 +70,10 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, doc
   const overlayRef = useRef<HTMLDivElement>(null);  
   const [isClosing, setIsClosing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
+  const { backendError: doctorNotesError } = useFieldError(["doctorNote", "doctorNotes"]);
+  const { backendError: patientNotesError } = useFieldError(["patientNote", "patientNotes"]);
 
   // Safely parse yyyy-MM-dd string to local Date object to prevent timezone shifting
   const parseLocalDate = (dateStr: string) => {
@@ -159,7 +164,10 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, doc
         setPatientNotes(initialData?.patientNotes || "");
       }
     }
-    if (!cancelled) setError(null);
+    if (!cancelled) {
+      setError(null);
+      setFormErrors({});
+    }
     return () => {
       cancelled = true;
     };
@@ -295,13 +303,41 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, doc
   const handleSubmit = async (e: React.BaseSyntheticEvent) => {
     e.preventDefault();
     setError(null);
+    setFormErrors({});
     if (mode === 'view') {
       handleClose();
       return;
     }
 
-    if (!selectedDate || !selectedTime || !selectedPatient || !selectedDoctor) {
+    const errors: Record<string, string> = {};
+    if (!selectedDate) {
+      errors.date = isAr ? "تاريخ الموعد مطلوب" : "Date is required";
+    }
+    if (!selectedTime) {
+      errors.time = isAr ? "وقت البدء مطلوب" : "Start time is required";
+    }
+    
+    if (mode === 'add') {
+      if (!selectedPatient) {
+        errors.patient = isAr ? "يرجى اختيار المريض" : "Patient is required";
+      }
+      if (!selectedDoctor) {
+        errors.doctor = isAr ? "يرجى اختيار الطبيب" : "Doctor is required";
+      }
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
       setError(isAr ? "يرجى ملء جميع الحقول المطلوبة" : "Please fill all required fields");
+      
+      setTimeout(() => {
+        const firstErrorEl = document.querySelector('[data-has-error="true"]');
+        if (firstErrorEl) {
+          firstErrorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          const focusable = firstErrorEl.querySelector('button, input, select, textarea') as HTMLElement;
+          focusable?.focus();
+        }
+      }, 100);
       return;
     }
 
@@ -572,114 +608,100 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, doc
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="flex flex-col gap-2">
                     <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.date', T)} <span className="text-destructive">*</span></label>
-                    <div className={cn("relative group flex items-center justify-between h-12 bg-input-background border border-border rounded-xl px-4 focus-within:ring-4 focus-within:ring-primary/10 transition-all", isAr ? "flex-row" : "flex-row-reverse")}>
-                      <DatePicker name="parseLocalDate" value={parseLocalDate(selectedDate)}
-                        useYearSelect={true}
-                        onChange={([date]) => setSelectedDate(date ? format(date, 'yyyy-MM-dd') : '')}
-                        placeholder={t('dialog.select_date', T)}
-                        className={cn("flex-1 bg-transparent border-none outline-none font-bold h-full text-base md:text-sm", isAr ? "text-right" : "text-left")}
-                      />
-                      <FaCalendarAlt className="text-muted-foreground pointer-events-none group-focus-within:text-primary transition-colors size-[18px]" />
-                    </div>
+                    <DatePicker 
+                      name="date" 
+                      backendField={["appointmentDate", "date"]}
+                      value={parseLocalDate(selectedDate)}
+                      useYearSelect={true}
+                      onChange={([date]) => {
+                        setSelectedDate(date ? format(date, 'yyyy-MM-dd') : '');
+                        setFormErrors(prev => ({ ...prev, date: '' }));
+                      }}
+                      placeholder={t('dialog.select_date', T)}
+                      icon={<FaCalendarAlt className="size-[18px]" />}
+                      error={formErrors.date}
+                      className="w-full font-bold"
+                    />
                   </div>
 
                   <div className="flex flex-col gap-2">
                     <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.time', T)} <span className="text-destructive">*</span></label>
-                    <div className="relative group">
-                      <TimePicker
-                        value={selectedTime}
-                        onChange={setSelectedTime}
-                        className={cn("w-full h-12 bg-input-background justify-center xs:justify-end border border-border rounded-xl transition-all outline-none focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10", isAr ? "text-right" : "text-left")}
-                      />
-                    </div>
+                    <TimePicker
+                      name="time"
+                      backendField={["appointmentStartTime", "time"]}
+                      value={selectedTime}
+                      onChange={(val) => {
+                        setSelectedTime(val);
+                        setFormErrors(prev => ({ ...prev, time: '' }));
+                      }}
+                      error={formErrors.time}
+                    />
                   </div>
 
-                  {!selectedAppointmentType && (
-                    <div className="flex flex-col gap-2">
-                      <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.end_time', T)} <span className="text-xs font-normal text-muted-foreground mx-1">{isAr ? "(اختياري)" : "(optional)"}</span></label>
-                      <div className="relative group">
-                        <TimePicker
-                          value={selectedEndTime}
-                          onChange={setSelectedEndTime}
-                          className={cn("w-full h-12 bg-input-background justify-center xs:justify-end border border-border rounded-xl transition-all outline-none focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10", isAr ? "text-right" : "text-left")}
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="flex flex-col gap-2 col-span-1 md:col-span-2">
-                    <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.appointment_type', T)} <span className="text-xs font-normal text-muted-foreground mx-1">{isAr ? "(اختياري)" : "(optional)"}</span></label>
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1">
-                        <Select name="selectedAppointmentType" value={selectedAppointmentType} onValueChange={setSelectedAppointmentType}>
-                          <SelectTrigger className={cn("rounded-xl h-12 bg-input-background transition-all focus:ring-4 focus:ring-primary/10 w-full", (selectedAppointmentType) && "text-foreground font-bold")}>
-                            <SelectValue placeholder={t('dialog.select_type', T)} />
-                          </SelectTrigger>
-                          <SelectContent className={cn("rounded-xl z-600", isAr ? "text-right" : "text-left")} >
-                            {appointmentTypesList.map((type) => (
-                              <SelectItem key={type.uuid} value={type.uuid}>
-                                {type.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      {selectedAppointmentType && (
-                        <button 
-                          type="button" 
-                          onClick={() => setSelectedAppointmentType("")}
-                          className="shrink-0 h-12 px-3 rounded-xl border border-destructive/20 text-destructive hover:bg-destructive/10 transition-colors flex items-center justify-center bg-input-background"
-                          title={isAr ? "إزالة نوع الموعد" : "Remove Appointment Type"}
-                        >
-                          <TbCancel className="size-5" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="mt-2 p-3 bg-blue-50/50 border border-blue-100 rounded-lg text-xs text-blue-800 space-y-1 col-span-1 md:col-span-2">
-                    <p className="font-semibold flex items-center gap-1"><AlertCircle className="size-3"/> {isAr ? 'كيفية حساب مدة الموعد:' : 'How appointment duration is calculated:'}</p>
-                    <ul className={cn("list-disc space-y-1 text-blue-700/80", isAr ? "pr-4" : "pl-4")}>
-                      <li>{isAr ? 'إذا تم اختيار نوع الموعد، يتم استخدام مدته (ويتم إخفاء وتجاهل وقت الانتهاء).' : 'If Appointment Type is selected, its duration is used (end time is ignored and hidden).'}</li>
-                      <li>{isAr ? 'إذا لم يتم اختيار نوع الموعد، يتم استخدام وقت الانتهاء.' : 'If no Appointment Type, End Time is used.'}</li>
-                      <li>{isAr ? 'إذا لم يتم تحديد وقت الانتهاء، يتم استخدام مدة كشفية الطبيب الافتراضية.' : 'If End Time is not set, Doctor Default Clinic Period is used.'}</li>
-                      <li>{isAr ? 'إذا لم يكن للطبيب مدة افتراضية، يتم استخدام المدة الافتراضية للعيادة.' : 'If no Doctor Default Period, Clinic Default Period is used.'}</li>
-                    </ul>
+                  <div className="flex flex-col gap-2">
+                    <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.end_time', T)} <span className="text-xs font-normal text-muted-foreground mx-1">{isAr ? "(اختياري)" : "(optional)"}</span></label>
+                    <TimePicker
+                      name="endTime"
+                      backendField={["appointmentEndTime", "endTime"]}
+                      value={selectedEndTime}
+                      onChange={setSelectedEndTime}
+                    />
                   </div>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-2" data-has-error={!!doctorNotesError}>
                   <label className="text-sm font-medium">{t('dialog.doctor_notes', T)} <span className="text-xs font-normal text-muted-foreground mx-1">{isAr ? "(اختياري)" : "(optional)"}</span></label>
                   <textarea
                     value={doctorNotes}
                     onChange={(e) => setDoctorNotes(e.target.value)}
                     placeholder={t('dialog.doctor_notes', T)}
                     className={cn(
-                      "w-full min-h-[100px] p-4 rounded-xl border border-border bg-input-background focus:ring-4 focus:ring-primary/10 transition-all outline-none font-medium text-sm resize-none",
+                      "w-full min-h-[100px] p-4 rounded-xl border bg-input-background focus:ring-4 focus:ring-primary/10 transition-all outline-none font-medium text-sm resize-none",
+                      doctorNotesError ? "border-destructive focus:border-destructive focus:ring-destructive/10 bg-destructive/5 text-destructive" : "border-border",
                       isAr ? "text-right" : "text-left"
                     )}
                   />
+                  {doctorNotesError && (
+                    <p className="text-[11px] text-destructive mt-1 font-bold animate-in fade-in slide-in-from-top-1 text-start">
+                      {doctorNotesError}
+                    </p>
+                  )}
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-2" data-has-error={!!patientNotesError}>
                   <label className="text-sm font-medium">{t('dialog.patient_notes', T)} <span className="text-xs font-normal text-muted-foreground mx-1">{isAr ? "(اختياري)" : "(optional)"}</span></label>
                   <textarea
                     value={patientNotes}
                     onChange={(e) => setPatientNotes(e.target.value)}
                     placeholder={t('dialog.patient_notes', T)}
                     className={cn(
-                      "w-full min-h-[100px] p-4 rounded-xl border border-border bg-input-background focus:ring-4 focus:ring-primary/10 transition-all outline-none font-medium text-sm resize-none",
+                      "w-full min-h-[100px] p-4 rounded-xl border bg-input-background focus:ring-4 focus:ring-primary/10 transition-all outline-none font-medium text-sm resize-none",
+                      patientNotesError ? "border-destructive focus:border-destructive focus:ring-destructive/10 bg-destructive/5 text-destructive" : "border-border",
                       isAr ? "text-right" : "text-left"
                     )}
                   />
+                  {patientNotesError && (
+                    <p className="text-[11px] text-destructive mt-1 font-bold animate-in fade-in slide-in-from-top-1 text-start">
+                      {patientNotesError}
+                    </p>
+                  )}
                 </div>
               </div>
             ) : (
               <div className="space-y-6 py-2">
                 <div className="md:grid flex flex-col md:grid-cols-2 gap-6">
                   <div className="flex flex-col gap-2">
-                    <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.patient', T)}</label>
-                    <Select name="selectedPatient" value={selectedPatient} onValueChange={setSelectedPatient}>
+                    <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.patient', T)} <span className="text-destructive">*</span></label>
+                    <Select 
+                      name="patient" 
+                      backendField={["patientUuid", "patient"]} 
+                      value={selectedPatient} 
+                      onValueChange={(val) => {
+                        setSelectedPatient(val);
+                        setFormErrors(prev => ({ ...prev, patient: '' }));
+                      }}
+                      error={formErrors.patient}
+                    >
                       <SelectTrigger className={cn("rounded-xl h-12 bg-input-background transition-all focus:ring-4 focus:ring-primary/10", (selectedPatient) && "text-foreground font-bold")}>
                         <SelectValue placeholder={t('dialog.select_patient', T)} />
                       </SelectTrigger>
@@ -694,8 +716,17 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, doc
                   </div>
 
                   <div className="flex flex-col gap-2">
-                    <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.doctor', T)}</label>
-                    <Select name="selectedDoctor" value={selectedDoctor} onValueChange={setSelectedDoctor}>
+                    <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.doctor', T)} <span className="text-destructive">*</span></label>
+                    <Select 
+                      name="doctor" 
+                      backendField={["doctorUuid", "doctor"]} 
+                      value={selectedDoctor} 
+                      onValueChange={(val) => {
+                        setSelectedDoctor(val);
+                        setFormErrors(prev => ({ ...prev, doctor: '' }));
+                      }}
+                      error={formErrors.doctor}
+                    >
                       <SelectTrigger className={cn("rounded-xl h-12 bg-input-background transition-all focus:ring-4 focus:ring-primary/10", (selectedDoctor) && "text-foreground font-bold")}>
                         <SelectValue placeholder={t('dialog.select_doctor', T)} />
                       </SelectTrigger>
@@ -710,38 +741,45 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, doc
                   </div>
 
                   <div className="flex flex-col gap-2">
-                    <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.date', T)}</label>
-                    <div className={cn("relative group flex items-center justify-between h-12 bg-input-background border border-border rounded-xl px-4 focus-within:ring-4 focus-within:ring-primary/10 transition-all", isAr ? "flex-row" : "flex-row-reverse")}>
-                      <DatePicker name="parseLocalDate" value={parseLocalDate(selectedDate)}
-                        onChange={([date]) => setSelectedDate(date ? format(date, 'yyyy-MM-dd') : '')}
-                        placeholder={t('dialog.select_date', T)}
-                        className={cn("flex-1 bg-transparent border-none outline-none font-bold h-full text-base md:text-sm", isAr ? "text-right" : "text-left")}
-                      />
-                      <FaCalendarAlt className="text-muted-foreground pointer-events-none group-focus-within:text-primary transition-colors size-[18px]" />
-                    </div>
+                    <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.date', T)} <span className="text-destructive">*</span></label>
+                    <DatePicker 
+                      name="date" 
+                      backendField={["appointmentDate", "date"]}
+                      value={parseLocalDate(selectedDate)}
+                      onChange={([date]) => {
+                        setSelectedDate(date ? format(date, 'yyyy-MM-dd') : '');
+                        setFormErrors(prev => ({ ...prev, date: '' }));
+                      }}
+                      placeholder={t('dialog.select_date', T)}
+                      icon={<FaCalendarAlt className="size-[18px]" />}
+                      error={formErrors.date}
+                      className="w-full font-bold"
+                    />
                   </div>
 
                   <div className="flex flex-col gap-2">
                     <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.time', T)} <span className="text-destructive">*</span></label>
-                    <div className="relative group">
-                      <TimePicker
-                        value={selectedTime}
-                        onChange={setSelectedTime}
-                        className={cn("w-full h-12 bg-input-background justify-center xs:justify-end border border-border rounded-xl transition-all outline-none focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10", isAr ? "text-right" : "text-left")}
-                      />
-                    </div>
+                    <TimePicker
+                      name="time"
+                      backendField={["appointmentStartTime", "time"]}
+                      value={selectedTime}
+                      onChange={(val) => {
+                        setSelectedTime(val);
+                        setFormErrors(prev => ({ ...prev, time: '' }));
+                      }}
+                      error={formErrors.time}
+                    />
                   </div>
 
                   {!selectedAppointmentType && (
                     <div className="flex flex-col gap-2">
                       <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.end_time', T)} <span className="text-xs font-normal text-muted-foreground mx-1">{isAr ? "(اختياري)" : "(optional)"}</span></label>
-                      <div className="relative group">
-                        <TimePicker
-                          value={selectedEndTime}
-                          onChange={setSelectedEndTime}
-                          className={cn("w-full h-12 bg-input-background justify-center xs:justify-end border border-border rounded-xl transition-all outline-none focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10", isAr ? "text-right" : "text-left")}
-                        />
-                      </div>
+                      <TimePicker
+                        name="endTime"
+                        backendField={["appointmentEndTime", "endTime"]}
+                        value={selectedEndTime}
+                        onChange={setSelectedEndTime}
+                      />
                     </div>
                   )}
 
@@ -749,7 +787,12 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, doc
                     <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.appointment_type', T)} <span className="text-xs font-normal text-muted-foreground mx-1">{isAr ? "(اختياري)" : "(optional)"}</span></label>
                     <div className="flex items-center gap-2">
                       <div className="flex-1">
-                        <Select name="selectedAppointmentType" value={selectedAppointmentType} onValueChange={setSelectedAppointmentType}>
+                        <Select 
+                          name="appointmentType" 
+                          backendField={["appointmentTypeUuid", "appointmentType"]} 
+                          value={selectedAppointmentType} 
+                          onValueChange={setSelectedAppointmentType}
+                        >
                           <SelectTrigger className={cn("rounded-xl h-12 bg-input-background transition-all focus:ring-4 focus:ring-primary/10 w-full", (selectedAppointmentType) && "text-foreground font-bold")}>
                             <SelectValue placeholder={t('dialog.select_type', T)} />
                           </SelectTrigger>
@@ -816,30 +859,42 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, doc
                     </div>
                   )}
 
-                  <div className="flex flex-col gap-2 col-span-1 md:col-span-2">
+                  <div className="flex flex-col gap-2 col-span-1 md:col-span-2" data-has-error={!!doctorNotesError}>
                     <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.doctor_notes', T)} <span className="text-xs font-normal text-muted-foreground mx-1">{isAr ? "(اختياري)" : "(optional)"}</span></label>
                     <textarea
                       value={doctorNotes}
                       onChange={(e) => setDoctorNotes(e.target.value)}
                       placeholder={t('dialog.doctor_notes', T)}
                       className={cn(
-                        "w-full min-h-[100px] p-4 rounded-xl border border-border bg-input-background focus:ring-4 focus:ring-primary/10 transition-all outline-none font-medium text-sm resize-none",
+                        "w-full min-h-[100px] p-4 rounded-xl border bg-input-background focus:ring-4 focus:ring-primary/10 transition-all outline-none font-medium text-sm resize-none",
+                        doctorNotesError ? "border-destructive focus:border-destructive focus:ring-destructive/10 bg-destructive/5 text-destructive" : "border-border",
                         isAr ? "text-right" : "text-left"
                       )}
                     />
+                    {doctorNotesError && (
+                      <p className="text-[11px] text-destructive mt-1 font-bold animate-in fade-in slide-in-from-top-1 text-start">
+                        {doctorNotesError}
+                      </p>
+                    )}
                   </div>
 
-                  <div className="flex flex-col gap-2 col-span-1 md:col-span-2">
+                  <div className="flex flex-col gap-2 col-span-1 md:col-span-2" data-has-error={!!patientNotesError}>
                     <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.patient_notes', T)} <span className="text-xs font-normal text-muted-foreground mx-1">{isAr ? "(اختياري)" : "(optional)"}</span></label>
                     <textarea
                       value={patientNotes}
                       onChange={(e) => setPatientNotes(e.target.value)}
                       placeholder={t('dialog.patient_notes', T)}
                       className={cn(
-                        "w-full min-h-[100px] p-4 rounded-xl border border-border bg-input-background focus:ring-4 focus:ring-primary/10 transition-all outline-none font-medium text-sm resize-none",
+                        "w-full min-h-[100px] p-4 rounded-xl border bg-input-background focus:ring-4 focus:ring-primary/10 transition-all outline-none font-medium text-sm resize-none",
+                        patientNotesError ? "border-destructive focus:border-destructive focus:ring-destructive/10 bg-destructive/5 text-destructive" : "border-border",
                         isAr ? "text-right" : "text-left"
                       )}
                     />
+                    {patientNotesError && (
+                      <p className="text-[11px] text-destructive mt-1 font-bold animate-in fade-in slide-in-from-top-1 text-start">
+                        {patientNotesError}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -863,7 +918,7 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, doc
               </>
             )}
             {mode === 'view' && (
-              <div className="flex gap-3 w-full">
+              <div className="flex gap-3 w-full flex-wrap sm:flex-nowrap">
                 {hasManageMedicalRecords && initialData?.status === 'pending' && onComplete && (
                   <Button
                     type="button"
@@ -872,19 +927,21 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, doc
                     }}
                     className="flex-1 h-10 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-200/50"
                   >
-                    <Check className={cn("size-4", isAr ? "ml-2" : "mr-2")} />
-                    {isAr ? "إكمال الموعد" : "Complete Appointment"}
+                    <FileText className={cn("size-4", isAr ? "ml-2" : "mr-2")} />
+                    {isAr ? "تقديم السجل الطبي" : "Submit Medical Record"}
                   </Button>
                 )}
-                {initialData?.status === 'pending' && onCancel && (
+                {initialData && initialData.status?.toLowerCase() === 'pending' && onCancel && (
                   <Button
                     type="button"
+                    variant="destructive"
                     onClick={() => {
-                      if (initialData) onCancel(initialData);
+                      handleClose();
+                      onCancel(initialData);
                     }}
-                    className="flex-1 h-10 rounded-lg bg-rose-600 hover:bg-rose-700 text-white shadow-lg shadow-rose-200/50"
+                    className="flex-1 h-10 rounded-lg"
                   >
-                    <TbCancel className={cn("size-4.5", isAr ? "ml-2" : "mr-2")} />
+                    <TbCancel className={cn("size-4", isAr ? "ml-2" : "mr-2")} />
                     {t('actions.delete', T)}
                   </Button>
                 )}
@@ -903,30 +960,6 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, doc
                 <Button onClick={handleSubmit} className="flex-2 shadow-lg shadow-primary/20 bg-primary hover:bg-primary/90 h-10 rounded-lg">
                   {t('dialog.save_changes', T)}
                 </Button>
-                {hasManageMedicalRecords && initialData?.status === 'pending' && onComplete && (
-                  <Button
-                    type="button"
-                    onClick={() => {
-                      if (initialData) onComplete(initialData);
-                    }}
-                    className="flex-1 h-10 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-200/50"
-                  >
-                    <Check className={cn("size-4", isAr ? "ml-2" : "mr-2")} />
-                    {isAr ? "إكمال الموعد" : "Complete"}
-                  </Button>
-                )}
-                {initialData?.status === 'pending' && onCancel && (
-                  <Button
-                    type="button"
-                    onClick={() => {
-                      if (initialData) onCancel(initialData);
-                    }}
-                    className="flex-1 h-10 rounded-lg bg-rose-600 hover:bg-rose-700 text-white shadow-lg shadow-rose-200/50"
-                  >
-                    <TbCancel className={cn("size-4.5", isAr ? "ml-2" : "mr-2")} />
-                    {t('actions.delete', T)}
-                  </Button>
-                )}
                 <Button
                   type="button"
                   variant="outline"

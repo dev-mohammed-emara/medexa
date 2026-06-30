@@ -16,10 +16,9 @@ import {
 } from 'date-fns';
 import { formatDateDisplay } from '../../utils/date';
 import { ar } from 'date-fns/locale';
-import { ChevronRight, ChevronLeft, Plus, Clock, User, Stethoscope, Eye, SquarePen, X, Smartphone, MoveHorizontal, Check, FileText, AlertCircle } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Plus, Clock, User, Stethoscope, Eye, SquarePen, X, Smartphone, MoveHorizontal, Check, FileText, AlertCircle, Trash2 } from 'lucide-react';
 import { getErrorMessage } from '../../utils/error';
 import { FaCalendarAlt } from 'react-icons/fa';
-import { TbCancel } from 'react-icons/tb';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { apiFetch } from '../../utils/apiFetch';
 import { useMediaQuery } from 'react-responsive';
@@ -44,6 +43,7 @@ import { useBroadcast } from '../../hooks/useBroadcast';
 import { fetchDoctors, type ApiDoctor } from '../../api/doctorApi';
 import { getCookie } from '../../utils/cookie';
 import { useAuth } from '../../contexts/AuthContext';
+import { useFieldError } from '../../hooks/useFieldError';
 
 interface CalendarAppointment {
   uuid: string;
@@ -84,6 +84,12 @@ interface MedicalRecordData {
 const AppointmentsList = () => {
   const { isAr, t } = useLanguage();
   const { user } = useAuth();
+
+  const { backendError: diagnosisError } = useFieldError(["diagnosis"]);
+  const { backendError: treatmentPlanError } = useFieldError(["treatmentPlan"]);
+  const { backendError: caseDescriptionError } = useFieldError(["caseDescription"]);
+  const { backendError: amountError } = useFieldError(["amount"]);
+  const { backendError: noteError } = useFieldError(["note"]);
   const hasManageMedicalRecords = user?.permissions?.includes('MANAGE_MEDICAL_RECORDS') || user?.role === 'ROLE_CLINIC_OWNER' || user?.role === 'ROLE_DOCTOR' || user?.roles?.includes('ROLE_DOCTOR');
   const T = appointmentsTranslations;
   const currentLocale = isAr ? ar : enUS;
@@ -1360,19 +1366,12 @@ const AppointmentsList = () => {
                                       >
                                         <SquarePen className={cn("size-3.5", isAr ? "ml-1" : "mr-1")} /> {t('actions.edit', T)}
                                       </button>
-                                      {hasManageMedicalRecords && (
-                                        <button
-                                          onClick={(e) => { e.stopPropagation(); handleOpenCompleteModal(app); }}
-                                          className="inline-flex items-center justify-center whitespace-nowrap font-medium transition-all duration-300 border bg-emerald-600 text-white hover:bg-emerald-700 rounded-md p-2 size-8 text-xs shadow-sm hover:shadow-emerald-200/50 hover:-translate-y-0.5"
-                                        >
-                                          <Check className="size-4" />
-                                        </button>
-                                      )}
                                       <button
                                         onClick={(e) => { e.stopPropagation(); handleDeleteAppointment(app.id); }}
-                                        className="inline-flex items-center justify-center whitespace-nowrap font-medium transition-all duration-300 border border-rose-200 bg-rose-600 text-white hover:bg-rose-700 rounded-md p-2 size-8 text-xs shadow-sm hover:shadow-rose-200/50 hover:-translate-y-0.5 shrink-0"
+                                        className="inline-flex items-center justify-center whitespace-nowrap font-medium transition-all duration-300 border bg-background text-destructive hover:bg-destructive/10 rounded-md gap-1.5 px-3 h-8 text-xs hover:border-primary/30 hover:shadow-lg hover:-translate-y-0.5 shrink-0"
+                                        title={t('actions.delete', T)}
                                       >
-                                        <TbCancel className="size-4" />
+                                        <Trash2 className="size-3.5" />
                                       </button>
                                     </>
                                   )}
@@ -1722,7 +1721,7 @@ const AppointmentsList = () => {
             </div>
 
             {/* Amount */}
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2" data-has-error={!!amountError}>
               <label className="text-sm font-semibold text-foreground/80 pr-1 pl-1">
                 {isAr ? 'قيمة المعاملة' : 'Amount'}
               </label>
@@ -1733,14 +1732,20 @@ const AppointmentsList = () => {
                 onChange={(e) => setMedicalRecordData(prev => ({ ...prev, amount: Number(e.target.value) }))}
                 placeholder={isAr ? 'المبلغ...' : 'Amount...'}
                 className={cn(
-                  "w-full h-12 px-4 rounded-xl border border-border transition-all outline-none font-medium text-sm text-start",
-                  medicalRecordModalMode === 'view' ? "bg-muted/50 cursor-not-allowed text-muted-foreground" : "bg-muted/30 focus:bg-white focus:ring-4 focus:ring-primary/10"
+                  "w-full h-12 px-4 rounded-xl border transition-all outline-none font-medium text-sm text-start",
+                  medicalRecordModalMode === 'view' ? "bg-muted/50 cursor-not-allowed text-muted-foreground border-border" : "bg-muted/30 focus:bg-white focus:ring-4 focus:ring-primary/10",
+                  amountError ? "border-destructive focus:border-destructive focus:ring-destructive/10 bg-destructive/5 text-destructive" : "border-border"
                 )}
               />
+              {amountError && (
+                <p className="text-[11px] text-destructive mt-1 font-bold animate-in fade-in slide-in-from-top-1 text-start">
+                  {amountError}
+                </p>
+              )}
             </div>
 
             {/* Diagnosis */}
-            <div className="flex flex-col gap-2 col-span-1 md:col-span-2">
+            <div className="flex flex-col gap-2 col-span-1 md:col-span-2" data-has-error={!!diagnosisError}>
               <label className="text-sm font-semibold text-foreground/80 pr-1 pl-1">
                 {isAr ? 'التشخيص' : 'Diagnosis'} <span className="text-destructive">*</span>
               </label>
@@ -1751,14 +1756,20 @@ const AppointmentsList = () => {
                 onChange={(e) => setMedicalRecordData(prev => ({ ...prev, diagnosis: e.target.value }))}
                 placeholder={isAr ? 'التشخيص...' : 'Diagnosis...'}
                 className={cn(
-                  "w-full h-12 px-4 rounded-xl border border-border transition-all outline-none font-medium text-sm text-start",
-                  medicalRecordModalMode === 'view' ? "bg-muted/50 cursor-not-allowed text-muted-foreground" : "bg-muted/30 focus:bg-white focus:ring-4 focus:ring-primary/10"
+                  "w-full h-12 px-4 rounded-xl border transition-all outline-none font-medium text-sm text-start",
+                  medicalRecordModalMode === 'view' ? "bg-muted/50 cursor-not-allowed text-muted-foreground border-border" : "bg-muted/30 focus:bg-white focus:ring-4 focus:ring-primary/10",
+                  diagnosisError ? "border-destructive focus:border-destructive focus:ring-destructive/10 bg-destructive/5 text-destructive" : "border-border"
                 )}
               />
+              {diagnosisError && (
+                <p className="text-[11px] text-destructive mt-1 font-bold animate-in fade-in slide-in-from-top-1 text-start">
+                  {diagnosisError}
+                </p>
+              )}
             </div>
 
             {/* Note */}
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2" data-has-error={!!noteError}>
               <label className="text-sm font-semibold text-foreground/80 pr-1 pl-1">
                 {isAr ? 'ملاحظة إضافية' : 'Additional Note'} <span className="text-xs font-normal text-muted-foreground mx-1">{isAr ? "(اختياري)" : "(optional)"}</span>
               </label>
@@ -1768,15 +1779,21 @@ const AppointmentsList = () => {
                 onChange={(e) => setMedicalRecordData(prev => ({ ...prev, note: e.target.value }))}
                 placeholder={isAr ? 'ملاحظات...' : 'Notes...'}
                 className={cn(
-                  "w-full min-h-[100px] p-4 rounded-xl border border-border transition-all outline-none font-medium text-sm resize-none",
-                  medicalRecordModalMode === 'view' ? "bg-muted/50 cursor-not-allowed text-muted-foreground" : "bg-muted/30 focus:bg-white focus:ring-4 focus:ring-primary/10",
+                  "w-full min-h-[100px] p-4 rounded-xl border transition-all outline-none font-medium text-sm resize-none",
+                  medicalRecordModalMode === 'view' ? "bg-muted/50 cursor-not-allowed text-muted-foreground border-border" : "bg-muted/30 focus:bg-white focus:ring-4 focus:ring-primary/10",
+                  noteError ? "border-destructive focus:border-destructive focus:ring-destructive/10 bg-destructive/5 text-destructive" : "border-border",
                   isAr ? "text-right" : "text-left"
                 )}
               />
+              {noteError && (
+                <p className="text-[11px] text-destructive mt-1 font-bold animate-in fade-in slide-in-from-top-1 text-start">
+                  {noteError}
+                </p>
+              )}
             </div>
 
             {/* Case Description */}
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-2" data-has-error={!!caseDescriptionError}>
               <label className="text-sm font-semibold text-foreground/80 pr-1 pl-1">
                 {isAr ? 'وصف الحالة' : 'Case Description'} <span className="text-destructive">*</span>
               </label>
@@ -1786,15 +1803,21 @@ const AppointmentsList = () => {
                 onChange={(e) => setMedicalRecordData(prev => ({ ...prev, caseDescription: e.target.value }))}
                 placeholder={isAr ? 'أدخل وصف الحالة...' : 'Enter case description...'}
                 className={cn(
-                  "w-full min-h-[100px] p-4 rounded-xl border border-border transition-all outline-none font-medium text-sm resize-none",
-                  medicalRecordModalMode === 'view' ? "bg-muted/50 cursor-not-allowed text-muted-foreground" : "bg-muted/30 focus:bg-white focus:ring-4 focus:ring-primary/10",
+                  "w-full min-h-[100px] p-4 rounded-xl border transition-all outline-none font-medium text-sm resize-none",
+                  medicalRecordModalMode === 'view' ? "bg-muted/50 cursor-not-allowed text-muted-foreground border-border" : "bg-muted/30 focus:bg-white focus:ring-4 focus:ring-primary/10",
+                  caseDescriptionError ? "border-destructive focus:border-destructive focus:ring-destructive/10 bg-destructive/5 text-destructive" : "border-border",
                   isAr ? "text-right" : "text-left"
                 )}
               />
+              {caseDescriptionError && (
+                <p className="text-[11px] text-destructive mt-1 font-bold animate-in fade-in slide-in-from-top-1 text-start">
+                  {caseDescriptionError}
+                </p>
+              )}
             </div>
 
             {/* Treatment Plan */}
-            <div className="flex flex-col gap-2 col-span-1 md:col-span-2">
+            <div className="flex flex-col gap-2 col-span-1 md:col-span-2" data-has-error={!!treatmentPlanError}>
               <label className="text-sm font-semibold text-foreground/80 pr-1 pl-1">
                 {isAr ? 'خطة العلاج' : 'Treatment Plan'} <span className="text-destructive">*</span>
               </label>
@@ -1804,11 +1827,17 @@ const AppointmentsList = () => {
                 onChange={(e) => setMedicalRecordData(prev => ({ ...prev, treatmentPlan: e.target.value }))}
                 placeholder={isAr ? 'أدخل خطة العلاج...' : 'Enter treatment plan...'}
                 className={cn(
-                  "w-full min-h-[100px] p-4 rounded-xl border border-border transition-all outline-none font-medium text-sm resize-none",
-                  medicalRecordModalMode === 'view' ? "bg-muted/50 cursor-not-allowed text-muted-foreground" : "bg-muted/30 focus:bg-white focus:ring-4 focus:ring-primary/10",
+                  "w-full min-h-[100px] p-4 rounded-xl border transition-all outline-none font-medium text-sm resize-none",
+                  medicalRecordModalMode === 'view' ? "bg-muted/50 cursor-not-allowed text-muted-foreground border-border" : "bg-muted/30 focus:bg-white focus:ring-4 focus:ring-primary/10",
+                  treatmentPlanError ? "border-destructive focus:border-destructive focus:ring-destructive/10 bg-destructive/5 text-destructive" : "border-border",
                   isAr ? "text-right" : "text-left"
                 )}
               />
+              {treatmentPlanError && (
+                <p className="text-[11px] text-destructive mt-1 font-bold animate-in fade-in slide-in-from-top-1 text-start">
+                  {treatmentPlanError}
+                </p>
+              )}
             </div>
 
 
