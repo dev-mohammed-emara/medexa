@@ -35,6 +35,18 @@ export const apiFetch = async (input: RequestInfo | URL, init?: RequestInit, ena
       localStorage.removeItem('token');
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('medexa_user');
+
+      const isAr = localStorage.getItem('medexa-lang') === 'ar';
+      const revokedMsg = isAr
+        ? "لقد حاولت تنفيذ إجراء غير مصرح لك به، وبالتالي تم إلغاء صلاحية وصولك."
+        : "You tried to execute an action that you are not authorized for, therefore your access is revoked.";
+
+      localStorage.setItem('auth_revoked_reason', revokedMsg);
+
+      if (typeof window !== 'undefined' && window.showToast) {
+        window.showToast(revokedMsg, 'error');
+      }
+
       if (window.location.pathname !== '/login') {
         window.location.href = '/login';
       }

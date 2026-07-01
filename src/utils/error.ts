@@ -16,7 +16,13 @@ export const getApiErrorMessages = (err: any, fallbackMessage: string = "Somethi
     // details[].message
     if (obj.details && Array.isArray(obj.details)) {
       messages = obj.details
-        .map((d: any) => d?.message)
+        .map((d: any) => {
+          if (d?.field && d?.message) {
+            const fieldName = d.field.split('.').pop() || d.field;
+            return `${fieldName}: ${d.message}`;
+          }
+          return d?.message;
+        })
         .filter((m: any) => typeof m === 'string' && m.trim() !== '');
     }
     // details.message (if details is an object)
@@ -31,12 +37,11 @@ export const getApiErrorMessages = (err: any, fallbackMessage: string = "Somethi
     // message (fallback when details is empty or invalid)
     if (obj.message && typeof obj.message === 'string' && obj.message.trim() !== '') {
       const msg = obj.message.trim();
-      // Ignore generic unhelpful top-level messages if possible, though we return them if nothing else exists
-      // The prompt said: NEVER display "validation failed" or "bad request" if details contains messages.
-      // But if details is empty, we USE the top-level message. However, if the top-level message IS validation failed, it's better to show fallback.
-      if (msg.toLowerCase() !== 'validation failed' && msg.toLowerCase() !== 'bad request') {
-        return [msg];
+      const msgLower = msg.toLowerCase();
+      if (msgLower.includes('validation') || msgLower.includes('bad request') || msgLower.includes('correct the highlighted')) {
+        return ["Validation failed. Please check the highlighted fields and correct the invalid values."];
       }
+      return [msg];
     }
 
     // error
@@ -50,5 +55,5 @@ export const getApiErrorMessages = (err: any, fallbackMessage: string = "Somethi
 
 export const getErrorMessage = (err: any, fallbackMessage: string = "Something went wrong"): string => {
   const messages = getApiErrorMessages(err, fallbackMessage);
-  return messages.join('\n');
+  return messages.join(' || ');
 };

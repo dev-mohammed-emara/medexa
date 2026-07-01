@@ -44,28 +44,35 @@ function Select({
     else fieldsToCheck.push(backendField);
   }
   
-  const { backendError, setBackendError } = useFieldError(fieldsToCheck.length > 0 ? fieldsToCheck : undefined);
-  const [errorMsg, setErrorMsg] = React.useState<string | null>(null);
+  const { backendError, backendErrors, setBackendError, setBackendErrors } = useFieldError(fieldsToCheck.length > 0 ? fieldsToCheck : undefined);
+  const [errorMsgs, setErrorMsgs] = React.useState<string[]>([]);
   const { isAr } = useLanguage();
 
   React.useEffect(() => {
-    if (backendError) setErrorMsg(backendError);
-  }, [backendError]);
+    if (backendErrors && backendErrors.length > 0) {
+      setErrorMsgs(backendErrors);
+    } else if (backendError) {
+      setErrorMsgs([backendError]);
+    } else {
+      setErrorMsgs([]);
+    }
+  }, [backendError, backendErrors]);
 
 
   const handleValueChange = (val: string) => {
-    if (errorMsg) setErrorMsg(null);
+    if (errorMsgs.length > 0) setErrorMsgs([]);
     if (backendError) setBackendError(null);
+    if (backendErrors.length > 0) setBackendErrors([]);
     if (props.onValueChange) props.onValueChange(val);
   };
 
-  const currentError = errorMsg || error;
+  const hasError = errorMsgs.length > 0 || !!error;
 
   return (
-    <SelectContext.Provider value={{ error: currentError, onSearchChange, onlyNumbers }}>
+    <SelectContext.Provider value={{ error: hasError, onSearchChange, onlyNumbers }}>
       <div 
         className={cn("w-full flex flex-col relative", containerClassName)} 
-        data-has-error={!!currentError}
+        data-has-error={hasError}
       >
         <SelectPrimitive.Root data-slot="select" {...props} onValueChange={handleValueChange} name={undefined} />
         {props.name && (
@@ -81,17 +88,21 @@ function Select({
               e.preventDefault();
               const inputEl = e.target as HTMLInputElement;
               if (inputEl.validity.valueMissing) {
-                setErrorMsg(isAr ? 'يرجى ملء هذا الحقل' : 'Please fill out this field.');
+                setErrorMsgs([isAr ? 'يرجى ملء هذا الحقل' : 'Please fill out this field.']);
               } else {
-                setErrorMsg(inputEl.validationMessage);
+                setErrorMsgs([inputEl.validationMessage]);
               }
             }}
           />
         )}
-        {(typeof currentError === 'string' && currentError) && (
-          <p className="text-[11px] text-destructive mt-1.5 font-bold animate-in fade-in slide-in-from-top-1 text-start">
-            {currentError}
-          </p>
+        {(hasError || (typeof error === 'string' && error)) && (
+          <div className="text-[11px] text-destructive mt-1.5 font-bold animate-in fade-in slide-in-from-top-1 text-start">
+            {typeof error === 'string' && error ? (
+              <p>{error}</p>
+            ) : (
+              <p>{errorMsgs.join(' || ')}</p>
+            )}
+          </div>
         )}
       </div>
     </SelectContext.Provider>

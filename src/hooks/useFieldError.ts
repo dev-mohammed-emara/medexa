@@ -3,6 +3,7 @@ import { matchFieldName } from '../utils/backendValidation';
 
 export const useFieldError = (nameOrNames?: string | string[]) => {
   const [backendError, setBackendError] = useState<string | null>(null);
+  const [backendErrors, setBackendErrors] = useState<string[]>([]);
 
   useEffect(() => {
     if (!nameOrNames) return;
@@ -13,18 +14,20 @@ export const useFieldError = (nameOrNames?: string | string[]) => {
       const customEvent = e as CustomEvent;
       const errorData = customEvent.detail as { details?: Array<{ field: string; message?: string }>; message?: string } | null;
       
-      // Check if there are details and try to find the specific field
+      // Check if there are details and try to find matching fields
       if (errorData && errorData.details && Array.isArray(errorData.details) && errorData.details.length > 0) {
-        // Use the new matchFieldName utility to support exact, last-segment, camelCase, and snake_case matching
-        const detail = errorData.details.find((d) => matchFieldName(d.field, names));
-        if (detail) {
-          setBackendError(detail.message || errorData.message || null);
+        const matchingDetails = errorData.details.filter((d) => matchFieldName(d.field, names));
+        if (matchingDetails.length > 0) {
+          const messages = matchingDetails.map(d => d.message || errorData.message || 'Invalid field');
+          setBackendErrors(messages);
+          setBackendError(messages[0]);
         }
       }
     };
 
     const handleClear = () => {
       setBackendError(null);
+      setBackendErrors([]);
     };
 
     window.addEventListener('BACKEND_VALIDATION_ERROR', handleBackendError);
@@ -36,5 +39,5 @@ export const useFieldError = (nameOrNames?: string | string[]) => {
     };
   }, [JSON.stringify(nameOrNames)]);
 
-  return { backendError, setBackendError };
+  return { backendError, backendErrors, setBackendError, setBackendErrors };
 };

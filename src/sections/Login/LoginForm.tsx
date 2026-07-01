@@ -23,6 +23,15 @@ const LoginForm = () => {
   const [serverMessage, setServerMessage] = useState<string | null>(null)
   const [loginError, setLoginError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [revokedError, setRevokedError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const reason = localStorage.getItem('auth_revoked_reason');
+    if (reason) {
+      setRevokedError(reason);
+      localStorage.removeItem('auth_revoked_reason');
+    }
+  }, []);
   const { login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
@@ -145,6 +154,18 @@ const LoginForm = () => {
             {isForgot ? t('reset_desc', T) : t('platform_name', T)}
           </p>
         </div>
+
+        {revokedError && (
+          <div className={cn(
+            "mb-6 p-4 rounded-xl border flex items-start gap-3 bg-destructive/10 border-destructive/20 text-destructive animate-in fade-in slide-in-from-top-2",
+            isAr ? "text-right" : "text-left"
+          )}>
+            <div className="mt-0.5 shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+            </div>
+            <p className="text-sm font-semibold">{revokedError}</p>
+          </div>
+        )}
 
         {loginError && !isForgot && (
           <div className={cn(

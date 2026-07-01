@@ -54,6 +54,15 @@ export const matchFieldName = (backendField: string, frontendNames: string[]): b
     // 4. snake_case conversion: 'owner.summary' === 'owner_summary'
     const snakeCaseBackend = backendSegments.join('_').toLowerCase();
     if (nameLower === snakeCaseBackend) return true;
+
+    // 5. Suffix segment match (e.g. "clinic.owner.email" matches "owner.email")
+    const nameSegments = name.split('.');
+    if (nameSegments.length > 1) {
+      if (backendSegments.length >= nameSegments.length) {
+        const bfSuffix = backendSegments.slice(-nameSegments.length).join('.').toLowerCase();
+        if (bfSuffix === nameLower) return true;
+      }
+    }
   }
 
   return false;

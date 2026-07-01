@@ -50,20 +50,23 @@ const ProfileView = () => {
   const { isLoaded, isExiting } = usePreloader();
   const { dir, isAr, t } = useLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
-  const initialTab = searchParams.get('tab') === 'clinic' && hasPermission('MANAGE_CLINIC') ? 'clinic' : 'profile';
+  const initialTab = searchParams.get('info') === 'clinic' && hasPermission('MANAGE_CLINIC') ? 'clinic' : 'profile';
   const [activeTab, setActiveTab] = useState<'profile' | 'clinic'>(initialTab);
 
   useEffect(() => {
-    const tabParam = searchParams.get('tab');
-    if (tabParam === 'clinic') {
+    const infoParam = searchParams.get('info');
+    if (infoParam === 'clinic') {
       if (hasPermission('MANAGE_CLINIC')) {
         setActiveTab('clinic');
       } else {
-        setSearchParams({ tab: 'profile' }, { replace: true });
+        setSearchParams({ info: 'user' }, { replace: true });
         setActiveTab('profile');
       }
+    } else if (infoParam === 'user') {
+      setActiveTab('profile');
     } else {
       setActiveTab('profile');
+      setSearchParams({ info: 'user' }, { replace: true });
     }
   }, [searchParams, hasPermission, setSearchParams]);
 
@@ -114,8 +117,8 @@ const ProfileView = () => {
           specialty: (!isSecretary && data.specialty) || '',
           summary: (!isSecretary && data.summary) || '',
           defaultAppointmentPeriod: (!isSecretary && (data.defaultAppointmentPeriod || 30).toString()) || '30',
-          joinedDate: (data.user?.user_created_at || data.user?.createdAt || data.user_created_at || data.createdAt) 
-            ? formatDateDisplay(data.user?.user_created_at || data.user?.createdAt || data.user_created_at || data.createdAt) 
+          joinedDate: (data.user?.user_created_at || data.user?.createdAt || data.user_created_at || data.createdAt)
+            ? formatDateDisplay(data.user?.user_created_at || data.user?.createdAt || data.user_created_at || data.createdAt)
             : ''
         });
         setPersonalPhone(formatPhoneForDisplay(data.user.phoneNumber || ''));
@@ -278,7 +281,7 @@ const ProfileView = () => {
   const [isEditingInsurance, setIsEditingInsurance] = useState(false);
 
   const { shouldRender: showProfileActions, isExiting: isProfileExiting } = useExitAnimation(isEditingProfile, 300);
-  const { shouldRender: showAppointmentActions, isExiting: isAppointmentExiting } = useExitAnimation(isEditingAppointment, 300);
+
   const { shouldRender: showClinicActions, isExiting: isClinicExiting } = useExitAnimation(isEditingClinicInfo, 300);
   const { shouldRender: showInsuranceActions, isExiting: isInsuranceExiting } = useExitAnimation(isEditingInsurance, 300);
   const { shouldRender: showScheduleActions, isExiting: isScheduleExiting } = useExitAnimation(isEditingSchedule, 300);
@@ -510,7 +513,7 @@ const ProfileView = () => {
     setActiveTab(tab);
     setIsEditingSchedule(false);
     setScheduleErrors({});
-    setSearchParams({ tab }, { replace: true });
+    setSearchParams({ info: tab === 'profile' ? 'user' : 'clinic' }, { replace: true });
   };
 
   const toggleDay = (index: number) => {
@@ -596,7 +599,7 @@ const ProfileView = () => {
         const p1 = day.periods[i];
         const p1From = timeToMins(p1.from);
         const p1To = timeToMins(p1.to);
-        
+
         if (p1From >= p1To) {
           if (!localErrors[day.dayOfWeek]) localErrors[day.dayOfWeek] = [];
           if (!localErrors[day.dayOfWeek].includes("End time must be after start time.")) {
@@ -863,7 +866,7 @@ const ProfileView = () => {
                     )}
                     <button
                       onClick={() => setIsPasswordModalOpen(true)}
-                        className="h-11 px-4 border border-primary/30 rounded-xl text-primary bg-primary/5 hover:bg-primary/10 transition-all flex items-center gap-2 text-sm font-bold animate-in fade-in duration-300"
+                      className="h-11 px-4 border border-primary/30 rounded-xl text-primary bg-primary/5 hover:bg-primary/10 transition-all flex items-center gap-2 text-sm font-bold animate-in fade-in duration-300"
                     >
                       <Key size={16} />
                       {t('profile.change_password', T_PAGE)}
@@ -949,7 +952,7 @@ const ProfileView = () => {
                   <div className="flex flex-col gap-6">
                     <div className="flex flex-col gap-2">
                       <label className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('common.gender')}</label>
-                      <Select disabled={!isEditingProfile} name="gender"  value={personalInfo.gender} onValueChange={(val) => setPersonalInfo(p => ({ ...p, gender: val }))}>
+                      <Select disabled={!isEditingProfile} name="gender" value={personalInfo.gender} onValueChange={(val) => setPersonalInfo(p => ({ ...p, gender: val }))}>
                         <SelectTrigger className={cn(
                           "h-11 border-border font-bold",
                           isEditingProfile ? "bg-muted/30 focus:border-primary focus:bg-white" : "bg-muted/50 cursor-not-allowed text-muted-foreground"
@@ -1097,10 +1100,10 @@ const ProfileView = () => {
 
                 {/* Appointment Period Settings */}
                 {(user?.role === 'ROLE_DOCTOR' || user?.role === 'ROLE_CLINIC_OWNER' || user?.roles?.includes('ROLE_DOCTOR') || user?.roles?.includes('ROLE_CLINIC_OWNER')) && (
-                  <div data-slot="card" className={cn("tab-pane h-full flex flex-col rounded-xl border p-6 shadow-lg hover:shadow-xl transition-all duration-300", isEditingAppointment ? "ring-2 ring-inset ring-yellow-400 border-yellow-400 bg-yellow-50/20" : "bg-white border-border")}>
+                  <div data-slot="card" className={cn("tab-pane h-full flex flex-col rounded-xl border p-6 shadow-lg hover:shadow-xl transition-all duration-300", isEditingAppointment ? "ring-2 ring-yellow-400 border-yellow-400 bg-yellow-50/20" : "bg-white border-border")}>
                     <div className="flex justify-between items-center mb-8 gap-4 flex-wrap">
                       <h3 className="text-xl font-bold">{isAr ? 'إعدادات المواعيد' : 'Appointment Settings'}</h3>
-                      {!isEditingAppointment && !showAppointmentActions && (
+                      {!isEditingAppointment && (
                         <button
                           onClick={() => setIsEditingAppointment(true)}
                           className="h-11 px-4 border border-primary/30 rounded-xl text-primary bg-primary/5 hover:bg-primary/10 transition-all flex items-center gap-2 text-sm font-bold animate-in fade-in duration-300"
@@ -1141,8 +1144,8 @@ const ProfileView = () => {
                         </div>
                       </div>
                     </div>
-                    {showAppointmentActions && (
-                      <div className={cn("flex justify-end gap-3 mt-auto pt-6 duration-300", isAppointmentExiting ? "animate-out fade-out slide-out-to-bottom-2" : "animate-in fade-in slide-in-from-bottom-2")}>
+                    {isEditingAppointment && (
+                      <div className="flex justify-end gap-3 mt-auto pt-6">
                         <button
                           onClick={handleCancelAppointmentPeriod}
                           className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-medium transition-all duration-300 border bg-background text-foreground hover:bg-accent hover:text-white hover:border-accent h-10 px-6"
@@ -1244,14 +1247,14 @@ const ProfileView = () => {
                                       <TimePicker
                                         value={period.from}
                                         onChange={(val) => updatePeriod(dIdx, pIdx, 'from', val)}
-                                        className="h-8 py-0 px-2 flex-1 border border-muted bg-white shadow-none focus-within:ring-1 focus-within:ring-primary rounded-md text-sm min-w-0"
+                                        className="h-10 py-1.5 px-2 flex-1 border border-muted bg-white shadow-none focus-within:ring-1 focus-within:ring-primary rounded-lg text-sm min-w-0"
                                         noClock
                                       />
                                       <span className="text-muted-foreground text-xs">—</span>
                                       <TimePicker
                                         value={period.to}
                                         onChange={(val) => updatePeriod(dIdx, pIdx, 'to', val)}
-                                        className="h-8 py-0 px-2 flex-1 border border-muted bg-white shadow-none focus-within:ring-1 focus-within:ring-primary rounded-md text-sm min-w-0"
+                                        className="h-10 py-1.5 px-2 flex-1 border border-muted bg-white shadow-none focus-within:ring-1 focus-within:ring-primary rounded-lg text-sm min-w-0"
                                         noClock
                                       />
                                       <button

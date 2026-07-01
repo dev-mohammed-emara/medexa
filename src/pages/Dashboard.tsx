@@ -55,7 +55,7 @@ const Dashboard = () => {
       title: isAr ? 'الإعدادات' : 'Settings',
       desc: isAr ? 'إعدادات النظام والملف الشخصي' : 'System and profile settings',
       icon: Settings,
-      href: '/profile?tab=clinic',
+      href: '/profile?info=clinic',
       color: 'bg-purple-50 text-purple-600',
       border: 'border-purple-100',
       hover: 'hover:border-purple-300 hover:shadow-purple-100'

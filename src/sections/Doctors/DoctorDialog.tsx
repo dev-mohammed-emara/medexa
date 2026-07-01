@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { DatePicker } from '../../components/ui/DatePicker';
 import { Button } from '../../components/ui/Button'
 import Input from '../../components/ui/Input'
+import Textarea from '../../components/ui/Textarea'
 import ScrollLockWrapper from '../../components/ui/ScrollLockWrapper'
 import {
   Select,
@@ -47,6 +48,7 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
   const [loading, setLoading] = useState(false)
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>(initialData?.user?.permissions || [])
   const [error, setError] = useState<string | null>(null)
+  const [showPermissionWarning, setShowPermissionWarning] = useState(false)
 
   const [password, setPassword] = useState('')
   const [passwordError, setPasswordError] = useState<string | null>(null)
@@ -70,7 +72,13 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
       setSelectedPermissions([])
     }
     setError(null)
+    setShowPermissionWarning(false)
   }, [initialData, isOpen])
+
+  // Reset permission warning state if user modifies permissions
+  useEffect(() => {
+    setShowPermissionWarning(false)
+  }, [selectedPermissions])
 
   const handleClose = useCallback(() => {
     setIsClosing(true)
@@ -100,6 +108,15 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
     setError(null)
     if (mode === 'view') {
       handleClose()
+      return
+    }
+
+    if (selectedPermissions.length === 0 && !showPermissionWarning) {
+      setShowPermissionWarning(true)
+      const warningMsg = isAr
+        ? "هذا المستخدم ليس لديه أي صلاحيات معينة. قد لا يتمكن من الوصول أو تنفيذ الإجراءات التي يحتاجها. هل تريد الاستمرار؟"
+        : "This user does not have any permissions assigned. They may not be able to access or perform the actions they need. Do you want to continue?";
+      setError(warningMsg)
       return
     }
 
@@ -449,19 +466,19 @@ const DoctorDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: DoctorD
                   </Select>
                 </div>
               </div>
-                  <div className="flex flex-col gap-2">
-                <label htmlFor={inputId('description')} className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.description', T)} <span className="text-xs font-normal text-muted-foreground mx-1">{isAr ? "(اختياري)" : "(optional)"}</span></label>
-                <textarea
-                  id={inputId('description')}
-                  name="summary"
-                  defaultValue={initialData?.summary}
-                  disabled={mode === 'view'}
-                  className={cn("w-full min-h-24 p-4 rounded-xl border border-border bg-input-background text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all resize-none disabled:opacity-50 placeholder:text-muted-foreground", (initialData?.summary) && "text-foreground font-bold")}
-                  placeholder={t('dialog.description_placeholder', T)}
-                  rows={3}
-                  dir={isAr ? "rtl" : "ltr"}
-                />
-              </div>
+                  <div className="flex flex-col gap-2 text-start">
+                    <label htmlFor={inputId('description')} className={cn("text-sm font-semibold text-foreground/80", isAr ? "pr-1" : "pl-1")}>{t('dialog.description', T)} <span className="text-xs font-normal text-muted-foreground mx-1">{isAr ? "(اختياري)" : "(optional)"}</span></label>
+                    <Textarea
+                      id={inputId('description')}
+                      name="summary"
+                      defaultValue={initialData?.summary}
+                      disabled={mode === 'view'}
+                      placeholder={t('dialog.description_placeholder', T)}
+                      rows={3}
+                      dir={isAr ? "rtl" : "ltr"}
+                      className="font-bold rounded-xl"
+                    />
+                  </div>
 
               {/* Permissions Section */}
               <PermissionsFieldset

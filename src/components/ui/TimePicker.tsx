@@ -55,14 +55,20 @@ const TimePicker: React.FC<TimePickerProps> = ({
     else fieldsToCheck.push(backendField);
   }
 
-  const { backendError, setBackendError } = useFieldError(
+  const { backendError, backendErrors, setBackendError, setBackendErrors } = useFieldError(
     fieldsToCheck.length > 0 ? fieldsToCheck : undefined
   );
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [errorMsgs, setErrorMsgs] = useState<string[]>([]);
 
   useEffect(() => {
-    if (backendError) setErrorMsg(backendError);
-  }, [backendError]);
+    if (backendErrors && backendErrors.length > 0) {
+      setErrorMsgs(backendErrors);
+    } else if (backendError) {
+      setErrorMsgs([backendError]);
+    } else {
+      setErrorMsgs([]);
+    }
+  }, [backendError, backendErrors]);
 
   const [isOpen, setIsOpen] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
@@ -103,8 +109,9 @@ const TimePicker: React.FC<TimePickerProps> = ({
   }, [isOpen]);
 
   const handleOpen = () => {
-    if (errorMsg) setErrorMsg(null);
+    if (errorMsgs.length > 0) setErrorMsgs([]);
     if (backendError) setBackendError(null);
+    if (backendErrors.length > 0) setBackendErrors([]);
     setIsOpen(true);
   };
 
@@ -117,8 +124,9 @@ const TimePicker: React.FC<TimePickerProps> = ({
   };
 
   const handleConfirm = () => {
-    if (errorMsg) setErrorMsg(null);
+    if (errorMsgs.length > 0) setErrorMsgs([]);
     if (backendError) setBackendError(null);
+    if (backendErrors.length > 0) setBackendErrors([]);
     onChange(formatTo24h(tempH, tempM, tempP));
     handleClose();
   };
@@ -256,28 +264,32 @@ const TimePicker: React.FC<TimePickerProps> = ({
     );
   };
 
-  const currentError = errorMsg || error;
+  const hasError = errorMsgs.length > 0 || !!error;
 
   return (
-    <div className="w-full flex flex-col" data-has-error={!!currentError}>
+    <div className="w-full flex flex-col" data-has-error={hasError}>
       <div
         ref={containerRef}
         onClick={handleOpen}
         className={cn(
-          "time-picker-container whitespace-nowrap flex items-center max-w-full text-end bg-white border border-border rounded-xl px-3 py-1.5 transition-all hover:border-primary/50 cursor-pointer h-12 w-full",
-          currentError && "border-destructive hover:border-destructive bg-destructive/5 text-destructive",
+          "time-picker-container whitespace-nowrap flex items-center justify-center max-w-full text-center bg-white border border-border rounded-xl px-3 py-1.5 transition-all hover:border-primary/50 cursor-pointer h-12 w-full",
+          hasError && "border-destructive hover:border-destructive bg-destructive/5 text-destructive",
           className
         )}
       >
-        {!noClock && <Clock className={cn("size-4 mr-2 ml-2", currentError ? "text-destructive" : "text-muted-foreground")} />}
-        <div className={cn("flex-1 font-bold text-end", currentError ? "text-destructive" : "text-foreground")} dir="ltr">
+        {!noClock && <Clock className={cn("size-4 mr-2 ml-2", hasError ? "text-destructive" : "text-muted-foreground")} />}
+        <div className={cn("flex-1 font-bold text-center", hasError ? "text-destructive" : "text-foreground")} dir="ltr">
           {initial.h}:{initial.m} {initial.p === 'AM' ? (isAr ? 'ص' : 'AM') : (isAr ? 'م' : 'PM')}
         </div>
       </div>
-      {typeof currentError === 'string' && currentError && (
-        <p className="text-[11px] text-destructive mt-1.5 font-bold animate-in fade-in slide-in-from-top-1 text-start">
-          {currentError}
-        </p>
+      {(hasError || (typeof error === 'string' && error)) && (
+        <div className="text-[11px] text-destructive mt-1.5 font-bold animate-in fade-in slide-in-from-top-1 text-start">
+          {typeof error === 'string' && error ? (
+            <p>{error}</p>
+          ) : (
+            <p>{errorMsgs.join(' || ')}</p>
+          )}
+        </div>
       )}
 
       {isOpen && (

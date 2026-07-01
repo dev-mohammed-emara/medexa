@@ -1,7 +1,7 @@
 
 
 
-import { Check, Mail, Phone, Plus, Save, User, X } from 'lucide-react'
+import { Check, Mail, Phone, Plus, Save, User, X, AlertCircle } from 'lucide-react'
 import { FaCalendarAlt } from 'react-icons/fa'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { DatePicker } from '../../components/ui/DatePicker';
@@ -47,6 +47,8 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
   const [isClosing, setIsClosing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>(initialData?.user?.permissions || []);
+  const [error, setError] = useState<string | null>(null);
+  const [showPermissionWarning, setShowPermissionWarning] = useState(false);
 
   const [password, setPassword] = useState('');
   const [passwordError, setPasswordError] = useState<string | null>(null);
@@ -67,7 +69,14 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
       setConfirmPasswordError(null);
       setSelectedPermissions([]);
     }
+    setError(null);
+    setShowPermissionWarning(false);
   }, [initialData, isOpen]);
+
+  // Reset permission warning state if user modifies permissions
+  useEffect(() => {
+    setShowPermissionWarning(false);
+  }, [selectedPermissions]);
 
   const handleClose = useCallback(() => {
     setIsClosing(true);
@@ -93,8 +102,18 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     if (mode === 'view') {
       handleClose();
+      return;
+    }
+
+    if (selectedPermissions.length === 0 && !showPermissionWarning) {
+      setShowPermissionWarning(true);
+      const warningMsg = isAr
+        ? "هذا المستخدم ليس لديه أي صلاحيات معينة. قد لا يتمكن من الوصول أو تنفيذ الإجراءات التي يحتاجها. هل تريد الاستمرار؟"
+        : "This user does not have any permissions assigned. They may not be able to access or perform the actions they need. Do you want to continue?";
+      setError(warningMsg);
       return;
     }
 
@@ -160,7 +179,9 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
       if (error.message && error.message.toLowerCase().includes('password')) {
         setPasswordError(error.message);
       }
-      window.showToast?.(error.message || t('error_save', T), 'error')
+      const msg = error.message || t('error_save', T);
+      setError(msg);
+      window.showToast?.(msg, 'error')
     } finally {
       setLoading(false);
     }
@@ -217,6 +238,12 @@ const SecretaryDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Secr
           </header>
 
           <ScrollLockWrapper className="flex-1 overflow-y-auto pr-1 no-scrollbar">
+            {error && (
+              <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-xl flex items-center gap-3 text-destructive animate-in fade-in slide-in-from-top-2">
+                <AlertCircle className="size-5 shrink-0" />
+                <p className="text-sm font-bold">{error}</p>
+              </div>
+            )}
             <form id="secretaryForm" onSubmit={handleSubmit} className="space-y-6 py-2" autoComplete="off">
               {/* Name Fields - Three Columns */}
               <div className="grid grid-cols-1 md:grid-cols-2  lg:grid-cols-3 gap-4">

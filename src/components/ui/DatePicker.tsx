@@ -55,21 +55,28 @@ export const DatePicker = React.forwardRef<any, DatePickerProps>(
       else fieldsToCheck.push(backendField);
     }
 
-    const { backendError, setBackendError } = useFieldError(
+    const { backendError, backendErrors, setBackendError, setBackendErrors } = useFieldError(
       fieldsToCheck.length > 0 ? fieldsToCheck : undefined
     );
-    const [errorMsg, setErrorMsg] = useState<string | null>(null);
+    const [errorMsgs, setErrorMsgs] = useState<string[]>([]);
     const { isAr } = useLanguage();
     const containerRef = useRef<HTMLDivElement>(null);
     const [open, setOpen] = useState(false);
 
     useEffect(() => {
-      if (backendError) setErrorMsg(backendError);
-    }, [backendError]);
+      if (backendErrors && backendErrors.length > 0) {
+        setErrorMsgs(backendErrors);
+      } else if (backendError) {
+        setErrorMsgs([backendError]);
+      } else {
+        setErrorMsgs([]);
+      }
+    }, [backendError, backendErrors]);
 
     const handleChange = (date: Date | null) => {
-      if (errorMsg) setErrorMsg(null);
+      if (errorMsgs.length > 0) setErrorMsgs([]);
       if (backendError) setBackendError(null);
+      if (backendErrors.length > 0) setBackendErrors([]);
       
       const dateStr = date && isValid(date) ? format(date, 'yyyy-MM-dd') : '';
       if (onChange) {
@@ -77,7 +84,7 @@ export const DatePicker = React.forwardRef<any, DatePickerProps>(
       }
     };
 
-    const currentError = errorMsg || error;
+    const hasError = errorMsgs.length > 0 || !!error;
 
     let parsedValue: Date | null = null;
     if (value instanceof Date && isValid(value)) {
@@ -91,7 +98,7 @@ export const DatePicker = React.forwardRef<any, DatePickerProps>(
       <div
         ref={containerRef}
         className={cn('w-full flex flex-col relative', containerClassName)}
-        data-has-error={!!currentError}
+        data-has-error={hasError}
       >
         <input
           type="text"
@@ -105,11 +112,11 @@ export const DatePicker = React.forwardRef<any, DatePickerProps>(
             e.preventDefault();
             const inputEl = e.target as HTMLInputElement;
             if (inputEl.validity.valueMissing) {
-              setErrorMsg(
+              setErrorMsgs([
                 isAr ? 'يرجى ملء هذا الحقل' : 'Please fill out this field.'
-              );
+              ]);
             } else {
-              setErrorMsg(inputEl.validationMessage);
+              setErrorMsgs([inputEl.validationMessage]);
             }
           }}
         />
@@ -120,7 +127,7 @@ export const DatePicker = React.forwardRef<any, DatePickerProps>(
             } border-border rounded-xl px-4 transition-all data-[error=true]:border-destructive data-[error=true]:focus-within:border-destructive data-[error=true]:focus-within:ring-destructive/10 data-[error=true]:bg-destructive/5`,
             className
           )}
-          data-error={!!currentError}
+          data-error={hasError}
         >
           <MuiDatePicker
             inputRef={ref}
@@ -144,7 +151,7 @@ export const DatePicker = React.forwardRef<any, DatePickerProps>(
                 InputProps: { disableUnderline: true },
                 className: cn(
                   'flex-1 border-none outline-none text-right font-bold h-full text-base md:text-sm placeholder:font-normal placeholder:text-muted-foreground w-full',
-                  currentError && 'text-destructive'
+                  hasError && 'text-destructive'
                 ),
                 sx: {
                   '& .MuiInputBase-root': {
@@ -190,17 +197,21 @@ export const DatePicker = React.forwardRef<any, DatePickerProps>(
             <div
               className={cn(
                 'pointer-events-none group-focus-within:text-primary transition-colors relative z-20',
-                currentError ? 'text-destructive' : 'text-muted-foreground'
+                hasError ? 'text-destructive' : 'text-muted-foreground'
               )}
             >
               {icon}
             </div>
           )}
         </div>
-        {typeof currentError === 'string' && currentError && (
-          <p className="text-[11px] text-destructive mt-1.5 font-bold animate-in fade-in slide-in-from-top-1 text-start">
-            {currentError}
-          </p>
+        {(hasError || (typeof error === 'string' && error)) && (
+          <div className="text-[11px] text-destructive mt-1.5 font-bold animate-in fade-in slide-in-from-top-1 text-start">
+            {typeof error === 'string' && error ? (
+              <p>{error}</p>
+            ) : (
+              <p>{errorMsgs.join(' || ')}</p>
+            )}
+          </div>
         )}
       </div>
     );

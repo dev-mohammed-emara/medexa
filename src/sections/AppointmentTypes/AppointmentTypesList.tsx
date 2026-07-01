@@ -7,6 +7,9 @@ import { useAuth } from '../../contexts/AuthContext';
 import Modal from '../../components/ui/Modal';
 import { Button } from '../../components/ui/Button';
 import EmptyShell from '../../components/ui/EmptyShell';
+import Input from '../../components/ui/Input';
+import Textarea from '../../components/ui/Textarea';
+import { getErrorMessage } from '../../utils/error';
 import {
   Table,
   TableHeader,
@@ -44,6 +47,7 @@ const AppointmentTypesList = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [modalError, setModalError] = useState<string | null>(null);
 
   // Form State
   const [currentUuid, setCurrentUuid] = useState<string | null>(null);
@@ -79,12 +83,14 @@ const AppointmentTypesList = () => {
     setModalMode('add');
     setCurrentUuid(null);
     setFormData({ name: '', description: '', duration: 30 });
+    setModalError(null);
     setIsModalOpen(true);
   };
 
   const handleOpenEditViewModal = async (uuid: string, mode: 'edit' | 'view') => {
     try {
       setLoading(true);
+      setModalError(null);
       const data = await getAppointmentType(uuid);
       setModalMode(mode);
       setCurrentUuid(uuid);
@@ -109,6 +115,7 @@ const AppointmentTypesList = () => {
 
   const handleSave = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
+    setModalError(null);
 
     if (!formData.name.trim() || formData.duration <= 0) {
       window.showToast?.(isAr ? 'يرجى تعبئة جميع الحقول المطلوبة' : 'Please fill all required fields', 'error');
@@ -131,7 +138,9 @@ const AppointmentTypesList = () => {
       await loadAppointmentTypes();
     } catch (err: any) {
       console.error(err);
-      window.showToast?.(err.message || 'Failed to save appointment type', 'error');
+      const errMsg = getErrorMessage(err);
+      setModalError(errMsg);
+      window.showToast?.(errMsg, 'error');
     } finally {
       setSaving(false);
     }
@@ -395,78 +404,63 @@ const AppointmentTypesList = () => {
         }
       >
         <div className="scrollable z-500 overflow-visible overflow-y-auto pr-1 no-scrollbar" style={{ overscrollBehavior: 'contain' }}>
+          {modalError && (
+            <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-xl flex items-center gap-3 text-destructive animate-in fade-in slide-in-from-top-2">
+              <AlertCircle className="size-5 shrink-0" />
+              <p className="text-sm font-bold">{modalError}</p>
+            </div>
+          )}
           <form id="appointmentTypeForm" onSubmit={handleSave} className="py-2" autoComplete="off">
             <article className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Name Field */}
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-2 text-start">
                   <label className="text-sm font-semibold text-foreground/80 pr-1">{isAr ? 'الاسم' : 'Name'}</label>
-                  <div className="relative w-full group">
-                    <div className={cn("absolute top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none group-focus-within:text-primary transition-colors z-10", isAr ? "right-4" : "left-4")}>
-                      <FileText className="size-[18px]" />
-                    </div>
-                    <input
-                      className={cn(
-                        "flex w-full border border-border bg-input-background px-4 py-2 text-base transition-all outline-none placeholder:text-muted-foreground focus:border-primary focus:ring-4 focus:ring-primary/10 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm font-bold rounded-xl h-12",
-                        isAr ? "pr-12 pl-4" : "pl-12 pr-4"
-                      )}
-                      required
-                      placeholder={isAr ? "أدخل الاسم" : "Enter name"}
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      disabled={modalMode === 'view'}
-                      dir={isAr ? "rtl" : "ltr"}
-                      name="name"
-                    />
-                  </div>
+                  <Input
+                    required
+                    placeholder={isAr ? "أدخل الاسم" : "Enter name"}
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    disabled={modalMode === 'view'}
+                    dir={isAr ? "rtl" : "ltr"}
+                    name="name"
+                    icon={<FileText className="size-[18px]" />}
+                    className="font-bold rounded-xl h-12"
+                  />
                 </div>
 
                 {/* Duration Field */}
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-2 text-start">
                   <label className="text-sm font-semibold text-foreground/80 pr-1">{isAr ? 'المدة الافتراضية (بالدقائق)' : 'Default Duration (mins)'}</label>
-                  <div className="relative w-full group">
-                    <div className={cn("absolute top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none group-focus-within:text-primary transition-colors z-10", isAr ? "right-4" : "left-4")}>
-                      <Clock className="size-[18px]" />
-                    </div>
-                    <input
-                      type="number"
-                      className={cn(
-                        "flex w-full border border-border bg-input-background px-4 py-2 text-base transition-all outline-none placeholder:text-muted-foreground focus:border-primary focus:ring-4 focus:ring-primary/10 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm font-bold rounded-xl h-12",
-                        isAr ? "pr-12 pl-4" : "pl-12 pr-4"
-                      )}
-                      required
-                      placeholder={isAr ? "المدة بالدقائق" : "Duration in minutes"}
-                      value={formData.duration}
-                      onChange={(e) => setFormData({ ...formData, duration: parseInt(e.target.value) || 0 })}
-                      disabled={modalMode === 'view'}
-                      min={1}
-                      dir={isAr ? "rtl" : "ltr"}
-                      name="duration"
-                    />
-                  </div>
+                  <Input
+                    type="number"
+                    required
+                    placeholder={isAr ? "المدة بالدقائق" : "Duration in minutes"}
+                    value={formData.duration.toString()}
+                    onChange={(e) => setFormData({ ...formData, duration: parseInt(e.target.value) || 0 })}
+                    disabled={modalMode === 'view'}
+                    min={1}
+                    dir={isAr ? "rtl" : "ltr"}
+                    name="duration"
+                    icon={<Clock className="size-[18px]" />}
+                    className="font-bold rounded-xl h-12"
+                  />
                 </div>
 
                 {/* Description Field */}
-                <div className="flex flex-col gap-2 col-span-1 md:col-span-2">
+                <div className="flex flex-col gap-2 col-span-1 md:col-span-2 text-start">
                   <label className="text-sm font-semibold text-foreground/80 pr-1">{isAr ? 'الوصف' : 'Description'} <span className="text-xs font-normal text-muted-foreground mx-1">{isAr ? "(اختياري)" : "(optional)"}</span></label>
-                  <div className="relative group">
-                    <textarea
-                      name="description"
-                      className={cn(
-                        "w-full min-h-24 p-4 rounded-xl border border-border bg-input-background text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all resize-none disabled:opacity-50 placeholder:text-muted-foreground font-bold",
-                        isAr ? "pr-12 pl-4" : "pl-12 pr-4"
-                      )}
-                      placeholder={isAr ? "الوصف" : "Description"}
-                      rows={3}
-                      value={formData.description}
-                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                      disabled={modalMode === 'view'}
-                      dir={isAr ? "rtl" : "ltr"}
-                    />
-                    <div className={cn("absolute top-4 text-muted-foreground pointer-events-none group-focus-within:text-primary transition-colors", isAr ? "right-4" : "left-4")}>
-                      <FileText className="size-[18px]" aria-hidden="true" />
-                    </div>
-                  </div>
+                  <Textarea
+                    name="description"
+                    placeholder={isAr ? "الوصف" : "Description"}
+                    rows={3}
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    disabled={modalMode === 'view'}
+                    dir={isAr ? "rtl" : "ltr"}
+                    icon={<FileText className="size-[18px]" />}
+                    className="font-bold rounded-xl"
+                  />
                 </div>
               </div>
             </article>

@@ -1,7 +1,7 @@
 import Input from '@/components/ui/Input';
 import Portal from '@/components/ui/Portal';
 import { cn } from '@/utils/cn';
-import { Key, Mail, Shield, X, Loader2 } from 'lucide-react';
+import { Key, Mail, Shield, X, Loader2, AlertCircle } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -25,6 +25,7 @@ const EmailChangeDialog = ({ isOpen, onClose }: EmailChangeDialogProps) => {
 
   const [newEmail, setNewEmail] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleClose = useCallback(() => {
     setIsClosing(true);
@@ -71,6 +72,7 @@ const EmailChangeDialog = ({ isOpen, onClose }: EmailChangeDialogProps) => {
     if (!newEmail) return;
 
     setLoading(true);
+    setError(null);
     try {
       const token = getCookie('token');
       const response = await apiFetch('/api/auth/email/change', {
@@ -98,6 +100,7 @@ const EmailChangeDialog = ({ isOpen, onClose }: EmailChangeDialogProps) => {
       handleClose();
     } catch (err: any) {
       console.error(err);
+      setError(err.message || 'Error updating email');
       window.showToast?.(err.message || 'Error updating email', 'error');
     } finally {
       setLoading(false);
@@ -131,6 +134,13 @@ const EmailChangeDialog = ({ isOpen, onClose }: EmailChangeDialogProps) => {
               {t('profile.change_email_desc', T_PAGE)}
             </p>
           </div>
+
+          {error && (
+            <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-xl flex items-center gap-3 text-destructive animate-in fade-in slide-in-from-top-2 text-start">
+              <AlertCircle className="size-5 shrink-0" />
+              <p className="text-sm font-bold">{error}</p>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-4 py-4">            <div className="space-y-2 text-start">
             <label className="flex items-center gap-2 font-medium text-sm text-foreground" style={{ fontWeight: 600 }}>

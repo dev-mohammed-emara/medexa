@@ -22,7 +22,7 @@ const Preloader = () => {
 
   const ease = "expo.inOut";
   const darkPrimary = "#052c46";
-  const lastUrlRef = useRef(window.location.href);
+  const lastPathnameRef = useRef(window.location.pathname);
 
   // Use a ref to track the master timeline to prevent clashing
   const masterTl = useRef<gsap.core.Timeline | null>(null);
@@ -122,14 +122,14 @@ const Preloader = () => {
   }, [closeTransition]);
 
   useEffect(() => {
-    lastUrlRef.current = window.location.href;
+    lastPathnameRef.current = window.location.pathname;
   }, [locationKey]);
 
   useEffect(() => {
     const handlePopState = () => {
-      // If URL hasn't changed, it's likely a modal closure or hash change - don't show preloader
-      if (window.location.href === lastUrlRef.current) return;
-      lastUrlRef.current = window.location.href;
+      // If pathname hasn't changed, it's likely a modal closure or hash/query change - don't show preloader
+      if (window.location.pathname === lastPathnameRef.current) return;
+      lastPathnameRef.current = window.location.pathname;
 
       // Force cover screen immediately on popstate
       if (loaderRef.current) {

@@ -77,7 +77,10 @@ export default function Counter({
     ? currencyFormatter.format(value)
     : numberFormatter.format(value);
 
-  const digits = formattedValue.split('');
+  // Clean leading zeros unless it's a partial decimal like 0.5
+  const cleanedValue = formattedValue.replace(/^([-+])?0+(?=\d)(?!\.)/, '$1');
+
+  const digits = cleanedValue.split('');
 
   return (
     <span

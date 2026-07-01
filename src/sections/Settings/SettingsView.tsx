@@ -668,7 +668,7 @@ const SettingsView = ({ hideHeader, className }: SettingsViewProps = {}) => {
                                 <TimePicker
                                   value={period.from}
                                   onChange={(val) => updatePeriod(day.id, period.id, 'from', val)}
-                                  className="h-10 xs:h-8 w-full flex-1 border border-muted bg-white shadow-none focus-within:ring-1 focus-within:ring-primary rounded-md text-sm min-w-[80px]"
+                                  className="h-10 w-full flex-1 border border-muted bg-white shadow-none focus-within:ring-1 focus-within:ring-primary rounded-lg text-sm min-w-[80px] py-1.5"
                                   noClock
                                 />
                               ) : (
@@ -681,7 +681,7 @@ const SettingsView = ({ hideHeader, className }: SettingsViewProps = {}) => {
                                 <TimePicker
                                   value={period.to}
                                   onChange={(val) => updatePeriod(day.id, period.id, 'to', val)}
-                                  className="h-10 xs:h-8 w-full flex-1 border border-muted bg-white shadow-none focus-within:ring-1 focus-within:ring-primary rounded-md text-sm min-w-[80px]"
+                                  className="h-10 w-full flex-1 border border-muted bg-white shadow-none focus-within:ring-1 focus-within:ring-primary rounded-lg text-sm min-w-[80px] py-1.5"
                                   noClock
                                 />
                               ) : (

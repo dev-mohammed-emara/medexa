@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { DatePicker } from '../../components/ui/DatePicker';
 import { Button } from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
+import Textarea from '../../components/ui/Textarea';
 import ScrollLockWrapper from '../../components/ui/ScrollLockWrapper';
 import {
   Select,
@@ -257,20 +258,17 @@ const PatientsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Patie
                     dir={isAr ? "rtl" : "ltr"}
                   />
                 </div>
-                <div className="col-span-1 md:col-span-2 relative group">
-                  <textarea
-                    name="note"
-                    defaultValue={initialData?.note}
-                    className={cn(
-                      "w-full min-h-24 p-4 rounded-xl border border-border bg-input-background text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all resize-none disabled:opacity-50 placeholder:text-muted-foreground font-bold",
-                      isAr ? "pr-12" : "pl-12"
-                    )}
-                    placeholder={`${t('dialog.notes', T)} ${isAr ? '(اختياري)' : '(optional)'}`}
-                    rows={3}
-                    dir={isAr ? "rtl" : "ltr"}
-                  />
-                  <FileText className={cn("absolute top-4 text-muted-foreground pointer-events-none group-focus-within:text-primary transition-colors size-[18px]", isAr ? "right-4" : "left-4")} />
-                </div>
+                <div className="col-span-1 md:col-span-2 text-start">
+                   <Textarea
+                     name="note"
+                     defaultValue={initialData?.note}
+                     placeholder={`${t('dialog.notes', T)} ${isAr ? '(اختياري)' : '(optional)'}`}
+                     rows={3}
+                     dir={isAr ? "rtl" : "ltr"}
+                     icon={<FileText className="size-[18px]" />}
+                     className="font-bold rounded-xl"
+                   />
+                 </div>
               </div>
             </form>
           </ScrollLockWrapper>

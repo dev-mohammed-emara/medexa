@@ -269,7 +269,7 @@ const Navbar = ({ onMenuClick }: NavbarProps) => {
                 <span>{t('nav.profile', T_PAGE)}</span>
               </TransitionLink>
               <TransitionLink
-                href="/profile?tab=clinic"
+                href="/profile?info=clinic"
                 onClick={() => setShowProfile(false)}
                 className="w-full flex items-center gap-3 px-4 py-2.5 text-sm rounded-lg hover:bg-slate-50 transition-colors"
               >
