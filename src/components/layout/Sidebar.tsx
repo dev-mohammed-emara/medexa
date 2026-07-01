@@ -150,7 +150,7 @@ const Sidebar = ({ isCollapsed, onToggle }: SidebarProps) => {
                     !isWideScreen ? "opacity-100" : "opacity-0",
                     isActive
                       ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-lg"
-                      : "text-sidebar-foreground hover:bg-sidebar-accent/50"
+                      : "text-sidebar-foreground hover:bg-sidebar-accent"
                   )}
                 >
                   {isActive && (

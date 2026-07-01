@@ -1,0 +1,14 @@
+User-agent: *
+Disallow: /dashboard
+Disallow: /patients
+Disallow: /doctors
+Disallow: /secretaries
+Disallow: /records
+Disallow: /finance
+Disallow: /statistics
+Disallow: /support-tickets
+Disallow: /appointments
+Disallow: /admin
+Disallow: /profile
+Disallow: /login
+Disallow: /register

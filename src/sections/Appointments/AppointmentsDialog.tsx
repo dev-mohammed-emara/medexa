@@ -189,7 +189,7 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, doc
           if (doctorsListProp && doctorsListProp.length > 0) {
             if (!cancelled) setDoctorsList(doctorsListProp);
           } else {
-            const docData = await fetchDoctors({ size: 100 });
+            const docData = await fetchDoctors({ size: 50 });
             if (!cancelled) {
               if (docData.content && docData.content.length > 0) {
                 setDoctorsList(docData.content);
@@ -205,7 +205,7 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, doc
 
         try {
           if (patientsList.length === 0) {
-            const patData = await fetchPatients({ size: 100 });
+            const patData = await fetchPatients({ size: 50 });
             if (!cancelled) {
               if (patData.content && patData.content.length > 0) {
                 setPatientsList(patData.content);
@@ -700,6 +700,14 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, doc
                         setSelectedPatient(val);
                         setFormErrors(prev => ({ ...prev, patient: '' }));
                       }}
+                      onSearchChange={async (searchQuery) => {
+                        try {
+                          const patData = await fetchPatients({ size: 50, search: searchQuery });
+                          setPatientsList(patData.content || []);
+                        } catch (e) {
+                          console.error('Failed to search patients in dialog:', e);
+                        }
+                      }}
                       error={formErrors.patient}
                     >
                       <SelectTrigger className={cn("rounded-xl h-12 bg-input-background transition-all focus:ring-4 focus:ring-primary/10", (selectedPatient) && "text-foreground font-bold")}>
@@ -724,6 +732,14 @@ const AppointmentsDialog = ({ isOpen, onClose, onConfirm, mode, initialData, doc
                       onValueChange={(val) => {
                         setSelectedDoctor(val);
                         setFormErrors(prev => ({ ...prev, doctor: '' }));
+                      }}
+                      onSearchChange={async (searchQuery) => {
+                        try {
+                          const docData = await fetchDoctors({ size: 50, search: searchQuery });
+                          setDoctorsList(docData.content || []);
+                        } catch (e) {
+                          console.error('Failed to search doctors in dialog:', e);
+                        }
                       }}
                       error={formErrors.doctor}
                     >

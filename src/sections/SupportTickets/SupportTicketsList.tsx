@@ -4,7 +4,8 @@ import {
   RotateCcw
 } from 'lucide-react';
 import { DateFromTo } from '../../components/ui/DateFromTo';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useUrlFilters } from '../../hooks/useUrlFilters';
 import { Button } from '../../components/ui/Button';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { usePreloader } from '../../contexts/PreloaderContext';
@@ -47,25 +48,93 @@ const SupportTicketsList = () => {
   const defaultToDate = getLocalDateString(today);
   const defaultFromDate = getLocalDateString(firstDayOfMonth);
 
+  // Initial parameters resolution (URL takes priority over sessionStorage, which takes priority over defaults)
+  const initialParams = useMemo(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlStatus = urlParams.get('status');
+    const urlPriority = urlParams.get('priority');
+    const urlFromDate = urlParams.get('dateFrom');
+    const urlToDate = urlParams.get('dateTo');
+    const urlSort = urlParams.get('sort');
+    const urlPage = urlParams.get('page');
+    const urlSize = urlParams.get('size');
+    
+    const saved = (() => {
+      try {
+        const data = sessionStorage.getItem('medexa_filter_support_tickets');
+        return data ? JSON.parse(data) : null;
+      } catch {
+        return null;
+      }
+    })();
+
+    return {
+      status: urlStatus !== null ? urlStatus : (saved?.status ?? ''),
+      priority: urlPriority !== null ? urlPriority : (saved?.priority ?? ''),
+      fromDate: urlFromDate !== null ? urlFromDate : (saved?.fromDate ?? defaultFromDate),
+      toDate: urlToDate !== null ? urlToDate : (saved?.toDate ?? defaultToDate),
+      sort: urlSort !== null ? urlSort : (saved?.sort ?? 'createdAt,desc'),
+      
+      activeStatus: urlStatus !== null ? urlStatus : (saved?.activeStatus ?? ''),
+      activePriority: urlPriority !== null ? urlPriority : (saved?.activePriority ?? ''),
+      activeFromDate: urlFromDate !== null ? urlFromDate : (saved?.activeFromDate ?? defaultFromDate),
+      activeToDate: urlToDate !== null ? urlToDate : (saved?.activeToDate ?? defaultToDate),
+      activeSort: urlSort !== null ? urlSort : (saved?.activeSort ?? 'createdAt,desc'),
+      
+      currentPage: urlPage !== null ? Number(urlPage) : (saved?.currentPage ?? 1),
+      pageSize: urlSize !== null ? Number(urlSize) : (saved?.pageSize ?? 10),
+    };
+  }, [defaultFromDate, defaultToDate]);
+
   // Local Filter Input States
-  const [status, setStatus] = useState('');
-  const [priority, setPriority] = useState('');
-  const [fromDate, setFromDate] = useState(defaultFromDate);
-  const [toDate, setToDate] = useState(defaultToDate);
-  const [sort, setSort] = useState('createdAt,desc');
+  const [status, setStatus] = useState(initialParams.status);
+  const [priority, setPriority] = useState(initialParams.priority);
+  const [fromDate, setFromDate] = useState(initialParams.fromDate);
+  const [toDate, setToDate] = useState(initialParams.toDate);
+  const [sort, setSort] = useState(initialParams.sort);
 
   // Active Filter States (applied on Confirm)
-  const [activeStatus, setActiveStatus] = useState('');
-  const [activePriority, setActivePriority] = useState('');
-  const [activeFromDate, setActiveFromDate] = useState(defaultFromDate);
-  const [activeToDate, setActiveToDate] = useState(defaultToDate);
-  const [activeSort, setActiveSort] = useState('createdAt,desc');
+  const [activeStatus, setActiveStatus] = useState(initialParams.activeStatus);
+  const [activePriority, setActivePriority] = useState(initialParams.activePriority);
+  const [activeFromDate, setActiveFromDate] = useState(initialParams.activeFromDate);
+  const [activeToDate, setActiveToDate] = useState(initialParams.activeToDate);
+  const [activeSort, setActiveSort] = useState(initialParams.activeSort);
 
   // Pagination State
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [currentPage, setCurrentPage] = useState(initialParams.currentPage);
+  const [pageSize, setPageSize] = useState(initialParams.pageSize);
   const [totalPages, setTotalPages] = useState(1);
   const [totalElements, setTotalElements] = useState(0);
+
+  // Sync active states back to local inputs (e.g. on back/forward browser navigation)
+  useEffect(() => {
+    setStatus(activeStatus);
+    setPriority(activePriority);
+    setFromDate(activeFromDate);
+    setToDate(activeToDate);
+    setSort(activeSort);
+  }, [activeStatus, activePriority, activeFromDate, activeToDate, activeSort]);
+
+  // Hook for SEO URL and SessionStorage synchronization
+  useUrlFilters({
+    sessionKey: 'medexa_filter_support_tickets',
+    filters: [
+      { key: 'status', state: activeStatus, setState: setActiveStatus, defaultValue: '' },
+      { key: 'priority', state: activePriority, setState: setActivePriority, defaultValue: '' },
+      { key: 'dateFrom', state: activeFromDate, setState: setActiveFromDate, defaultValue: defaultFromDate },
+      { key: 'dateTo', state: activeToDate, setState: setActiveToDate, defaultValue: defaultToDate },
+      { key: 'sort', state: activeSort, setState: setActiveSort, defaultValue: 'createdAt,desc' },
+      { key: 'page', state: currentPage, setState: setCurrentPage, defaultValue: 1 },
+      { key: 'size', state: pageSize, setState: setPageSize, defaultValue: 10 },
+    ],
+  });
+
+  // Static Document Title
+  useEffect(() => {
+    document.title = isAr
+      ? 'تذاكر الدعم الفني | Medexa'
+      : 'Support Tickets | Medexa';
+  }, [isAr]);
 
 
 

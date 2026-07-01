@@ -4,6 +4,7 @@ export const patientsTranslations = {
     page_title: "إدارة المرضى",
     page_desc: "إدارة سجلات ومعلومات المرضى",
     add_button: "إضافة مريض",
+    sort_label: "ترتيب حسب",
     search_placeholder: "ابحث عن مريض...",
     mobile_swipe: "اسحب لليسار أو اليمين لتصفح الجدول",
     table: {
@@ -54,6 +55,7 @@ export const patientsTranslations = {
     page_title: "Patients Management",
     page_desc: "Manage patient records and information",
     add_button: "Add Patient",
+    sort_label: "Sort By",
     search_placeholder: "Search for a patient...",
     mobile_swipe: "Swipe left or right to browse the table",
     table: {

@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useUrlFilters } from '../../hooks/useUrlFilters';
 import {
   TrendingUp,
   TrendingDown,
@@ -75,26 +76,98 @@ const FinanceOverview = () => {
   const defaultToDate = getLocalDateString(today);
   const defaultFromDate = getLocalDateString(firstDayOfMonth);
 
-  const [fromDate, setFromDate] = useState<string>(defaultFromDate);
-  const [toDate, setToDate] = useState<string>(defaultToDate);
-  const [type, setType] = useState<string>("DEFAULT");
-  const [sort, setSort] = useState<string>("createdAt,desc");
+  // Initial parameters resolution (URL takes priority over sessionStorage, which takes priority over defaults)
+  const initialParams = useMemo(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlFromDate = urlParams.get('dateFrom');
+    const urlToDate = urlParams.get('dateTo');
+    const urlType = urlParams.get('type');
+    const urlSort = urlParams.get('sort');
+    const urlStatsFromDate = urlParams.get('statsFrom');
+    const urlStatsToDate = urlParams.get('statsTo');
+    const urlPage = urlParams.get('page');
+    const urlSize = urlParams.get('size');
+    
+    const saved = (() => {
+      try {
+        const data = sessionStorage.getItem('medexa_filter_finance');
+        return data ? JSON.parse(data) : null;
+      } catch {
+        return null;
+      }
+    })();
 
-  const [tempFromDate, setTempFromDate] = useState<string>(defaultFromDate);
-  const [tempToDate, setTempToDate] = useState<string>(defaultToDate);
-  const [tempType, setTempType] = useState<string>("DEFAULT");
-  const [tempSort, setTempSort] = useState<string>("createdAt,desc");
+    return {
+      fromDate: urlFromDate !== null ? urlFromDate : (saved?.fromDate ?? defaultFromDate),
+      toDate: urlToDate !== null ? urlToDate : (saved?.toDate ?? defaultToDate),
+      type: urlType !== null ? urlType : (saved?.type ?? 'DEFAULT'),
+      sort: urlSort !== null ? urlSort : (saved?.sort ?? 'createdAt,desc'),
+      
+      tempFromDate: urlFromDate !== null ? urlFromDate : (saved?.tempFromDate ?? defaultFromDate),
+      tempToDate: urlToDate !== null ? urlToDate : (saved?.tempToDate ?? defaultToDate),
+      tempType: urlType !== null ? urlType : (saved?.tempType ?? 'DEFAULT'),
+      tempSort: urlSort !== null ? urlSort : (saved?.tempSort ?? 'createdAt,desc'),
+      
+      statsFromDate: urlStatsFromDate !== null ? urlStatsFromDate : (saved?.statsFromDate ?? ''),
+      statsToDate: urlStatsToDate !== null ? urlStatsToDate : (saved?.statsToDate ?? ''),
+      tempStatsFromDate: urlStatsFromDate !== null ? urlStatsFromDate : (saved?.tempStatsFromDate ?? ''),
+      tempStatsToDate: urlStatsToDate !== null ? urlStatsToDate : (saved?.tempStatsToDate ?? ''),
+      
+      currentPage: urlPage !== null ? Number(urlPage) : (saved?.currentPage ?? 1),
+      itemsPerPage: urlSize !== null ? Number(urlSize) : (saved?.itemsPerPage ?? 10),
+    };
+  }, [defaultFromDate, defaultToDate]);
 
-  const [statsFromDate, setStatsFromDate] = useState<string>("");
-  const [statsToDate, setStatsToDate] = useState<string>("");
-  const [tempStatsFromDate, setTempStatsFromDate] = useState<string>("");
-  const [tempStatsToDate, setTempStatsToDate] = useState<string>("");
+  const [fromDate, setFromDate] = useState<string>(initialParams.fromDate);
+  const [toDate, setToDate] = useState<string>(initialParams.toDate);
+  const [type, setType] = useState<string>(initialParams.type);
+  const [sort, setSort] = useState<string>(initialParams.sort);
+
+  const [tempFromDate, setTempFromDate] = useState<string>(initialParams.tempFromDate);
+  const [tempToDate, setTempToDate] = useState<string>(initialParams.tempToDate);
+  const [tempType, setTempType] = useState<string>(initialParams.tempType);
+  const [tempSort, setTempSort] = useState<string>(initialParams.tempSort);
+
+  const [statsFromDate, setStatsFromDate] = useState<string>(initialParams.statsFromDate);
+  const [statsToDate, setStatsToDate] = useState<string>(initialParams.statsToDate);
+  const [tempStatsFromDate, setTempStatsFromDate] = useState<string>(initialParams.tempStatsFromDate);
+  const [tempStatsToDate, setTempStatsToDate] = useState<string>(initialParams.tempStatsToDate);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalMode, setModalMode] = useState<'add' | 'edit' | 'view'>('add');
   const [selectedTransactionUuid, setSelectedTransactionUuid] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [currentPage, setCurrentPage] = useState(initialParams.currentPage);
+  const [itemsPerPage, setItemsPerPage] = useState(initialParams.itemsPerPage);
+
+  // Sync active states back to local inputs (e.g. on back/forward browser navigation)
+  useEffect(() => {
+    setTempFromDate(fromDate);
+    setTempToDate(toDate);
+    setTempType(type);
+    setTempSort(sort);
+    setTempStatsFromDate(statsFromDate);
+    setTempStatsToDate(statsToDate);
+  }, [fromDate, toDate, type, sort, statsFromDate, statsToDate]);
+
+  // Hook for SEO URL and SessionStorage synchronization
+  useUrlFilters({
+    sessionKey: 'medexa_filter_finance',
+    filters: [
+      { key: 'dateFrom', state: fromDate, setState: setFromDate, defaultValue: defaultFromDate },
+      { key: 'dateTo', state: toDate, setState: setToDate, defaultValue: defaultToDate },
+      { key: 'type', state: type, setState: setType, defaultValue: 'DEFAULT' },
+      { key: 'sort', state: sort, setState: setSort, defaultValue: 'createdAt,desc' },
+      { key: 'statsFrom', state: statsFromDate, setState: setStatsFromDate, defaultValue: '' },
+      { key: 'statsTo', state: statsToDate, setState: setStatsToDate, defaultValue: '' },
+      { key: 'page', state: currentPage, setState: setCurrentPage, defaultValue: 1 },
+      { key: 'size', state: itemsPerPage, setState: setItemsPerPage, defaultValue: 10 },
+    ],
+  });
+
+  // Dynamic SEO Document Title
+  useEffect(() => {
+    document.title = isAr ? 'المالية | Medexa' : 'Finance | Medexa';
+  }, [isAr]);
 
   const [transactions, setTransactions] = useState<any[]>([]);
   const [totalElements, setTotalElements] = useState<number>(0);
@@ -477,7 +550,7 @@ const FinanceOverview = () => {
                         {(tx.type === 'income' || tx.type === 'INCOME') ? t('type_income', T) : t('type_expense', T)}
                       </span>
                     </TableCell>
-                    <TableCell className="p-4 font-bold">{tx.amount}</TableCell>
+                    <TableCell className="p-4 font-bold"><span dir="ltr">{tx.amount}</span></TableCell>
                     <TableCell className="p-4">{t('jod', T)}</TableCell>
                     <TableCell className="p-4 font-medium text-muted-foreground">{tx.transactionDate}</TableCell>
                     <TableCell className={cn("p-4 text-muted-foreground", isAr ? "text-right" : "text-left")}>{tx.note || '-'}</TableCell>

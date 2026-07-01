@@ -9,7 +9,11 @@ import ScrollLockWrapper from "./ScrollLockWrapper"
 import { useLanguage } from "../../contexts/LanguageContext"
 import { useFieldError } from "../../hooks/useFieldError"
 
-const SelectContext = React.createContext<{ error?: string | boolean | null }>({ error: null });
+const SelectContext = React.createContext<{ 
+  error?: string | boolean | null, 
+  onSearchChange?: (val: string) => void,
+  onlyNumbers?: boolean
+}>({ error: null });
 
 const getElementText = (node: React.ReactNode): string => {
   if (node == null) return ""
@@ -23,8 +27,16 @@ function Select({
   containerClassName,
   error,
   backendField,
+  onSearchChange,
+  onlyNumbers,
   ...props
-}: React.ComponentProps<typeof SelectPrimitive.Root> & { containerClassName?: string, error?: string | boolean, backendField?: string | string[] }) {
+}: React.ComponentProps<typeof SelectPrimitive.Root> & { 
+  containerClassName?: string, 
+  error?: string | boolean, 
+  backendField?: string | string[], 
+  onSearchChange?: (val: string) => void,
+  onlyNumbers?: boolean
+}) {
   const fieldsToCheck = [];
   if (props.name) fieldsToCheck.push(props.name);
   if (backendField) {
@@ -50,7 +62,7 @@ function Select({
   const currentError = errorMsg || error;
 
   return (
-    <SelectContext.Provider value={{ error: currentError }}>
+    <SelectContext.Provider value={{ error: currentError, onSearchChange, onlyNumbers }}>
       <div 
         className={cn("w-full flex flex-col relative", containerClassName)} 
         data-has-error={!!currentError}
@@ -144,6 +156,9 @@ function SelectContent({
   const { isAr } = useLanguage()
   const [search, setSearch] = React.useState("")
   const inputRef = React.useRef<HTMLInputElement>(null)
+  const context = React.useContext(SelectContext)
+  const onSearchChange = context?.onSearchChange
+  const onlyNumbers = context?.onlyNumbers
 
   const itemsCount = React.useMemo(() => {
     let count = 0
@@ -162,20 +177,11 @@ function SelectContent({
     return count
   }, [children])
 
-  const showSearch = itemsCount > 10
-
-  // Focus search input on mount when list is open
-  React.useEffect(() => {
-    if (showSearch) {
-      const timer = setTimeout(() => {
-        inputRef.current?.focus()
-      }, 50)
-      return () => clearTimeout(timer)
-    }
-  }, [showSearch])
+  const showSearch = itemsCount > 10 || !!onSearchChange
 
   const filteredChildren = React.useMemo(() => {
     if (!search || !showSearch) return children
+    if (onSearchChange) return children
 
     const filter = (node: React.ReactNode): React.ReactNode => {
       return React.Children.map(node, (child) => {
@@ -200,15 +206,58 @@ function SelectContent({
       })
     }
     return filter(children)
-  }, [children, search, showSearch])
+  }, [children, search, showSearch, onSearchChange])
+
+  // Helper to focus search input safely inside animation frame
+  const focusSearchInput = React.useCallback(() => {
+    requestAnimationFrame(() => {
+      const input = inputRef.current;
+      if (!input) return;
+      if (document.activeElement !== input) {
+        input.focus();
+      }
+    });
+  }, []);
+
+  // Controlled focus strategy using useLayoutEffect triggered by filteredChildren updates
+  React.useLayoutEffect(() => {
+    if (showSearch) {
+      focusSearchInput();
+    }
+  }, [filteredChildren, showSearch, focusSearchInput]);
+
+  // Debounce backend search
+  const debounceTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
+  const handleSearchChange = (val: string) => {
+    if (onlyNumbers) {
+      val = val.replace(/[^0-9]/g, "")
+    }
+    setSearch(val)
+    if (onSearchChange) {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current)
+      }
+      debounceTimerRef.current = setTimeout(() => {
+        onSearchChange(val)
+      }, 300)
+    }
+  }
+
+  React.useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current)
+      }
+    }
+  }, [])
 
   return (
     <SelectPrimitive.Portal>
       <SelectPrimitive.Content
         data-slot="select-content"
         className={cn(
-          "relative max-h-96 min-w-(--radix-select-trigger-width) overflow-hidden rounded-xl bg-popover text-popover-foreground shadow-lg ring-1 ring-border overscroll-contain",
-          "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0 data-[state=open]:zoom-in-98 data-[state=closed]:zoom-out-98 data-[side=bottom]:slide-in-from-top-2 data-[side=top]:slide-in-from-bottom-2 data-[state=closed]:slide-out-to-top-2 duration-250",
+          "relative max-h-96 min-w-(--radix-select-trigger-width) overflow-hidden rounded-xl bg-popover text-popover-foreground shadow-lg ring-1 ring-border overscroll-contain flex flex-col",
+          "",
           position === "popper" && "data-[side=bottom]:translate-y-1 data-[side=top]:-translate-y-1",
           smallZ ? "z-10" : "z-1050",
           className
@@ -227,7 +276,12 @@ function SelectContent({
         {...props}
       >
         {showSearch && (
-          <div className="p-2 sticky top-0 bg-popover z-20 border-b border-border">
+          <div 
+            className="p-2 sticky top-0 bg-popover z-20 border-b border-border h-[52px] flex-shrink-0"
+            onPointerDown={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="relative flex items-center">
               <Search className={cn("absolute size-4 text-muted-foreground", isAr ? "right-3" : "left-3")} />
               <input
@@ -239,7 +293,7 @@ function SelectContent({
                 )}
                 placeholder={isAr ? "بحث..." : "Search..."}
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => handleSearchChange(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "ArrowDown") {
                     e.preventDefault()
@@ -250,6 +304,9 @@ function SelectContent({
                   }
                   e.stopPropagation()
                 }}
+                onPointerDown={(e) => e.stopPropagation()}
+                onMouseDown={(e) => e.stopPropagation()}
+                onFocus={(e) => e.stopPropagation()}
               />
             </div>
           </div>
@@ -258,9 +315,9 @@ function SelectContent({
           data-position={position}
           data-lenis-prevent
           className={cn(
-            "p-0 overflow-y-auto touch-pan-y scroll-smooth scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent",
+            "p-0 overflow-y-auto touch-pan-y scroll-smooth scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent flex-1",
             position === "popper" &&
-              "h-(--radix-select-trigger-height) w-full min-w-(--radix-select-trigger-width)"
+              "w-full min-w-(--radix-select-trigger-width)"
           )}
         >
           <ScrollLockWrapper>

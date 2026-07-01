@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useUrlFilters } from '../../hooks/useUrlFilters'
 import {
   Plus,
   Eye,
@@ -47,26 +48,82 @@ const SecretaryList = () => {
     }
   });
 
+  // Initial parameters resolution (URL takes priority over sessionStorage, which takes priority over defaults)
+  const initialParams = useMemo(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlSearch = urlParams.get('search');
+    const urlStatus = urlParams.get('status');
+    const urlSort = urlParams.get('sort');
+    const urlPage = urlParams.get('page');
+    const urlSize = urlParams.get('size');
+    
+    const saved = (() => {
+      try {
+        const data = sessionStorage.getItem('medexa_filter_secretary');
+        return data ? JSON.parse(data) : null;
+      } catch {
+        return null;
+      }
+    })();
+
+    return {
+      search: urlSearch !== null ? urlSearch : (saved?.search ?? ''),
+      status: urlStatus !== null ? urlStatus : (saved?.status ?? 'all'),
+      sort: urlSort !== null ? urlSort : (saved?.sort ?? 'createdAt,desc'),
+      activeSearch: urlSearch !== null ? urlSearch : (saved?.activeSearch ?? ''),
+      activeStatus: urlStatus !== null ? urlStatus : (saved?.activeStatus ?? 'all'),
+      activeSort: urlSort !== null ? urlSort : (saved?.activeSort ?? 'createdAt,desc'),
+      currentPage: urlPage !== null ? Number(urlPage) : (saved?.currentPage ?? 1),
+      pageSize: urlSize !== null ? Number(urlSize) : (saved?.pageSize ?? 10),
+    };
+  }, []);
+
   // State management
   const [secretaries, setSecretaries] = useState<ApiSecretary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Local Filter Input States
-  const [search, setSearch] = useState('');
-  const [status, setStatus] = useState('all');
-  const [sort, setSort] = useState('createdAt,desc');
+  const [search, setSearch] = useState(initialParams.search);
+  const [status, setStatus] = useState(initialParams.status);
+  const [sort, setSort] = useState(initialParams.sort);
 
   // Active Filter States (applied on Confirm)
-  const [activeSearch, setActiveSearch] = useState('');
-  const [activeStatus, setActiveStatus] = useState('all');
-  const [activeSort, setActiveSort] = useState('createdAt,desc');
+  const [activeSearch, setActiveSearch] = useState(initialParams.activeSearch);
+  const [activeStatus, setActiveStatus] = useState(initialParams.activeStatus);
+  const [activeSort, setActiveSort] = useState(initialParams.activeSort);
 
   // Pagination State
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [currentPage, setCurrentPage] = useState(initialParams.currentPage);
+  const [pageSize, setPageSize] = useState(initialParams.pageSize);
   const [totalPages, setTotalPages] = useState(1);
   const [totalElements, setTotalElements] = useState(0);
+
+  // Sync active states back to local inputs (e.g. on back/forward browser navigation)
+  useEffect(() => {
+    setSearch(activeSearch);
+    setStatus(activeStatus);
+    setSort(activeSort);
+  }, [activeSearch, activeStatus, activeSort]);
+
+  // Hook for SEO URL and SessionStorage synchronization
+  useUrlFilters({
+    sessionKey: 'medexa_filter_secretary',
+    filters: [
+      { key: 'search', state: activeSearch, setState: setActiveSearch, defaultValue: '', urlEnabled: false },
+      { key: 'status', state: activeStatus, setState: setActiveStatus, defaultValue: 'all' },
+      { key: 'sort', state: activeSort, setState: setActiveSort, defaultValue: 'createdAt,desc' },
+      { key: 'page', state: currentPage, setState: setCurrentPage, defaultValue: 1 },
+      { key: 'size', state: pageSize, setState: setPageSize, defaultValue: 10 },
+    ],
+  });
+
+  // Static Document Title
+  useEffect(() => {
+    document.title = isAr
+      ? 'السكرتارية | Medexa'
+      : 'Secretaries | Medexa';
+  }, [isAr]);
 
   // Dialog states
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -288,11 +345,10 @@ const SecretaryList = () => {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent smallZ>
-                <SelectItem value="--">--</SelectItem>
-                <SelectItem value="createdAt,desc">createdAt,desc</SelectItem>
-                <SelectItem value="createdAt,asc">createdAt,asc</SelectItem>
-                <SelectItem value="user.firstName,asc">user.firstName,asc</SelectItem>
-                <SelectItem value="user.firstName,desc">user.firstName,desc</SelectItem>
+                <SelectItem value="createdAt,desc">{isAr ? "الأحدث أولاً" : "Newest First"}</SelectItem>
+                <SelectItem value="createdAt,asc">{isAr ? "الأقدم أولاً" : "Oldest First"}</SelectItem>
+                <SelectItem value="user.firstName,asc">{isAr ? "الاسم (أ-ي)" : "Name (A-Z)"}</SelectItem>
+                <SelectItem value="user.firstName,desc">{isAr ? "الاسم (ي-أ)" : "Name (Z-A)"}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -387,7 +443,7 @@ const SecretaryList = () => {
                             <div className="space-y-2 mb-4">
                               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                 <Phone className="size-4 shrink-0" />
-                                <span>{secretary.user?.phoneNumber || '---'}</span>
+                                <span dir="ltr">{secretary.user?.phoneNumber || '---'}</span>
                               </div>
                               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                 <Mail className="size-4 shrink-0" />

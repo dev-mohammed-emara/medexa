@@ -264,13 +264,13 @@ const TimePicker: React.FC<TimePickerProps> = ({
         ref={containerRef}
         onClick={handleOpen}
         className={cn(
-          "time-picker-container whitespace-nowrap flex items-center max-w-full text-center bg-white border border-border rounded-xl px-3 py-1.5 transition-all hover:border-primary/50 cursor-pointer h-12 w-full",
+          "time-picker-container whitespace-nowrap flex items-center max-w-full text-end bg-white border border-border rounded-xl px-3 py-1.5 transition-all hover:border-primary/50 cursor-pointer h-12 w-full",
           currentError && "border-destructive hover:border-destructive bg-destructive/5 text-destructive",
           className
         )}
       >
         {!noClock && <Clock className={cn("size-4 mr-2 ml-2", currentError ? "text-destructive" : "text-muted-foreground")} />}
-        <div className={cn("flex-1 font-bold w-full", currentError ? "text-destructive" : "text-foreground")} dir="ltr">
+        <div className={cn("flex-1 font-bold text-end", currentError ? "text-destructive" : "text-foreground")} dir="ltr">
           {initial.h}:{initial.m} {initial.p === 'AM' ? (isAr ? 'ص' : 'AM') : (isAr ? 'م' : 'PM')}
         </div>
       </div>

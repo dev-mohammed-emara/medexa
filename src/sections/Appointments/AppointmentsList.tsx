@@ -19,7 +19,8 @@ import { ar } from 'date-fns/locale';
 import { ChevronRight, ChevronLeft, Plus, Clock, User, Stethoscope, Eye, SquarePen, X, Smartphone, MoveHorizontal, Check, FileText, AlertCircle, Trash2 } from 'lucide-react';
 import { getErrorMessage } from '../../utils/error';
 import { FaCalendarAlt } from 'react-icons/fa';
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import { useUrlFilters } from '../../hooks/useUrlFilters';
 import { apiFetch } from '../../utils/apiFetch';
 import { useMediaQuery } from 'react-responsive';
 import { Button } from '../../components/ui/Button';
@@ -101,19 +102,80 @@ const AppointmentsList = () => {
   const handleCloseDeleteModal = useCallback(() => setIsDeleteModalOpen(false), []);
   const isMediumScreen = useMediaQuery({ query: '(min-width: 1024px) and (max-width: 1279px)' });
 
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedDoctor, setSelectedDoctor] = useState('all');
+  const defaultMonth = useMemo(() => new Date().getMonth() + 1, []);
+  const defaultYear = useMemo(() => new Date().getFullYear(), []);
+
+  // Initial parameters resolution (URL takes priority over sessionStorage, which takes priority over defaults)
+  const initialParams = useMemo(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlMonth = urlParams.get('month');
+    const urlYear = urlParams.get('year');
+    // Note: selectedDoctor cannot be resolved to UUID until doctorsList loads.
+    // So we resolve it from sessionStorage first, and map doctorName parameter in a separate useEffect once doctorsList is loaded.
+    const saved = (() => {
+      try {
+        const data = sessionStorage.getItem('medexa_filter_appointments');
+        return data ? JSON.parse(data) : null;
+      } catch {
+        return null;
+      }
+    })();
+
+    const initMonth = urlMonth !== null ? Number(urlMonth) : (saved?.month ?? defaultMonth);
+    const initYear = urlYear !== null ? Number(urlYear) : (saved?.year ?? defaultYear);
+
+    return {
+      currentDate: new Date(initYear, initMonth - 1, 1),
+      selectedDoctor: saved?.selectedDoctor ?? 'all',
+    };
+  }, [defaultMonth, defaultYear]);
+
+  const [currentDate, setCurrentDate] = useState<Date>(initialParams.currentDate);
+  const [selectedDoctor, setSelectedDoctor] = useState<string>(initialParams.selectedDoctor);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [lastSelectedDate, setLastSelectedDate] = useState<Date | null>(null);
+  const [doctorsList, setDoctorsList] = useState<Array<Partial<ApiDoctor>>>([]);
+
+  // Hook for SEO URL and SessionStorage synchronization
+  useUrlFilters({
+    sessionKey: 'medexa_filter_appointments',
+    filters: [
+      {
+        key: 'month',
+        state: currentDate.getMonth() + 1,
+        setState: (m: number) => setCurrentDate(prev => new Date(prev.getFullYear(), m - 1, 1)),
+        defaultValue: defaultMonth,
+      },
+      {
+        key: 'year',
+        state: currentDate.getFullYear(),
+        setState: (y: number) => setCurrentDate(prev => new Date(y, prev.getMonth(), 1)),
+        defaultValue: defaultYear,
+      },
+      {
+        key: 'doctor',
+        state: selectedDoctor,
+        setState: setSelectedDoctor,
+        defaultValue: 'all',
+        urlEnabled: false, // Protected: keep in state and sessionStorage but not in URL
+      }
+    ],
+  });
+
+  // Static Document Title
+  useEffect(() => {
+    document.title = isAr
+      ? 'جدول المواعيد | Medexa'
+      : 'Appointments Schedule | Medexa';
+  }, [isAr]);
 
   const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [doctorsList, setDoctorsList] = useState<Array<Partial<ApiDoctor>>>([]);
 
   // Load doctors for filter select
   useEffect(() => {
     const loadDoctors = async () => {
       try {
-        const res = await fetchDoctors({ size: 100 });
+        const res = await fetchDoctors({ size: 50 });
         if (res.content && res.content.length > 0) {
           setDoctorsList(res.content);
         } else {
@@ -1029,7 +1091,19 @@ const AppointmentsList = () => {
         </div>
 
         <div className="flex items-center max-sm:flex-wrap gap-3">
-          <Select name="selectedDoctor" value={selectedDoctor} onValueChange={setSelectedDoctor}>
+          <Select
+            name="selectedDoctor"
+            value={selectedDoctor}
+            onValueChange={setSelectedDoctor}
+            onSearchChange={async (searchQuery) => {
+              try {
+                const res = await fetchDoctors({ size: 50, search: searchQuery });
+                setDoctorsList(res.content || []);
+              } catch (err) {
+                console.error('Failed to search doctors in list:', err);
+              }
+            }}
+          >
             <SelectTrigger className="w-56 h-10 bg-white border-border shadow-xs">
               <SelectValue placeholder={t('select_doctor', T)} />
             </SelectTrigger>

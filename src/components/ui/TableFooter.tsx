@@ -40,16 +40,19 @@ const TableFooter = ({
     if (totalItems <= 0) {
       return [10];
     }
-    const filtered = defaultOptions.filter(option => option <= totalItems);
-    if (!filtered.includes(totalItems)) {
+    const filtered = defaultOptions.filter(option => option <= totalItems && option <= 50);
+    if (totalItems <= 50 && !filtered.includes(totalItems)) {
       filtered.push(totalItems);
+    }
+    if (filtered.length === 0) {
+      filtered.push(Math.min(50, totalItems));
     }
     return filtered.sort((a, b) => a - b);
   };
 
   const pageSizeOptions = getPageSizeOptions();
   const maxOption = pageSizeOptions[pageSizeOptions.length - 1] || 10;
-  const activePageSize = itemsPerPage > maxOption ? maxOption : itemsPerPage;
+  const activePageSize = Math.min(50, itemsPerPage > maxOption ? maxOption : itemsPerPage);
 
   const PrevIcon = isAr ? LuChevronRight : LuChevronLeft;
   const NextIcon = isAr ? LuChevronLeft : LuChevronRight;
@@ -74,14 +77,15 @@ const TableFooter = ({
               <span className="text-xs text-muted-foreground font-bold">
                 {isAr ? "حجم الصفحة:" : "Page Size:"}
               </span>
-              <div className="min-w-[70px]">
+              <div className="min-w-[10px]">
                 <Select name="String" value={String(activePageSize)}
                   onValueChange={onItemsPerPageChange}
+                  onlyNumbers
                 >
                   <SelectTrigger className="h-9 rounded-xl border border-border bg-white text-foreground px-3 flex items-center justify-center gap-2 font-bold">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent smallZ>
+                  <SelectContent smallZ className="min-w-[80px]! w-[80px]!">
                     {pageSizeOptions.map((option) => (
                       <SelectItem key={option} value={String(option)} className="font-bold">{option}</SelectItem>
                     ))}
@@ -112,12 +116,13 @@ const TableFooter = ({
           <Select name="String" value={String(currentPage)}
             onValueChange={(value) => onPageChange(Number(value))}
             disabled={resolvedTotalPages <= 1}
+            onlyNumbers
           >
             {/* Added '[&_svg]:text-white' to force the dropdown chevron to be white */}
             <SelectTrigger className="h-10 rounded-xl border-none bg-primary text-white px-4 shadow-lg shadow-primary/20 flex items-center justify-center gap-2 transition-transform active:scale-95 disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none font-bold [&_svg]:text-white">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent smallZ>
+            <SelectContent smallZ className="min-w-[120px] w-[120px]">
               {Array.from({ length: resolvedTotalPages }, (_, idx) => idx + 1).map((page) => (
                 <SelectItem key={page} value={String(page)} className="font-bold">{page}</SelectItem>
               ))}

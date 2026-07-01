@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useUrlFilters } from '../../hooks/useUrlFilters';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useLanguage } from '../../contexts/LanguageContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -32,10 +33,46 @@ const PatientDetailsView = () => {
   const { isAr, dir } = useLanguage();
   const { hasPermission } = useAuth();
 
+  const getLocalDateString = (d: Date) => formatDateApi(d) || '';
+
+  const today = new Date();
+  const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+
+  const defaultToDate = getLocalDateString(today);
+  const defaultFromDate = getLocalDateString(firstDayOfMonth);
+
+  // Initial parameters resolution (URL takes priority over sessionStorage, which takes priority over defaults)
+  const initialParams = useMemo(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlFromDate = urlParams.get('dateFrom');
+    const urlToDate = urlParams.get('dateTo');
+    const urlSort = urlParams.get('sort');
+    const urlPage = urlParams.get('page');
+    
+    const saved = (() => {
+      try {
+        const data = sessionStorage.getItem('medexa_filter_patient_details');
+        return data ? JSON.parse(data) : null;
+      } catch {
+        return null;
+      }
+    })();
+
+    return {
+      fromDate: urlFromDate !== null ? urlFromDate : (saved?.fromDate ?? defaultFromDate),
+      toDate: urlToDate !== null ? urlToDate : (saved?.toDate ?? defaultToDate),
+      sort: urlSort !== null ? urlSort : (saved?.sort ?? 'createdAt,desc'),
+      tempFromDate: urlFromDate !== null ? urlFromDate : (saved?.tempFromDate ?? defaultFromDate),
+      tempToDate: urlToDate !== null ? urlToDate : (saved?.tempToDate ?? defaultToDate),
+      tempSort: urlSort !== null ? urlSort : (saved?.tempSort ?? 'createdAt,desc'),
+      currentPage: urlPage !== null ? Number(urlPage) : (saved?.currentPage ?? 1),
+    };
+  }, [defaultFromDate, defaultToDate]);
+
   const [patient, setPatient] = useState<ApiPatient | null>(null);
   const [records, setRecords] = useState<any[]>([]);
   const [totalElements, setTotalElements] = useState<number>(0);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(initialParams.currentPage);
   const [itemsPerPage] = useState(10);
   const [totalPages, setTotalPages] = useState(0);
 
@@ -48,21 +85,36 @@ const PatientDetailsView = () => {
   const [isLoadingPatient, setIsLoadingPatient] = useState(true);
   const [isLoadingRecords, setIsLoadingRecords] = useState(true);
 
-  const getLocalDateString = (d: Date) => formatDateApi(d) || '';
-
-  const today = new Date();
-  const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-
-  const defaultToDate = getLocalDateString(today);
-  const defaultFromDate = getLocalDateString(firstDayOfMonth);
-
   // Filters
-  const [fromDate, setFromDate] = useState<string>(defaultFromDate);
-  const [toDate, setToDate] = useState<string>(defaultToDate);
-  const [sort, setSort] = useState<string>("createdAt,desc");
-  const [tempFromDate, setTempFromDate] = useState<string>(defaultFromDate);
-  const [tempToDate, setTempToDate] = useState<string>(defaultToDate);
-  const [tempSort, setTempSort] = useState<string>("createdAt,desc");
+  const [fromDate, setFromDate] = useState<string>(initialParams.fromDate);
+  const [toDate, setToDate] = useState<string>(initialParams.toDate);
+  const [sort, setSort] = useState<string>(initialParams.sort);
+  const [tempFromDate, setTempFromDate] = useState<string>(initialParams.tempFromDate);
+  const [tempToDate, setTempToDate] = useState<string>(initialParams.tempToDate);
+  const [tempSort, setTempSort] = useState<string>(initialParams.tempSort);
+
+  // Sync active states back to local inputs (e.g. on back/forward browser navigation)
+  useEffect(() => {
+    setTempFromDate(fromDate);
+    setTempToDate(toDate);
+    setTempSort(sort);
+  }, [fromDate, toDate, sort]);
+
+  // Hook for SEO URL and SessionStorage synchronization
+  useUrlFilters({
+    sessionKey: 'medexa_filter_patient_details',
+    filters: [
+      { key: 'dateFrom', state: fromDate, setState: setFromDate, defaultValue: defaultFromDate },
+      { key: 'dateTo', state: toDate, setState: setToDate, defaultValue: defaultToDate },
+      { key: 'sort', state: sort, setState: setSort, defaultValue: 'createdAt,desc' },
+      { key: 'page', state: currentPage, setState: setCurrentPage, defaultValue: 1 },
+    ],
+  });
+
+  // Static Document Title
+  useEffect(() => {
+    document.title = isAr ? 'تفاصيل المريض | Medexa' : 'Patient Details | Medexa';
+  }, [isAr]);
 
   const loadData = useCallback(async (isCancelled?: () => boolean) => {
     if (!uuid) {

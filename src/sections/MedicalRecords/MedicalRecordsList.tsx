@@ -7,7 +7,8 @@ import {
   Stethoscope,
   RotateCcw
 } from 'lucide-react';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useUrlFilters } from '../../hooks/useUrlFilters';
 import { FaCalendarAlt } from 'react-icons/fa';
 import TableFooter from '../../components/ui/TableFooter';
 import { formatDateApi, formatDateDisplay } from '../../utils/date';
@@ -42,21 +43,75 @@ const MedicalRecordsList = () => {
   const defaultToDate = getLocalDateString(today);
   const defaultFromDate = getLocalDateString(firstDayOfMonth);
 
+  // Initial parameters resolution (URL takes priority over sessionStorage, which takes priority over defaults)
+  const initialParams = useMemo(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlFromDate = urlParams.get('dateFrom');
+    const urlToDate = urlParams.get('dateTo');
+    const urlSort = urlParams.get('sort');
+    const urlPage = urlParams.get('page');
+    const urlSize = urlParams.get('size');
+    
+    const saved = (() => {
+      try {
+        const data = sessionStorage.getItem('medexa_filter_medical_records');
+        return data ? JSON.parse(data) : null;
+      } catch {
+        return null;
+      }
+    })();
+
+    return {
+      fromDate: urlFromDate !== null ? urlFromDate : (saved?.fromDate ?? defaultFromDate),
+      toDate: urlToDate !== null ? urlToDate : (saved?.toDate ?? defaultToDate),
+      sort: urlSort !== null ? urlSort : (saved?.sort ?? 'createdAt,desc'),
+      tempFromDate: urlFromDate !== null ? urlFromDate : (saved?.tempFromDate ?? defaultFromDate),
+      tempToDate: urlToDate !== null ? urlToDate : (saved?.tempToDate ?? defaultToDate),
+      tempSort: urlSort !== null ? urlSort : (saved?.tempSort ?? 'createdAt,desc'),
+      currentPage: urlPage !== null ? Number(urlPage) : (saved?.currentPage ?? 1),
+      itemsPerPage: urlSize !== null ? Number(urlSize) : (saved?.itemsPerPage ?? 10),
+    };
+  }, [defaultFromDate, defaultToDate]);
+
   // Active filter states
-  const [fromDate, setFromDate] = useState<string>(defaultFromDate);
-  const [toDate, setToDate] = useState<string>(defaultToDate);
-  const [sort, setSort] = useState<string>("createdAt,desc");
+  const [fromDate, setFromDate] = useState<string>(initialParams.fromDate);
+  const [toDate, setToDate] = useState<string>(initialParams.toDate);
+  const [sort, setSort] = useState<string>(initialParams.sort);
 
   // Temp filter states
-  const [tempFromDate, setTempFromDate] = useState<string>(defaultFromDate);
-  const [tempToDate, setTempToDate] = useState<string>(defaultToDate);
-  const [tempSort, setTempSort] = useState<string>("createdAt,desc");
+  const [tempFromDate, setTempFromDate] = useState<string>(initialParams.tempFromDate);
+  const [tempToDate, setTempToDate] = useState<string>(initialParams.tempToDate);
+  const [tempSort, setTempSort] = useState<string>(initialParams.tempSort);
 
   const [records, setRecords] = useState<any[]>([]);
   const [totalElements, setTotalElements] = useState<number>(0);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [currentPage, setCurrentPage] = useState(initialParams.currentPage);
+  const [itemsPerPage, setItemsPerPage] = useState(initialParams.itemsPerPage);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Sync active states back to local inputs (e.g. on back/forward browser navigation)
+  useEffect(() => {
+    setTempFromDate(fromDate);
+    setTempToDate(toDate);
+    setTempSort(sort);
+  }, [fromDate, toDate, sort]);
+
+  // Hook for SEO URL and SessionStorage synchronization
+  useUrlFilters({
+    sessionKey: 'medexa_filter_medical_records',
+    filters: [
+      { key: 'dateFrom', state: fromDate, setState: setFromDate, defaultValue: defaultFromDate },
+      { key: 'dateTo', state: toDate, setState: setToDate, defaultValue: defaultToDate },
+      { key: 'sort', state: sort, setState: setSort, defaultValue: 'createdAt,desc' },
+      { key: 'page', state: currentPage, setState: setCurrentPage, defaultValue: 1 },
+      { key: 'size', state: itemsPerPage, setState: setItemsPerPage, defaultValue: 10 },
+    ],
+  });
+
+  // Dynamic SEO Document Title
+  useEffect(() => {
+    document.title = isAr ? 'السجلات الطبية | Medexa' : 'Medical Records | Medexa';
+  }, [isAr]);
 
   const toggleRecord = (uuid: string) => {
     setOpenId(openId === uuid ? null : uuid);

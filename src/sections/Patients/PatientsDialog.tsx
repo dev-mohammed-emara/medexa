@@ -160,13 +160,13 @@ const PatientsDialog = ({ isOpen, onClose, onConfirm, mode, initialData }: Patie
             onClick={handleClose}
             disabled={loading}
             type="button"
-            className={cn("absolute top-6 p-2 rounded-full hover:bg-muted transition-colors opacity-70 hover:opacity-100 outline-none z-20", isAr ? "right-6" : "left-6")}
+            className={cn("absolute top-6 p-2 rounded-full hover:bg-muted transition-colors opacity-70 hover:opacity-100 outline-none z-20", isAr ? "left-6" : "right-6")}
           >
             <X className="size-5" />
             <span className="sr-only">{t('dialog.close', T)}</span>
           </button>
 
-          <header data-slot="dialog-header" className="flex flex-col gap-2 text-center mb-6">
+          <header data-slot="dialog-header" className="flex flex-col gap-2 text-start mb-6">
             <h2 data-slot="dialog-title" className="text-2xl font-bold text-foreground">
               {titles[mode]}
             </h2>

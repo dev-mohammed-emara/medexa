@@ -6,7 +6,8 @@ import {
   Loader2,
   RotateCcw
 } from 'lucide-react';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useUrlFilters } from '../../hooks/useUrlFilters';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../../components/ui/Button';
 import { patientsTranslations } from '../../constants/translations/patients';
@@ -44,24 +45,73 @@ const PatientsList = () => {
   const canAnimate = isLoaded && !isExiting;
   const navigate = useNavigate();
 
+  // Initial parameters resolution (URL takes priority over sessionStorage, which takes priority over defaults)
+  const initialParams = useMemo(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlSearch = urlParams.get('search');
+    const urlSort = urlParams.get('sort');
+    const urlPage = urlParams.get('page');
+    const urlSize = urlParams.get('size');
+    
+    const saved = (() => {
+      try {
+        const data = sessionStorage.getItem('medexa_filter_patients');
+        return data ? JSON.parse(data) : null;
+      } catch {
+        return null;
+      }
+    })();
+
+    return {
+      search: urlSearch !== null ? urlSearch : (saved?.search ?? ''),
+      sort: urlSort !== null ? urlSort : (saved?.sort ?? 'createdAt,desc'),
+      activeSearch: urlSearch !== null ? urlSearch : (saved?.activeSearch ?? ''),
+      activeSort: urlSort !== null ? urlSort : (saved?.activeSort ?? 'createdAt,desc'),
+      currentPage: urlPage !== null ? Number(urlPage) : (saved?.currentPage ?? 1),
+      pageSize: urlSize !== null ? Number(urlSize) : (saved?.pageSize ?? 10),
+    };
+  }, []);
+
   // State Management
   const [patients, setPatients] = useState<ApiPatient[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Local Filter Input States
-  const [search, setSearch] = useState('');
-  const [sort, setSort] = useState('createdAt,desc');
+  const [search, setSearch] = useState(initialParams.search);
+  const [sort, setSort] = useState(initialParams.sort);
 
   // Active Filter States (applied on Confirm)
-  const [activeSearch, setActiveSearch] = useState('');
-  const [activeSort, setActiveSort] = useState('createdAt,desc');
+  const [activeSearch, setActiveSearch] = useState(initialParams.activeSearch);
+  const [activeSort, setActiveSort] = useState(initialParams.activeSort);
 
   // Pagination State
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [currentPage, setCurrentPage] = useState(initialParams.currentPage);
+  const [pageSize, setPageSize] = useState(initialParams.pageSize);
   const [totalPages, setTotalPages] = useState(1);
   const [totalElements, setTotalElements] = useState(0);
+
+  // Sync active states back to local inputs (e.g. on back/forward browser navigation)
+  useEffect(() => {
+    setSearch(activeSearch);
+    setSort(activeSort);
+  }, [activeSearch, activeSort]);
+
+  // Hook for SEO URL and SessionStorage synchronization
+  useUrlFilters({
+    sessionKey: 'medexa_filter_patients',
+    filters: [
+      { key: 'search', state: activeSearch, setState: setActiveSearch, defaultValue: '', urlEnabled: false },
+      { key: 'sort', state: activeSort, setState: setActiveSort, defaultValue: 'createdAt,desc' },
+      { key: 'page', state: currentPage, setState: setCurrentPage, defaultValue: 1 },
+      { key: 'size', state: pageSize, setState: setPageSize, defaultValue: 10 },
+    ],
+  });
+
+  // Dynamic SEO Document Title
+  useEffect(() => {
+    document.title = isAr ? 'المرضى | Medexa' : 'Patients | Medexa';
+  }, [isAr]);
 
   // Dialog State
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -235,11 +285,10 @@ const PatientsList = () => {
                     <SelectValue placeholder={t('sort_label', T) || 'Sort By'} />
                   </SelectTrigger>
                   <SelectContent smallZ>
-                    <SelectItem value="--">--</SelectItem>
-                    <SelectItem value="createdAt,desc">createdAt,desc</SelectItem>
-                    <SelectItem value="createdAt,asc">createdAt,asc</SelectItem>
-                    <SelectItem value="firstName,asc">firstName,asc</SelectItem>
-                    <SelectItem value="firstName,desc">firstName,desc</SelectItem>
+                    <SelectItem value="createdAt,desc">{isAr ? "الأحدث أولاً" : "Newest First"}</SelectItem>
+                    <SelectItem value="createdAt,asc">{isAr ? "الأقدم أولاً" : "Oldest First"}</SelectItem>
+                    <SelectItem value="firstName,asc">{isAr ? "الاسم الأول (أ-ي)" : "First Name (A-Z)"}</SelectItem>
+                    <SelectItem value="firstName,desc">{isAr ? "الاسم الأول (ي-أ)" : "First Name (Z-A)"}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -312,7 +361,7 @@ const PatientsList = () => {
                             {fullName}
                           </TableCell>
                           <TableCell className={cn("p-4 align-middle whitespace-nowrap text-muted-foreground", isAr ? "text-right" : "text-left")}>
-                            {patient.phoneNumber}
+                            <span dir="ltr">{patient.phoneNumber}</span>
                           </TableCell>
                           <TableCell className={cn("p-4 align-middle whitespace-nowrap", isAr ? "text-right" : "text-left")}>
                             {calculateAge(patient.dateOfBirth)}
